@@ -41,6 +41,7 @@ export function setupHandlers(bot: Telegraf<BotContext>): void {
   // Telegram Stars: handle successful payment
   bot.on('successful_payment', async (ctx) => {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Telegram payment message
       const payment = (ctx.message as any).successful_payment;
       if (!payment) return;
 

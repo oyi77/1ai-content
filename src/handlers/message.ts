@@ -1106,6 +1106,7 @@ export async function messageHandler(ctx: BotContext): Promise<void> {
 
         // First photo of new group — wait for rest
         await new Promise((r) => setTimeout(r, 1500));
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Session stateData dynamic access
         const finalUrls: string[] = (ctx.session.stateData as any)?._batchUrls || [photoUrl];
 
         ctx.session.state = 'MEDIA_INTENT_SELECTION';

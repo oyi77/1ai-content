@@ -216,6 +216,7 @@ export async function handleCloneCallbacks(ctx: BotContext, data: string): Promi
   }
 
   if (data === "repurpose_generate_t2v") {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Prisma JSON field access
     const repurposeData = ctx.session.stateData?.repurposeData as any;
     if (!repurposeData?.storyboard) {
       const lang = ctx.session?.userLang || 'id';
@@ -284,6 +285,7 @@ export async function handleCloneCallbacks(ctx: BotContext, data: string): Promi
   }
 
   if (data === "repurpose_generate_i2v") {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Prisma JSON field access
     const repurposeData = ctx.session.stateData?.repurposeData as any;
     if (!repurposeData?.storyboard) {
       const lang = ctx.session?.userLang || 'id';

@@ -405,6 +405,7 @@ export async function getNichesAsync(): Promise<typeof NICHE_LIST> {
     if (dbNiches.length > 0) {
       const parsed = dbNiches.map((n: any) => ({
         id: n.key,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Prisma JSON field spread
         ...((typeof n.value === 'string' ? JSON.parse(n.value) : n.value) as any),
       }));
       nicheCache = parsed;

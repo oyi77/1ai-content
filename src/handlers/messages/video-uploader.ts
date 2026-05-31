@@ -35,6 +35,7 @@ async function withConcurrency<T, R>(
 }
 
 export async function handleDisassemble(ctx: BotContext): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Telegraf message type discrimination
   const message = ctx.message as any;
   if (!message) return;
 

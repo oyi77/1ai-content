@@ -1393,6 +1393,7 @@ export class ImageGenerationService {
       ...params,
       _targetWidth: dims.width,
       _targetHeight: dims.height,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic image params extension
     } as any;
 
     const enrichedBase = PromptEngine.enrichForImage(

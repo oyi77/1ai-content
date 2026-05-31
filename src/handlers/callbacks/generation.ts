@@ -112,6 +112,7 @@ export async function handleGenerationCallbacks(ctx: BotContext, data: string): 
     }
 
     const { showSmartPlatformSelection } = await import("../../flows/generate.js");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Telegraf preset type
     await showSmartPlatformSelection(ctx, preset as any);
     return true;
   }
@@ -480,6 +481,7 @@ export async function handleGenerationCallbacks(ctx: BotContext, data: string): 
       | string
       | undefined;
     if (selectedPrompt && ctx.session) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Session videoCreation init
       if (!ctx.session.videoCreation) ctx.session.videoCreation = {} as any;
       ctx.session.videoCreation!.customPrompt = selectedPrompt;
       ctx.session.videoCreation!.waitingForCustomPrompt = false;

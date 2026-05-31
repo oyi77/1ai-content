@@ -667,6 +667,7 @@ Visual style: Cinematic, high quality, engaging transitions.
         throw new Error(`Gemini API returned ${response.status}: ${response.statusText}`);
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API response
       const data = await response.json() as any;
       const generatedCaption = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
 
@@ -706,6 +707,7 @@ Visual style: Cinematic, high quality, engaging transitions.
    */
   static updateStoryboardTemplate(niche: string, scenes: Array<{ scene: number; duration: number; type: string; description: string }>) {
     if (NICHE_TEMPLATES[niche as keyof typeof NICHE_TEMPLATES]) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic template property assignment
       (NICHE_TEMPLATES[niche as keyof typeof NICHE_TEMPLATES] as any).storyboardTemplate = scenes;
     }
     return true;

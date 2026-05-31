@@ -378,6 +378,7 @@ export async function handlePromptLibraryCallbacks(ctx: BotContext, data: string
   if (data === "report_bug") {
     await ctx.answerCbQuery();
     const lang = ctx.session?.userLang || 'id';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- BotState string assignment
     if (ctx.session) ctx.session.state = 'WAITING_BUG_REPORT' as any;
     await ctx.editMessageText(
       t('cb.report_bug', lang),

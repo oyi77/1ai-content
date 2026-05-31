@@ -58,6 +58,7 @@ PaymentService.setBotInstance(bot);
 SubscriptionService.setBotInstance(bot);
 
 // Global BigInt serializer patch (Prisma returns BigInt for telegramId)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- BigInt JSON serialization polyfill
 (BigInt.prototype as any).toJSON = function () { return this.toString(); };
 
 // Initialize Fastify server

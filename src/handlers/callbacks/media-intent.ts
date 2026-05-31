@@ -110,6 +110,7 @@ export async function handleMediaIntentCallback(ctx: BotContext, data: string): 
       mode: 'i2v',
       imageCategory: 'product',
     };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Session videoCreation dynamic init
     if (!ctx.session.videoCreation) ctx.session.videoCreation = {} as any;
     (ctx.session.videoCreation as Record<string, unknown>).pendingPhotos = photos.map((url: string) => ({ fileId: '', url }));
 
