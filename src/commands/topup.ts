@@ -236,7 +236,7 @@ export async function showDuitkuPaymentMethods(ctx: BotContext, packageId: strin
       return;
     }
 
-    const price = pkg.priceIdr || (pkg as any).price;
+    const price = pkg.priceIdr || (pkg as Record<string, unknown>).price as number || 0;
     const methods = await DuitkuService.getPaymentMethods(price);
 
     if (methods.length === 0) {
@@ -375,7 +375,7 @@ export async function handleTopupExtraCredit(ctx: BotContext, credits: number): 
     const lang = dbUser.language || 'id';
 
     const unitCost = await getUnitCostAsync('VIDEO_15S');
-    const amount = credits * unitCost;
+    const _amount = credits * unitCost;
 
     const gateways = await PaymentSettingsService.getEnabledGateways();
     if (!gateways || gateways.length === 0) {

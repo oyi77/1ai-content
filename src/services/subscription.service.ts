@@ -197,7 +197,8 @@ export class SubscriptionService {
         select: { id: true, creditBalance: true },
       });
       // subscriptionCredits available after prisma generate with updated schema
-      const subCredits = Math.min((user as any)?.subscriptionCredits || 0, Number(user?.creditBalance || 0));
+      const userRecord = user as unknown as Record<string, unknown>;
+      const subCredits = Math.min((userRecord?.subscriptionCredits as number) || 0, Number(user?.creditBalance || 0));
       await prisma.user.update({
         where: { telegramId: sub.userId },
         data: {

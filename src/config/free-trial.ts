@@ -58,7 +58,7 @@ export async function getFreeTrialConfigAsync(): Promise<typeof FREE_TRIAL_CONFI
       const val = typeof dbConfig.value === 'string' ? JSON.parse(dbConfig.value) : dbConfig.value;
       return { ...FREE_TRIAL_CONFIG, ...val };
     }
-  } catch {}
+  } catch { /* config load failed, use defaults */ }
   return FREE_TRIAL_CONFIG;
 }
 

@@ -6,6 +6,7 @@ Flow tested:
             -> language sub-menu (language options present)
             -> notification toggle (responds without error)
 """
+
 import pytest
 from conftest import (
     send_and_wait,
@@ -16,8 +17,8 @@ from conftest import (
     _is_error_text,
 )
 
-
 # ─── /settings entry screen ──────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_settings_shows_inline_keyboard(client, bot):
@@ -29,9 +30,9 @@ async def test_settings_shows_inline_keyboard(client, bot):
 async def test_settings_response_is_not_error(client, bot):
     msg = await send_and_wait(client, bot, "/settings")
     assert msg is not None
-    assert not _is_error_text(msg.text), (
-        f"/settings returned an error: {(msg.text or '')[:120]}"
-    )
+    assert not _is_error_text(
+        msg.text
+    ), f"/settings returned an error: {(msg.text or '')[:120]}"
 
 
 @pytest.mark.asyncio
@@ -86,22 +87,25 @@ async def test_settings_has_main_menu_escape(client, bot):
 
 # ─── Language sub-menu ───────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_language_button_shows_language_options(client, bot):
     msg = await send_and_wait(client, bot, "/settings", need_buttons=True)
     assert msg is not None
 
     # Try clicking the language button by text since callback_data varies
-    result = await click_button_by_text(client, bot, msg, "bahasa") or \
-             await click_button_by_text(client, bot, msg, "language") or \
-             await click_button_by_text(client, bot, msg, "lang")
+    result = (
+        await click_button_by_text(client, bot, msg, "bahasa")
+        or await click_button_by_text(client, bot, msg, "language")
+        or await click_button_by_text(client, bot, msg, "lang")
+    )
 
     if result is None:
         pytest.skip("Language button not found or did not respond")
 
-    assert not _is_error_text(result.text), (
-        f"Language sub-menu returned an error: {(result.text or '')[:120]}"
-    )
+    assert not _is_error_text(
+        result.text
+    ), f"Language sub-menu returned an error: {(result.text or '')[:120]}"
     # Should show at least Indonesian and English options
     text = (result.text or "").lower()
     cbs = _get_button_callbacks(result)
@@ -123,18 +127,20 @@ async def test_language_options_are_not_error(client, bot):
     msg = await send_and_wait(client, bot, "/settings", need_buttons=True)
     assert msg is not None
 
-    result = await click_button_by_text(client, bot, msg, "bahasa") or \
-             await click_button_by_text(client, bot, msg, "language")
+    result = await click_button_by_text(
+        client, bot, msg, "bahasa"
+    ) or await click_button_by_text(client, bot, msg, "language")
 
     if result is None:
         pytest.skip("Language button not found or did not respond")
 
-    assert not _is_error_text(result.text), (
-        f"Language options returned an error: {(result.text or '')[:120]}"
-    )
+    assert not _is_error_text(
+        result.text
+    ), f"Language options returned an error: {(result.text or '')[:120]}"
 
 
 # ─── Notification toggle ─────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_notification_toggle_responds_without_error(client, bot):
@@ -155,6 +161,6 @@ async def test_notification_toggle_responds_without_error(client, bot):
     if result is None:
         pytest.skip("Notification button not found at top-level settings")
 
-    assert not _is_error_text(result.text), (
-        f"Notification toggle returned an error: {(result.text or '')[:120]}"
-    )
+    assert not _is_error_text(
+        result.text
+    ), f"Notification toggle returned an error: {(result.text or '')[:120]}"

@@ -15,7 +15,7 @@ import { getConfig } from '@/config/env';
 const adminCheck = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
   const token =
     request.headers.authorization?.replace('Bearer ', '') ||
-    (request.query as any).token;
+    (request.query as Record<string, string>).token;
   if (token !== process.env.ADMIN_PASSWORD) {
     reply.status(401).send({ error: 'Unauthorized' });
   }

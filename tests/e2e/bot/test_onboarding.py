@@ -11,6 +11,7 @@ Note: We cannot simulate a brand-new user (that would require a fresh
 Telegram account). Instead we verify that /start for a returning user
 correctly shows the returning-user menu — which is the normal production path.
 """
+
 import pytest
 from conftest import (
     send_and_wait,
@@ -20,8 +21,8 @@ from conftest import (
     _is_error_text,
 )
 
-
 # ─── /start returning-user flow ──────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_start_returns_non_empty_response(client, bot):
@@ -41,23 +42,32 @@ async def test_start_response_is_in_known_language(client, bot):
     text = (msg.text or "").lower()
 
     indonesian_words = ("halo", "selamat", "kredit", "buat", "video", "menu", "saldo")
-    english_words = ("hello", "welcome", "credit", "create", "menu", "balance", "quick actions", "quick action")
+    english_words = (
+        "hello",
+        "welcome",
+        "credit",
+        "create",
+        "menu",
+        "balance",
+        "quick actions",
+        "quick action",
+    )
 
     is_indonesian = any(w in text for w in indonesian_words)
     is_english = any(w in text for w in english_words)
 
-    assert is_indonesian or is_english, (
-        f"/start response is not in Indonesian or English: {text[:200]}"
-    )
+    assert (
+        is_indonesian or is_english
+    ), f"/start response is not in Indonesian or English: {text[:200]}"
 
 
 @pytest.mark.asyncio
 async def test_start_response_is_not_error(client, bot):
     msg = await send_and_wait(client, bot, "/start")
     assert msg is not None
-    assert not _is_error_text(msg.text), (
-        f"/start returned an error: {(msg.text or '')[:120]}"
-    )
+    assert not _is_error_text(
+        msg.text
+    ), f"/start returned an error: {(msg.text or '')[:120]}"
 
 
 @pytest.mark.asyncio
@@ -72,12 +82,13 @@ async def test_start_inline_keyboard_has_at_least_two_buttons(client, bot):
     msg = await send_and_wait(client, bot, "/start", need_buttons=True)
     assert msg is not None
     cbs = _get_button_callbacks(msg)
-    assert len(cbs) >= 2, (
-        f"/start showed only {len(cbs)} button(s), expected at least 2"
-    )
+    assert (
+        len(cbs) >= 2
+    ), f"/start showed only {len(cbs)} button(s), expected at least 2"
 
 
 # ─── Language selection (accessible from /settings) ──────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_language_selection_indonesian_responds(client, bot):
@@ -89,10 +100,9 @@ async def test_language_selection_indonesian_responds(client, bot):
     if settings_msg is None:
         pytest.skip("/settings did not respond with buttons")
 
-    lang_result = (
-        await click_button_by_text(client, bot, settings_msg, "bahasa")
-        or await click_button_by_text(client, bot, settings_msg, "language")
-    )
+    lang_result = await click_button_by_text(
+        client, bot, settings_msg, "bahasa"
+    ) or await click_button_by_text(client, bot, settings_msg, "language")
     if lang_result is None:
         pytest.skip("Language button not found in settings")
 
@@ -100,9 +110,9 @@ async def test_language_selection_indonesian_responds(client, bot):
     if id_result is None:
         pytest.skip("Indonesian option not found in language sub-menu")
 
-    assert not _is_error_text(id_result.text), (
-        f"Selecting Indonesian returned error: {(id_result.text or '')[:120]}"
-    )
+    assert not _is_error_text(
+        id_result.text
+    ), f"Selecting Indonesian returned error: {(id_result.text or '')[:120]}"
 
 
 @pytest.mark.asyncio
@@ -115,10 +125,9 @@ async def test_language_selection_english_responds(client, bot):
     if settings_msg is None:
         pytest.skip("/settings did not respond with buttons")
 
-    lang_result = (
-        await click_button_by_text(client, bot, settings_msg, "bahasa")
-        or await click_button_by_text(client, bot, settings_msg, "language")
-    )
+    lang_result = await click_button_by_text(
+        client, bot, settings_msg, "bahasa"
+    ) or await click_button_by_text(client, bot, settings_msg, "language")
     if lang_result is None:
         pytest.skip("Language button not found in settings")
 
@@ -126,16 +135,18 @@ async def test_language_selection_english_responds(client, bot):
     if en_result is None:
         pytest.skip("English option not found in language sub-menu")
 
-    assert not _is_error_text(en_result.text), (
-        f"Selecting English returned error: {(en_result.text or '')[:120]}"
-    )
+    assert not _is_error_text(
+        en_result.text
+    ), f"Selecting English returned error: {(en_result.text or '')[:120]}"
 
     # Restore to Indonesian so other tests see the default language
-    await click_button_by_text(client, bot, en_result, "Bahasa") or \
-        await click_button_by_text(client, bot, en_result, "Indonesia")
+    await click_button_by_text(
+        client, bot, en_result, "Bahasa"
+    ) or await click_button_by_text(client, bot, en_result, "Indonesia")
 
 
 # ─── Keyboard shortcut smoke tests ───────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_create_video_keyboard_button_triggers_mode_selection(client, bot):
@@ -158,6 +169,6 @@ async def test_create_video_keyboard_button_triggers_mode_selection(client, bot)
 async def test_create_video_keyboard_is_not_error(client, bot):
     msg = await send_and_wait(client, bot, "\U0001f3ac Create Video")
     assert msg is not None
-    assert not _is_error_text(msg.text), (
-        f"'🎬 Create Video' returned error: {(msg.text or '')[:120]}"
-    )
+    assert not _is_error_text(
+        msg.text
+    ), f"'🎬 Create Video' returned error: {(msg.text or '')[:120]}"

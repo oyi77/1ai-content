@@ -26,7 +26,7 @@ async function getAgencyUser(request: FastifyRequest, reply: FastifyReply) {
     return null;
   }
   try {
-    const decoded = jwt.verify(authHeader.substring(7), getJwtSecret()) as any;
+    const decoded = jwt.verify(authHeader.substring(7), getJwtSecret()) as { userId: string };
     const user = await UserService.findByUuid(decoded.userId);
     if (!user) {
       reply.status(404).send({ error: 'User not found' });

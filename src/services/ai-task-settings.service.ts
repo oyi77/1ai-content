@@ -63,8 +63,8 @@ export class AITaskSettingsService {
 
     await prisma.pricingConfig.upsert({
       where: { category_key: { category: 'ai_tasks', key: 'settings' } },
-      create: { category: 'ai_tasks', key: 'settings', value: merged as any, updatedBy: BigInt(0) },
-      update: { value: merged as any, updatedBy: BigInt(0) },
+      create: { category: 'ai_tasks', key: 'settings', value: JSON.parse(JSON.stringify(merged)), updatedBy: BigInt(0) },
+      update: { value: JSON.parse(JSON.stringify(merged)), updatedBy: BigInt(0) },
     });
     await redis.set(AI_TASK_KEY, JSON.stringify(merged));
   }

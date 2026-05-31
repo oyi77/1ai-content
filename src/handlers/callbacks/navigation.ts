@@ -1,5 +1,4 @@
 import { BotContext } from "@/types";
-import { logger } from "@/utils/logger";
 import { getConfig } from "@/config/env";
 import { UserService } from "@/services/user.service";
 import {
@@ -36,8 +35,8 @@ export async function handleNavigationCallbacks(ctx: BotContext, data: string): 
       delete ctx.session.generateCampaignSize;
       delete ctx.session.customPresetConfig;
       if (ctx.session.stateData && typeof ctx.session.stateData === 'object') {
-        delete (ctx.session.stateData as any).selectedPrompt;
-        delete (ctx.session.stateData as any).selectedPromptId;
+        delete (ctx.session.stateData as unknown as Record<string, unknown>).selectedPrompt;
+        delete (ctx.session.stateData as unknown as Record<string, unknown>).selectedPromptId;
       }
     }
     const user = ctx.from;

@@ -171,8 +171,8 @@ export async function getUnitCostAsync(key: keyof typeof UNIT_COSTS): Promise<nu
   if (config !== null && config !== undefined) {
     // DB value can be: number (direct), { units: N }, or { value: N }
     if (typeof config === 'number') return config;
-    if (typeof config === 'object' && 'units' in config) return (config as any).units;
-    if (typeof config === 'object' && 'value' in config) return (config as any).value;
+    if (typeof config === 'object' && 'units' in config) return (config as Record<string, unknown>).units as number;
+    if (typeof config === 'object' && 'value' in config) return (config as Record<string, unknown>).value as number;
   }
   return UNIT_COSTS[key];
 }

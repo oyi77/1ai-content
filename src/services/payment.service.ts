@@ -61,7 +61,7 @@ export class PaymentService {
       throw new Error('Invalid package');
     }
 
-    const price = pkg.priceIdr || (pkg as any).price;
+    const price = pkg.priceIdr || pkg.priceIdr;
     const credits = pkg.credits + (pkg.bonus || 0);
 
     // Generate order ID

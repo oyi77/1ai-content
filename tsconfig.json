@@ -17,7 +17,6 @@
     "noUnusedParameters": false,
     "noEmit": true,
     "types": ["node", "jest"],
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     }

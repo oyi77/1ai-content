@@ -21,13 +21,13 @@ export async function apiKeyAuth(request: FastifyRequest, reply: FastifyReply) {
   if (!apiKey.lastUsedAt || apiKey.lastUsedAt < oneMinAgo) {
     prisma.apiKey.update({ where: { id: apiKey.id }, data: { lastUsedAt: new Date() } }).catch(() => {});
   }
-  (request as any).apiUser = apiKey.user;
+  (request as unknown as Record<string, unknown>).apiUser = apiKey.user;
 }
 
 /**
  * Soft API key auth — used on routes that also accept JWT session auth.
  * Only validates the key if X-API-Key header is present.
- * On success: sets (request as any).apiUser and returns true.
+ * On success: sets (request as unknown as Record<string, unknown>).apiUser and returns true.
  * On invalid key: sends 401/403 and returns false.
  * When header is absent: returns false without sending a reply (caller falls through to JWT).
  */
@@ -58,6 +58,6 @@ export async function tryApiKeyAuth(
   if (!apiKey.lastUsedAt || apiKey.lastUsedAt < oneMinAgo) {
     prisma.apiKey.update({ where: { id: apiKey.id }, data: { lastUsedAt: new Date() } }).catch(() => {});
   }
-  (request as any).apiUser = apiKey.user;
+  (request as unknown as Record<string, unknown>).apiUser = apiKey.user;
   return true;
 }

@@ -77,9 +77,9 @@ function getDims(params: ImageGenerationParams): {
   width: number;
   height: number;
 } {
-  const p = params as any;
+  const p = params as unknown as Record<string, unknown>;
   if (p._targetWidth && p._targetHeight)
-    return { width: p._targetWidth, height: p._targetHeight };
+    return { width: p._targetWidth as number, height: p._targetHeight as number };
   return getImageDimensions(params.aspectRatio, params.resolution);
 }
 
@@ -250,13 +250,13 @@ async function generateViaFalaiImg2Img(
   if (!imageUrl)
     throw new Error("Fal.ai img2img: no reference image URL provided");
 
-  const negativePrompt = (params as any)._negativePrompt as string | undefined;
+  const negativePrompt = (params as unknown as Record<string, unknown>)._negativePrompt as string | undefined;
   const response = await axios.post(
     "https://fal.run/fal-ai/flux/dev/image-to-image",
     {
       prompt,
       image_url: imageUrl,
-      strength: (params as any)._elementStrengthOverride ?? await AdminConfigService.getAiParam('falai_img2img_strength', 0.75),
+      strength: ((params as unknown as Record<string, unknown>)._elementStrengthOverride as number) ?? await AdminConfigService.getAiParam('falai_img2img_strength', 0.75),
       ...(negativePrompt ? { negative_prompt: negativePrompt.replace(/^,\s*/, '') } : {}),
       image_size:
         params.aspectRatio === "16:9"
@@ -464,7 +464,7 @@ async function generateViaGeminiImg2Img(
       timeout: 30000,
     });
     imageBase64 = Buffer.from(imgResponse.data).toString("base64");
-    const ct = imgResponse.headers["content-type"] || "image/jpeg";
+    const ct = String(imgResponse.headers["content-type"] || "image/jpeg");
     if (ct.includes("png")) mimeType = "image/png";
   } else {
     throw new Error("Gemini img2img: no reference image");
@@ -919,9 +919,9 @@ async function generateViaSegmindIPAdapter(
     },
   );
 
-  if (response.data && response.headers["content-type"]?.includes("image")) {
+  if (response.data && String(response.headers["content-type"] || "").includes("image")) {
     const base64 = Buffer.from(response.data).toString("base64");
-    const mimeType = response.headers["content-type"] || "image/png";
+    const mimeType = String(response.headers["content-type"] || "image/png");
     return {
       success: true,
       imageUrl: `data:${mimeType};base64,${base64}`,
@@ -960,9 +960,9 @@ async function generateViaSegmindImg2Img(
     },
   );
 
-  if (response.data && response.headers["content-type"]?.includes("image")) {
+  if (response.data && String(response.headers["content-type"] || "").includes("image")) {
     const base64 = Buffer.from(response.data).toString("base64");
-    const mimeType = response.headers["content-type"] || "image/png";
+    const mimeType = String(response.headers["content-type"] || "image/png");
     return {
       success: true,
       imageUrl: `data:${mimeType};base64,${base64}`,
@@ -1329,7 +1329,7 @@ export class ImageGenerationService {
           "🖼️ Vision analysis failed, continuing with original prompt",
         );
         // Flag for downstream — callers can warn user about degraded quality
-        (params as any)._visionAnalysisFailed = true;
+        (params as unknown as Record<string, unknown>)._visionAnalysisFailed = true;
       }
     }
 
@@ -1353,7 +1353,7 @@ export class ImageGenerationService {
         const productRef = ea.productDesc ? ` Exact product to preserve: ${ea.productDesc}.` : '';
         visionEnrichedPrompt = `Keep the product exactly as shown in the reference image.${productRef} ${params.prompt}. Change only the background and scene as described. Do not alter the product itself.`;
         elementStrengthOverride = 0.55;
-        (params as any)._negativePrompt = ((params as any)._negativePrompt || '') + ', person, human, model, hands, body';
+        (params as unknown as Record<string, unknown>)._negativePrompt = ((params as unknown as Record<string, unknown>)._negativePrompt || '') + ', person, human, model, hands, body';
         logger.info("🎯 Element selection: keepProduct only (strength=0.55)");
       } else if (sel.keepCharacter && !sel.keepProduct && !sel.keepBackground) {
         const charRef = ea.characterDesc ? ` Character appearance to preserve: ${ea.characterDesc}.` : '';
@@ -1378,12 +1378,12 @@ export class ImageGenerationService {
 
       // Store strength override for downstream providers
       if (elementStrengthOverride !== undefined) {
-        (params as any)._elementStrengthOverride = elementStrengthOverride;
+        (params as unknown as Record<string, unknown>)._elementStrengthOverride = elementStrengthOverride;
       }
 
       // Always add anti-UI/screenshot negative prompt for img2img to prevent
       // garbled text when user uploads screenshots instead of clean product photos
-      (params as any)._negativePrompt = ((params as any)._negativePrompt || '') +
+      (params as unknown as Record<string, unknown>)._negativePrompt = ((params as unknown as Record<string, unknown>)._negativePrompt || '') +
         ', text overlay, ui elements, interface, screenshot, watermark, button, icon, timestamp, chat bubble, telegram, mobile app';
     }
 

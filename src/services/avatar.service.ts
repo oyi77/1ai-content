@@ -66,7 +66,7 @@ export class AvatarService {
         imageUrl,
         localPath: localPath || null,
         description,
-        features: features as any,
+        features: features ? JSON.parse(JSON.stringify(features)) : null,
         isDefault,
       },
     });

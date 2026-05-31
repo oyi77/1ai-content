@@ -130,7 +130,7 @@ export async function getPersonasAsync(): Promise<PersonaConfig[]> {
     if (dbPersonas.length > 0) {
       const merged = { ...PERSONA_CONFIG };
       for (const dbP of dbPersonas) {
-        const override = typeof dbP.value === 'string' ? JSON.parse(dbP.value) : dbP.value as any;
+        const override = typeof dbP.value === 'string' ? JSON.parse(dbP.value) : dbP.value as Record<string, unknown>;
         const key = dbP.key as UserMode;
         if (merged[key]) {
           merged[key] = { ...merged[key], ...override, id: key };

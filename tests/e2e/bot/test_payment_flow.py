@@ -6,6 +6,7 @@ The flow tested is:
   /topup -> package list -> click a package -> gateway selection appears
            -> check_payment button present
 """
+
 import pytest
 from conftest import (
     send_and_wait,
@@ -15,8 +16,8 @@ from conftest import (
     _is_error_text,
 )
 
-
 # ─── /topup entry screen ─────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_topup_shows_package_buttons(client, bot):
@@ -25,21 +26,22 @@ async def test_topup_shows_package_buttons(client, bot):
     cbs = _get_button_callbacks(msg)
     # Packages are commonly named package_*, buy_*, or topup_*
     pkg_cbs = [
-        c for c in cbs
+        c
+        for c in cbs
         if any(c.startswith(p) for p in ("package_", "buy_", "topup_", "pkg_"))
     ]
-    assert len(pkg_cbs) > 0, (
-        f"/topup did not show any package buttons; callbacks found: {cbs}"
-    )
+    assert (
+        len(pkg_cbs) > 0
+    ), f"/topup did not show any package buttons; callbacks found: {cbs}"
 
 
 @pytest.mark.asyncio
 async def test_topup_response_is_not_error(client, bot):
     msg = await send_and_wait(client, bot, "/topup")
     assert msg is not None
-    assert not _is_error_text(msg.text), (
-        f"/topup returned an error: {(msg.text or '')[:120]}"
-    )
+    assert not _is_error_text(
+        msg.text
+    ), f"/topup returned an error: {(msg.text or '')[:120]}"
 
 
 @pytest.mark.asyncio
@@ -54,12 +56,13 @@ async def test_topup_has_main_menu_escape(client, bot):
         or _has_button(msg, text_contains="Kembali")
         or _has_button(msg, text_contains="Back")
     )
-    assert has_escape, (
-        f"/topup is missing an escape button back to main menu; callbacks: {cbs}"
-    )
+    assert (
+        has_escape
+    ), f"/topup is missing an escape button back to main menu; callbacks: {cbs}"
 
 
 # ─── package selection ───────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_clicking_first_package_shows_gateway_or_confirm(client, bot):
@@ -72,7 +75,11 @@ async def test_clicking_first_package_shows_gateway_or_confirm(client, bot):
 
     cbs = _get_button_callbacks(msg)
     pkg_cb = next(
-        (c for c in cbs if any(c.startswith(p) for p in ("package_", "buy_", "topup_", "pkg_"))),
+        (
+            c
+            for c in cbs
+            if any(c.startswith(p) for p in ("package_", "buy_", "topup_", "pkg_"))
+        ),
         None,
     )
     if pkg_cb is None:
@@ -80,9 +87,9 @@ async def test_clicking_first_package_shows_gateway_or_confirm(client, bot):
 
     result = await click_callback(client, bot, msg, pkg_cb)
     assert result is not None, f"Clicking package '{pkg_cb}' produced no bot response"
-    assert not _is_error_text(result.text), (
-        f"Clicking package '{pkg_cb}' returned an error: {(result.text or '')[:120]}"
-    )
+    assert not _is_error_text(
+        result.text
+    ), f"Clicking package '{pkg_cb}' returned an error: {(result.text or '')[:120]}"
 
 
 @pytest.mark.asyncio
@@ -96,7 +103,11 @@ async def test_package_selection_shows_gateway_buttons(client, bot):
 
     cbs = _get_button_callbacks(msg)
     pkg_cb = next(
-        (c for c in cbs if any(c.startswith(p) for p in ("package_", "buy_", "topup_", "pkg_"))),
+        (
+            c
+            for c in cbs
+            if any(c.startswith(p) for p in ("package_", "buy_", "topup_", "pkg_"))
+        ),
         None,
     )
     if pkg_cb is None:
@@ -107,10 +118,17 @@ async def test_package_selection_shows_gateway_buttons(client, bot):
 
     result_cbs = _get_button_callbacks(result)
     # Gateway buttons are typically named gateway_*, pay_*, or contain provider names
-    gateway_keywords = ("gateway_", "pay_", "midtrans", "tripay", "duitku", "nowpay", "qris")
+    gateway_keywords = (
+        "gateway_",
+        "pay_",
+        "midtrans",
+        "tripay",
+        "duitku",
+        "nowpay",
+        "qris",
+    )
     has_gateway = any(
-        any(kw in c.lower() for kw in gateway_keywords)
-        for c in result_cbs
+        any(kw in c.lower() for kw in gateway_keywords) for c in result_cbs
     )
     # Fallback: some flows skip gateway selection and go straight to an invoice
     has_invoice_keyword = any(
@@ -134,7 +152,11 @@ async def test_payment_check_button_appears_after_package_selection(client, bot)
 
     cbs = _get_button_callbacks(msg)
     pkg_cb = next(
-        (c for c in cbs if any(c.startswith(p) for p in ("package_", "buy_", "topup_", "pkg_"))),
+        (
+            c
+            for c in cbs
+            if any(c.startswith(p) for p in ("package_", "buy_", "topup_", "pkg_"))
+        ),
         None,
     )
     if pkg_cb is None:
@@ -145,11 +167,19 @@ async def test_payment_check_button_appears_after_package_selection(client, bot)
 
     result_cbs = _get_button_callbacks(result)
     # Accept any button that indicates payment checking / confirmation
-    check_keywords = ("check_payment", "cek_payment", "cek_bayar", "confirm", "konfirmasi", "check")
-    has_check = any(
-        any(kw in c.lower() for kw in check_keywords)
-        for c in result_cbs
-    ) or _has_button(result, text_contains="Cek") or _has_button(result, text_contains="Check")
+    check_keywords = (
+        "check_payment",
+        "cek_payment",
+        "cek_bayar",
+        "confirm",
+        "konfirmasi",
+        "check",
+    )
+    has_check = (
+        any(any(kw in c.lower() for kw in check_keywords) for c in result_cbs)
+        or _has_button(result, text_contains="Cek")
+        or _has_button(result, text_contains="Check")
+    )
 
     # Not all gateways show check immediately — mark as xfail with reason if absent
     if not has_check:

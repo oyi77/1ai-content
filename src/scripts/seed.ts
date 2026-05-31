@@ -23,7 +23,7 @@ export async function runSeeder() {
         create: {
           category: "niche",
           key: niche.id,
-          value: niche as any,
+          value: JSON.parse(JSON.stringify(niche)),
           updatedAt: new Date(),
         },
         update: {}, // Don't overwrite admin changes

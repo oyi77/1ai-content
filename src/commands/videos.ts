@@ -36,7 +36,8 @@ export async function videosCommand(ctx: BotContext): Promise<void> {
     const lang = ctx.from?.language_code || 'id';
 
     // Get user's videos from database with pagination
-    const page = parseInt((ctx.session as any)?.videosPage as string) || 0;
+    const sessionExt = ctx.session as unknown as Record<string, unknown>;
+    const page = parseInt(sessionExt?.videosPage as string) || 0;
     const videos = await VideoService.getUserVideos(BigInt(user.id), 10, page * 10);
 
     if (videos.length === 0) {
@@ -163,7 +164,7 @@ export async function viewVideo(ctx: BotContext, jobId: string): Promise<void> {
             media: video.thumbnailUrl,
             caption: message,
             parse_mode: 'Markdown',
-          } as any
+          } as unknown as Parameters<typeof ctx.editMessageMedia>[0]
         );
         // Follow-up with action buttons
         await ctx.reply(

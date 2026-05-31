@@ -195,7 +195,7 @@ export function registerProviderCostRoutes(server: FastifyInstance): void {
   // GET /api/admin/dynamic-pricing/drift — Check for price drift
   server.get("/api/admin/dynamic-pricing/drift", async (request, reply) => {
     try {
-      const threshold = Number((request.query as any).threshold || 10);
+      const threshold = Number((request.query as Record<string, string>).threshold || 10);
       const drift = await DynamicPricingService.checkPriceDrift(threshold);
 
       return reply.send({

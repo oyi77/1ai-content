@@ -10,6 +10,7 @@ Telethon binds to one event loop at connect time and refuses to work on any
 other.  We create a single loop at import time, connect eagerly, and yield
 that loop as the session-scoped event_loop fixture so every test runs on it.
 """
+
 import asyncio
 import inspect
 from datetime import datetime, timezone
@@ -73,7 +74,9 @@ except Exception as exc:
 def pytest_collection_modifyitems(items):
     marker = pytest.mark.asyncio(loop_scope="session")
     for item in items:
-        if asyncio.iscoroutinefunction(item.obj) or inspect.isasyncgenfunction(item.obj):
+        if asyncio.iscoroutinefunction(item.obj) or inspect.isasyncgenfunction(
+            item.obj
+        ):
             item.add_marker(marker)
 
 
@@ -109,6 +112,7 @@ def bot():
 
 
 # ─── low-level helpers ────────────────────────────────────────────────────────
+
 
 def _is_loading(text: str) -> bool:
     """Return True for short animation/loading messages sent by the bot."""
@@ -199,7 +203,9 @@ async def wait_for_response(
         await asyncio.sleep(POLL_INTERVAL)
         msgs = await client.get_messages(bot, limit=8)
         for m in sorted(msgs, key=lambda x: x.date, reverse=True):
-            msg_date = m.date.replace(tzinfo=timezone.utc) if m.date.tzinfo is None else m.date
+            msg_date = (
+                m.date.replace(tzinfo=timezone.utc) if m.date.tzinfo is None else m.date
+            )
             if msg_date <= since:
                 continue
             if m.sender_id == me.id:
@@ -223,7 +229,9 @@ async def send_and_wait(
     """Send `text` to the bot and return the first substantive reply."""
     since = datetime.now(timezone.utc)
     await client.send_message(bot, text)
-    return await wait_for_response(client, bot, since, timeout=timeout, need_buttons=need_buttons)
+    return await wait_for_response(
+        client, bot, since, timeout=timeout, need_buttons=need_buttons
+    )
 
 
 async def click_callback(

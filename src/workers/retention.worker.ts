@@ -339,10 +339,10 @@ export class RetentionScheduler {
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
     const [categoryCount, dayCount] = await Promise.all([
-      (prisma as any).retentionLog.count({
+      prisma.retentionLog.count({
         where: { userId, triggerType: category, sentAt: { gte: threeDaysAgo } },
       }),
-      (prisma as any).retentionLog.count({
+      prisma.retentionLog.count({
         where: { userId, sentAt: { gte: oneDayAgo } },
       }),
     ]);
@@ -352,7 +352,7 @@ export class RetentionScheduler {
   }
 
   private static async logSent(userId: bigint, triggerType: string): Promise<void> {
-    await (prisma as any).retentionLog.create({
+    await prisma.retentionLog.create({
       data: { userId, triggerType },
     });
     // Write the 3-day dedup key so concurrent/future workers skip this user+category

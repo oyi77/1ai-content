@@ -78,7 +78,8 @@ export class ProviderBalanceService {
   static async fetchBalance(providerKey: string): Promise<BalanceResult> {
     const config = getConfig();
     const apiKeyEnv = API_KEY_MAP[providerKey];
-    const apiKey = apiKeyEnv ? (config as any)[apiKeyEnv] : undefined;
+    const apiKeyRaw = apiKeyEnv ? (config as unknown as Record<string, unknown>)[apiKeyEnv] : undefined;
+    const apiKey = apiKeyRaw ? String(apiKeyRaw) : undefined;
     if (!apiKey)
       return {
         provider: providerKey,
@@ -99,7 +100,7 @@ export class ProviderBalanceService {
     try {
       const cached = await redis.get(cacheKey);
       if (cached) return JSON.parse(cached);
-    } catch {}
+    } catch { /* cache miss */ }
 
     const omnirouteUrl = config.OMNIROUTE_URL || "http://localhost:20128";
 
@@ -155,7 +156,7 @@ export class ProviderBalanceService {
           "EX",
           BALANCE_CACHE_TTL,
         );
-      } catch {}
+      } catch { /* cache write failed */ }
       return result;
     } catch (err: any) {
       return {
@@ -188,7 +189,7 @@ export class ProviderBalanceService {
   static async fetchModels(providerKey: string): Promise<ModelResult> {
     const config = getConfig();
     const apiKeyEnv = API_KEY_MAP[providerKey];
-    const apiKey = apiKeyEnv ? (config as any)[apiKeyEnv] : undefined;
+    const apiKey = apiKeyEnv ? (config as unknown as Record<string, unknown>)[apiKeyEnv] : undefined;
     if (!apiKey) return { provider: providerKey, models: [], cached: false };
 
     const cacheKey = `provider:models:${providerKey}`;
@@ -200,7 +201,7 @@ export class ProviderBalanceService {
           models: JSON.parse(cached),
           cached: true,
         };
-    } catch {}
+    } catch { /* cache miss */ }
 
     const omnirouteUrl = config.OMNIROUTE_URL || "http://localhost:20128";
 
@@ -232,7 +233,7 @@ export class ProviderBalanceService {
           "EX",
           MODELS_CACHE_TTL,
         );
-      } catch {}
+      } catch { /* cache write failed */ }
       return { provider: providerKey, models, cached: false };
     } catch {
       return { provider: providerKey, models: [], cached: false };

@@ -62,7 +62,7 @@ export class DynamicPricingService {
     const exchangeRateConfig = await prisma.pricingConfig.findUnique({
       where: { category_key: { category: 'global', key: 'exchange_rate' } },
     });
-    const usdToIdr = (exchangeRateConfig?.value as any)?.rate || getConfig().USD_TO_IDR_RATE || 16000;
+    const usdToIdr = Number((exchangeRateConfig?.value as Record<string, unknown>)?.rate) || getConfig().USD_TO_IDR_RATE || 16000;
 
     // Calculate cost in IDR
     const providerCostIdr = costUsd * usdToIdr;
@@ -198,8 +198,8 @@ export class DynamicPricingService {
       const dbCost = dbCosts.find((c: any) => c.key === current.providerKey);
       if (!dbCost) continue;
 
-      const dbCostValue = dbCost.value as any;
-      const oldCost = dbCostValue.costUsd || 0;
+      const dbCostValue = dbCost.value as Record<string, unknown>;
+      const oldCost = Number(dbCostValue.costUsd) || 0;
       const newCost = current.costUsd;
 
       if (oldCost > 0) {
@@ -246,7 +246,7 @@ export class DynamicPricingService {
       });
 
       if (current) {
-        const currentValue = current.value as any;
+        const currentValue = current.value as Record<string, unknown>;
         const oldUnits = currentValue.units || 0;
         const newUnits = recommendation.units;
 
@@ -255,7 +255,7 @@ export class DynamicPricingService {
             key,
             oldUnits,
             newUnits,
-            oldPrice: Math.ceil((oldUnits / 10) * (oldUnits / 10)), // Rough estimate
+            oldPrice: Math.ceil((Number(oldUnits) / 10) * (Number(oldUnits) / 10)), // Rough estimate
             newPrice: recommendation.priceIdr,
           });
 

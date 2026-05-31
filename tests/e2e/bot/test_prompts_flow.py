@@ -7,6 +7,7 @@ Flow tested:
            -> clicking a prompt -> no "Prompt Tidak Ditemukan" error
            -> model name leak check (Gemini, GPT, Claude etc. must not appear)
 """
+
 import pytest
 from conftest import (
     send_and_wait,
@@ -17,10 +18,21 @@ from conftest import (
 )
 
 # AI model names that must never appear in bot responses
-_SECRET_NAMES = ["Gemini", "GPT-4", "Grok", "Claude", "OpenAI", "Anthropic", "Mistral", "Llama", "OmniRoute"]
+_SECRET_NAMES = [
+    "Gemini",
+    "GPT-4",
+    "Grok",
+    "Claude",
+    "OpenAI",
+    "Anthropic",
+    "Mistral",
+    "Llama",
+    "OmniRoute",
+]
 
 
 # ─── /prompts entry screen ───────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_prompts_shows_niche_buttons(client, bot):
@@ -28,18 +40,18 @@ async def test_prompts_shows_niche_buttons(client, bot):
     assert msg is not None, "/prompts produced no response with buttons"
     cbs = _get_button_callbacks(msg)
     niche_cbs = [c for c in cbs if c.startswith("prompts_")]
-    assert len(niche_cbs) > 0, (
-        f"/prompts did not show any prompts_* niche buttons; got: {cbs}"
-    )
+    assert (
+        len(niche_cbs) > 0
+    ), f"/prompts did not show any prompts_* niche buttons; got: {cbs}"
 
 
 @pytest.mark.asyncio
 async def test_prompts_response_is_not_error(client, bot):
     msg = await send_and_wait(client, bot, "/prompts")
     assert msg is not None
-    assert not _is_error_text(msg.text), (
-        f"/prompts returned an error: {(msg.text or '')[:120]}"
-    )
+    assert not _is_error_text(
+        msg.text
+    ), f"/prompts returned an error: {(msg.text or '')[:120]}"
 
 
 @pytest.mark.asyncio
@@ -61,6 +73,7 @@ async def test_prompts_has_main_menu_escape(client, bot):
 
 # ─── Niche selection ─────────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_fnb_niche_shows_prompt_list(client, bot):
     msg = await send_and_wait(client, bot, "/prompts", need_buttons=True)
@@ -71,14 +84,12 @@ async def test_fnb_niche_shows_prompt_list(client, bot):
 
     result = await click_callback(client, bot, msg, "prompts_fnb")
     assert result is not None, "Clicking prompts_fnb produced no response"
-    assert not _is_error_text(result.text), (
-        f"prompts_fnb returned an error: {(result.text or '')[:120]}"
-    )
+    assert not _is_error_text(
+        result.text
+    ), f"prompts_fnb returned an error: {(result.text or '')[:120]}"
     cbs = _get_button_callbacks(result)
     use_btns = [c for c in cbs if c.startswith("use_")]
-    assert len(use_btns) > 0, (
-        f"F&B niche showed no use_* prompt buttons; got: {cbs}"
-    )
+    assert len(use_btns) > 0, f"F&B niche showed no use_* prompt buttons; got: {cbs}"
 
 
 @pytest.mark.asyncio
@@ -89,7 +100,8 @@ async def test_all_niches_respond_without_error(client, bot):
 
     cbs = _get_button_callbacks(msg)
     niche_cbs = [
-        c for c in cbs
+        c
+        for c in cbs
         if c.startswith("prompts_") and c not in ("prompts_trending", "prompts_custom")
     ]
     if not niche_cbs:
@@ -111,6 +123,7 @@ async def test_all_niches_respond_without_error(client, bot):
 
 
 # ─── Prompt selection ────────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_selecting_first_fnb_prompt_does_not_show_not_found_error(client, bot):
@@ -137,12 +150,12 @@ async def test_selecting_first_fnb_prompt_does_not_show_not_found_error(client, 
     assert result is not None, f"Clicking prompt '{use_btn}' produced no response"
 
     text = (result.text or "").lower()
-    assert "tidak ditemukan" not in text, (
-        f"Prompt selection shows 'Tidak Ditemukan' error for '{use_btn}'"
-    )
-    assert not _is_error_text(result.text), (
-        f"Prompt selection returned error for '{use_btn}': {text[:120]}"
-    )
+    assert (
+        "tidak ditemukan" not in text
+    ), f"Prompt selection shows 'Tidak Ditemukan' error for '{use_btn}'"
+    assert not _is_error_text(
+        result.text
+    ), f"Prompt selection returned error for '{use_btn}': {text[:120]}"
 
 
 @pytest.mark.asyncio
@@ -156,7 +169,12 @@ async def test_selected_prompt_shows_video_creation_cta(client, bot):
 
     cbs = _get_button_callbacks(msg)
     niche_cb = next(
-        (c for c in cbs if c.startswith("prompts_") and c not in ("prompts_trending", "prompts_custom")),
+        (
+            c
+            for c in cbs
+            if c.startswith("prompts_")
+            and c not in ("prompts_trending", "prompts_custom")
+        ),
         None,
     )
     if niche_cb is None:
@@ -191,6 +209,7 @@ async def test_selected_prompt_shows_video_creation_cta(client, bot):
 
 # ─── Model name leak ─────────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_prompt_library_does_not_leak_model_names(client, bot):
     """
@@ -205,7 +224,11 @@ async def test_prompt_library_does_not_leak_model_names(client, bot):
         msgs_to_check.append(entry_msg)
         cbs = _get_button_callbacks(entry_msg)
         first_niche = next(
-            (c for c in cbs if c.startswith("prompts_") and c not in ("prompts_trending",)),
+            (
+                c
+                for c in cbs
+                if c.startswith("prompts_") and c not in ("prompts_trending",)
+            ),
             None,
         )
         if first_niche:
@@ -220,7 +243,7 @@ async def test_prompt_library_does_not_leak_model_names(client, bot):
             if secret.lower() in text.lower():
                 # Find the context around the leak
                 idx = text.lower().index(secret.lower())
-                snippet = text[max(0, idx - 20): idx + len(secret) + 20]
+                snippet = text[max(0, idx - 20) : idx + len(secret) + 20]
                 leaks.append(f"'{secret}' in message {m.id}: ...{snippet}...")
 
     assert not leaks, "Model names leaked in prompt library:\n" + "\n".join(leaks)
@@ -236,11 +259,13 @@ async def test_main_menu_does_not_leak_model_names(client, bot):
 
     text = (msg.text or "") + " ".join(
         btn.text
-        for row in (msg.reply_markup.rows if msg.reply_markup and hasattr(msg.reply_markup, "rows") else [])
+        for row in (
+            msg.reply_markup.rows
+            if msg.reply_markup and hasattr(msg.reply_markup, "rows")
+            else []
+        )
         for btn in row.buttons
     )
 
     leaks = [s for s in _SECRET_NAMES if s.lower() in text.lower()]
-    assert not leaks, (
-        f"Model names leaked in main menu: {leaks}"
-    )
+    assert not leaks, f"Model names leaked in main menu: {leaks}"

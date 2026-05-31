@@ -5,12 +5,13 @@ These are pure HTTP tests (no Telethon needed) so they run independently
 of the bot session.  They use aiohttp and skip gracefully when the server
 is not reachable at BASE_URL.
 """
+
 import pytest
 import aiohttp
 from conftest import BASE_URL
 
-
 # ─── helpers ─────────────────────────────────────────────────────────────────
+
 
 async def _get(path: str) -> tuple[int, str]:
     """
@@ -31,6 +32,7 @@ async def _get(path: str) -> tuple[int, str]:
 
 
 # ─── public endpoints ─────────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_health_endpoint_returns_200():
@@ -54,6 +56,7 @@ async def test_api_packages_returns_200():
 async def test_api_packages_returns_json_list(client, bot):
     """Packages endpoint must return a JSON array."""
     import json
+
     try:
         async with aiohttp.ClientSession(
             timeout=aiohttp.ClientTimeout(total=10)
@@ -62,14 +65,15 @@ async def test_api_packages_returns_json_list(client, bot):
                 if resp.status != 200:
                     pytest.skip(f"/api/packages returned {resp.status}")
                 data = await resp.json()
-                assert isinstance(data, (list, dict)), (
-                    f"/api/packages did not return a JSON object: {str(data)[:120]}"
-                )
+                assert isinstance(
+                    data, (list, dict)
+                ), f"/api/packages did not return a JSON object: {str(data)[:120]}"
     except aiohttp.ClientConnectorError:
         pytest.skip(f"Server not reachable at {BASE_URL}")
 
 
 # ─── authenticated endpoints (expect 401 without token) ───────────────────────
+
 
 @pytest.mark.asyncio
 async def test_webapp_dashboard_returns_200():
@@ -85,12 +89,11 @@ async def test_webapp_dashboard_returns_200():
 async def test_api_user_endpoint_requires_auth():
     """/api/user must reject unauthenticated requests."""
     status, _ = await _get("/api/user")
-    assert status in (401, 403), (
-        f"/api/user should require auth but returned {status}"
-    )
+    assert status in (401, 403), f"/api/user should require auth but returned {status}"
 
 
 # ─── Facebook domain verification ─────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_facebook_verification_file_accessible():
@@ -99,6 +102,4 @@ async def test_facebook_verification_file_accessible():
     remain publicly accessible.
     """
     status, _ = await _get("/go7u73s641jq2jtd8gfh2ecbl94kmy.html")
-    assert status == 200, (
-        f"Facebook verification file returned {status}, expected 200"
-    )
+    assert status == 200, f"Facebook verification file returned {status}, expected 200"

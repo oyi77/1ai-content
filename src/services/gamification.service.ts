@@ -139,10 +139,10 @@ export class GamificationService {
 
     try {
       // Get or create streak record
-      let streak = await (prisma as any).userStreak.findUnique({ where: { userId } });
+      let streak = await prisma.userStreak.findUnique({ where: { userId } });
 
       if (!streak) {
-        streak = await (prisma as any).userStreak.create({
+        streak = await prisma.userStreak.create({
           data: { userId, currentStreak: 1, longestStreak: 1, lastGenerateDate: today, streakStartDate: today, totalGenerates: 1 },
         });
         streakUpdated = true;
@@ -156,7 +156,7 @@ export class GamificationService {
 
         if (isAlreadyToday) {
           // Already generated today — just increment total
-          await (prisma as any).userStreak.update({
+          await prisma.userStreak.update({
             where: { userId },
             data: { totalGenerates: { increment: 1 } },
           });
@@ -164,7 +164,7 @@ export class GamificationService {
           // Streak continues!
           const newStreak = streak.currentStreak + 1;
           const newLongest = Math.max(streak.longestStreak, newStreak);
-          streak = await (prisma as any).userStreak.update({
+          streak = await prisma.userStreak.update({
             where: { userId },
             data: { currentStreak: newStreak, longestStreak: newLongest, lastGenerateDate: today, totalGenerates: { increment: 1 } },
           });
@@ -180,7 +180,7 @@ export class GamificationService {
           }
         } else {
           // Streak broken — reset
-          streak = await (prisma as any).userStreak.update({
+          streak = await prisma.userStreak.update({
             where: { userId },
             data: { currentStreak: 1, lastGenerateDate: today, streakStartDate: today, totalGenerates: { increment: 1 } },
           });
@@ -234,18 +234,18 @@ export class GamificationService {
   ): Promise<BadgeDefinition[]> {
     try {
       const stats = await this.getUserStats(userId);
-      const existingBadges = await (prisma as any).userBadge.findMany({
+      const existingBadges = await prisma.userBadge.findMany({
         where: { userId },
         select: { badgeId: true },
       });
-      const existingIds = new Set(existingBadges.map((b: any) => b.badgeId));
+      const existingIds = new Set(existingBadges.map((b) => b.badgeId));
 
       const newBadges: BadgeDefinition[] = [];
 
       for (const badge of Object.values(BADGES)) {
         if (!existingIds.has(badge.id) && badge.condition(stats)) {
           // Use upsert to prevent duplicate badge award from concurrent calls
-          const created = await (prisma as any).userBadge.upsert({
+          const created = await prisma.userBadge.upsert({
             where: { userId_badgeId: { userId, badgeId: badge.id } },
             update: {}, // no-op if already exists
             create: { userId, badgeId: badge.id },
@@ -283,7 +283,7 @@ export class GamificationService {
               await options.telegram
                 .sendMessage(options.chatId, message, { parse_mode: 'Markdown' })
                 .catch(() => {});
-              await (prisma as any).userBadge
+              await prisma.userBadge
                 .update({
                   where: { userId_badgeId: { userId, badgeId: badge.id } },
                   data: { notified: true },
@@ -306,12 +306,12 @@ export class GamificationService {
    */
   static async getUserStats(userId: bigint): Promise<UserStats> {
     const [streak, referrals] = await Promise.all([
-      (prisma as any).userStreak.findUnique({ where: { userId } }),
+      prisma.userStreak.findUnique({ where: { userId } }),
       prisma.commission.findMany({ where: { referrerId: userId }, select: { tier: true } }),
     ]);
 
     const totalGenerates = streak?.totalGenerates || 0;
-    const referralCount = referrals.filter((r: any) => r.tier === 1).length;
+    const referralCount = referrals.filter((r) => r.tier === 1).length;
     const hasDownline3Level = referrals.some((r: any) => r.tier === 3);
 
     // Calculate months active from user creation
@@ -408,8 +408,8 @@ export class GamificationService {
    */
   static async getUserGamificationSummary(userId: bigint): Promise<string> {
     const [streak, badges] = await Promise.all([
-      (prisma as any).userStreak.findUnique({ where: { userId } }),
-      (prisma as any).userBadge.findMany({ where: { userId } }),
+      prisma.userStreak.findUnique({ where: { userId } }),
+      prisma.userBadge.findMany({ where: { userId } }),
     ]);
 
     const streakText = streak?.currentStreak

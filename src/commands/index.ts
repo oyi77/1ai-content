@@ -72,7 +72,7 @@ export function setupCommands(bot: Telegraf<BotContext>): void {
   bot.command("pricing", pricingCommand);
   bot.command("delete_account", deleteAccountCommand);
   bot.command("image", (ctx) =>
-    (ctx as any).reply("🖼️ *Image Generation*\n\n" + "Select workflow:", {
+    ctx.reply("🖼️ *Image Generation*\n\n" + "Select workflow:", {
       parse_mode: "Markdown",
       reply_markup: {
         inline_keyboard: [

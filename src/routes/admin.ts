@@ -727,7 +727,10 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
 
   // API: Playground — Image Generation
   server.post("/api/admin/playground/image", async (request, reply) => {
-    const { prompt, provider, aspectRatio = "1:1" } = request.body as any;
+    const body = request.body as Record<string, unknown>;
+    const prompt = body.prompt as string;
+    const provider = body.provider as string | undefined;
+    const aspectRatio = (body.aspectRatio as string) || "1:1";
     if (!prompt) return reply.status(400).send({ error: "Prompt required" });
 
     // ImageGenerationService imported statically above
@@ -737,19 +740,18 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
       aspectRatio,
       // We bypass routing and force a specific provider for playground
       _forceProvider: provider,
-    } as any);
+    });
 
     return result;
   });
 
   // API: Playground — Video Generation
   server.post("/api/admin/playground/video", async (request, reply) => {
-    const {
-      prompt,
-      provider,
-      duration = 5,
-      niche = "fnb",
-    } = request.body as any;
+    const body = request.body as Record<string, unknown>;
+    const prompt = body.prompt as string;
+    const provider = body.provider as string | undefined;
+    const duration = (body.duration as number) || 5;
+    const niche = (body.niche as string) || "fnb";
     if (!prompt) return reply.status(400).send({ error: "Prompt required" });
 
     // generateVideoWithFallback imported statically above
@@ -766,7 +768,7 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
   });
 
   // API: Get Landing Page Config
-  server.get("/api/landing-config", async (_request, reply) => {
+  server.get("/api/landing-config", async (_request, _reply) => {
     try {
       const data = await redis.get("admin:landing_config");
       return data ? JSON.parse(data) : {};
@@ -778,7 +780,7 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
   // API: Update Landing Page Config
   server.post("/api/landing-config", async (request, reply) => {
     try {
-      const body = request.body as any;
+      const body = request.body as Record<string, unknown>;
       await redis.set("admin:landing_config", JSON.stringify(body));
       return { success: true };
     } catch (error: any) {
@@ -935,7 +937,7 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
 
     const recommendations = {
       VIDEO_15S: {
-        current: (unitCosts as any)?.VIDEO_15S || UNIT_COSTS.VIDEO_15S,
+        current: (unitCosts as Record<string, unknown>)?.VIDEO_15S as number || UNIT_COSTS.VIDEO_15S,
         apiCostUsd:
           5 * avgVideoSceneCostUsd + optimizerOverheadUsd * 5 + voOverheadUsd,
         apiCostUsdMax:
@@ -946,7 +948,7 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
         description: "15s video (5 scenes)",
       },
       VIDEO_30S: {
-        current: (unitCosts as any)?.VIDEO_30S || UNIT_COSTS.VIDEO_30S,
+        current: (unitCosts as Record<string, unknown>)?.VIDEO_30S as number || UNIT_COSTS.VIDEO_30S,
         apiCostUsd:
           7 * avgVideoSceneCostUsd + optimizerOverheadUsd * 7 + voOverheadUsd,
         apiCostUsdMax:
@@ -957,7 +959,7 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
         description: "30s video (7 scenes)",
       },
       VIDEO_60S: {
-        current: (unitCosts as any)?.VIDEO_60S || UNIT_COSTS.VIDEO_60S,
+        current: (unitCosts as Record<string, unknown>)?.VIDEO_60S as number || UNIT_COSTS.VIDEO_60S,
         apiCostUsd:
           7 * avgVideoSceneCostUsd * 2 +
           optimizerOverheadUsd * 7 +
@@ -974,14 +976,14 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
         description: "60s video (7 scenes, 2x duration)",
       },
       IMAGE_UNIT: {
-        current: (unitCosts as any)?.IMAGE_UNIT || UNIT_COSTS.IMAGE_UNIT,
+        current: (unitCosts as Record<string, unknown>)?.IMAGE_UNIT as number || UNIT_COSTS.IMAGE_UNIT,
         apiCostUsd: 0.003 + optimizerOverheadUsd,
         apiCostUsdMax: 0.04 + visionOverheadUsd + optimizerOverheadUsd,
         minUnits: calcMinUnits(0.04 + visionOverheadUsd + optimizerOverheadUsd),
         description: "Single image (worst case: img2img + vision)",
       },
       CLONE_STYLE: {
-        current: (unitCosts as any)?.CLONE_STYLE || UNIT_COSTS.CLONE_STYLE,
+        current: (unitCosts as Record<string, unknown>)?.CLONE_STYLE as number || UNIT_COSTS.CLONE_STYLE,
         apiCostUsd:
           visionOverheadUsd + 7 * avgVideoSceneCostUsd + voOverheadUsd,
         apiCostUsdMax:
@@ -993,7 +995,7 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
       },
       CAMPAIGN_5_VIDEO: {
         current:
-          (unitCosts as any)?.CAMPAIGN_5_VIDEO || UNIT_COSTS.CAMPAIGN_5_VIDEO,
+          (unitCosts as Record<string, unknown>)?.CAMPAIGN_5_VIDEO as number || UNIT_COSTS.CAMPAIGN_5_VIDEO,
         apiCostUsd: 5 * (7 * avgVideoSceneCostUsd + voOverheadUsd),
         apiCostUsdMax: 5 * (7 * maxVideoSceneCostUsd + voOverheadUsd),
         minUnits: calcMinUnits(5 * (7 * maxVideoSceneCostUsd + voOverheadUsd)),
@@ -1033,8 +1035,8 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
   });
 
   // API: Get all admin prompts (global, visible to all users)
-  server.get("/api/admin-prompts", async (request: any) => {
-    const niche = (request.query as any).niche;
+  server.get("/api/admin-prompts", async (request: FastifyRequest, _reply: FastifyReply) => {
+    const niche = (request.query as Record<string, string>).niche;
     const prompts = await prisma.savedPrompt.findMany({
       where: {
         userId: BigInt(0), // userId=0 means admin/global prompt
@@ -1057,8 +1059,8 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
   });
 
   // API: Create admin prompt
-  server.post("/api/admin-prompts", async (request: any, reply) => {
-    const { niche, title, prompt } = request.body as any;
+  server.post("/api/admin-prompts", async (request: FastifyRequest, reply: FastifyReply) => {
+    const { niche, title, prompt } = request.body as Record<string, string>;
     if (!niche || !title || !prompt) {
       return reply.status(400).send({ error: "niche, title, prompt required" });
     }
@@ -1075,11 +1077,11 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
   });
 
   // API: Update admin prompt
-  server.put("/api/admin-prompts/:id", async (request: any, reply) => {
-    const id = parseInt(request.params.id);
+  server.put("/api/admin-prompts/:id", async (request: FastifyRequest, reply: FastifyReply) => {
+    const id = parseInt((request.params as Record<string, string>).id);
     if (!Number.isInteger(id) || id <= 0)
       return reply.status(400).send({ error: "Invalid id" });
-    const { title, prompt, niche } = request.body as any;
+    const { title, prompt, niche } = request.body as Record<string, string>;
     try {
       await prisma.savedPrompt.update({
         where: { id },
@@ -1096,8 +1098,8 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
   });
 
   // API: Delete admin prompt
-  server.delete("/api/admin-prompts/:id", async (request: any, reply) => {
-    const id = parseInt(request.params.id);
+  server.delete("/api/admin-prompts/:id", async (request: FastifyRequest, reply: FastifyReply) => {
+    const id = parseInt((request.params as Record<string, string>).id);
     if (!Number.isInteger(id) || id <= 0)
       return reply.status(400).send({ error: "Invalid id" });
     try {
@@ -1243,7 +1245,7 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
         const res = await fetch(
           `https://api.telegram.org/bot${token}/getWebhookInfo`,
         );
-        const data = (await res.json()) as any;
+        const data = await res.json() as { ok?: boolean; result?: { url?: string; pending_update_count?: number; last_error_message?: string } };
         checks.webhook = {
           status: data.ok ? "ok" : "error",
           url: data.result?.url,
@@ -1422,7 +1424,7 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
 
   /** GET /api/v3/gamification/badges */
   server.get("/api/v3/gamification/badges", async () => {
-    const badgeCounts = await (prisma as any).userBadge.groupBy({
+    const badgeCounts = await prisma.userBadge.groupBy({
       by: ["badgeId"],
       _count: { userId: true },
       orderBy: { _count: { userId: "desc" } },
@@ -1436,13 +1438,13 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
   /** GET /api/v3/retention/stats */
   server.get("/api/v3/retention/stats", async () => {
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    const stats = await (prisma as any).retentionLog.groupBy({
+    const stats = await prisma.retentionLog.groupBy({
       by: ["triggerType"],
       _count: { id: true },
       where: { sentAt: { gte: sevenDaysAgo } },
       orderBy: { _count: { id: "desc" } },
     });
-    const total = await (prisma as any).retentionLog.count({
+    const total = await prisma.retentionLog.count({
       where: { sentAt: { gte: sevenDaysAgo } },
     });
     return { stats, total, period: "7d" };
@@ -1468,8 +1470,8 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
       const userId = BigInt(request.params.id);
       const [summary, streak, badges] = await Promise.all([
         GamificationService.getUserGamificationSummary(userId),
-        (prisma as any).userStreak.findUnique({ where: { userId } }),
-        (prisma as any).userBadge.findMany({ where: { userId } }),
+        prisma.userStreak.findUnique({ where: { userId } }),
+        prisma.userBadge.findMany({ where: { userId } }),
       ]);
       return { summary, streak, badges };
     } catch (error: any) {
@@ -1536,21 +1538,21 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
       subscriber.on("message", (_channel: string, message: string) => {
         try {
           reply.raw.write(`data: ${message}\n\n`);
-        } catch {}
+        } catch { /* client disconnected */ }
       });
 
       // Heartbeat every 30s to keep connection alive
       const heartbeat = setInterval(() => {
         try {
           reply.raw.write(`: heartbeat\n\n`);
-        } catch {}
+        } catch { /* client disconnected */ }
       }, 30000);
 
       request.raw.on("close", () => {
         clearInterval(heartbeat);
         try {
           subscriber.disconnect();
-        } catch {}
+        } catch { /* already disconnected */ }
       });
     } catch (error: any) {
       reply.raw.write(
@@ -1568,12 +1570,12 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
 
   /** POST /api/admin/settings/providers — Update dynamic provider overrides */
   server.post("/api/admin/settings/providers", async (request, reply) => {
-    const body = request.body as any;
+    const body = request.body as Record<string, unknown>;
     if (!body || typeof body !== "object") {
       return reply.status(400).send({ error: "Invalid settings object" });
     }
 
-    await ProviderSettingsService.updateSettings(body);
+    await ProviderSettingsService.updateSettings(body as Parameters<typeof ProviderSettingsService.updateSettings>[0]);
 
     // Log the event for the SSE stream
     await redis.publish(
@@ -1613,13 +1615,13 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
   server.get("/api/admin/providers/all", async () => {
     const overrides = await ProviderSettingsService.getDynamicSettings();
     const config = getConfig();
-    const cbPrefix = "cb:";
+    const _cbPrefix = "cb:";
 
     // Build video provider list
     const videoProviders = Object.entries(PROVIDER_CONFIG.video).map(
       ([key, cfg]) => {
         const override = overrides.video?.[key];
-        const apiKeyVar = key.toUpperCase().replace(/ /g, "_") + "_API_KEY";
+        const _apiKeyVar = key.toUpperCase().replace(/ /g, "_") + "_API_KEY";
         // Map provider key to env var name
         const envVarMap: Record<string, string> = {
           byteplus: "BYTEPLUS_API_KEY",
@@ -1643,7 +1645,8 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
           omniroute: "OMNIROUTE_API_KEY",
         };
         const envKey = envVarMap[key] || "";
-        const hasKey = envKey === "NONE" ? true : !!(config as any)[envKey];
+        const configRecord = config as Record<string, unknown>;
+        const hasKey = envKey === "NONE" ? true : !!configRecord[envKey];
         return {
           key,
           type: "video",
@@ -1683,7 +1686,8 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
           omniroute: "OMNIROUTE_API_KEY",
         };
         const envKey = envVarMap[key] || "";
-        const hasKey = envKey === "NONE" ? true : !!(config as any)[envKey];
+        const configRecord = config as Record<string, unknown>;
+        const hasKey = envKey === "NONE" ? true : !!configRecord[envKey];
         return {
           key,
           type: "image",
@@ -1835,7 +1839,7 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
   // POST /api/admin/custom-providers
   server.post('/api/admin/custom-providers', async (request, reply) => {
     if (!await verifyAdmin(request, reply)) return;
-    const { name, baseUrl, apiKey } = request.body as any;
+    const { name, baseUrl, apiKey } = request.body as Record<string, string>;
     if (!name || !baseUrl || !apiKey) return reply.status(400).send({ error: 'name, baseUrl, apiKey required' });
     const provider = await CustomProviderService.create({ name, baseUrl, apiKey });
     return reply.send(provider);
@@ -1844,16 +1848,16 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
   // PUT /api/admin/custom-providers/:id
   server.put('/api/admin/custom-providers/:id', async (request, reply) => {
     if (!await verifyAdmin(request, reply)) return;
-    const { id } = request.params as any;
-    const data = request.body as any;
-    const provider = await CustomProviderService.update(id, data);
+    const { id } = request.params as { id: string };
+    const data = request.body as Record<string, unknown>;
+    const provider = await CustomProviderService.update(id, data as Parameters<typeof CustomProviderService.update>[1]);
     return reply.send(provider);
   });
 
   // DELETE /api/admin/custom-providers/:id
   server.delete('/api/admin/custom-providers/:id', async (request, reply) => {
     if (!await verifyAdmin(request, reply)) return;
-    const { id } = request.params as any;
+    const { id } = request.params as { id: string };
     await CustomProviderService.delete(id);
     return reply.send({ ok: true });
   });
@@ -1861,7 +1865,7 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
   // POST /api/admin/custom-providers/:id/fetch-models
   server.post('/api/admin/custom-providers/:id/fetch-models', async (request, reply) => {
     if (!await verifyAdmin(request, reply)) return;
-    const { id } = request.params as any;
+    const { id } = request.params as { id: string };
     const models = await CustomProviderService.fetchModels(id);
     return reply.send({ ok: true, count: models.length, models });
   });
@@ -1869,8 +1873,9 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
   // POST /api/admin/custom-providers/:id/test
   server.post('/api/admin/custom-providers/:id/test', async (request, reply) => {
     if (!await verifyAdmin(request, reply)) return;
-    const { id } = request.params as any;
-    const { model } = (request.body as any) || {};
+    const { id } = request.params as { id: string };
+    const body = (request.body as Record<string, unknown>) || {};
+    const model = body.model as string | undefined;
     const result = await CustomProviderService.testProvider(id, model);
     return reply.send(result);
   });
@@ -1878,7 +1883,7 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
   // POST /api/admin/custom-providers/:id/check-balance
   server.post('/api/admin/custom-providers/:id/check-balance', async (request, reply) => {
     if (!await verifyAdmin(request, reply)) return;
-    const { id } = request.params as any;
+    const { id } = request.params as { id: string };
     try {
       const balance = await CustomProviderService.checkBalance(id);
       return reply.send({ success: true, balance });
@@ -1962,12 +1967,15 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
       // Filter out providers we don't have configured API keys for
       if (!isProviderActive(providerId)) continue;
 
-      const providerName = (providerData as any).name || providerId;
-      const providerModels = (providerData as any).models;
+      const providerRecord = providerData as Record<string, unknown>;
+      const providerName = (providerRecord.name as string) || providerId;
+      const providerModels = providerRecord.models as Record<string, unknown>[] | undefined;
       if (!providerModels || typeof providerModels !== 'object') continue;
       for (const [modelId, modelData] of Object.entries(providerModels)) {
         if (!modelData || typeof modelData !== 'object') continue;
-        const m = modelData as any;
+        const m = modelData as Record<string, unknown>;
+        const modalities = m.modalities as Record<string, string[]> | undefined;
+        const limits = m.limit as Record<string, number> | undefined;
         models.push({
           id: modelId,
           name: m.name || modelId,
@@ -1978,10 +1986,10 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
           reasoning: !!m.reasoning,
           toolCall: !!m.tool_call,
           openWeights: !!m.open_weights,
-          inputModalities: m.modalities?.input || ['text'],
-          outputModalities: m.modalities?.output || ['text'],
-          contextWindow: m.limit?.context || null,
-          outputLimit: m.limit?.output || null,
+          inputModalities: modalities?.input || ['text'],
+          outputModalities: modalities?.output || ['text'],
+          contextWindow: limits?.context || null,
+          outputLimit: limits?.output || null,
           releaseDate: m.release_date || null,
         });
       }
@@ -2109,7 +2117,9 @@ You are an expert system administrator and architect for this platform. Give spe
 
     const omni = getOmniRouteService();
     const sessionId = `admin_chat_${ip}`;
-    const isFirstMessage = !(omni as any).conversationHistory?.has(sessionId);
+    const omniRecord = omni as unknown as Record<string, unknown>;
+    const history = omniRecord.conversationHistory as Map<string, unknown> | undefined;
+    const isFirstMessage = !history?.has(sessionId);
     const msgToSend = isFirstMessage ? fullMessage : message.trim();
     const result = await omni.chat(sessionId, msgToSend, requestedModel || undefined);
 
@@ -2168,7 +2178,7 @@ You are an expert system administrator and architect for this platform. Give spe
 
   /** POST /api/settings/landing — Update landing page config */
   server.post("/api/settings/landing", async (request, reply) => {
-    const body = request.body as any;
+    const body = request.body as Record<string, unknown>;
     if (!body || typeof body !== "object") {
       return reply.status(400).send({ error: "Invalid payload" });
     }
@@ -2225,10 +2235,10 @@ You are an expert system administrator and architect for this platform. Give spe
       create: {
         category: "niche",
         key: body.id,
-        value: body as any,
+        value: JSON.parse(JSON.stringify(body)),
         updatedBy: BigInt(0),
       },
-      update: { value: body as any, updatedBy: BigInt(0) },
+      update: { value: JSON.parse(JSON.stringify(body)), updatedBy: BigInt(0) },
     });
     // Invalidate niche cache by re-exporting reset signal via module reload not possible; cache TTL handles it
     return { success: true };
@@ -2249,16 +2259,16 @@ You are an expert system administrator and architect for this platform. Give spe
   });
 
   server.post("/api/settings/free-trial", async (request) => {
-    const body = request.body as any;
+    const body = request.body as Record<string, unknown>;
     await prisma.pricingConfig.upsert({
       where: { category_key: { category: "free_trial", key: "config" } },
       create: {
         category: "free_trial",
         key: "config",
-        value: body,
+        value: JSON.parse(JSON.stringify(body)),
         updatedBy: BigInt(0),
       },
-      update: { value: body, updatedBy: BigInt(0) },
+      update: { value: JSON.parse(JSON.stringify(body)), updatedBy: BigInt(0) },
     });
     return { success: true };
   });
@@ -2275,7 +2285,7 @@ You are an expert system administrator and architect for this platform. Give spe
 
   /** POST /api/settings/exchange-rate */
   server.post("/api/settings/exchange-rate", async (request, reply) => {
-    const { rate } = request.body as any;
+    const { rate } = request.body as Record<string, string>;
     if (!rate || isNaN(Number(rate)) || Number(rate) < 10_000 || Number(rate) > 50_000) {
       return reply.status(400).send({ error: "Invalid rate (must be between 10,000 and 50,000 IDR/USD)" });
     }
@@ -2322,7 +2332,7 @@ You are an expert system administrator and architect for this platform. Give spe
 
   /** POST /api/settings/pixels */
   server.post("/api/settings/pixels", async (request, reply) => {
-    const body = request.body as any;
+    const body = request.body as Record<string, unknown>;
     if (!body || typeof body !== "object") {
       return reply.status(400).send({ error: "Invalid payload" });
     }
@@ -2371,8 +2381,8 @@ You are an expert system administrator and architect for this platform. Give spe
     for (const pkg of PACKAGES) {
       await prisma.pricingConfig.upsert({
         where: { category_key: { category: "package", key: pkg.id } },
-        update: { value: pkg as any },
-        create: { category: "package", key: pkg.id, value: pkg as any },
+        update: { value: JSON.parse(JSON.stringify(pkg)) },
+        create: { category: "package", key: pkg.id, value: JSON.parse(JSON.stringify(pkg)) },
       });
       seeded++;
     }
@@ -2381,8 +2391,8 @@ You are an expert system administrator and architect for this platform. Give spe
     for (const [key, plan] of Object.entries(SUBSCRIPTION_PLANS)) {
       await prisma.pricingConfig.upsert({
         where: { category_key: { category: "subscription", key } },
-        update: { value: plan as any },
-        create: { category: "subscription", key, value: plan as any },
+        update: { value: JSON.parse(JSON.stringify(plan)) },
+        create: { category: "subscription", key, value: JSON.parse(JSON.stringify(plan)) },
       });
       seeded++;
     }
@@ -2391,11 +2401,11 @@ You are an expert system administrator and architect for this platform. Give spe
     for (const [key, units] of Object.entries(UNIT_COSTS)) {
       await prisma.pricingConfig.upsert({
         where: { category_key: { category: "unit_cost", key } },
-        update: { value: { units, credits: (units as number) / 10 } as any },
+        update: { value: JSON.parse(JSON.stringify({ units, credits: (units as number) / 10 })) },
         create: {
           category: "unit_cost",
           key,
-          value: { units, credits: (units as number) / 10 } as any,
+          value: JSON.parse(JSON.stringify({ units, credits: (units as number) / 10 })),
         },
       });
       seeded++;
@@ -2409,8 +2419,8 @@ You are an expert system administrator and architect for this platform. Give spe
     // Seed global margin
     await prisma.pricingConfig.upsert({
       where: { category_key: { category: "global", key: "margin_percent" } },
-      update: { value: 30 as any },
-      create: { category: "global", key: "margin_percent", value: 30 as any },
+      update: { value: 30 },
+      create: { category: "global", key: "margin_percent", value: 30 },
     });
     seeded++;
 
@@ -2419,8 +2429,8 @@ You are an expert system administrator and architect for this platform. Give spe
     for (const niche of NICHE_LIST) {
       await prisma.pricingConfig.upsert({
         where: { category_key: { category: "niche", key: niche.id } },
-        update: { value: niche as any },
-        create: { category: "niche", key: niche.id, value: niche as any },
+        update: { value: JSON.parse(JSON.stringify(niche)) },
+        create: { category: "niche", key: niche.id, value: JSON.parse(JSON.stringify(niche)) },
       });
       seeded++;
     }
@@ -2431,12 +2441,13 @@ You are an expert system administrator and architect for this platform. Give spe
 
     for (const [key, cfg] of [...videoProviders, ...imageProviders]) {
       // Check if provider has costPerGenerationUsd defined
-      const costUsd = (cfg as any).costPerGenerationUsd;
+      const cfgRecord = cfg as unknown as Record<string, unknown>;
+      const costUsd = cfgRecord.costPerGenerationUsd;
       if (costUsd !== undefined) {
         await prisma.pricingConfig.upsert({
           where: { category_key: { category: "provider_cost", key } },
-          update: { value: { costUsd } as any },
-          create: { category: "provider_cost", key, value: { costUsd } as any },
+          update: { value: JSON.parse(JSON.stringify({ costUsd })) },
+          create: { category: "provider_cost", key, value: JSON.parse(JSON.stringify({ costUsd })) },
         });
         seeded++;
       }
@@ -2485,7 +2496,7 @@ You are an expert system administrator and architect for this platform. Give spe
 
   /** GET /api/profit-report — Revenue, costs, and profit breakdown */
   server.get("/api/profit-report", async (request) => {
-    const { period = "30" } = request.query as any;
+    const { period = "30" } = request.query as Record<string, string>;
     const days = Math.min(Math.max(1, parseInt(period as string) || 30), 365);
     const since = new Date();
     since.setDate(since.getDate() - days);
@@ -2774,8 +2785,8 @@ You are an expert system administrator and architect for this platform. Give spe
     if (!body.id) return reply.status(400).send({ error: 'id required' });
     await prisma.pricingConfig.upsert({
       where: { category_key: { category: 'persona', key: body.id } },
-      create: { category: 'persona', key: body.id, value: body as any, updatedBy: BigInt(0) },
-      update: { value: body as any, updatedBy: BigInt(0) },
+      create: { category: 'persona', key: body.id, value: JSON.parse(JSON.stringify(body)), updatedBy: BigInt(0) },
+      update: { value: JSON.parse(JSON.stringify(body)), updatedBy: BigInt(0) },
     });
     return { success: true };
   });
@@ -2936,7 +2947,8 @@ You are an expert system administrator and architect for this platform. Give spe
     if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
     try {
-      const data = await (request as any).file();
+      const reqWithFile = request as unknown as { file: () => Promise<{ filename: string; file: NodeJS.ReadableStream }> };
+      const data = await reqWithFile.file();
       if (!data) return reply.status(400).send({ error: "No file uploaded" });
 
       const ext = path.extname(data.filename).toLowerCase() || '.mp4';

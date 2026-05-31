@@ -11,9 +11,9 @@ async function getAdapter() {
     const config = getConfig();
     adapterInstance = new PostBridgePlatformAdapter({
       apiKey: config.POSTBRIDGE_API_KEY || '',
-      mode: config.AI_PIPELINE_MODE === 'hub' ? 'hub' : 'direct',
-      hubUrl: config.OMNIROUTER_URL,
-      hubApiKey: config.OMNIROUTER_API_KEY,
+      mode: 'direct',
+      hubUrl: config.OMNIROUTE_URL,
+      hubApiKey: config.OMNIROUTE_API_KEY,
     });
     return adapterInstance;
   } catch (err: any) {

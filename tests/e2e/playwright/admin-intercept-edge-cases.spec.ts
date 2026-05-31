@@ -24,6 +24,7 @@ test.describe('Admin Intercept Edge Cases', () => {
     // Wait for debounce
     await page.waitForTimeout(500);
     // Nothing selected, click add (using evaluate to bypass UI overlap)
+    // @ts-expect-error - document is available in browser context
     await page.evaluate(() => { document.getElementById('add-btn').click(); });
     
     const errorMessage = page.locator('#add-error');
@@ -37,6 +38,7 @@ test.describe('Admin Intercept Edge Cases', () => {
 
     await page.click('button:has-text("+ Intercept User")');
     // Force hidden input value to bypass UI validation
+    // @ts-expect-error - document is available in browser context
     await page.evaluate((id) => { document.getElementById('add-telegram-id').value = id }, NON_NUMERIC_USER_ID);
     await page.click('#add-btn');
 
@@ -51,6 +53,7 @@ test.describe('Admin Intercept Edge Cases', () => {
 
     await page.click('button:has-text("+ Intercept User")');
     // Force hidden input value
+    // @ts-expect-error - document is available in browser context
     await page.evaluate((id) => { document.getElementById('add-telegram-id').value = id }, INVALID_USER_ID);
     await page.click('#add-btn');
 

@@ -1,7 +1,7 @@
 import { prisma } from '@/config/database';
 
 // TemplateVideo model available after prisma generate with updated schema
-const tv = () => (prisma as any).templateVideo;
+const tv = () => prisma.templateVideo;
 
 export class TemplateVideoService {
   static async getByNiche(niche: string) {

@@ -653,7 +653,7 @@ export async function showNichePrompts(
 
   try {
     if (edit) {
-      await (ctx as any).editMessageText(msg, {
+      await ctx.editMessageText(msg, {
         parse_mode: "Markdown",
         reply_markup: markup,
       });
@@ -742,7 +742,7 @@ export async function showPromptDetail(
 
   try {
     if (edit) {
-      await (ctx as any).editMessageText(msg, {
+      await ctx.editMessageText(msg, {
         parse_mode: "Markdown",
         reply_markup: markup,
       });
@@ -835,7 +835,7 @@ export async function showCustomizePrompt(
 
   try {
     if (edit) {
-      await (ctx as any).editMessageText(msg, {
+      await ctx.editMessageText(msg, {
         parse_mode: "Markdown",
         reply_markup: markup,
       });

@@ -96,9 +96,10 @@ export async function handleVideoCallbacks(ctx: BotContext, data: string): Promi
   }
 
   if (data === 'videos_prev' || data === 'videos_next') {
-    const currentPage = parseInt((ctx.session as any)?.videosPage as string) || 0;
+    const sessionExt = ctx.session as unknown as Record<string, unknown>;
+    const currentPage = parseInt(sessionExt?.videosPage as string) || 0;
     const newPage = data === 'videos_next' ? currentPage + 1 : Math.max(0, currentPage - 1);
-    if (ctx.session) (ctx.session as any).videosPage = String(newPage);
+    if (ctx.session) sessionExt.videosPage = String(newPage);
     await videosCommand(ctx);
     return true;
   }
@@ -171,16 +172,18 @@ export async function handleVideoCallbacks(ctx: BotContext, data: string): Promi
       const niche =
         ctx.session?.selectedNiche ||
         ctx.session?.videoCreation?.niche ||
-        (video as any)?.niche ||
+        (video as unknown as Record<string, unknown>)?.niche ||
         "product";
       const storyboard = ctx.session?.videoCreation?.storyboard;
-      const platform = (video as any)?.platform || "tiktok";
+      const videoRecord = video as unknown as Record<string, unknown>;
+      const nicheVal = String(videoRecord?.niche || niche);
+      const platform = String(videoRecord?.platform || "tiktok");
 
       const scenes =
         storyboard && storyboard.length > 0
           ? storyboard
-          : [{ description: (video as any)?.prompt || niche }];
-      const caption = generateCaption(niche, scenes, platform);
+          : [{ description: String(videoRecord?.prompt || niche) }];
+      const caption = generateCaption(nicheVal, scenes, platform);
 
       await ctx.reply(`${caption.text}\n\n${caption.hashtags}`);
     } catch (err) {
@@ -220,7 +223,7 @@ export async function handleVideoCallbacks(ctx: BotContext, data: string): Promi
             : ["professional"];
       ctx.session.selectedStyles = videoStyles as string[];
 
-      const videoStoryboard = (video as any).storyboard as Array<{
+      const videoStoryboard = (video as unknown as Record<string, unknown>).storyboard as Array<{
         scene: number;
         duration: number;
         description: string;

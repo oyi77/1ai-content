@@ -34,7 +34,8 @@ export async function errorHandler(err: unknown, ctx: BotContext): Promise<void>
   }
 
   try {
-    const lang = (ctx as any).session?.userLang || 'id';
+    const sessionExt = ctx.session as unknown as Record<string, unknown> | undefined;
+    const lang = (sessionExt?.userLang as string) || 'id';
     const { t } = await import('../i18n/translations.js');
     const { safeReply } = await import('../utils/safe-reply.js');
     await safeReply(ctx, t('error.something_went_wrong', lang) + '\n\n' + t('error.try_start', lang));

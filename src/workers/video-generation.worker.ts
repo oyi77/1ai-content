@@ -453,7 +453,7 @@ async function processSingleScene(
     await VideoService.updateStatus(jobId, 'failed', result.error);
     // Atomic lock to prevent double-refund on BullMQ retry
     const refundLockKey = `refund-lock:${jobId}`;
-    const lockAcquired = await (redis as any).set(refundLockKey, '1', 'EX', 3600, 'NX');
+    const lockAcquired = await redis.set(refundLockKey, '1', 'EX', 3600, 'NX');
     if (!lockAcquired) {
       logger.warn(`Refund lock already held for job ${jobId} — skipping duplicate refund`);
     } else {
@@ -712,7 +712,7 @@ async function processExtendedScenes(
     await VideoService.updateStatus(jobId, 'failed', err.message);
     // Atomic lock to prevent double-refund on BullMQ retry
     const refundLockKey = `refund-lock:${jobId}`;
-    const lockAcquired = await (redis as any).set(refundLockKey, '1', 'EX', 3600, 'NX');
+    const lockAcquired = await redis.set(refundLockKey, '1', 'EX', 3600, 'NX');
     if (!lockAcquired) {
       logger.warn(`Refund lock already held for job ${jobId} — skipping duplicate refund`);
     } else {
@@ -791,7 +791,7 @@ async function processExtendedScenes(
     await VideoService.updateStatus(jobId, 'failed', 'All scenes failed');
     // Atomic lock to prevent double-refund on BullMQ retry
     const refundLockKey = `refund-lock:${jobId}`;
-    const lockAcquired = await (redis as any).set(refundLockKey, '1', 'EX', 3600, 'NX');
+    const lockAcquired = await redis.set(refundLockKey, '1', 'EX', 3600, 'NX');
     if (!lockAcquired) {
       logger.warn(`Refund lock already held for job ${jobId} — skipping duplicate refund`);
     } else {
@@ -810,7 +810,7 @@ async function processExtendedScenes(
     if (refundAmount > 0) {
       // Atomic lock to prevent double-refund on BullMQ retry
       const partialRefundLockKey = `refund-lock:${jobId}:partial`;
-      const partialLockAcquired = await (redis as any).set(partialRefundLockKey, '1', 'EX', 3600, 'NX');
+      const partialLockAcquired = await redis.set(partialRefundLockKey, '1', 'EX', 3600, 'NX');
       if (!partialLockAcquired) {
         logger.warn(`Partial refund lock already held for job ${jobId} — skipping duplicate partial refund`);
       } else {
@@ -1032,7 +1032,7 @@ async function handleCampaignJobComplete(
 
   // All jobs done — acquire merge lock (prevents duplicate merge if race condition)
   // Acquire merge lock — only the first worker to set the key proceeds
-  const lockAcquired = await (redis as any).set(mergeKey, '1', 'EX', 3600, 'NX');
+  const lockAcquired = await redis.set(mergeKey, '1', 'EX', 3600, 'NX');
   if (lockAcquired !== 'OK') return; // another worker is already merging
 
   try {
@@ -1096,7 +1096,7 @@ async function handleCampaignJobComplete(
           parse_mode: 'Markdown',
         });
       } finally {
-        try { fs.unlinkSync(mergedPath); } catch (_) {}
+        try { fs.unlinkSync(mergedPath); } catch (_) { /* file may not exist */ }
       }
     }
   } finally {
@@ -1268,7 +1268,7 @@ export function startVideoWorker(bot: { telegram: Telegram }): Worker<VideoGener
             const creditCost = job.data.creditCost ?? await getVideoCreditCostAsync(job.data.duration);
             await VideoService.updateStatus(job.data.jobId, 'failed', 'Generation timed out');
             const refundLockKey = `refund-lock:${job.data.jobId}`;
-            const lockAcquired = await (redis as any).set(refundLockKey, '1', 'EX', 3600, 'NX');
+            const lockAcquired = await redis.set(refundLockKey, '1', 'EX', 3600, 'NX');
             if (lockAcquired) {
               await UserService.refundCredits(telegramId, creditCost, job.data.jobId, 'Generation timed out');
             }
@@ -1320,7 +1320,7 @@ export function startVideoWorker(bot: { telegram: Telegram }): Worker<VideoGener
             await VideoService.updateStatus(job.data.jobId, 'failed', error.message);
             // Atomic lock to prevent double-refund on BullMQ retry
             const refundLockKey = `refund-lock:${job.data.jobId}`;
-            const lockAcquired = await (redis as any).set(refundLockKey, '1', 'EX', 3600, 'NX');
+            const lockAcquired = await redis.set(refundLockKey, '1', 'EX', 3600, 'NX');
             if (!lockAcquired) {
               logger.warn(`Refund lock already held for job ${job.data.jobId} — skipping duplicate refund`);
             } else {

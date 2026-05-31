@@ -68,11 +68,11 @@ export class ProviderCostTrackerService {
     // Fallback to PROVIDER_CONFIG
     const [type, key] = this.findProviderInConfig(providerKey);
     if (type && key) {
-      const cfg = PROVIDER_CONFIG[type][key] as any;
+      const cfg = PROVIDER_CONFIG[type][key] as unknown as Record<string, unknown>;
       if (cfg.costPerGenerationUsd !== undefined) {
         const cost: ProviderCost = {
           providerKey,
-          costUsd: cfg.costPerGenerationUsd,
+          costUsd: cfg.costPerGenerationUsd as number,
           source: 'static',
           fetchedAt: new Date(),
         };
@@ -106,22 +106,22 @@ export class ProviderCostTrackerService {
     await prisma.pricingConfig.upsert({
       where: { category_key: { category: 'provider_cost', key: providerKey } },
       update: {
-        value: {
+        value: JSON.parse(JSON.stringify({
           costUsd,
           source: 'api',
           lastFetched: new Date().toISOString(),
           metadata
-        } as any
+        }))
       },
       create: {
         category: 'provider_cost',
         key: providerKey,
-        value: {
+        value: JSON.parse(JSON.stringify({
           costUsd,
           source: 'api',
           lastFetched: new Date().toISOString(),
           metadata
-        } as any
+        }))
       },
     });
 
@@ -158,22 +158,22 @@ export class ProviderCostTrackerService {
     await prisma.pricingConfig.upsert({
       where: { category_key: { category: 'provider_cost', key: providerKey } },
       update: {
-        value: {
+        value: JSON.parse(JSON.stringify({
           costUsd,
           source: 'manual',
           lastFetched: new Date().toISOString(),
           metadata
-        } as any
+        }))
       },
       create: {
         category: 'provider_cost',
         key: providerKey,
-        value: {
+        value: JSON.parse(JSON.stringify({
           costUsd,
           source: 'manual',
           lastFetched: new Date().toISOString(),
           metadata
-        } as any
+        }))
       },
     });
 
@@ -203,11 +203,12 @@ export class ProviderCostTrackerService {
     };
 
     for (const [key, cfg] of Object.entries(providers)) {
-      const costUsd = (cfg as any).costPerGenerationUsd;
+      const cfgTyped = cfg as unknown as Record<string, unknown>;
+      const costUsd = cfgTyped.costPerGenerationUsd;
       if (costUsd !== undefined) {
         costs.push({
           providerKey: key,
-          costUsd,
+          costUsd: costUsd as number,
           source: 'static',
           fetchedAt: new Date(),
         });
@@ -220,17 +221,17 @@ export class ProviderCostTrackerService {
     });
 
     for (const dbCost of dbCosts) {
-      const value = dbCost.value as any;
+      const value = dbCost.value as Record<string, unknown>;
       const existingIdx = costs.findIndex(c => c.providerKey === dbCost.key);
 
       if (existingIdx >= 0) {
         // Override with more recent source
         const cost: ProviderCost = {
           providerKey: dbCost.key,
-          costUsd: value.costUsd,
-          source: value.source || 'manual',
-          fetchedAt: value.lastFetched ? new Date(value.lastFetched) : new Date(),
-          metadata: value.metadata,
+          costUsd: value.costUsd as number,
+          source: (value.source as string || 'manual') as ProviderCost['source'],
+          fetchedAt: value.lastFetched ? new Date(value.lastFetched as string) : new Date(),
+          metadata: value.metadata as ProviderCost['metadata'],
         };
 
         // API/Manual sources always override static
@@ -240,10 +241,10 @@ export class ProviderCostTrackerService {
       } else {
         costs.push({
           providerKey: dbCost.key,
-          costUsd: value.costUsd,
-          source: value.source || 'manual',
-          fetchedAt: value.lastFetched ? new Date(value.lastFetched) : new Date(),
-          metadata: value.metadata,
+          costUsd: value.costUsd as number,
+          source: (value.source as string || 'manual') as ProviderCost['source'],
+          fetchedAt: value.lastFetched ? new Date(value.lastFetched as string) : new Date(),
+          metadata: value.metadata as ProviderCost['metadata'],
         });
       }
     }
@@ -283,7 +284,8 @@ export class ProviderCostTrackerService {
     const exchangeRateConfig = await prisma.pricingConfig.findUnique({
       where: { category_key: { category: 'global', key: 'exchange_rate' } },
     });
-    const usdToIdr = (exchangeRateConfig?.value as any)?.rate || 16000;
+    const exchangeValue = exchangeRateConfig?.value as Record<string, unknown> | undefined;
+    const usdToIdr = (exchangeValue?.rate as number) || 16000;
 
     const totalCostIdr = costUsd * usdToIdr;
     const priceWithMargin = totalCostIdr * (1 + margin / 100);
@@ -320,7 +322,7 @@ export class ProviderCostTrackerService {
     };
 
     for (const [key, cfg] of Object.entries(providers)) {
-      const costUsd = (cfg as any).costPerGenerationUsd;
+      const costUsd = (cfg as unknown as Record<string, unknown>).costPerGenerationUsd;
       if (costUsd !== undefined) {
         // Only insert if not exists (don't override manual/API sources)
         const existing = await prisma.pricingConfig.findUnique({

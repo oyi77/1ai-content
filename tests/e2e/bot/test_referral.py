@@ -8,6 +8,7 @@ Verified behaviors:
   - Referral stats are displayed (earned, total referrals)
   - Clicking any referral sub-button does not return an error
 """
+
 import pytest
 from conftest import (
     send_and_wait,
@@ -17,8 +18,8 @@ from conftest import (
     _is_error_text,
 )
 
-
 # ─── /referral entry screen ──────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_referral_returns_response(client, bot):
@@ -30,9 +31,9 @@ async def test_referral_returns_response(client, bot):
 async def test_referral_response_is_not_error(client, bot):
     msg = await send_and_wait(client, bot, "/referral", timeout=30)
     assert msg is not None
-    assert not _is_error_text(msg.text), (
-        f"/referral returned an error: {(msg.text or '')[:120]}"
-    )
+    assert not _is_error_text(
+        msg.text
+    ), f"/referral returned an error: {(msg.text or '')[:120]}"
 
 
 @pytest.mark.asyncio
@@ -44,12 +45,12 @@ async def test_referral_does_not_show_no_account_error(client, bot):
     msg = await send_and_wait(client, bot, "/referral", timeout=30)
     assert msg is not None
     text = (msg.text or "").lower()
-    assert "don't have an account" not in text, (
-        "/referral incorrectly shows 'don't have an account'"
-    )
-    assert "belum memiliki akun" not in text, (
-        "/referral incorrectly shows 'belum memiliki akun'"
-    )
+    assert (
+        "don't have an account" not in text
+    ), "/referral incorrectly shows 'don't have an account'"
+    assert (
+        "belum memiliki akun" not in text
+    ), "/referral incorrectly shows 'belum memiliki akun'"
 
 
 @pytest.mark.asyncio
@@ -58,9 +59,9 @@ async def test_referral_shows_referral_code_or_link(client, bot):
     assert msg is not None
     text = msg.text or ""
     has_code = "ref_" in text or "start=ref" in text or "?start=" in text
-    assert has_code, (
-        f"/referral response does not contain a referral code or deep link: {text[:200]}"
-    )
+    assert (
+        has_code
+    ), f"/referral response does not contain a referral code or deep link: {text[:200]}"
 
 
 @pytest.mark.asyncio
@@ -74,11 +75,20 @@ async def test_referral_contains_stats(client, bot):
     text = (msg.text or "").lower()
     has_stats = any(
         w in text
-        for w in ("referral", "refer", "komisi", "commission", "earned", "total", "kredit", "credit")
+        for w in (
+            "referral",
+            "refer",
+            "komisi",
+            "commission",
+            "earned",
+            "total",
+            "kredit",
+            "credit",
+        )
     )
-    assert has_stats, (
-        f"/referral response does not contain stats keywords: {text[:200]}"
-    )
+    assert (
+        has_stats
+    ), f"/referral response does not contain stats keywords: {text[:200]}"
 
 
 @pytest.mark.asyncio
@@ -112,12 +122,13 @@ async def test_referral_has_main_menu_escape(client, bot):
         or _has_button(msg, text_contains="Kembali")
         or _has_button(msg, text_contains="Back")
     )
-    assert has_escape, (
-        f"Referral screen is missing main menu escape button; callbacks: {cbs}"
-    )
+    assert (
+        has_escape
+    ), f"Referral screen is missing main menu escape button; callbacks: {cbs}"
 
 
 # ─── referral sub-buttons ────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_all_referral_sub_buttons_respond_without_error(client, bot):
@@ -139,7 +150,9 @@ async def test_all_referral_sub_buttons_respond_without_error(client, bot):
     failures = []
     for cb in test_cbs:
         # Re-fetch fresh /referral message each time so message state is clean
-        fresh_msg = await send_and_wait(client, bot, "/referral", need_buttons=True, timeout=30)
+        fresh_msg = await send_and_wait(
+            client, bot, "/referral", need_buttons=True, timeout=30
+        )
         if not fresh_msg:
             failures.append(f"[{cb}] could not reload /referral")
             continue

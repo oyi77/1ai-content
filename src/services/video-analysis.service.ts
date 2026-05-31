@@ -60,7 +60,7 @@ async function fetchMediaAsBase64(url: string): Promise<{ data: string; mimeType
     timeout: 30_000,
   });
 
-  let contentType: string = response.headers['content-type'] || 'video/mp4';
+  let contentType: string = String(response.headers['content-type'] || 'video/mp4');
 
   if (
     contentType === 'application/octet-stream' ||

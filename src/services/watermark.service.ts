@@ -57,7 +57,7 @@ export class WatermarkService {
       // Download image as base64
       const imgResp = await axios.get(imageUrl, { responseType: 'arraybuffer', timeout: 15000 });
       const base64 = Buffer.from(imgResp.data).toString('base64');
-      let mimeType = imgResp.headers['content-type'] || 'image/jpeg';
+      let mimeType = String(imgResp.headers['content-type'] || 'image/jpeg');
       if (!mimeType.startsWith('image/')) mimeType = 'image/jpeg';
 
       const [promptsCfg, taskCfg, visionUrl] = await Promise.all([

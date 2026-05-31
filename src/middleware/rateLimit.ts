@@ -186,7 +186,7 @@ export const paymentLimiter = createRateLimiter({
   windowMs: 60_000,
   keyPrefix: "ratelimit:payment",
   keyGenerator: (request) => {
-    const user = (request as any).user;
+    const user = (request as unknown as Record<string, unknown>).user as Record<string, unknown> | undefined;
     const identifier = user?.telegramId || user?.id || request.ip || "unknown";
     return `${identifier}`;
   },
@@ -198,7 +198,7 @@ export const withdrawalLimiter = createRateLimiter({
   windowMs: 60_000,
   keyPrefix: "ratelimit:withdraw",
   keyGenerator: (request) => {
-    const user = (request as any).user;
+    const user = (request as unknown as Record<string, unknown>).user as Record<string, unknown> | undefined;
     const identifier = user?.telegramId || user?.id || request.ip || "unknown";
     return `${identifier}`;
   },
@@ -210,7 +210,7 @@ export const generationLimiter = createRateLimiter({
   windowMs: 60_000,
   keyPrefix: "ratelimit:generation",
   keyGenerator: (request) => {
-    const user = (request as any).user;
+    const user = (request as unknown as Record<string, unknown>).user as Record<string, unknown> | undefined;
     const identifier = user?.telegramId || user?.id || request.ip || "unknown";
     return `${identifier}`;
   },
@@ -222,7 +222,7 @@ export const readLimiter = createRateLimiter({
   windowMs: 60_000,
   keyPrefix: "ratelimit:read",
   keyGenerator: (request) => {
-    const user = (request as any).user;
+    const user = (request as unknown as Record<string, unknown>).user as Record<string, unknown> | undefined;
     const identifier = user?.telegramId || user?.id || request.ip || "unknown";
     return `${identifier}`;
   },

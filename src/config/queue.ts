@@ -83,10 +83,12 @@ export const cleanupQueue = new Queue("cleanup-videos", {
 export async function initializeQueue(): Promise<void> {
   try {
     // Setup event handlers - BullMQ uses 'on' with proper typing
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     videoQueue.on("waiting" as any, (jobId: string) => {
       logger.debug(`Video job waiting: ${jobId}`);
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     paymentQueue.on("waiting" as any, (jobId: string) => {
       logger.debug(`Payment job waiting: ${jobId}`);
     });

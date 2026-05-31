@@ -118,8 +118,8 @@ export class CustomProviderService {
 
     await prisma.pricingConfig.upsert({
       where: { category_key: { category: 'custom_provider', key: provider.id } },
-      create: { category: 'custom_provider', key: provider.id, value: provider as any, updatedBy: BigInt(0) },
-      update: { value: provider as any, updatedBy: BigInt(0) },
+      create: { category: 'custom_provider', key: provider.id, value: JSON.parse(JSON.stringify(provider)), updatedBy: BigInt(0) },
+      update: { value: JSON.parse(JSON.stringify(provider)), updatedBy: BigInt(0) },
     });
 
     await invalidateCache();
@@ -137,8 +137,8 @@ export class CustomProviderService {
 
     await prisma.pricingConfig.upsert({
       where: { category_key: { category: 'custom_provider', key: id } },
-      create: { category: 'custom_provider', key: id, value: updated as any, updatedBy: BigInt(0) },
-      update: { value: updated as any, updatedBy: BigInt(0) },
+      create: { category: 'custom_provider', key: id, value: JSON.parse(JSON.stringify(updated)), updatedBy: BigInt(0) },
+      update: { value: JSON.parse(JSON.stringify(updated)), updatedBy: BigInt(0) },
     });
 
     await invalidateCache();
@@ -187,8 +187,8 @@ export class CustomProviderService {
 
     await prisma.pricingConfig.upsert({
       where: { category_key: { category: 'custom_provider', key: id } },
-      create: { category: 'custom_provider', key: id, value: updated as any, updatedBy: BigInt(0) },
-      update: { value: updated as any, updatedBy: BigInt(0) },
+      create: { category: 'custom_provider', key: id, value: JSON.parse(JSON.stringify(updated)), updatedBy: BigInt(0) },
+      update: { value: JSON.parse(JSON.stringify(updated)), updatedBy: BigInt(0) },
     });
 
     await invalidateCache();
@@ -281,8 +281,8 @@ export class CustomProviderService {
     const updated: CustomProvider = { ...provider, lastBalance };
     await prisma.pricingConfig.upsert({
       where: { category_key: { category: 'custom_provider', key: id } },
-      create: { category: 'custom_provider', key: id, value: updated as any, updatedBy: BigInt(0) },
-      update: { value: updated as any, updatedBy: BigInt(0) },
+      create: { category: 'custom_provider', key: id, value: JSON.parse(JSON.stringify(updated)), updatedBy: BigInt(0) },
+      update: { value: JSON.parse(JSON.stringify(updated)), updatedBy: BigInt(0) },
     });
     await invalidateCache();
 

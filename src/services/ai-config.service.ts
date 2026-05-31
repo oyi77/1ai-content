@@ -191,8 +191,8 @@ export class AIConfigService {
     const merged = { ...current, ...tasks };
     await prisma.pricingConfig.upsert({
       where: { category_key: { category: 'ai_config', key: 'tasks' } },
-      create: { category: 'ai_config', key: 'tasks', value: merged as any, updatedBy: BigInt(0) },
-      update: { value: merged as any, updatedBy: BigInt(0) },
+      create: { category: 'ai_config', key: 'tasks', value: JSON.parse(JSON.stringify(merged)), updatedBy: BigInt(0) },
+      update: { value: JSON.parse(JSON.stringify(merged)), updatedBy: BigInt(0) },
     });
     await redis.set(REDIS_KEY_TASKS, JSON.stringify(merged));
   }
@@ -203,8 +203,8 @@ export class AIConfigService {
     const merged = { ...current, ...prompts };
     await prisma.pricingConfig.upsert({
       where: { category_key: { category: 'ai_config', key: 'prompts' } },
-      create: { category: 'ai_config', key: 'prompts', value: merged as any, updatedBy: BigInt(0) },
-      update: { value: merged as any, updatedBy: BigInt(0) },
+      create: { category: 'ai_config', key: 'prompts', value: JSON.parse(JSON.stringify(merged)), updatedBy: BigInt(0) },
+      update: { value: JSON.parse(JSON.stringify(merged)), updatedBy: BigInt(0) },
     });
     await redis.set(REDIS_KEY_PROMPTS, JSON.stringify(merged));
   }
@@ -215,8 +215,8 @@ export class AIConfigService {
     const merged = { ...current, ...chat };
     await prisma.pricingConfig.upsert({
       where: { category_key: { category: 'ai_config', key: 'chat' } },
-      create: { category: 'ai_config', key: 'chat', value: merged as any, updatedBy: BigInt(0) },
-      update: { value: merged as any, updatedBy: BigInt(0) },
+      create: { category: 'ai_config', key: 'chat', value: JSON.parse(JSON.stringify(merged)), updatedBy: BigInt(0) },
+      update: { value: JSON.parse(JSON.stringify(merged)), updatedBy: BigInt(0) },
     });
     await redis.set(REDIS_KEY_CHAT, JSON.stringify(merged));
   }

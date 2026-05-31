@@ -3,10 +3,10 @@ import { P2pService } from "@/services/p2p.service";
 import { t } from "@/i18n/translations";
 
 export async function sendCommand(ctx: BotContext): Promise<void> {
-    const message = ctx.message as any;
+    const message = ctx.message as unknown as Record<string, unknown>;
     if (!message || !message.text) return;
 
-    const args = message.text.split(" ");
+    const args = (message.text as string).split(" ");
     if (args.length !== 3) {
         const lang = ctx.from?.language_code || 'id';
         await ctx.reply(t('social.send_usage', lang), { parse_mode: "HTML" });

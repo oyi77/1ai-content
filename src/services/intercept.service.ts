@@ -45,7 +45,7 @@ export class InterceptService {
   ): Promise<void> {
     try {
       await prisma.chatEvent.create({
-        data: { userId: telegramId, eventType, content, metadata: metadata ? (metadata as any) : undefined },
+        data: { userId: telegramId, eventType, content, metadata: metadata ? JSON.parse(JSON.stringify(metadata)) : undefined },
       });
       // Publish to Redis pub/sub for real-time SSE
       await redis.publish(

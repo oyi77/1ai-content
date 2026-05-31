@@ -53,12 +53,12 @@ const SESSION_TTL = 86400; // 24h
 /** Write session data directly to Redis without going through middleware */
 export async function updateSessionDirectly(
   userId: number,
-  updater: (session: any) => void,
+  updater: (session: { state?: string; stateData?: Record<string, unknown>; [key: string]: unknown }) => void,
 ): Promise<void> {
   const key = `session:${userId}`;
   const lockKey = `session-lock:${userId}`;
   // Try to acquire lock (expires in 2s to prevent deadlock)
-  const locked = await (redis as any).set(lockKey, '1', 'EX', 2, 'NX');
+  const locked = await redis.set(lockKey, '1', 'EX', 2, 'NX');
   if (!locked) {
     // Lock held by concurrent request — skip this update to avoid corruption
     logger.warn(`Session update skipped for user ${userId}: lock held by concurrent request`);
@@ -255,7 +255,7 @@ export async function executeImageGeneration(
           ctx.session.generateLastImageUrl = isBase64 ? undefined : result.imageUrl;
         }
 
-        await telegram.sendPhoto(chatId, photoSource as any, {
+        await telegram.sendPhoto(chatId, photoSource as string, {
           caption: captionText,
           parse_mode: "Markdown",
           reply_markup: {
@@ -1046,7 +1046,7 @@ export async function messageHandler(ctx: BotContext): Promise<void> {
     ];
 
     if (("photo" in message || "video" in message) && !MEDIA_HANDLED_STATES.includes(ctx.session.state)) {
-      const lang = ctx.session?.userLang || 'id';
+      const _lang = ctx.session?.userLang || 'id';
 
       if ("video" in message) {
         // ── Contextless video upload ──
@@ -1083,14 +1083,15 @@ export async function messageHandler(ctx: BotContext): Promise<void> {
       const largestPhoto = photos[photos.length - 1];
       const fileLink = await ctx.telegram.getFileLink(largestPhoto.file_id);
       const photoUrl = fileLink.toString();
-      const mediaGroupId = (message as any).media_group_id as string | undefined;
-      const captionText = (message as any).caption as string | undefined;
+      const msgWithMedia = message as { media_group_id?: string; caption?: string };
+      const mediaGroupId = msgWithMedia.media_group_id;
+      const captionText = msgWithMedia.caption;
 
       if (mediaGroupId) {
         // Multi-photo batch: debounce and collect
-        const existingUrls: string[] = (ctx.session.stateData as any)?._batchUrls || [];
-        existingUrls.push(photoUrl);
-        const lastGroupId = (ctx.session.stateData as any)?._batchGroupId;
+      const existingUrls: string[] = ((ctx.session.stateData as Record<string, unknown>)._batchUrls as string[]) || [];
+      existingUrls.push(photoUrl);
+      const lastGroupId = (ctx.session.stateData as Record<string, unknown>)._batchGroupId as string | undefined;
 
         ctx.session.stateData = {
           ...ctx.session.stateData,
@@ -1373,12 +1374,13 @@ export async function messageHandler(ctx: BotContext): Promise<void> {
     // Repurpose video URL input
     if (ctx.session.state === "REPURPOSE_VIDEO_URL") {
       let videoUrl: string | undefined;
+      const msgWithVideo = message as { video?: { file_id: string }; document?: { file_id: string; mime_type?: string } };
       if ("video" in message) {
         // Telegram compressed video
-        videoUrl = (await ctx.telegram.getFileLink((message as any).video.file_id)).toString();
+        videoUrl = (await ctx.telegram.getFileLink(msgWithVideo.video!.file_id)).toString();
       } else if ("document" in message) {
         // Video sent as file (uncompressed / .mp4 document)
-        const doc = (message as any).document;
+        const doc = msgWithVideo.document;
         if (doc?.mime_type?.startsWith("video/")) {
           videoUrl = (await ctx.telegram.getFileLink(doc.file_id)).toString();
         }
@@ -1548,12 +1550,14 @@ export async function messageHandler(ctx: BotContext): Promise<void> {
       // Detect batch upload (media_group_id) — debounce reply
       // When user sends multiple photos at once, Telegram sends them as a media group.
       // We accumulate silently and only reply after the last photo in the group.
-      const mediaGroupId = (message as any).media_group_id;
+      const msgWithMedia = message as { media_group_id?: string };
+      const mediaGroupId = msgWithMedia.media_group_id;
       if (mediaGroupId) {
         // Track the media group ID to debounce
-        const lastGroupId = (ctx.session as any)._lastMediaGroupId;
-        (ctx.session as any)._lastMediaGroupId = mediaGroupId;
-        (ctx.session as any)._lastMediaGroupTime = Date.now();
+        const sessionExt = ctx.session as unknown as Record<string, unknown>;
+        const lastGroupId = sessionExt._lastMediaGroupId as string | undefined;
+        sessionExt._lastMediaGroupId = mediaGroupId;
+        sessionExt._lastMediaGroupTime = Date.now();
 
         if (lastGroupId === mediaGroupId) {
           // Same group — accumulate silently, don't spam replies

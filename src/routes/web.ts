@@ -68,7 +68,7 @@ export async function webRoutes(server: FastifyInstance): Promise<void> {
     const packages = await getPackagesAsync();
 
     // Determine language (priority: ?lang=, then Accept-Language header, then 'id' default)
-    const langParam = (request.query as any).lang;
+    const langParam = (request.query as Record<string, string>).lang;
     const acceptLang = request.headers["accept-language"] || "";
     let currentLang = langParam || (acceptLang.startsWith("en") ? "en" : "id");
     if (!["id", "en"].includes(currentLang)) currentLang = "id";
@@ -179,7 +179,7 @@ export async function webRoutes(server: FastifyInstance): Promise<void> {
 
   // Payment finish — redirect target after gateway payment
   server.get("/payment/finish", async (request, reply) => {
-    const { order_id } = request.query as any;
+    const { order_id } = request.query as Record<string, string>;
     let statusMessage = "Payment is being processed";
     let statusIcon = "⏳";
     let statusClass = "pending";
@@ -220,7 +220,7 @@ export async function webRoutes(server: FastifyInstance): Promise<void> {
   // ── AUTH ──
   server.post("/auth/telegram", async (request, reply) => {
     try {
-      let userData = request.body as any;
+      let userData = request.body as Record<string, unknown>;
 
       // Support Telegram Web App (Mini App) initData format
       if (userData?.initData) {
@@ -255,19 +255,20 @@ export async function webRoutes(server: FastifyInstance): Promise<void> {
         }
       }
 
-      let user = await UserService.findByTelegramId(BigInt(userData.id));
+      let user = await UserService.findByTelegramId(BigInt(String(userData.id)));
       if (!user) {
         try {
           user = await UserService.create({
-            telegramId: BigInt(userData.id),
-            username: userData.username,
-            firstName: userData.first_name,
-            lastName: userData.last_name,
+            telegramId: BigInt(String(userData.id)),
+            username: userData.username as string | undefined,
+            firstName: userData.first_name as string,
+            lastName: userData.last_name as string | undefined,
           });
-        } catch (err: any) {
-          if (err?.code === "P2002") {
+        } catch (err: unknown) {
+          const error = err as { code?: string };
+          if (error?.code === "P2002") {
             // Created concurrently — fetch the existing record
-            user = await UserService.findByTelegramId(BigInt(userData.id));
+            user = await UserService.findByTelegramId(BigInt(String(userData.id)));
           } else {
             throw err;
           }
@@ -326,7 +327,7 @@ export async function webRoutes(server: FastifyInstance): Promise<void> {
       const decoded = jwt.verify(
         authHeader.substring(7),
         getJwtSecret(),
-      ) as any;
+      ) as { userId: string };
       const user = await UserService.findByUuid(decoded.userId);
       if (!user) {
         reply.status(404).send({ error: "User not found" });
@@ -436,10 +437,11 @@ export async function webRoutes(server: FastifyInstance): Promise<void> {
   // ── STORYBOARD PREVIEW ──
   server.post("/api/storyboard", async (request, reply) => {
     try {
-      const { niche, duration, customPrompt } = request.body as any;
-      if (!niche || !duration)
+      const { niche, duration: durationStr, customPrompt } = request.body as Record<string, string>;
+      if (!niche || !durationStr)
         return reply.status(400).send({ error: "Niche and duration required" });
-      const nicheConfig = (NICHES as any)[niche];
+      const duration = Number(durationStr);
+      const nicheConfig = (NICHES as Record<string, { styles?: string[] }>)[niche];
       const scenes = nicheConfig
         ? Math.max(3, Math.min(Math.floor(duration / 5), 8))
         : 4;
@@ -450,9 +452,9 @@ export async function webRoutes(server: FastifyInstance): Promise<void> {
         scenes,
       );
       return {
-        scenes: storyboard.map((s: any, i: number) => ({
+        scenes: storyboard.map((s: Record<string, unknown>, i: number) => ({
           scene: i + 1,
-          duration: s.duration || Math.floor(duration / storyboard.length),
+          duration: (s.duration as number) || Math.floor(duration / storyboard.length),
           description: customPrompt
             ? `${customPrompt} — ${s.description}`
             : s.description,
@@ -488,7 +490,7 @@ export async function webRoutes(server: FastifyInstance): Promise<void> {
           noWatermark,
           subtitles,
           voiceover,
-        } = request.body as any;
+        } = request.body as Record<string, string>;
         if (!niche || !duration)
           return reply
             .status(400)
@@ -503,7 +505,7 @@ export async function webRoutes(server: FastifyInstance): Promise<void> {
           }
         }
 
-        const creditCost = await getVideoCreditCostAsync(duration);
+        const creditCost = await getVideoCreditCostAsync(Number(duration));
         if (Number(user.creditBalance) < creditCost) {
           return reply.status(402).send({
             error: `Insufficient credits. Need ${creditCost}, have ${user.creditBalance}`,
@@ -514,14 +516,14 @@ export async function webRoutes(server: FastifyInstance): Promise<void> {
         await UserService.deductCredits(user.telegramId, creditCost);
 
         const jobId = `WEB-${Date.now()}-${crypto.randomBytes(4).toString("hex")}`;
-        const scenes = storyboard?.scenes || [];
+        const scenes = Array.isArray((storyboard as unknown as Record<string, unknown>)?.scenes) ? (storyboard as unknown as Record<string, unknown>).scenes as Array<{ scene: number; duration: number; description: string }> : [];
         const sceneData =
           scenes.length > 0
             ? scenes
             : [
                 {
                   scene: 1,
-                  duration,
+                  duration: Number(duration),
                   description: customPrompt || `${niche} marketing video`,
                 },
               ];
@@ -534,16 +536,16 @@ export async function webRoutes(server: FastifyInstance): Promise<void> {
               jobId,
               niche,
               platform,
-              duration,
-              scenes: sceneData.length,
+              duration: Number(duration),
+              scenes: Array.isArray(sceneData) ? sceneData.length : 1,
               status: "processing",
               creditsUsed: creditCost,
-              storyboard: sceneData,
+              storyboard: sceneData as unknown as Parameters<typeof prisma.video.create>[0]['data']['storyboard'],
               styles: style ? [style] : [],
               generationMetadata: {
-                noWatermark: noWatermark === true,
-                subtitles: subtitles !== false,
-                voiceover: enableVO !== false || voiceover !== false,
+                noWatermark: noWatermark === 'true',
+                subtitles: subtitles !== 'false',
+                voiceover: enableVO !== 'false' || voiceover !== 'false',
               },
             },
           });
@@ -553,15 +555,15 @@ export async function webRoutes(server: FastifyInstance): Promise<void> {
             jobId,
             niche,
             platform,
-            duration,
+            duration: Number(duration),
             scenes: sceneData.length,
             storyboard: sceneData,
             customPrompt: customPrompt || undefined,
             referenceImage: referenceImageUrl || undefined,
             userId: user.telegramId.toString(),
             chatId: Number(user.telegramId),
-            enableVO,
-            enableSubtitles,
+            enableVO: enableVO === 'true',
+            enableSubtitles: enableSubtitles === 'true',
             language,
           });
         } catch (jobError: any) {
@@ -590,7 +592,7 @@ export async function webRoutes(server: FastifyInstance): Promise<void> {
     const user = await getUser(request, reply);
     if (!user) return;
     try {
-      const { videoUrl } = request.body as any;
+      const { videoUrl } = request.body as Record<string, string>;
       if (!videoUrl)
         return reply.status(400).send({ error: "videoUrl is required" });
 
@@ -641,7 +643,7 @@ export async function webRoutes(server: FastifyInstance): Promise<void> {
           aspectRatio = "1:1",
           referenceImageUrl,
           avatarImageUrl,
-        } = request.body as any;
+        } = request.body as Record<string, string>;
         if (!prompt)
           return reply.status(400).send({ error: "prompt is required" });
 
@@ -718,7 +720,7 @@ export async function webRoutes(server: FastifyInstance): Promise<void> {
     const user = await getUser(request, reply);
     if (!user) return;
     try {
-      const { imageUrl } = request.body as any;
+      const { imageUrl } = request.body as Record<string, string>;
       if (!imageUrl)
         return reply.status(400).send({ error: "imageUrl is required" });
 
@@ -789,7 +791,7 @@ export async function webRoutes(server: FastifyInstance): Promise<void> {
       const user = await getUser(request, reply);
       if (!user) return;
       try {
-        const { packageId, gateway } = request.body as any;
+        const { packageId, gateway } = request.body as Record<string, string>;
         if (!packageId || !gateway)
           return reply
             .status(400)
@@ -824,7 +826,7 @@ export async function webRoutes(server: FastifyInstance): Promise<void> {
 
   // ── TRANSACTIONS ──
   server.get("/api/my/transactions", async (request, reply) => {
-    if ((request.headers as any)['x-api-key']) { if (!await tryApiKeyAuth(request, reply)) return; }
+    if ((request.headers as Record<string, string>)['x-api-key']) { if (!await tryApiKeyAuth(request, reply)) return; }
     const user = await getUser(request, reply);
     if (!user) return;
     try {
@@ -875,8 +877,8 @@ td{padding:8px;border-bottom:1px solid #eee}.total{font-size:24px;font-weight:bo
     const user = await getUser(request, reply);
     if (!user) return;
     try {
-      const { recipientUsername, amount } = request.body as any;
-      if (!recipientUsername || !amount || isNaN(amount) || amount < 50) {
+        const { recipientUsername, amount } = request.body as Record<string, string>;
+      if (!recipientUsername || !amount || isNaN(Number(amount)) || Number(amount) < 50) {
         return reply
           .status(400)
           .send({
@@ -935,7 +937,7 @@ td{padding:8px;border-bottom:1px solid #eee}.total{font-size:24px;font-weight:bo
 
   // ── USER VIDEOS ──
   server.get("/api/user/videos", async (request, reply) => {
-    if ((request.headers as any)['x-api-key']) { if (!await tryApiKeyAuth(request, reply)) return; }
+    if ((request.headers as Record<string, string>)['x-api-key']) { if (!await tryApiKeyAuth(request, reply)) return; }
     const user = await getUser(request, reply);
     if (!user) return;
     try {
@@ -964,7 +966,7 @@ td{padding:8px;border-bottom:1px solid #eee}.total{font-size:24px;font-weight:bo
 
   // ── USER HISTORY ──
   server.get("/api/user/history", async (request, reply) => {
-    if ((request.headers as any)['x-api-key']) { if (!await tryApiKeyAuth(request, reply)) return; }
+    if ((request.headers as Record<string, string>)['x-api-key']) { if (!await tryApiKeyAuth(request, reply)) return; }
     const user = await getUser(request, reply);
     if (!user) return;
     try {
@@ -1054,7 +1056,7 @@ td{padding:8px;border-bottom:1px solid #eee}.total{font-size:24px;font-weight:bo
 
   // ── REFERRAL INFO & STATS ──
   server.get("/api/referral", async (request, reply) => {
-    if ((request.headers as any)['x-api-key']) { if (!await tryApiKeyAuth(request, reply)) return; }
+    if ((request.headers as Record<string, string>)['x-api-key']) { if (!await tryApiKeyAuth(request, reply)) return; }
     const user = await getUser(request, reply);
     if (!user) return;
     try {

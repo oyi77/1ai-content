@@ -13,7 +13,7 @@ import { t } from "@/i18n/translations";
 import { sendVilonaWelcomeAnimation } from "@/services/vilona-animation.service";
 import { PaymentSettingsService } from "@/services/payment-settings.service";
 
-import { MAIN_MENU_KEYBOARD, getMainMenuKeyboard } from "@/config/pricing";
+import { getMainMenuKeyboard } from "@/config/pricing";
 
 /**
  * Map Telegram language_code to our 4 supported UI languages.

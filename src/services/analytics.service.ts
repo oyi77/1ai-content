@@ -269,27 +269,27 @@ export class AnalyticsService {
       };
       
       // Add attribution IDs if available (for click matching)
-      if ((event.custom_data as any)?.fbc) {
-        userData.fbc = (event.custom_data as any).fbc;
+      if (event.custom_data?.fbc) {
+        userData.fbc = event.custom_data.fbc;
       }
-      if ((event.custom_data as any)?.fbp) {
-        userData.fbp = (event.custom_data as any).fbp;
+      if (event.custom_data?.fbp) {
+        userData.fbp = event.custom_data.fbp;
       }
 
-      const customData: any = {
+      const customData: Record<string, unknown> = {
         value: event.custom_data?.value,
         currency: event.custom_data?.currency || "IDR",
       };
       
       // Add UTM parameters to custom data for reporting
-      if ((event.custom_data as any)?.utm_campaign) {
-        customData.utm_campaign = (event.custom_data as any).utm_campaign;
+      if (event.custom_data?.utm_campaign) {
+        customData.utm_campaign = event.custom_data.utm_campaign;
       }
-      if ((event.custom_data as any)?.utm_content) {
-        customData.utm_content = (event.custom_data as any).utm_content;
+      if (event.custom_data?.utm_content) {
+        customData.utm_content = event.custom_data.utm_content;
       }
-      if ((event.custom_data as any)?.lp_variant) {
-        customData.lp_variant = (event.custom_data as any).lp_variant;
+      if (event.custom_data?.lp_variant) {
+        customData.lp_variant = event.custom_data.lp_variant;
       }
 
       await axios.post(
@@ -332,11 +332,11 @@ export class AnalyticsService {
       };
       
       // Add TikTok Click ID if available (for attribution matching)
-      if ((event.custom_data as any)?.ttclid) {
-        userData.ttclid = (event.custom_data as any).ttclid;
+      if (event.custom_data?.ttclid) {
+        userData.ttclid = event.custom_data.ttclid;
       }
 
-      const properties: any = {
+      const properties: Record<string, unknown> = {
         ...(event.custom_data?.value && { value: event.custom_data.value }),
         ...(event.custom_data?.currency && { currency: event.custom_data.currency }),
         content_id: event.custom_data?.content_id,
@@ -345,11 +345,11 @@ export class AnalyticsService {
       };
       
       // Add UTM parameters for reporting
-      if ((event.custom_data as any)?.utm_campaign) {
-        properties.utm_campaign = (event.custom_data as any).utm_campaign;
+      if (event.custom_data?.utm_campaign) {
+        properties.utm_campaign = event.custom_data.utm_campaign;
       }
-      if ((event.custom_data as any)?.lp_variant) {
-        properties.lp_variant = (event.custom_data as any).lp_variant;
+      if (event.custom_data?.lp_variant) {
+        properties.lp_variant = event.custom_data.lp_variant;
       }
 
       const payload = {

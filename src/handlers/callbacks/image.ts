@@ -24,7 +24,7 @@ export function detectImageElements(analysisText: string): {
 } {
   const lower = analysisText.toLowerCase();
   let hasCharacter = CHARACTER_KEYWORDS.some(kw => new RegExp(`\\b${kw}\\b`).test(lower));
-  let hasProduct = PRODUCT_KEYWORDS.some(kw => new RegExp(`\\b${kw}\\b`).test(lower));
+  const hasProduct = PRODUCT_KEYWORDS.some(kw => new RegExp(`\\b${kw}\\b`).test(lower));
   if (/\b(no|tanpa|without)\s+(person|human|character|model|orang)\b/.test(lower)) {
     hasCharacter = false;
   }

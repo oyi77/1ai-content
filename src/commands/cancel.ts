@@ -31,7 +31,7 @@ export async function cancelCommand(ctx: BotContext): Promise<void> {
     ctx.session.state = 'DASHBOARD';
     ctx.session.videoCreation = undefined;
     ctx.session.videoCreationNew = undefined;
-    delete (ctx.session as any).stateData;
+    delete (ctx.session as unknown as Record<string, unknown>).stateData;
 
     await ctx.reply(
       t('cancel.cancelled', lang),

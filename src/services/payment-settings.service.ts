@@ -230,7 +230,7 @@ export class PaymentSettingsService {
           action: "pricing_update",
           entityType: "pricing_config",
           entityId: `${category}:${key}`,
-          oldValue: existing.value as any,
+          oldValue: JSON.parse(JSON.stringify(existing.value)),
           newValue: value,
           userId: updatedBy || null,
         },
@@ -258,9 +258,9 @@ export class PaymentSettingsService {
 
   static async getAllPricingByCategory(
     category: string,
-  ): Promise<Record<string, any>> {
+  ): Promise<Record<string, unknown>> {
     const rows = await prisma.pricingConfig.findMany({ where: { category } });
-    return rows.reduce((acc: Record<string, any>, r) => {
+    return rows.reduce((acc: Record<string, unknown>, r) => {
       acc[r.key] = r.value;
       return acc;
     }, {});
@@ -268,25 +268,34 @@ export class PaymentSettingsService {
 
   static async getMarginPercent(): Promise<number> {
     const config = await this.getPricingConfig("global", "margin_percent");
-    // Handle both legacy {value: 30} format and direct number format
     if (typeof config === "number") return config;
-    return (config as any)?.value ?? 30;
+    if (config && typeof config === "object" && "value" in config) {
+      return Number((config as Record<string, unknown>).value) ?? 30;
+    }
+    return 30;
   }
 
   static async getTransferFeePercent(): Promise<number> {
     const config = await this.getPricingConfig("global", "p2p_fee_percent");
     if (typeof config === "number") return config;
-    return (config as any)?.value ?? 0.5;
+    if (config && typeof config === "object" && "value" in config) {
+      return Number((config as Record<string, unknown>).value) ?? 0.5;
+    }
+    return 0.5;
   }
 
   static async getProviderCostUsd(providerKey: string): Promise<number> {
     const config = await this.getPricingConfig("provider_cost", providerKey);
-    return (config as any)?.costUsd ?? 0;
+    if (config && typeof config === "object" && "costUsd" in config) {
+      return Number((config as Record<string, unknown>).costUsd) ?? 0;
+    }
+    return 0;
   }
 
   static async getImageCreditCost(provider?: string): Promise<number> {
     const config = await this.getPricingConfig("image_credit", "default");
-    const baseCost = (config as any)?.credits ?? 0.2;
+    const configRecord = config as Record<string, unknown> | undefined;
+    const baseCost = Number(configRecord?.credits) || 0.2;
 
     if (provider) {
       const providerCost = await this.getProviderCostUsd(provider);
@@ -311,7 +320,7 @@ export class PaymentSettingsService {
         where: { category_key: { category, key } },
       });
       if (!row) continue;
-      const v = row.value as any;
+      const v = row.value as Record<string, unknown>;
       if (typeof v === "object" && v !== null && typeof v.value === "number") {
         await prisma.pricingConfig.update({
           where: { category_key: { category, key } },

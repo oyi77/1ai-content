@@ -204,7 +204,7 @@ export class GrokApiService {
 
       const content = resp.data.choices?.[0]?.message?.content;
       if (content) {
-        const usage = (resp.data as any)?.usage;
+        const usage = (resp.data as Record<string, unknown>)?.usage as Record<string, number> | undefined;
         if (usage) {
           trackTokens({ provider: 'metaclaw', model: 'meta/llama-3.3-70b-instruct', service: 'grok_chat', promptTokens: usage.prompt_tokens || 0, completionTokens: usage.completion_tokens || 0 }).catch(err => logger.warn('Token tracking failed', { error: err.message }));
         }

@@ -152,7 +152,7 @@ export class NowPaymentsService {
         const parts = (transaction.packageName ?? '').split('_');
         const planId = parts[0] || 'lite';
         const cycle: 'monthly' | 'annual' = parts[1] === 'annual' ? 'annual' : 'monthly';
-        await SubscriptionService.createSubscription(transaction.userId, planId as any, cycle, order_id);
+        await SubscriptionService.createSubscription(transaction.userId, planId as 'lite' | 'pro' | 'agency', cycle, order_id);
         logger.info(`NOWPayments: subscription activated: ${planId}/${cycle} for user ${transaction.userId} (order ${order_id})`);
       } else {
         const credits = Number(transaction.creditsAmount);

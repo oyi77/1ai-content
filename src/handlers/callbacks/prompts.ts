@@ -420,7 +420,7 @@ export async function handlePromptsCallback(ctx: BotContext, data: string): Prom
           await ctx.reply(t('cb.video_process_failed_refund', lang2));
         }
       } catch (error) {
-        console.error("Free trial generation error:", error);
+        logger.error("Free trial generation error:", error);
 
         await ctx.reply(
           t('prompt.generation_failed', lang2),

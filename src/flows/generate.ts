@@ -18,7 +18,7 @@ import { BotContext } from '@/types';
 import { logger } from '@/utils/logger';
 import { UserService } from '@/services/user.service';
 import { UNIT_COSTS, creditsToUnits } from '@/config/pricing';
-import { detectIndustry, generateVideoScenePrompts, generateScenePromptsWithAI, HPAS_SCENES, DURATION_PRESETS, buildCustomPresetConfig } from '@/config/hpas-engine';
+import { detectIndustry, generateVideoScenePrompts, generateScenePromptsWithAI, HPAS_SCENES, DURATION_PRESETS } from '@/config/hpas-engine';
 import { CampaignService } from '@/services/campaign.service';
 import { ContentAnalysisService } from '@/services/content-analysis.service';
 import { ImageGenerationService } from '@/services/image.service';
@@ -43,7 +43,7 @@ function clearGenerateSession(ctx: BotContext): void {
     'generateCampaignSize','generateScenes','generateStoryboardMode',
     'generateManualStoryboard','generateManualTranscript','customPresetConfig',
     'generatePhotos','generatePhotoCount'] as const;
-  for (const f of fields) delete (ctx.session as any)[f];
+  for (const f of fields) delete (ctx.session as unknown as Record<string, unknown>)[f];
   ctx.session.state = 'DASHBOARD';
 }
 
@@ -242,7 +242,7 @@ export async function executeGeneration(ctx: BotContext): Promise<void> {
       if (action === 'video' && presetConfig.totalSeconds > 15) {
         useFreeSlot = false;
       } else {
-        const { canUseWelcomeBonus, canUseDailyFree, getNextDailyFreeReset } = await import('../config/free-trial.js');
+        const { canUseWelcomeBonus, getNextDailyFreeReset } = await import('../config/free-trial.js');
         if (canUseWelcomeBonus(user)) {
           // Atomic check-and-set to prevent double-claim on concurrent requests
           const updated = await prisma.user.updateMany({
@@ -1472,8 +1472,8 @@ export async function showPostDelivery(ctx: BotContext): Promise<void> {
       delete ctx.session.generateManualTranscript;
       // Clear prompt library selection marker
       if (ctx.session.stateData && typeof ctx.session.stateData === 'object') {
-        delete (ctx.session.stateData as any).selectedPrompt;
-        delete (ctx.session.stateData as any).selectedPromptId;
+        delete (ctx.session.stateData as unknown as Record<string, unknown>).selectedPrompt;
+        delete (ctx.session.stateData as unknown as Record<string, unknown>).selectedPromptId;
       }
     }
 
