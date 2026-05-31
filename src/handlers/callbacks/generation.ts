@@ -36,7 +36,7 @@ export async function handleGenerationCallbacks(ctx: BotContext, data: string): 
       } catch {
         // URL expired or unreachable — clear it and prompt re-upload
         lastImageUrl = undefined;
-        if (ctx.session) delete (ctx.session as any).generateLastImageUrl;
+        if (ctx.session) delete (ctx.session as unknown as Record<string, unknown>).generateLastImageUrl;
         await ctx.reply(
           t('gen.image_url_expired', lang),
           {
