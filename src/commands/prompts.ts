@@ -1132,7 +1132,7 @@ export async function showMyPrompts(
         ],
       };
       if (edit)
-        await (ctx as any)
+        await ctx
           .editMessageText(msg, {
             parse_mode: "Markdown",
             reply_markup: markup,
@@ -1172,7 +1172,7 @@ export async function showMyPrompts(
 
     const markup = { inline_keyboard: rows };
     if (edit)
-      await (ctx as any)
+      await ctx
         .editMessageText(msg, { parse_mode: "Markdown", reply_markup: markup })
         .catch(() =>
           ctx.reply(msg, { parse_mode: "Markdown", reply_markup: markup }),
@@ -1224,7 +1224,7 @@ export async function startAddCustomPrompt(
   }
 
   if (edit)
-    await (ctx as any)
+    await ctx
       .editMessageText(msg, { parse_mode: "Markdown", reply_markup: markup })
       .catch(() =>
         ctx.reply(msg, { parse_mode: "Markdown", reply_markup: markup }),
