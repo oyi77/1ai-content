@@ -225,7 +225,8 @@ async function main() {
       const correlationId =
         (Array.isArray(incomingId) ? incomingId[0] : incomingId) ||
         require('crypto').randomUUID();
-      (request as any).correlationId = correlationId;
+      const reqWithCorrelation = request as unknown as Record<string, unknown>;
+      reqWithCorrelation.correlationId = correlationId;
     });
 
     // ── Security headers (onRequest so they're set before any response) ──

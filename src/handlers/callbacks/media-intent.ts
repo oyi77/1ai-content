@@ -10,9 +10,9 @@ export async function handleMediaIntentCallback(ctx: BotContext, data: string): 
   await ctx.answerCbQuery().catch(() => {});
 
   const lang = ctx.session?.userLang || 'id';
-  const pendingUrl = (ctx.session.stateData as any)?.pendingMediaUrl as string | undefined;
-  const pendingUrls = (ctx.session.stateData as any)?.pendingMediaUrls as string[] | undefined;
-  const pendingPrompt = (ctx.session.stateData as any)?.pendingPrompt as string | undefined;
+  const pendingUrl = (ctx.session.stateData as Record<string, unknown>)?.pendingMediaUrl as string | undefined;
+  const pendingUrls = (ctx.session.stateData as Record<string, unknown>)?.pendingMediaUrls as string[] | undefined;
+  const pendingPrompt = (ctx.session.stateData as Record<string, unknown>)?.pendingPrompt as string | undefined;
 
   // ── Ignore ──────────────────────────────────────────────────────────────────
   if (data === 'media_intent_ignore') {
@@ -111,7 +111,7 @@ export async function handleMediaIntentCallback(ctx: BotContext, data: string): 
       imageCategory: 'product',
     };
     if (!ctx.session.videoCreation) ctx.session.videoCreation = {} as any;
-    (ctx.session.videoCreation as any).pendingPhotos = photos.map((url: string) => ({ fileId: '', url }));
+    (ctx.session.videoCreation as Record<string, unknown>).pendingPhotos = photos.map((url: string) => ({ fileId: '', url }));
 
     let analysisResult: { hasCharacter: boolean; hasProduct: boolean; characterDesc: string; productDesc: string; backgroundDesc: string } | null = null;
     try {
