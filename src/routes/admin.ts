@@ -1159,9 +1159,9 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
         getQueueStats(),
       ]);
     const usersByTier =
-      (await prisma.$queryRaw`SELECT tier, COUNT(*)::int as count FROM users GROUP BY tier`) as any[];
+      (await prisma.$queryRaw`SELECT tier, COUNT(*)::int as count FROM users GROUP BY tier`) as { tier: string; count: number }[];
     const videosByStatus =
-      (await prisma.$queryRaw`SELECT status, COUNT(*)::int as count FROM videos GROUP BY status`) as any[];
+      (await prisma.$queryRaw`SELECT status, COUNT(*)::int as count FROM videos GROUP BY status`) as { status: string; count: number }[];
     const tierMap: Record<string, number> = {};
     for (const t of usersByTier) tierMap[t.tier] = t.count;
     const statusMap: Record<string, number> = {};

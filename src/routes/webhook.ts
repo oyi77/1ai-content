@@ -38,7 +38,7 @@ export async function webhookRoutes(server: FastifyInstance, options: WebhookOpt
       // Respond immediately so Telegram doesn't time out (prevents 502)
       reply.status(200).send({ ok: true });
       // Process update asynchronously
-      bot.handleUpdate(request.body as any).catch((err: any) => {
+      bot.handleUpdate(request.body as unknown as Parameters<typeof bot.handleUpdate>[0]).catch((err: unknown) => {
         logger.error('Telegram webhook processing error:', err);
       });
       return;
@@ -50,29 +50,29 @@ export async function webhookRoutes(server: FastifyInstance, options: WebhookOpt
 
   server.post('/webhook/midtrans', async (request, reply) => {
     try {
-      const body = request.body as any;
+      const body = request.body as Record<string, unknown>;
       // Delegating verification to PaymentService for single-source-of-truth
       logger.info('Midtrans webhook received:', { order_id: body.order_id, status: body.transaction_status });
       await PaymentService.handleNotification({
-        order_id: body.order_id,
-        status_code: body.status_code,
-        gross_amount: body.gross_amount,
-        signature_key: body.signature_key,
-        transaction_status: body.transaction_status,
-        payment_type: body.payment_type,
+        order_id: String(body.order_id),
+        status_code: String(body.status_code),
+        gross_amount: String(body.gross_amount),
+        signature_key: String(body.signature_key),
+        transaction_status: String(body.transaction_status),
+        payment_type: String(body.payment_type),
       });
 
       // Notify user on payment failure/expiry
       const midtransFailStatuses = ['deny', 'cancel', 'expire'];
-      if (midtransFailStatuses.includes(body.transaction_status) && body.order_id && bot) {
+      if (midtransFailStatuses.includes(String(body.transaction_status)) && body.order_id && bot) {
         try {
-          const tx = await prisma.transaction.findUnique({ where: { orderId: body.order_id } });
+          const tx = await prisma.transaction.findUnique({ where: { orderId: String(body.order_id) } });
           if (tx?.userId) {
             const dbUser = await UserService.findByTelegramId(BigInt(tx.userId));
             const lang = dbUser?.language || 'id';
             const tKey = body.transaction_status === 'expire' ? 'payment.expired' : 'payment.failed';
             await bot.telegram.sendMessage(tx.userId.toString(),
-              t(tKey, lang, { orderId: body.order_id }),
+              t(tKey, lang, { orderId: String(body.order_id) }),
               { parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: t('btn.topup', lang), callback_data: 'topup' }]] } }
             ).catch(() => {});
           }
@@ -95,7 +95,7 @@ export async function webhookRoutes(server: FastifyInstance, options: WebhookOpt
         return reply.status(500).send({ error: 'Tripay webhook not configured' });
       }
 
-      const body = request.body as any;
+      const body = request.body as Record<string, unknown>;
       const signature = request.headers['x-signature'] as string;
       const expectedSignature = crypto
         .createHmac('sha256', tripayPrivateKey)
@@ -112,24 +112,24 @@ export async function webhookRoutes(server: FastifyInstance, options: WebhookOpt
         'PAID': 'success', 'EXPIRED': 'failed', 'FAILED': 'failed', 'CANCELLED': 'failed',
       };
       const result = await PaymentService.handleNotification({
-        order_id: body.merchant_ref,
-        status_code: body.status_code?.toString() || '200',
-        gross_amount: body.amount?.toString() || '0',
-        signature_key: body.signature,
-        transaction_status: statusMap[body.status] || 'pending',
-        payment_type: body.payment_method,
+        order_id: String(body.merchant_ref),
+        status_code: String(body.status_code || '200'),
+        gross_amount: String(body.amount || '0'),
+        signature_key: String(body.signature),
+        transaction_status: statusMap[String(body.status)] || 'pending',
+        payment_type: String(body.payment_method),
       });
 
       // Notify user on payment failure/expiry
       if ((body.status === 'EXPIRED' || body.status === 'FAILED' || body.status === 'CANCELLED') && body.merchant_ref && bot) {
         try {
-          const tx = await prisma.transaction.findUnique({ where: { orderId: body.merchant_ref } });
+          const tx = await prisma.transaction.findUnique({ where: { orderId: String(body.merchant_ref) } });
           if (tx?.userId) {
             const dbUser = await UserService.findByTelegramId(BigInt(tx.userId));
             const lang = dbUser?.language || 'id';
             const tKey = body.status === 'EXPIRED' ? 'payment.expired' : 'payment.failed';
             await bot.telegram.sendMessage(tx.userId.toString(),
-              t(tKey, lang, { orderId: body.merchant_ref }),
+              t(tKey, lang, { orderId: String(body.merchant_ref) }),
               { parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: t('btn.topup', lang), callback_data: 'topup' }]] } }
             ).catch(() => {});
           }
@@ -146,7 +146,7 @@ export async function webhookRoutes(server: FastifyInstance, options: WebhookOpt
 
   server.post('/webhook/nowpayments', async (request, reply) => {
     try {
-      const body = request.body as any;
+      const body = request.body as Record<string, unknown>;
 
       // Verify IPN signature — mandatory when NOWPAYMENTS_IPN_SECRET is configured
       // Use process.env directly — tests mutate this at runtime to test the "no secret" path
@@ -162,7 +162,7 @@ export async function webhookRoutes(server: FastifyInstance, options: WebhookOpt
           return reply.status(400).send({ error: 'Missing signature' });
         }
         const sortedBody = JSON.stringify(
-          Object.keys(body).sort().reduce((acc: any, key) => { acc[key] = body[key]; return acc; }, {})
+          Object.keys(body).sort().reduce((acc: Record<string, unknown>, key) => { acc[key] = body[key]; return acc; }, {})
         );
         const expectedSig = crypto.createHmac('sha512', ipnSecret).update(sortedBody).digest('hex');
         if (!timingSafeCompare(signature, expectedSig)) {
@@ -173,19 +173,19 @@ export async function webhookRoutes(server: FastifyInstance, options: WebhookOpt
 
       logger.info('NOWPayments webhook received:', body);
 
-      const result = await NowPaymentsService.handleWebhook(body);
+      const result = await NowPaymentsService.handleWebhook(body as unknown as Parameters<typeof NowPaymentsService.handleWebhook>[0]);
 
       // Notify user on payment failure
       const nowFailStatuses = ['failed', 'expired'];
-      if (nowFailStatuses.includes(body.payment_status) && body.order_id && bot) {
+      if (nowFailStatuses.includes(String(body.payment_status)) && body.order_id && bot) {
         try {
-          const tx = await prisma.transaction.findUnique({ where: { orderId: body.order_id } });
+          const tx = await prisma.transaction.findUnique({ where: { orderId: String(body.order_id) } });
           if (tx?.userId) {
             const dbUser = await UserService.findByTelegramId(BigInt(tx.userId));
             const lang = dbUser?.language || 'id';
             const tKey = body.payment_status === 'expired' ? 'payment.expired' : 'payment.failed';
             await bot.telegram.sendMessage(tx.userId.toString(),
-              t(tKey, lang, { orderId: body.order_id }),
+              t(tKey, lang, { orderId: String(body.order_id) }),
               { parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: t('btn.topup', lang), callback_data: 'topup' }]] } }
             ).catch(() => {});
           }
@@ -200,7 +200,7 @@ export async function webhookRoutes(server: FastifyInstance, options: WebhookOpt
           const lastDash = orderId.lastIndexOf('-');
           const telegramId = orderId.substring(lastDash + 1);
           if (telegramId && /^\d+$/.test(telegramId) && bot) {
-            const coin = body.pay_currency?.toUpperCase() || 'CRYPTO';
+            const coin = String(body.pay_currency || 'CRYPTO').toUpperCase();
             const amount = body.price_amount ? `$${body.price_amount}` : '';
             const dbUser = await UserService.findByTelegramId(BigInt(telegramId));
             const lang = dbUser?.language || 'id';
@@ -225,27 +225,27 @@ export async function webhookRoutes(server: FastifyInstance, options: WebhookOpt
 
   server.post('/webhook/duitku', async (request, reply) => {
     try {
-      const body = request.body as any;
+      const body = request.body as Record<string, unknown>;
       logger.info('Duitku callback received:', body);
       
       const result = await DuitkuService.handleCallback({
-        merchantCode: body.merchantCode,
-        amount: body.amount,
-        merchantOrderId: body.merchantOrderId,
-        resultCode: body.resultCode,
-        reference: body.reference,
-        signature: body.signature,
+        merchantCode: String(body.merchantCode),
+        amount: String(body.amount),
+        merchantOrderId: String(body.merchantOrderId),
+        resultCode: String(body.resultCode),
+        reference: String(body.reference),
+        signature: String(body.signature),
       });
 
       // Notify user on payment failure
       if (body.resultCode !== '00' && body.resultCode !== '01' && body.merchantOrderId && bot) {
         try {
-          const tx = await prisma.transaction.findUnique({ where: { orderId: body.merchantOrderId } });
+          const tx = await prisma.transaction.findUnique({ where: { orderId: String(body.merchantOrderId) } });
           if (tx?.userId) {
             const dbUser = await UserService.findByTelegramId(BigInt(tx.userId));
             const lang = dbUser?.language || 'id';
             await bot.telegram.sendMessage(tx.userId.toString(),
-              t('payment.failed', lang, { orderId: body.merchantOrderId }),
+              t('payment.failed', lang, { orderId: String(body.merchantOrderId) }),
               { parse_mode: 'Markdown', reply_markup: { inline_keyboard: [[{ text: t('btn.topup', lang), callback_data: 'topup' }]] } }
             ).catch(() => {});
           }
