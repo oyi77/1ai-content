@@ -5,8 +5,7 @@
  * Version: 3.0.0
  */
 
-import { config } from "dotenv";
-config();
+import "dotenv/config";
 
 import { initConfig } from "@/config/env";
 const appConfig = initConfig();

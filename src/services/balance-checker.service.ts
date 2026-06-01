@@ -126,7 +126,7 @@ const laozhangStrategy: BalanceStrategyEntry = {
         const balance = (total !== undefined && used !== undefined) ? total - used : total;
         return { success: true, balance, currency: 'credits', unit: 'credits', raw: grant, strategyUsed: 'Laozhang/credit_grants' };
       }
-    } catch {
+    } catch (err) { logger.debug("Balance check fallback", { error: (err as Error).message });
       // fall through
     }
     // Try /v1/balance
@@ -256,7 +256,7 @@ const wavespeedStrategy: BalanceStrategyEntry = {
           strategyUsed: 'Wavespeed/user/balance',
         };
       }
-    } catch {
+    } catch (err) { logger.debug("Balance check fallback", { error: (err as Error).message });
       // fall through
     }
     const data = await httpGet(`${baseUrl}/account/balance`, apiKey);
@@ -290,7 +290,7 @@ const zhipuStrategy: BalanceStrategyEntry = {
         raw: data?.data,
         strategyUsed: 'ZhipuAI',
       };
-    } catch {
+    } catch (err) { logger.debug("Balance check fallback", { error: (err as Error).message });
       // Some ZhipuAI deployments use /v4
       const data = await httpGet(`${baseUrl}/billing/balance`, apiKey);
       return {
@@ -381,7 +381,7 @@ const juheStrategy: BalanceStrategyEntry = {
         const balance = safe('balance', data?.balance ?? data?.data?.balance ?? data?.total_available);
         return { success: true, balance, currency: 'credits', unit: 'credits', raw: data, strategyUsed: 'JuheAPI/balance' };
       }
-    } catch {
+    } catch (err) { logger.debug("Balance check fallback", { error: (err as Error).message });
       // fall through
     }
     const data = await httpGet(`${baseUrl}/dashboard/billing/credit_grants`, apiKey);
@@ -416,7 +416,7 @@ const evolinkStrategy: BalanceStrategyEntry = {
         raw: data?.data ?? data,
         strategyUsed: 'EvoLink/user/balance',
       };
-    } catch {
+    } catch (err) { logger.debug("Balance check fallback", { error: (err as Error).message });
       const data = await httpGet(`${baseUrl}/account`, apiKey);
       return {
         success: true,
@@ -452,7 +452,7 @@ const hyperealStrategy: BalanceStrategyEntry = {
           strategyUsed: 'Hypereal/account/balance',
         };
       }
-    } catch {
+    } catch (err) { logger.debug("Balance check fallback", { error: (err as Error).message });
       // fall through
     }
     
@@ -470,7 +470,7 @@ const hyperealStrategy: BalanceStrategyEntry = {
           strategyUsed: 'Hypereal/user/info',
         };
       }
-    } catch {
+    } catch (err) { logger.debug("Balance check fallback", { error: (err as Error).message });
       // fall through
     }
     
@@ -582,7 +582,7 @@ const genericOpenAIStrategy: BalanceStrategyEntry = {
             strategyUsed: `Generic${path}`,
           };
         }
-      } catch {
+      } catch (err) { logger.debug("Balance check fallback", { error: (err as Error).message });
         // try next
       }
     }
@@ -696,7 +696,7 @@ export async function checkProviderBalance(
       try {
         logger.debug(`BalanceChecker: falling back to Generic strategy for ${url}`);
         return await genericOpenAIStrategy.check(url, apiKey);
-      } catch {
+      } catch (err) { logger.debug("Balance check fallback", { error: (err as Error).message });
         // give up
       }
     }

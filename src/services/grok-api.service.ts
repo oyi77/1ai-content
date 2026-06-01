@@ -59,7 +59,8 @@ export class GrokApiService {
     try {
       await this.client.get('/docs', { timeout: 3000 });
       return true;
-    } catch {
+    } catch (err) {
+      logger.debug('Grok health check failed', { error: (err as Error).message });
       if (this.autoStart) {
         return this.startServer();
       }
@@ -95,12 +96,13 @@ export class GrokApiService {
         try {
           await this.client.get('/docs', { timeout: 2000 });
           return true;
-        } catch {
-          // still starting
+        } catch (retryErr) {
+          logger.debug('Grok still starting', { error: (retryErr as Error).message });
         }
       }
       return false;
-    } catch {
+    } catch (err) {
+      logger.debug('Grok start failed', { error: (err as Error).message });
       return false;
     }
   }
@@ -109,7 +111,8 @@ export class GrokApiService {
     try {
       await this.client.get('/docs', { timeout: 3000 });
       return true;
-    } catch {
+    } catch (err) {
+      logger.debug('Grok alive check failed', { error: (err as Error).message });
       return false;
     }
   }
