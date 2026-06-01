@@ -23,6 +23,7 @@ import { handlePromptsCallback } from "./callbacks/prompts";
 import { handleAccountCallback } from "./callbacks/account";
 import { handleAvatarTalkCallbacks } from "./callbacks/avatar-talk";
 import { handleMediaIntentCallback } from "./callbacks/media-intent";
+import { handleEbookCallbacks } from "./callbacks/ebook";
 
 /**
  * Handle callback queries
@@ -87,6 +88,9 @@ export async function callbackHandler(ctx: BotContext): Promise<void> {
 
     // Clone, storyboard, repurpose, disassemble, copy_prompt
     if (await handleCloneCallbacks(ctx, data)) return;
+
+    // Ebook generation (ebook_*)
+    if (await handleEbookCallbacks(ctx, data)) return;
 
     // Unknown callback
     logger.warn("Unknown callback:", data);

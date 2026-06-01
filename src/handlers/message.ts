@@ -686,6 +686,18 @@ export async function messageHandler(ctx: BotContext): Promise<void> {
         // Will be handled by the CUSTOM_PROMPT_INPUT handler below
       } else if (ctx.session?.state === "WAITING_ACCOUNT_ID") {
         // Will be handled by the WAITING_ACCOUNT_ID handler below
+      } else if (ctx.session?.state === "EBOOK_IDEA") {
+        const { handleEbookIdea } = await import("@/commands/ebook.js");
+        await handleEbookIdea(ctx, message);
+        return;
+      } else if (ctx.session?.state === "EBOOK_TITLE") {
+        const { handleEbookTitle } = await import("@/commands/ebook.js");
+        await handleEbookTitle(ctx, message);
+        return;
+      } else if (ctx.session?.state === "EBOOK_CHAPTERS") {
+        const { handleEbookChapters } = await import("@/commands/ebook.js");
+        await handleEbookChapters(ctx, message);
+        return;
       } else {
         // Handle reply keyboard buttons — match all language variants
         const { getAllMenuTexts } = await import('../config/pricing.js');

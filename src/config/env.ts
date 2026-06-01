@@ -33,6 +33,8 @@ const envSchema = z.object({
   CORS_ORIGIN: z.string().optional(),
   VIDEO_DIR: z.string().default("/tmp/videos"),
   AUDIO_DIR: z.string().default("/tmp/audio"),
+  EBOOK_API_URL: z.string().default("http://localhost:8765"),
+  EBOOK_API_KEY: z.string().optional(),
 
   // ── Admin ──
   ADMIN_TELEGRAM_IDS: z.string().optional(),

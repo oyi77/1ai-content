@@ -25,6 +25,7 @@ import { webhookRoutes } from "@/routes/webhook";
 import { adminRoutes } from "@/routes/admin";
 import { webRoutes } from "@/routes/web";
 import { agencyRoutes } from "@/routes/agency";
+import { contentApiRoutes } from "@/routes/content-api";
 import { PaymentService } from "@/services/payment.service";
 import { initializeDatabase, prisma } from "@/config/database";
 import { initializeRedis } from "@/config/redis";
@@ -275,6 +276,7 @@ async function main() {
     await app.register(adminRoutes);
     await app.register(webRoutes);
     await app.register(agencyRoutes, { prefix: '/api' });
+    await app.register(contentApiRoutes);
 
     if (appConfig.NODE_ENV === 'test') {
       const testRoutes = require('./routes/test').default;

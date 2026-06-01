@@ -100,6 +100,14 @@ export interface SessionData {
   // Pro mode: transcript auto/manual
   generateTranscriptMode?: "auto" | "manual";
   generateManualTranscript?: string;
+
+  // Ebook generation state
+  ebookIdea?: string;
+  ebookTitle?: string;
+  ebookChapters?: number;
+  ebookLanguage?: string;
+  ebookMode?: string;
+  ebookProjectId?: number;
 }
 
 export type BotState =
@@ -137,7 +145,12 @@ export type BotState =
   | "IMAGE_ELEMENT_SELECTION"
   | "VIDEO_ELEMENT_SELECTION"
   | "WAITING_BUG_REPORT"
-  | "MEDIA_INTENT_SELECTION";
+  | "MEDIA_INTENT_SELECTION"
+  | "EBOOK_IDEA"
+  | "EBOOK_TITLE"
+  | "EBOOK_CHAPTERS"
+  | "EBOOK_LANGUAGE"
+  | "EBOOK_MODE";
 
 // =============================================================================
 // USER TYPES

@@ -31,6 +31,13 @@ import { cancelCommand } from "./cancel";
 import { sendCommand } from "./send";
 import { pricingCommand } from "./pricing";
 import { deleteAccountCommand } from "./deleteAccount";
+import {
+  ebookCommand,
+  handleEbookCreate,
+  handleEbookList,
+  handleEbookDownload,
+  handleEbookPreview,
+} from "./ebook";
 
 // Feature-based flows
 export * from "@/flows/generate";
@@ -71,6 +78,8 @@ export function setupCommands(bot: Telegraf<BotContext>): void {
   bot.command("send", sendCommand);
   bot.command("pricing", pricingCommand);
   bot.command("delete_account", deleteAccountCommand);
+  bot.command("ebook", ebookCommand);
+  bot.command("ebooks", ebookCommand); // Alias
   bot.command("image", (ctx) =>
     ctx.reply("🖼️ *Image Generation*\n\n" + "Select workflow:", {
       parse_mode: "Markdown",
@@ -117,6 +126,7 @@ export function setupCommands(bot: Telegraf<BotContext>): void {
     { command: "referral", description: "👥 Referral & affiliate" },
     { command: "profile", description: "👤 Profil saya" },
     { command: "settings", description: "⚙️ Pengaturan" },
+    { command: "ebook", description: "📖 Buat ebook dengan AI" },
     { command: "support", description: "🆘 Hubungi support" },
     { command: "help", description: "📖 Panduan lengkap" },
   ]).catch(() => { /* ignore - bot token may not be set yet */ });
