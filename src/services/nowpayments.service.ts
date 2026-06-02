@@ -13,6 +13,7 @@ import { AnalyticsService } from '@/services/analytics.service';
 import { PaymentService } from '@/services/payment.service';
 import { logger } from '@/utils/logger';
 import { getConfig } from '@/config/env';
+import { secureRandomString } from '@/utils/crypto';
 
 const BASE_URL = 'https://api.nowpayments.io/v1';
 
@@ -56,7 +57,7 @@ export class NowPaymentsService {
     const validCoin = CRYPTO_COINS.find(c => c.id === params.coin);
     if (!validCoin) throw new Error('Invalid coin');
 
-    const random = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const random = secureRandomString(6);
     const orderId = `CRYPTO-${Date.now()}-${params.userId}-${random}`;
 
     // Create payment on NOWPayments

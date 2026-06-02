@@ -13,6 +13,7 @@ import { SubscriptionService } from '@/services/subscription.service';
 import { AnalyticsService } from '@/services/analytics.service';
 import { PaymentService } from '@/services/payment.service';
 import { getConfig } from '@/config/env';
+import { secureRandomString } from '@/utils/crypto';
 import crypto from 'crypto';
 
 interface TripayCreatePaymentParams {
@@ -56,7 +57,7 @@ export class TripayService {
 
       const price = pkg.priceIdr || pkg.priceIdr;
       const credits = pkg.credits + (pkg.bonus || 0);
-      const random = Math.random().toString(36).substring(2, 8).toUpperCase();
+      const random = secureRandomString(6);
       const orderId = `TRP-${Date.now()}-${params.userId}-${random}`;
 
       const payload = {

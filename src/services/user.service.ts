@@ -11,6 +11,7 @@ import { t } from '@/i18n/translations';
 import { sendAdminAlert } from '@/services/admin-alert.service';
 import { User, Prisma } from '@prisma/client';
 import { Telegraf } from 'telegraf';
+import { secureRandomInt } from '@/utils/crypto';
 
 export class UserService {
   /**
@@ -359,7 +360,7 @@ export class UserService {
     
     for (let attempt = 0; attempt < 10; attempt++) {
       const random = Array.from({ length: 4 }, () => 
-        charset[Math.floor(Math.random() * charset.length)]
+        charset[secureRandomInt(charset.length)]
       ).join('');
       
       const code = `REF-${base}-${random}`;
@@ -375,7 +376,7 @@ export class UserService {
     
     // Fallback to UUID-based
     const random = Array.from({ length: 8 }, () => 
-      charset[Math.floor(Math.random() * charset.length)]
+      charset[secureRandomInt(charset.length)]
     ).join('');
     return `REF-${random}`;
   }

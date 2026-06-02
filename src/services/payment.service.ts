@@ -13,6 +13,7 @@ import { AnalyticsService } from '@/services/analytics.service';
 import { PlanKey, BillingCycle, getPackagesAsync, getSubscriptionPlansAsync } from '@/config/pricing';
 import crypto from 'crypto';
 import { Telegraf } from 'telegraf';
+import { secureRandomString } from '@/utils/crypto';
 import { t } from '@/i18n/translations';
 import { getConfig } from '@/config/env';
 
@@ -66,7 +67,7 @@ export class PaymentService {
 
     // Generate order ID
     const timestamp = Date.now();
-    const random = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const random = secureRandomString(6);
     const orderId = `OC-${timestamp}-${params.userId}-${random}`;
 
     // Create transaction record

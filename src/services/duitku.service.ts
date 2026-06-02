@@ -8,6 +8,7 @@ import { PlanKey, BillingCycle, getPackagesAsync, getSubscriptionPlansAsync } fr
 import { AnalyticsService } from '@/services/analytics.service';
 import { PaymentService } from '@/services/payment.service';
 import { getConfig } from '@/config/env';
+import { secureRandomString } from '@/utils/crypto';
 
 function getDuitkuBaseUrl() {
   const config = getConfig();
@@ -81,7 +82,7 @@ export class DuitkuService {
     const price = pkg.priceIdr || pkg.priceIdr;
     const credits = pkg.credits + (pkg.bonus || 0);
 
-    const random = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const random = secureRandomString(6);
     const orderId = `OC-${Date.now()}-${params.userId}-${random}`;
     const signature = crypto.createHash('md5')
       .update(getMerchantCode() + orderId + price + getApiKey())

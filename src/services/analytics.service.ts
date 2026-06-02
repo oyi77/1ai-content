@@ -10,6 +10,7 @@ import axios from "axios";
 import crypto from "crypto";
 import { logger } from "@/utils/logger";
 import { getConfig } from "@/config/env";
+import { secureRandomString } from "@/utils/crypto";
 
 interface TrackingEvent {
   event_name: string;
@@ -228,7 +229,7 @@ export class AnalyticsService {
             name: event.event_name,
             params: {
               user_id: event.user_id,
-              session_id: Math.random().toString(36),
+              session_id: secureRandomString(16),
               value: event.custom_data?.value,
               currency: event.custom_data?.currency,
               transaction_id: event.custom_data?.content_id,
@@ -354,7 +355,7 @@ export class AnalyticsService {
 
       const payload = {
         event: event.event_name,
-        event_id: Math.random().toString(36).substring(2, 15),
+        event_id: secureRandomString(13),
         timestamp: Math.floor(Date.now() / 1000),
         user: userData,
         properties,
