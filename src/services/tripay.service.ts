@@ -64,8 +64,8 @@ export class TripayService {
         merchant_ref: orderId,
         amount: price,
         customer_name: params.username,
-        customer_email: 'customer@email.com',
-        customer_phone: '08123456789',
+        customer_email: `${params.username || 'user'}@telegram.local`,
+        customer_phone: '0000000000',
         order_items: [
           {
             name: pkg.name,
