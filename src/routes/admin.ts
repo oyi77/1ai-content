@@ -34,6 +34,7 @@ import { UserService } from "@/services/user.service";
 import { t } from "@/i18n/translations";
 import { getConfig, getConfigForAdmin, initConfig } from "@/config/env";
 import { logger } from "@/utils/logger";
+import { validateBody, PricingConfigSchema, PricingDeleteSchema, CustomProviderSchema, PromptSchema } from "@/utils/validation";
 import { ImageGenerationService } from "@/services/image.service";
 import { generateVideoWithFallback } from "@/services/video-fallback.service";
 import { CircuitBreaker } from "@/services/circuit-breaker.service";
@@ -845,27 +846,17 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
   });
 
   server.post("/api/pricing", async (request, reply) => {
-    const { category, key, value } = request.body as {
-      category: string;
-      key: string;
-      value: any;
-    };
-    if (!category || !key || value === undefined) {
-      return reply
-        .status(400)
-        .send({ error: "category, key, and value required" });
-    }
-    await PaymentSettingsService.setPricingConfig(category, key, value);
+    const data = await validateBody(request, reply, PricingConfigSchema);
+    if (!data) return;
+    await PaymentSettingsService.setPricingConfig(data.category, data.key, data.value);
     PaymentSettingsService.clearPricingCache();
     return { success: true };
   });
 
   server.delete("/api/pricing", async (request, reply) => {
-    const { category, key } = request.body as { category: string; key: string };
-    if (!category || !key) {
-      return reply.status(400).send({ error: "category and key required" });
-    }
-    await PaymentSettingsService.deletePricingConfig(category, key);
+    const data = await validateBody(request, reply, PricingDeleteSchema);
+    if (!data) return;
+    await PaymentSettingsService.deletePricingConfig(data.category, data.key);
     PaymentSettingsService.clearPricingCache();
     return { success: true };
   });
@@ -1839,9 +1830,9 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
   // POST /api/admin/custom-providers
   server.post('/api/admin/custom-providers', async (request, reply) => {
     if (!await verifyAdmin(request, reply)) return;
-    const { name, baseUrl, apiKey } = request.body as Record<string, string>;
-    if (!name || !baseUrl || !apiKey) return reply.status(400).send({ error: 'name, baseUrl, apiKey required' });
-    const provider = await CustomProviderService.create({ name, baseUrl, apiKey });
+    const data = await validateBody(request, reply, CustomProviderSchema);
+    if (!data) return;
+    const provider = await CustomProviderService.create(data);
     return reply.send(provider);
   });
 
