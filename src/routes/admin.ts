@@ -48,6 +48,7 @@ import { registerNicheRoutes } from "./admin/niches";
 import { registerFreeTrialRoutes } from "./admin/free-trial";
 import { registerSystemSettingsRoutes } from "./admin/system-settings";
 import { registerBroadcastRoutes } from "./admin/broadcast";
+import { registerPlaygroundRoutes } from "./admin/playground";
 import { ConfigError } from '@/utils/app-errors';
 
 const LOGIN_RATE_LIMIT_MAX = 5;
@@ -194,6 +195,7 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
   await registerFreeTrialRoutes(server, verifyAdmin);
   await registerSystemSettingsRoutes(server, verifyAdmin);
   await registerBroadcastRoutes(server);
+  await registerPlaygroundRoutes(server);
 
   // Login page (no auth required)
   server.get("/admin/login", async (_request, reply) => {
@@ -696,60 +698,6 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
       videoProviders: Object.keys(PROVIDER_CONFIG.video),
       imageProviders: Object.keys(PROVIDER_CONFIG.image),
     }, { layout: 'admin/layout.ejs' });
-  });
-
-  // API: Playground — Text/Chat
-  server.post("/api/admin/playground/text", async (request, reply) => {
-    const { prompt, model } = request.body as {
-      prompt: string;
-      model?: string;
-    };
-    if (!prompt) return reply.status(400).send({ error: "Prompt required" });
-    const omni = getOmniRouteService();
-    const result = await omni.chat("admin_playground", prompt, model);
-    return result;
-  });
-
-  // API: Playground — Image Generation
-  server.post("/api/admin/playground/image", async (request, reply) => {
-    const body = request.body as Record<string, unknown>;
-    const prompt = body.prompt as string;
-    const provider = body.provider as string | undefined;
-    const aspectRatio = (body.aspectRatio as string) || "1:1";
-    if (!prompt) return reply.status(400).send({ error: "Prompt required" });
-
-    // ImageGenerationService imported statically above
-    const result = await ImageGenerationService.generateImage({
-      prompt,
-      category: "product",
-      aspectRatio,
-      // We bypass routing and force a specific provider for playground
-      _forceProvider: provider,
-    });
-
-    return result;
-  });
-
-  // API: Playground — Video Generation
-  server.post("/api/admin/playground/video", async (request, reply) => {
-    const body = request.body as Record<string, unknown>;
-    const prompt = body.prompt as string;
-    const provider = body.provider as string | undefined;
-    const duration = (body.duration as number) || 5;
-    const niche = (body.niche as string) || "fnb";
-    if (!prompt) return reply.status(400).send({ error: "Prompt required" });
-
-    // generateVideoWithFallback imported statically above
-    const result = await generateVideoWithFallback({
-      prompt,
-      duration,
-      niche,
-      aspectRatio: "9:16",
-      // We bypass routing and force a specific provider for playground
-      _forceProvider: provider,
-    });
-
-    return result;
   });
 
   // API: Get Landing Page Config
