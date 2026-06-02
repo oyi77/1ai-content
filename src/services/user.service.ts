@@ -12,6 +12,7 @@ import { sendAdminAlert } from '@/services/admin-alert.service';
 import { User, Prisma } from '@prisma/client';
 import { Telegraf } from 'telegraf';
 import { secureRandomInt } from '@/utils/crypto';
+import { InsufficientCreditsError, NotFoundError } from '@/utils/app-errors';
 
 export class UserService {
   /**
@@ -215,14 +216,14 @@ export class UserService {
     });
 
     if (result.count === 0) {
-      throw new Error('Insufficient credits');
+      throw new InsufficientCreditsError();
     }
 
     // Decrement subscription credits tracking (subscription credits are used first)
     await prisma.$executeRaw`UPDATE "users" SET "subscription_credits" = GREATEST(0, "subscription_credits" - ${amount}) WHERE "telegram_id" = ${telegramId}`;
 
     const updated = await this.findByTelegramId(telegramId);
-    if (!updated) throw new Error('User not found after credit deduction');
+    if (!updated) throw new NotFoundError('User', String(telegramId));
 
     // Fire-and-forget low credit warning
     const remaining = Number(updated.creditBalance);

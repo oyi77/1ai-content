@@ -1,6 +1,7 @@
 import { prisma } from '@/config/database';
 import { logger } from '@/utils/logger';
 import { PaymentSettingsService } from './payment-settings.service';
+import { ValidationError, NotFoundError, InsufficientCreditsError } from '@/utils/app-errors';
 
 export class P2pService {
     /**
@@ -22,15 +23,15 @@ export class P2pService {
         amount: number
     ): Promise<{ valid: boolean; fee: number; totalDeduction: number; error?: string }> {
         if (senderId === recipientId) {
-            throw new Error('Cannot transfer credits to yourself');
+            throw new ValidationError('Cannot transfer credits to yourself', 'recipientId');
         }
 
         if (amount < 1) {
-            throw new Error('Minimum transfer amount is 1 credit');
+            throw new ValidationError('Minimum transfer amount is 1 credit', 'amount');
         }
 
         if (amount > 10000) {
-            throw new Error('Maximum transfer amount is 10000 credits');
+            throw new ValidationError('Maximum transfer amount is 10000 credits', 'amount');
         }
 
         const fee = await this.calculateFee(amount);
@@ -38,16 +39,18 @@ export class P2pService {
 
         const sender = await prisma.user.findUnique({ where: { telegramId: senderId } });
         if (!sender) {
-            throw new Error('Sender not found');
+            throw new NotFoundError('Sender', String(senderId));
         }
 
         if (Number(sender.creditBalance) < totalDeduction) {
-            throw new Error(`Insufficient balance. You need ${totalDeduction} credits (including ${fee} network fee)`);
+            throw new InsufficientCreditsError(
+                `Insufficient balance. You need ${totalDeduction} credits (including ${fee} network fee)`
+            );
         }
 
         const recipient = await prisma.user.findUnique({ where: { telegramId: recipientId } });
         if (!recipient) {
-            throw new Error('Recipient not found');
+            throw new NotFoundError('Recipient', String(recipientId));
         }
 
         return { valid: true, fee, totalDeduction };

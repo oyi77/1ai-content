@@ -7,6 +7,7 @@
 
 import { logger } from "@/utils/logger";
 import { getConfig } from "@/config/env";
+import { ProviderError, ProviderTimeoutError, ConfigError } from "@/utils/app-errors";
 import axios from "axios";
 import FormData from "form-data";
 import * as fs from "fs";
@@ -97,11 +98,11 @@ async function pollUntilComplete(
     const result = await pollFn(taskId);
     if (result.status === "completed") {
       if (!result.videoUrl)
-        throw new Error(`${providerName}: completed but no video URL`);
+        throw new ProviderError(providerName, "completed but no video URL");
       return result.videoUrl;
     }
     if (result.status === "failed")
-      throw new Error(`${providerName} generation failed`);
+      throw new ProviderError(providerName, "generation failed");
   }
   throw new Error(
     `${providerName} poll timeout after ${config.maxAttempts} attempts`,
@@ -235,7 +236,7 @@ async function generateViaFalai(
         resultRes.data?.video_url ||
         resultRes.data?.output?.video?.url ||
         resultRes.data?.output?.video_url;
-      if (!url) throw new Error("Fal.ai: COMPLETED but no video URL in result");
+      if (!url) throw new ProviderError("Fal.ai", "COMPLETED but no video URL in result");
       return { status: "completed", videoUrl: url };
     }
     return { status: "pending" };
@@ -278,7 +279,7 @@ async function generateViaSiliconFlow(
   );
 
   const requestId = response.data?.requestId;
-  if (!requestId) throw new Error("SiliconFlow: no requestId");
+  if (!requestId) throw new ProviderError("SiliconFlow", "no requestId");
 
   const videoUrl = await pollUntilComplete(
     "SiliconFlow",
@@ -334,7 +335,7 @@ async function generateViaXAI(
   }
 
   const apiKey = getConfig().GEMINIGEN_API_KEY || getConfig().XAI_API_KEY || "";
-  if (!apiKey) throw new Error("XAI: no API key available");
+  if (!apiKey) throw new ConfigError("XAI_API_KEY");
 
   const response = await axios.post(
     `${GEMINIGEN_API_BASE}/video-gen/grok`,
@@ -354,7 +355,7 @@ async function generateViaXAI(
       timeout: 10000,
     });
     const { status: s, generated_video, error_message } = poll.data;
-    if (s === 3) throw new Error(error_message || "XAI generation failed");
+    if (s === 3) throw new ProviderError("XAI", error_message || "generation failed");
     if (s === 2 && generated_video?.length > 0) {
       return {
         status: "completed",
@@ -412,7 +413,7 @@ async function generateViaLaoZhang(
   );
 
   const choices = response.data?.choices;
-  if (!choices?.length) throw new Error("LaoZhang: no choices in response");
+  if (!choices?.length) throw new ProviderError("LaoZhang", "no choices in response");
 
   const messageContent = choices[0]?.message?.content || "";
 

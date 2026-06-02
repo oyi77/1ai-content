@@ -16,6 +16,7 @@ import { Telegraf } from 'telegraf';
 import { secureRandomString } from '@/utils/crypto';
 import { t } from '@/i18n/translations';
 import { getConfig } from '@/config/env';
+import { ValidationError, PaymentError, NotFoundError } from '@/utils/app-errors';
 
 function getMidtransBaseUrl() {
   const config = getConfig();
@@ -59,7 +60,7 @@ export class PaymentService {
     const pkg = packages.find(p => p.id === params.packageId);
     
     if (!pkg) {
-      throw new Error('Invalid package');
+      throw new ValidationError('Invalid package', 'packageId');
     }
 
     const price = pkg.priceIdr || pkg.priceIdr;
@@ -127,7 +128,7 @@ export class PaymentService {
       };
     } catch (error: any) {
       logger.error('Midtrans API error:', error.response?.data || error.message);
-      throw new Error('Failed to create payment transaction');
+      throw new PaymentError('Midtrans', 'Failed to create payment transaction');
     }
   }
 

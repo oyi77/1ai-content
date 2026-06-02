@@ -2,6 +2,7 @@ import { logger } from "@/utils/logger";
 import { AdminConfigService } from "@/services/admin-config.service";
 import { getConfig } from "@/config/env";
 import { secureRandomInt } from "@/utils/crypto";
+import { ProviderError, ProviderTimeoutError, AllProvidersFailedError, ValidationError } from "@/utils/app-errors";
 import axios from "axios";
 import FormData from "form-data";
 import * as fs from "fs";
@@ -114,10 +115,10 @@ export async function generateViaGeminiGen(
           mode: "text2img",
         };
       }
-      if (s === 3) throw new Error("GeminiGen: generation failed");
+      if (s === 3) throw new ProviderError("GeminiGen", "generation failed");
       await new Promise((r) => setTimeout(r, 3000));
     }
-    throw new Error("GeminiGen: poll timeout");
+    throw new ProviderTimeoutError("GeminiGen", 0);
   }
   throw new Error(`GeminiGen: unexpected status ${status}`);
 }
@@ -156,7 +157,7 @@ export async function generateViaFalai(
       mode: "text2img",
     };
   }
-  throw new Error("Fal.ai: no images returned");
+  throw new ProviderError("Fal.ai", "no images returned");
 }
 
 export async function generateViaFalaiImg2Img(
@@ -165,7 +166,7 @@ export async function generateViaFalaiImg2Img(
 ): Promise<ImageGenerationResult> {
   const imageUrl = params.referenceImageUrl;
   if (!imageUrl)
-    throw new Error("Fal.ai img2img: no reference image URL provided");
+    throw new ValidationError("reference image URL required", "referenceImageUrl");
 
   const negativePrompt = (params as unknown as Record<string, unknown>)._negativePrompt as string | undefined;
   const response = await axios.post(
@@ -203,7 +204,7 @@ export async function generateViaFalaiImg2Img(
       mode: "img2img",
     };
   }
-  throw new Error("Fal.ai img2img: no images returned");
+  throw new ProviderError("Fal.ai", "img2img: no images returned");
 }
 
 export async function generateViaFalaiIPAdapter(
@@ -212,7 +213,7 @@ export async function generateViaFalaiIPAdapter(
 ): Promise<ImageGenerationResult> {
   const avatarUrl = params.avatarImageUrl;
   if (!avatarUrl)
-    throw new Error("Fal.ai IP-Adapter: no avatar image URL provided");
+    throw new ValidationError("avatar image URL required", "avatarUrl");
 
   const response = await axios.post(
     "https://fal.run/fal-ai/flux/dev/ip-adapter",
@@ -248,7 +249,7 @@ export async function generateViaFalaiIPAdapter(
       mode: "ip_adapter",
     };
   }
-  throw new Error("Fal.ai IP-Adapter: no images returned");
+  throw new ProviderError("Fal.ai", "IP-Adapter: no images returned");
 }
 
 export async function generateViaSiliconFlow(
@@ -288,7 +289,7 @@ export async function generateViaSiliconFlow(
       };
     }
   }
-  throw new Error("SiliconFlow: no images returned");
+  throw new ProviderError("SiliconFlow", "no images returned");
 }
 
 export async function generateViaNvidia(
@@ -324,7 +325,7 @@ export async function generateViaNvidia(
       mode: "text2img",
     };
   }
-  throw new Error("NVIDIA: no artifacts returned");
+  throw new ProviderError("NVIDIA", "no artifacts returned");
 }
 
 export async function generateViaGemini(
@@ -355,7 +356,7 @@ export async function generateViaGemini(
       };
     }
   }
-  throw new Error("Gemini: no image in response");
+  throw new ProviderError("Gemini", "no image in response");
 }
 
 export async function generateViaGeminiImg2Img(
@@ -378,7 +379,7 @@ export async function generateViaGeminiImg2Img(
     const ct = String(imgResponse.headers["content-type"] || "image/jpeg");
     if (ct.includes("png")) mimeType = "image/png";
   } else {
-    throw new Error("Gemini img2img: no reference image");
+    throw new ValidationError("reference image required", "referenceImageUrl");
   }
 
   const response = await axios.post(
@@ -418,7 +419,7 @@ export async function generateViaGeminiImg2Img(
       };
     }
   }
-  throw new Error("Gemini img2img: no image in response");
+  throw new ProviderError("Gemini", "img2img: no image in response");
 }
 
 export async function generateViaLaoZhangKontext(
@@ -516,7 +517,7 @@ export async function generateViaLaoZhangGptImage(
       );
     }
   }
-  throw new Error("LaoZhang text2img: all models failed");
+  throw new AllProvidersFailedError("LaoZhang text2img");
 }
 
 export async function generateViaEvoLinkImg2Img(

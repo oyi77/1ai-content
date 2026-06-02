@@ -4,6 +4,7 @@ import { Subscription, Prisma } from '@prisma/client';
 import { getSubscriptionPlansAsync, PlanKey, BillingCycle } from '@/config/pricing';
 import { Telegraf } from 'telegraf';
 import { t } from '@/i18n/translations';
+import { NotFoundError } from '@/utils/app-errors';
 
 export class SubscriptionService {
   /** Optional reference to the running Telegraf bot instance for sending proactive messages. */
@@ -27,7 +28,7 @@ export class SubscriptionService {
     const planConfig = plans[plan];
     
     if (!planConfig) {
-      throw new Error(`Plan configuration not found for: ${plan}`);
+      throw new NotFoundError('Plan configuration', plan);
     }
 
     const now = new Date();
