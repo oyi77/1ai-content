@@ -52,6 +52,7 @@ import { registerPlaygroundRoutes } from "./admin/playground";
 import { registerLandingConfigRoutes } from "./admin/landing-config";
 import { registerStatsRoutes } from "./admin/stats";
 import { registerUserMgmtRoutes } from "./admin/user-mgmt";
+import { registerSystemHealthRoutes } from "./admin/system-health";
 import { ConfigError } from '@/utils/app-errors';
 
 const LOGIN_RATE_LIMIT_MAX = 5;
@@ -202,6 +203,7 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
   await registerLandingConfigRoutes(server);
   await registerStatsRoutes(server);
   await registerUserMgmtRoutes(server);
+  await registerSystemHealthRoutes(server);
 
   // Login page (no auth required)
   server.get("/admin/login", async (_request, reply) => {
@@ -970,60 +972,6 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
     } catch {
       return reply.status(404).send({ error: "Not found" });
     }
-  });
-
-  // ── System Health ──
-
-  server.get("/api/system/health", async () => {
-    const checks: Record<string, any> = {};
-    try {
-      await prisma.$queryRaw`SELECT 1`;
-      checks.database = { status: "ok" };
-    } catch (e: any) {
-      checks.database = { status: "error", message: e.message };
-    }
-    try {
-      await redis.ping();
-      checks.redis = { status: "ok" };
-    } catch (e: any) {
-      checks.redis = { status: "error", message: e.message };
-    }
-    try {
-      const token = getConfig().BOT_TOKEN;
-      if (token) {
-        const res = await fetch(
-          `https://api.telegram.org/bot${token}/getWebhookInfo`,
-        );
-        const data = await res.json() as { ok?: boolean; result?: { url?: string; pending_update_count?: number; last_error_message?: string } };
-        checks.webhook = {
-          status: data.ok ? "ok" : "error",
-          url: data.result?.url,
-          pendingUpdates: data.result?.pending_update_count,
-          lastError: data.result?.last_error_message,
-        };
-      }
-    } catch (e: any) {
-      checks.webhook = { status: "error", message: e.message };
-    }
-    return {
-      status: Object.values(checks).every((c: any) => c.status === "ok")
-        ? "healthy"
-        : "degraded",
-      checks,
-      environment: getConfig().NODE_ENV,
-      version: "3.0.0",
-      uptime: process.uptime(),
-    };
-  });
-
-  // ── Token Usage Stats ──
-
-  server.get("/api/token-stats", async (request) => {
-    const { days = "7" } = request.query as { days?: string };
-    const daysCapped = Math.min(Math.max(1, parseInt(days) || 7), 90);
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { getTokenStats } = require("../services/token-tracker.service");
-    return getTokenStats(daysCapped);
   });
 
   server.get("/api/token-usage", async (request) => {
