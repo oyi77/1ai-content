@@ -162,7 +162,7 @@ export class ContentAnalysisService {
         logger.debug(`vision:cache hit for ${mediaUrl.slice(-40)}`);
         return JSON.parse(cached) as AnalysisResult;
       }
-    } catch { /* cache miss, continue */ }
+    } catch (err) { logger.debug("Cache miss:", err); }
 
     const [tasksConfig, promptsConfig] = await Promise.all([
       AIConfigService.getTasksConfig().catch(() => null),
@@ -187,7 +187,7 @@ export class ContentAnalysisService {
         if (result.success && result.prompt) {
           try {
             await redis.set(cacheKey, JSON.stringify(result), 'EX', cacheTTL);
-          } catch { /* non-fatal */ }
+          } catch (err) { logger.debug("Non-fatal error:", err); }
           return result;
         }
       } catch (err: any) {

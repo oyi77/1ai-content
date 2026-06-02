@@ -125,7 +125,7 @@ export class AudioVOService {
         try {
           const probe = await exec(`ffprobe -v error -show_entries format=duration -of csv=p=0 "${audioPath}"`, { timeout: 10000 });
           duration = parseFloat(probe.stdout.trim()) || 0;
-        } catch { /* ignore */ }
+        } catch (err) { logger.debug("Silent cleanup error:", err); }
       }
 
       logger.info(`🎙️ TTS generated: ${subtitleBlocks.length} subtitle blocks, ${duration.toFixed(1)}s`);

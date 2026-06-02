@@ -248,7 +248,7 @@ export class SubscriptionService {
                 },
               }
             );
-          } catch { /* notification failure is non-critical */ }
+          } catch (err) { logger.debug("Subscription: notification failed:", err); }
         } else {
           // No auto-renewal: expire and notify user to re-subscribe manually.
           // Credits are NOT auto-granted — that would be giving away free credits.

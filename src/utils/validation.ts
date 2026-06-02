@@ -124,6 +124,7 @@ export const apiKeySchema = z.object({
 });
 
 export const interceptToggleSchema = z.object({
+  telegramId: z.string().min(1).max(64),
   enabled: z.boolean(),
   reason: z.string().max(500).optional(),
 });

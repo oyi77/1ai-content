@@ -336,7 +336,7 @@ export class UserService {
             logger.error(`CRITICAL: Refund permanently failed after 5 attempts: ${raw}`, err);
             sendAdminAlert('critical', 'Refund Permanently Failed', { entry: raw, error: String(err) });
           }
-        } catch { /* parse failed, entry is lost — already logged */ }
+        } catch (err) { logger.debug("Parse failed, entry lost:", err); }
       }
     }
     return processed;

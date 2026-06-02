@@ -77,7 +77,7 @@ export async function sendVilonaLoadingAutoDelete(
     setTimeout(async () => {
       try {
         await ctx.telegram.deleteMessage(ctx.chat!.id, msgId);
-      } catch { /* already deleted */ }
+      } catch (err) { logger.debug("Vilona: delete already deleted:", err); }
     }, deleteAfterMs);
   }
 }
@@ -108,5 +108,5 @@ export async function sendVilonaWelcomeAnimation(ctx: BotContext): Promise<void>
 
     await new Promise(r => setTimeout(r, 600));
     await ctx.telegram.deleteMessage(ctx.chat!.id, sent.message_id).catch(() => {});
-  } catch { /* non-critical */ }
+  } catch (err) { logger.debug("Vilona: non-critical error:", err); }
 }

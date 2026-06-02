@@ -365,7 +365,7 @@ export class VideoPostProcessing {
     } finally {
       // Clean up normalized temp files
       for (const tmp of normalizedTempFiles) {
-        try { fs.unlinkSync(tmp); } catch { /* ignore */ }
+        try { fs.unlinkSync(tmp); } catch (err) { logger.debug("Temp file cleanup error:", err); }
       }
     }
   }
@@ -388,7 +388,7 @@ export class VideoPostProcessing {
         { timeout: 120000 }
       );
     } finally {
-      try { fs.unlinkSync(listPath); } catch (_) { /* ignore */ }
+      try { fs.unlinkSync(listPath); } catch (err) { logger.debug("Temp file cleanup error:", err); }
     }
   }
 
@@ -570,7 +570,7 @@ export class VideoPostProcessing {
     } finally {
       // Cleanup temp files
       for (const tmp of tempFiles) {
-        try { fs.unlinkSync(tmp); } catch (_) { /* ignore */ }
+        try { fs.unlinkSync(tmp); } catch (err) { logger.debug("Temp file cleanup error:", err); }
       }
     }
   }

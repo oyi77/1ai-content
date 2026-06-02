@@ -90,7 +90,7 @@ export class QualityCheckService {
     } finally {
       // Clean up extracted frame
       if (framePath && fs.existsSync(framePath)) {
-        try { fs.unlinkSync(framePath); } catch (_) { /* ignore */ }
+        try { fs.unlinkSync(framePath); } catch (err) { logger.debug("Silent cleanup error:", err); }
       }
     }
   }

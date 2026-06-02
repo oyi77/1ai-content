@@ -87,8 +87,8 @@ export class NotFoundError extends ApiError {
 
 /** Validation failed at the service layer (distinct from request validation) */
 export class ValidationError extends ApiError {
-  constructor(message: string, field?: string, cause?: unknown) {
-    super('VALIDATION_ERROR', field ? `${field}: ${message}` : message, 400, cause);
+  constructor(message: string, _field?: string, cause?: unknown) {
+    super('VALIDATION_ERROR', message, 400, cause);
   }
 }
 

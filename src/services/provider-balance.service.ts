@@ -2,6 +2,7 @@ import axios from "axios";
 import { getConfig } from "@/config/env";
 import { redis } from "@/config/redis";
 import { checkProviderBalance } from "@/services/balance-checker.service";
+import { logger } from "@/utils/logger";
 
 export interface BalanceResult {
   provider: string;
@@ -100,7 +101,7 @@ export class ProviderBalanceService {
     try {
       const cached = await redis.get(cacheKey);
       if (cached) return JSON.parse(cached);
-    } catch { /* cache miss */ }
+    } catch (err) { logger.debug("Cache miss:", err); }
 
     const omnirouteUrl = config.OMNIROUTE_URL || "http://localhost:20128";
 
@@ -156,7 +157,7 @@ export class ProviderBalanceService {
           "EX",
           BALANCE_CACHE_TTL,
         );
-      } catch { /* cache write failed */ }
+      } catch (err) { logger.debug("Cache write failed:", err); }
       return result;
     } catch (err: any) {
       return {
@@ -201,7 +202,7 @@ export class ProviderBalanceService {
           models: JSON.parse(cached),
           cached: true,
         };
-    } catch { /* cache miss */ }
+    } catch (err) { logger.debug("Cache miss:", err); }
 
     const omnirouteUrl = config.OMNIROUTE_URL || "http://localhost:20128";
 
@@ -233,7 +234,7 @@ export class ProviderBalanceService {
           "EX",
           MODELS_CACHE_TTL,
         );
-      } catch { /* cache write failed */ }
+      } catch (err) { logger.debug("Cache write failed:", err); }
       return { provider: providerKey, models, cached: false };
     } catch {
       return { provider: providerKey, models: [], cached: false };

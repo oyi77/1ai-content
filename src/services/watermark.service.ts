@@ -227,7 +227,7 @@ Respond with ONLY the JSON, no other text.`;
       // Schedule cleanup of the cleaned file after 5 minutes
       if (cleanedPath !== tmpFile) {
         setTimeout(() => {
-          try { if (fs.existsSync(cleanedPath)) fs.unlinkSync(cleanedPath); } catch { /* ignore */ }
+          try { if (fs.existsSync(cleanedPath)) fs.unlinkSync(cleanedPath); } catch (err) { logger.debug("Silent cleanup error:", err); }
         }, 5 * 60 * 1000);
       }
 
