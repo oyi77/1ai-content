@@ -47,6 +47,7 @@ import { registerInterceptRoutes } from "./admin/intercept";
 import { registerNicheRoutes } from "./admin/niches";
 import { registerFreeTrialRoutes } from "./admin/free-trial";
 import { registerSystemSettingsRoutes } from "./admin/system-settings";
+import { registerBroadcastRoutes } from "./admin/broadcast";
 import { ConfigError } from '@/utils/app-errors';
 
 const LOGIN_RATE_LIMIT_MAX = 5;
@@ -192,6 +193,7 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
   await registerNicheRoutes(server, verifyAdmin);
   await registerFreeTrialRoutes(server, verifyAdmin);
   await registerSystemSettingsRoutes(server, verifyAdmin);
+  await registerBroadcastRoutes(server);
 
   // Login page (no auth required)
   server.get("/admin/login", async (_request, reply) => {
@@ -670,29 +672,6 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
         firstName: v.user.firstName,
       } : null,
     }));
-  });
-
-  // API: Broadcast message
-  server.post("/api/broadcast", { preHandler: validate({ body: broadcastBodySchema }) }, async (request, reply) => {
-    const body = request.body as { message: string; tier?: string };
-
-    const where: any = { isBanned: false };
-    if (body.tier) {
-      where.tier = body.tier;
-    }
-
-    const users = await prisma.user.findMany({
-      where,
-      select: { telegramId: true },
-    });
-
-    await addNotificationJob({
-      type: "broadcast",
-      message: body.message,
-      users: users.map((u) => u.telegramId.toString()),
-    });
-
-    return { success: true, recipientCount: users.length };
   });
 
   // API: Get config — returns all env vars grouped by concern with secrets masked
