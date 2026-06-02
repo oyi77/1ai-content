@@ -308,3 +308,35 @@ export class RateLimitError extends BotError {
     this.name = "RateLimitError";
   }
 }
+
+export class NotFoundError extends BotError {
+  constructor(resource: string, id?: string | number) {
+    super(
+      id ? `${resource} not found: ${id}` : `${resource} not found`,
+      "NOT_FOUND",
+      404
+    );
+    this.name = "NotFoundError";
+  }
+}
+
+export class ApiError extends BotError {
+  constructor(service: string, message: string, statusCode: number = 502) {
+    super(`${service}: ${message}`, "API_ERROR", statusCode);
+    this.name = "ApiError";
+  }
+}
+
+export class ProviderError extends BotError {
+  constructor(provider: string, message: string) {
+    super(`${provider}: ${message}`, "PROVIDER_ERROR", 502);
+    this.name = "ProviderError";
+  }
+}
+
+export class ConfigError extends BotError {
+  constructor(key: string) {
+    super(`Missing configuration: ${key}`, "CONFIG_ERROR", 500);
+    this.name = "ConfigError";
+  }
+}

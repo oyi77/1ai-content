@@ -9,6 +9,7 @@ import { AnalyticsService } from '@/services/analytics.service';
 import { PaymentService } from '@/services/payment.service';
 import { getConfig } from '@/config/env';
 import { secureRandomString } from '@/utils/crypto';
+import { ValidationError, ApiError } from '@/types';
 
 function getDuitkuBaseUrl() {
   const config = getConfig();
@@ -76,7 +77,7 @@ export class DuitkuService {
     const pkg = packages.find(p => p.id === params.packageId);
     
     if (!pkg) {
-      throw new Error('Invalid package');
+      throw new ValidationError('Invalid package', { packageId: params.packageId });
     }
 
     const price = pkg.priceIdr || pkg.priceIdr;
@@ -127,7 +128,7 @@ export class DuitkuService {
       return { orderId, paymentUrl: data.paymentUrl, vaNumber: data.vaNumber };
     } catch (error: any) {
       logger.error('Duitku API error:', error.response?.data || error.message);
-      throw new Error('Failed to create payment');
+      throw new ApiError('Duitku', 'Failed to create payment');
     }
   }
 

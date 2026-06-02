@@ -14,6 +14,7 @@ import { PaymentService } from '@/services/payment.service';
 import { logger } from '@/utils/logger';
 import { getConfig } from '@/config/env';
 import { secureRandomString } from '@/utils/crypto';
+import { ValidationError, ApiError } from '@/types';
 
 const BASE_URL = 'https://api.nowpayments.io/v1';
 
@@ -52,10 +53,10 @@ export class NowPaymentsService {
     coin: string;
   }): Promise<NowPaymentResult> {
     const pkg = CRYPTO_PACKAGES.find(p => p.credits === params.credits);
-    if (!pkg) throw new Error('Invalid credit package');
+    if (!pkg) throw new ValidationError('Invalid credit package', { credits: params.credits });
 
     const validCoin = CRYPTO_COINS.find(c => c.id === params.coin);
-    if (!validCoin) throw new Error('Invalid coin');
+    if (!validCoin) throw new ValidationError('Invalid coin', { coin: params.coin });
 
     const random = secureRandomString(6);
     const orderId = `CRYPTO-${Date.now()}-${params.userId}-${random}`;

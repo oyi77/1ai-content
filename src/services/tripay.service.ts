@@ -14,6 +14,7 @@ import { AnalyticsService } from '@/services/analytics.service';
 import { PaymentService } from '@/services/payment.service';
 import { getConfig } from '@/config/env';
 import { secureRandomString } from '@/utils/crypto';
+import { ValidationError, ApiError } from '@/types';
 import crypto from 'crypto';
 
 interface TripayCreatePaymentParams {
@@ -52,7 +53,7 @@ export class TripayService {
       const pkg = packages.find(p => p.id === params.packageId);
       
       if (!pkg) {
-        throw new Error('Invalid package');
+        throw new ValidationError('Invalid package', { packageId: params.packageId });
       }
 
       const price = pkg.priceIdr || pkg.priceIdr;
