@@ -12,6 +12,7 @@
  */
 
 import { logger } from '@/utils/logger';
+import { ValidationError, ProviderError } from '@/utils/app-errors';
 import { getConfig } from '@/config/env';
 import { promisify } from 'util';
 import { exec as execCallback } from 'child_process';
@@ -104,7 +105,7 @@ export class AudioVOService {
       );
 
       if (!fs.existsSync(audioPath) || fs.statSync(audioPath).size === 0) {
-        throw new Error('TTS audio file empty or missing');
+        throw new ValidationError('TTS audio file empty or missing', 'audioFile');
       }
 
       // Parse VTT into subtitle blocks with word-level estimation
@@ -180,7 +181,7 @@ export class AudioVOService {
       }
 
       if (!fs.existsSync(output) || fs.statSync(output).size === 0) {
-        throw new Error('Merged output empty');
+        throw new ProviderError('AudioVO', 'Merged output empty');
       }
 
       logger.info(`🎵 Audio merged: ${output}`);
@@ -220,7 +221,7 @@ export class AudioVOService {
       );
 
       if (!fs.existsSync(output) || fs.statSync(output).size === 0) {
-        throw new Error('Subtitled output empty');
+        throw new ProviderError('AudioVO', 'Subtitled output empty');
       }
 
       logger.info(`📝 Subtitles burned: ${output}`);

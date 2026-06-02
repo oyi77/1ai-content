@@ -13,6 +13,7 @@ import crypto from 'crypto';
 import { getVideoCreditCost } from '@/config/pricing';
 import { getAILabel } from '@/config/languages';
 import axios from 'axios';
+import { ConfigError, ProviderError } from '@/utils/app-errors';
 import { AITaskSettingsService, AITaskProvider } from '@/services/ai-task-settings.service';
 import { trackTokens } from '@/services/token-tracker.service';
 import { pipelineGenerate } from '@/services/shared-ai-pipeline.service';
@@ -643,7 +644,7 @@ Visual style: Cinematic, high quality, engaging transitions.
       const languageLabel = getAILabel(lang);
       const apiKey = getConfig().GEMINI_API_KEY;
       if (!apiKey) {
-        throw new Error('GEMINI_API_KEY not configured');
+        throw new ConfigError('GEMINI_API_KEY');
       }
 
       const prompt = `Generate a short, engaging social media caption for a ${params.niche} marketing video in ${languageLabel}. Keep it under 100 characters. Include 1-2 relevant emojis. Output ONLY the caption text.`;
@@ -664,7 +665,7 @@ Visual style: Cinematic, high quality, engaging transitions.
       );
 
       if (!response.ok) {
-        throw new Error(`Gemini API returned ${response.status}: ${response.statusText}`);
+        throw new ProviderError('Gemini', `API returned ${response.status}: ${response.statusText}`);
       }
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API response
@@ -672,7 +673,7 @@ Visual style: Cinematic, high quality, engaging transitions.
       const generatedCaption = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
 
       if (!generatedCaption) {
-        throw new Error('Empty response from Gemini API');
+        throw new ProviderError('Gemini', 'Empty response');
       }
 
       logger.info(`Generated ${languageLabel} caption via Gemini: ${generatedCaption}`);

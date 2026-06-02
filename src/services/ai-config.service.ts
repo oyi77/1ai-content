@@ -8,6 +8,7 @@
 
 import { redis } from '@/config/redis';
 import { prisma } from '@/config/database';
+import { ValidationError } from '@/utils/app-errors';
 
 export type LLMProvider = 'groq' | 'gemini' | 'omniroute' | 'builtin' | 'custom';
 
@@ -91,7 +92,7 @@ function validateProviders(obj: any, path = ''): void {
   if (obj && typeof obj === 'object') {
     for (const [k, v] of Object.entries(obj)) {
       if (k === 'provider' && typeof v === 'string' && !VALID_PROVIDERS.includes(v as LLMProvider)) {
-        throw new Error(`Invalid provider "${v}" at ${path}.${k} — must be one of: ${VALID_PROVIDERS.join(', ')}`);
+        throw new ValidationError(`Invalid provider "${v}" at ${path}.${k}`, 'provider');
       }
       if (typeof v === 'object') validateProviders(v, `${path}.${k}`);
     }

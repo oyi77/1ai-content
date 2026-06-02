@@ -6,6 +6,7 @@
 
 import { prisma } from "@/config/database";
 import { logger } from "@/utils/logger";
+import { ValidationError } from '@/utils/app-errors';
 
 export class PaymentSettingsService {
   static readonly KEYS = {
@@ -64,7 +65,7 @@ export class PaymentSettingsService {
     updatedBy?: bigint,
   ): Promise<void> {
     if (!Object.keys(this.GATEWAYS).includes(gateway)) {
-      throw new Error(`Invalid gateway: ${gateway}`);
+      throw new ValidationError(`Invalid gateway: ${gateway}`, 'gateway');
     }
     await this.set(
       this.KEYS.DEFAULT_GATEWAY,

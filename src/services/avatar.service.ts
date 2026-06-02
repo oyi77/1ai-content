@@ -7,6 +7,7 @@
 
 import { prisma } from '@/config/database';
 import { logger } from '@/utils/logger';
+import { ConfigError, ProviderError, ProviderTimeoutError, ValidationError } from '@/utils/app-errors';
 import { ContentAnalysisService } from './content-analysis.service';
 
 const MAX_AVATARS_PER_USER = 5;
@@ -37,7 +38,7 @@ export class AvatarService {
       where: { userId: telegramId },
     });
     if (count >= MAX_AVATARS_PER_USER) {
-      throw new Error(`Maximum ${MAX_AVATARS_PER_USER} avatars allowed. Delete one first.`);
+      throw new ValidationError(`Maximum ${MAX_AVATARS_PER_USER} avatars allowed`, 'avatarCount');
     }
 
     // Analyse image to extract features
@@ -155,7 +156,7 @@ export class AvatarService {
   /** Generate a talking video from a photo URL and text script via D-ID */
   static async generateTalkingVideo(imageUrl: string, text: string): Promise<string> {
     const apiKey = process.env.D_ID_API_KEY;
-    if (!apiKey) throw new Error('D_ID_API_KEY not configured');
+    if (!apiKey) throw new ConfigError('D_ID_API_KEY');
 
     const authHeader = `Basic ${Buffer.from(`${apiKey}:`).toString('base64')}`;
 
@@ -176,7 +177,7 @@ export class AvatarService {
     });
     if (!createRes.ok) {
       const err = await createRes.text();
-      throw new Error(`D-ID create failed: ${createRes.status} ${err}`);
+      throw new ProviderError('D-ID', `create failed: ${createRes.status} ${err}`);
     }
     const { id } = await createRes.json() as { id: string };
 
@@ -188,9 +189,9 @@ export class AvatarService {
       });
       const data = await pollRes.json() as { status: string; result_url?: string; error?: { description: string } };
       if (data.status === 'done' && data.result_url) return data.result_url;
-      if (data.status === 'error') throw new Error(`D-ID error: ${data.error?.description}`);
+      if (data.status === 'error') throw new ProviderError('D-ID', `error: ${data.error?.description}`);
     }
-    throw new Error('D-ID timeout after 90s');
+    throw new ProviderTimeoutError('D-ID', 90000);
   }
 
   /** Delete an avatar */

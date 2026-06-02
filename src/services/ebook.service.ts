@@ -8,6 +8,7 @@
 import axios, { AxiosInstance } from "axios";
 import { logger } from "@/utils/logger";
 import { getConfig } from "@/config/env";
+import { ProviderError, ProviderTimeoutError } from '@/utils/app-errors';
 
 export interface EbookProject {
   id: number;
@@ -104,7 +105,7 @@ export class EbookService {
     } catch (err: unknown) {
       const error = err as Error;
       logger.error("Failed to create ebook project:", error);
-      throw new Error(`Ebook creation failed: ${error.message}`);
+      throw new ProviderError('Ebook', `creation failed: ${error.message}`);
     }
   }
 
@@ -118,7 +119,7 @@ export class EbookService {
     } catch (err: unknown) {
       const error = err as Error;
       logger.error(`Failed to get ebook project ${projectId}:`, error);
-      throw new Error(`Ebook fetch failed: ${error.message}`);
+      throw new ProviderError('Ebook', `fetch failed: ${error.message}`);
     }
   }
 
@@ -132,7 +133,7 @@ export class EbookService {
     } catch (err: unknown) {
       const error = err as Error;
       logger.error(`Failed to start ebook generation ${projectId}:`, error);
-      throw new Error(`Ebook generation failed: ${error.message}`);
+      throw new ProviderError('Ebook', `generation failed: ${error.message}`);
     }
   }
 
@@ -146,7 +147,7 @@ export class EbookService {
     } catch (err: unknown) {
       const error = err as Error;
       logger.error(`Failed to get ebook status ${projectId}:`, error);
-      throw new Error(`Ebook status failed: ${error.message}`);
+      throw new ProviderError('Ebook', `status failed: ${error.message}`);
     }
   }
 
@@ -160,7 +161,7 @@ export class EbookService {
     } catch (err: unknown) {
       const error = err as Error;
       logger.error(`Failed to get ebook export ${projectId}:`, error);
-      throw new Error(`Ebook export failed: ${error.message}`);
+      throw new ProviderError('Ebook', `export failed: ${error.message}`);
     }
   }
 
@@ -182,7 +183,7 @@ export class EbookService {
     } catch (err: unknown) {
       const error = err as Error;
       logger.error("Failed to list ebook projects:", error);
-      throw new Error(`Ebook list failed: ${error.message}`);
+      throw new ProviderError('Ebook', `list failed: ${error.message}`);
     }
   }
 
@@ -204,13 +205,13 @@ export class EbookService {
       }
 
       if (status.status === "failed") {
-        throw new Error(`Ebook generation failed: ${status.message}`);
+        throw new ProviderError('Ebook', `generation failed: ${status.message}`);
       }
 
       await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
     }
 
-    throw new Error("Ebook generation timed out");
+    throw new ProviderTimeoutError('Ebook', 90000);
   }
 }
 

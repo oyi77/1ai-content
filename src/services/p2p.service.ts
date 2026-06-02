@@ -73,7 +73,7 @@ export class P2pService {
                 // Double check balance inside transaction
                 const sender = await tx.user.findUnique({ where: { telegramId: senderId } });
                 if (!sender || Number(sender.creditBalance) < totalDeduction) {
-                    throw new Error('Insufficient balance during transaction');
+                    throw new InsufficientCreditsError('Insufficient balance during transaction');
                 }
 
                 // Deduct from sender

@@ -8,6 +8,7 @@ import { prisma } from '@/config/database';
 import { redis } from '@/config/redis';
 import axios from 'axios';
 import { randomUUID } from 'crypto';
+import { NotFoundError, ProviderError } from '@/utils/app-errors';
 import { checkProviderBalance } from '@/services/balance-checker.service';
 export { BalanceResult } from '@/services/balance-checker.service';
 
@@ -131,7 +132,7 @@ export class CustomProviderService {
     data: Partial<Pick<CustomProvider, 'name' | 'baseUrl' | 'apiKey' | 'enabled'>>,
   ): Promise<CustomProvider> {
     const existing = await CustomProviderService.getById(id);
-    if (!existing) throw new Error(`Custom provider not found: ${id}`);
+    if (!existing) throw new NotFoundError('CustomProvider', String(id));
 
     const updated: CustomProvider = { ...existing, ...data };
 
@@ -154,7 +155,7 @@ export class CustomProviderService {
 
   static async fetchModels(id: string): Promise<CustomProviderModel[]> {
     const provider = await CustomProviderService.getById(id);
-    if (!provider) throw new Error(`Custom provider not found: ${id}`);
+    if (!provider) throw new NotFoundError('CustomProvider', String(id));
 
     const response = await axios.get(`${provider.baseUrl}/models`, {
       headers: { Authorization: `Bearer ${provider.apiKey}` },
@@ -200,7 +201,7 @@ export class CustomProviderService {
     model?: string,
   ): Promise<{ success: boolean; model: string; response: string; latencyMs: number }> {
     const provider = await CustomProviderService.getById(id);
-    if (!provider) throw new Error(`Custom provider not found: ${id}`);
+    if (!provider) throw new NotFoundError('CustomProvider', String(id));
 
     const modelToUse = model || provider.models[0]?.id || 'gpt-4o-mini';
     const start = Date.now();
@@ -232,7 +233,7 @@ export class CustomProviderService {
     options?: { maxTokens?: number; temperature?: number; systemPrompt?: string },
   ): Promise<string> {
     const provider = await CustomProviderService.getById(id);
-    if (!provider) throw new Error(`Custom provider not found: ${id}`);
+    if (!provider) throw new NotFoundError('CustomProvider', String(id));
 
     const allMessages = options?.systemPrompt
       ? [{ role: 'system', content: options.systemPrompt }, ...messages]
@@ -253,7 +254,7 @@ export class CustomProviderService {
     );
 
     const content: string = response.data?.choices?.[0]?.message?.content;
-    if (!content) throw new Error('Empty response from custom provider');
+    if (!content) throw new ProviderError('CustomProvider', 'Empty response from custom provider');
     return content;
   }
 
@@ -264,7 +265,7 @@ export class CustomProviderService {
    */
   static async checkBalance(id: string): Promise<CustomProviderBalance> {
     const provider = await CustomProviderService.getById(id);
-    if (!provider) throw new Error(`Custom provider not found: ${id}`);
+    if (!provider) throw new NotFoundError('CustomProvider', String(id));
 
     const result = await checkProviderBalance(provider.baseUrl, provider.apiKey);
 

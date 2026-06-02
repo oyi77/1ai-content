@@ -11,6 +11,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { logger } from '@/utils/logger';
 import { getConfig } from '@/config/env';
+import { ValidationError } from '@/utils/app-errors';
 import axios from 'axios';
 import { AIConfigService } from '@/services/ai-config.service';
 import { getOmniRouteService } from '@/services/omniroute.service';
@@ -163,7 +164,7 @@ export class VideoAnalysisService {
           await prom(execFileCb)('wget', ['-q', '-O', tempPath, videoUrl]);
         }
         if (!fs.existsSync(tempPath) || fs.statSync(tempPath).size === 0) {
-          throw new Error('Downloaded file is empty');
+          throw new ValidationError('Downloaded file is empty', 'downloadedFile');
         }
       } catch (err: any) {
         logger.warn(`[VideoAnalysis] Download failed: ${err.message}`);
@@ -268,7 +269,7 @@ Break the video into 1 scene per ~5 seconds (max 8 scenes total). Make each prom
         });
         inlinePart = { inline_data: { mime_type: mimeType, data } };
       } else {
-        throw new Error('temp file missing');
+        throw new ValidationError('temp file missing', 'tempFile');
       }
     } catch {
       // Fall back: use first extracted frame if available, else text description

@@ -9,6 +9,7 @@ import { prisma } from '@/config/database';
 import { logger } from '@/utils/logger';
 import { getConfig } from '@/config/env';
 import axios from 'axios';
+import { ValidationError, ProviderError } from '@/utils/app-errors';
 import { publishViaAdapter, getPostBridgeAccountsViaAdapter } from './shared-platform-adapters.service';
 
 const POSTBRIDGE_API = 'https://api.post-bridge.com/v1';
@@ -170,7 +171,7 @@ export class PostAutomationService {
       return response.data.media_id || response.data.id;
     } catch (error: any) {
       logger.error('Failed to upload media to PostBridge:', error.response?.data || error.message);
-      throw new Error('Failed to upload media');
+      throw new ValidationError('Failed to upload media', 'media');
     }
   }
 
@@ -211,7 +212,7 @@ export class PostAutomationService {
     );
 
     if (selectedAccounts.length === 0) {
-      throw new Error('No accounts selected');
+      throw new ValidationError('No accounts selected', 'accounts');
     }
 
     // Upload media to PostBridge first
@@ -220,7 +221,7 @@ export class PostAutomationService {
       mediaId = await this.uploadMedia(params.mediaUrl);
     } catch (error) {
       logger.error('Media upload failed:', error);
-      throw new Error('Failed to upload media to PostBridge');
+      throw new ProviderError('PostBridge', 'Failed to upload media');
     }
 
     // Publish to each selected platform

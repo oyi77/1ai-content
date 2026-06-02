@@ -6,6 +6,7 @@
  */
 
 import { logger } from '@/utils/logger';
+import { ConfigError, ProviderError } from '@/utils/app-errors';
 import { getConfig } from '@/config/env';
 import axios from 'axios';
 import { readFile } from 'fs/promises';
@@ -267,7 +268,7 @@ Output 400-600 words total. Character descriptions MUST be detailed enough to re
 
     if (provider === 'gemini') {
       if (!getConfig().GEMINI_API_KEY) {
-        throw new Error('GEMINI_API_KEY not set');
+        throw new ConfigError('GEMINI_API_KEY');
       }
       const media = await fetchMediaAsBase64(mediaUrl);
       const requestBody = {
@@ -287,7 +288,7 @@ Output 400-600 words total. Character descriptions MUST be detailed enough to re
         timeout: 45000,
       });
       const generatedText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!generatedText) throw new Error('Gemini returned empty response');
+      if (!generatedText) throw new ProviderError('Gemini', 'Empty response');
       const usageMeta = response.data?.usageMetadata;
       const promptTokens = usageMeta?.promptTokenCount || (mediaType === 'video' ? 3000 : 2000);
       const completionTokens = usageMeta?.candidatesTokenCount || (mediaType === 'video' ? 2000 : 1500);
@@ -340,7 +341,7 @@ Output 400-600 words total. Character descriptions MUST be detailed enough to re
     const media = await fetchMediaAsBase64(mediaUrl);
     const result = await omni.analyzeImage(media.data, media.mimeType, prompt, visionModel);
     if (!result.success || !result.content) {
-      throw new Error(`OmniRoute vision (base64) returned empty: ${result.error}`);
+      throw new ProviderError('OmniRoute', `vision returned empty: ${result.error}`);
     }
     logger.info(`OmniRoute vision (base64) succeeded for ${mediaType} (${result.model})`);
     return parseGeminiResponse(result.content);
@@ -358,7 +359,7 @@ Output 400-600 words total. Character descriptions MUST be detailed enough to re
     promptOverride?: string,
   ): Promise<AnalysisResult> {
     const apiKey = getConfig().GROQ_API_KEY;
-    if (!apiKey) throw new Error('GROQ_API_KEY not set');
+    if (!apiKey) throw new ConfigError('GROQ_API_KEY');
 
     const groqModel = modelOverride || 'meta-llama/llama-4-scout-17b-16e-instruct';
 
@@ -412,7 +413,7 @@ Output 400-600 words total. Character descriptions MUST be detailed enough to re
     );
 
     const content = response.data?.choices?.[0]?.message?.content;
-    if (!content) throw new Error('Groq returned empty response');
+    if (!content) throw new ProviderError('Groq', 'Empty response');
 
     logger.info(`Groq vision succeeded for ${mediaType}`);
     trackTokens({

@@ -10,6 +10,7 @@ import { redis } from '@/config/redis';
 import { logger } from '@/utils/logger';
 import { getConfig } from '@/config/env';
 import { AdminConfigService } from '@/services/admin-config.service';
+import { ValidationError } from '@/utils/app-errors';
 
 interface RateLimitConfig {
   /** Window in seconds */
@@ -79,7 +80,7 @@ export async function checkRateLimit(
     pipeline.ttl(key);
     const results = await pipeline.exec();
 
-    if (!results) throw new Error('pipeline returned null');
+    if (!results) throw new ValidationError('pipeline returned null', 'pipeline');
 
     const count = (results[0][1] as number) || 0;
     const ttl   = (results[1][1] as number) || -1;

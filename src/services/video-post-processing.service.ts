@@ -18,6 +18,7 @@ import { promisify } from 'util';
 import { exec as execCallback } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
+import { ProviderError, ValidationError } from '@/utils/app-errors';
 
 const exec = promisify(execCallback);
 
@@ -153,7 +154,7 @@ async function getClipDuration(filePath: string): Promise<number> {
     );
     const duration = parseFloat(stdout.trim());
     if (isNaN(duration) || duration <= 0) {
-      throw new Error(`Invalid duration from ffprobe: ${stdout.trim()}`);
+      throw new ProviderError('FFprobe', `Invalid duration: ${stdout.trim()}`);
     }
     return duration;
   } catch (err: any) {
@@ -224,7 +225,7 @@ export class VideoPostProcessing {
       );
       const [w, h] = stdout.trim().split('x').map(Number);
       if (!w || !h || isNaN(w) || isNaN(h)) {
-        throw new Error(`Invalid resolution from ffprobe: ${stdout.trim()}`);
+        throw new ProviderError('FFprobe', `Invalid resolution: ${stdout.trim()}`);
       }
       refWidth = w;
       refHeight = h;
@@ -296,7 +297,7 @@ export class VideoPostProcessing {
     }
   ): Promise<void> {
     if (inputPaths.length === 0) {
-      throw new Error('No input paths provided for concatenation');
+      throw new ValidationError('No input paths provided for concatenation', 'inputPaths');
     }
 
     if (inputPaths.length === 1) {
@@ -475,7 +476,7 @@ export class VideoPostProcessing {
       );
 
       if (!fs.existsSync(outputPath) || fs.statSync(outputPath).size === 0) {
-        throw new Error('Color graded output is empty');
+        throw new ProviderError('FFmpeg', 'Color graded output is empty');
       }
 
       logger.info(`Color grade applied (${niche}): ${grade}`);

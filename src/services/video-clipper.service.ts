@@ -5,6 +5,7 @@ import { join } from 'path';
 import { tmpdir } from 'os';
 import { randomUUID } from 'crypto';
 import { logger } from '@/utils/logger';
+import { ProviderError } from '@/utils/app-errors';
 
 const execFileAsync = promisify(execFile);
 
@@ -80,7 +81,7 @@ export class VideoClipperService {
       };
     } catch (error: any) {
       logger.error('Failed to get video info:', error);
-      throw new Error(`Cannot fetch video info: ${error.message}`);
+      throw new ProviderError('VideoClipper', `Cannot fetch video info: ${error.message}`);
     }
   }
 
@@ -122,7 +123,7 @@ export class VideoClipperService {
       return outputFile;
     } catch (error: any) {
       logger.error('Download failed:', error);
-      throw new Error(`Download failed: ${error.message}`);
+      throw new ProviderError('VideoClipper', `Download failed: ${error.message}`);
     }
   }
 
@@ -167,7 +168,7 @@ export class VideoClipperService {
       await execFileAsync('yt-dlp', args, { timeout: 180000 });
       return outputFile;
     } catch (error: any) {
-      throw new Error(`Audio extraction failed: ${error.message}`);
+      throw new ProviderError('VideoClipper', `Audio extraction failed: ${error.message}`);
     }
   }
 
