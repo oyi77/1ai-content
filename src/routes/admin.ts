@@ -49,6 +49,7 @@ import { registerFreeTrialRoutes } from "./admin/free-trial";
 import { registerSystemSettingsRoutes } from "./admin/system-settings";
 import { registerBroadcastRoutes } from "./admin/broadcast";
 import { registerPlaygroundRoutes } from "./admin/playground";
+import { registerLandingConfigRoutes } from "./admin/landing-config";
 import { ConfigError } from '@/utils/app-errors';
 
 const LOGIN_RATE_LIMIT_MAX = 5;
@@ -196,6 +197,7 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
   await registerSystemSettingsRoutes(server, verifyAdmin);
   await registerBroadcastRoutes(server);
   await registerPlaygroundRoutes(server);
+  await registerLandingConfigRoutes(server);
 
   // Login page (no auth required)
   server.get("/admin/login", async (_request, reply) => {
@@ -698,28 +700,6 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
       videoProviders: Object.keys(PROVIDER_CONFIG.video),
       imageProviders: Object.keys(PROVIDER_CONFIG.image),
     }, { layout: 'admin/layout.ejs' });
-  });
-
-  // API: Get Landing Page Config
-  server.get("/api/landing-config", async (_request, _reply) => {
-    try {
-      const data = await redis.get("admin:landing_config");
-      return data ? JSON.parse(data) : {};
-    } catch {
-      return {};
-    }
-  });
-
-  // API: Update Landing Page Config
-  server.post("/api/landing-config", { preHandler: validate({ body: landingConfigSchema }) }, async (request, reply) => {
-    try {
-      const body = request.body as Record<string, unknown>;
-      await redis.set("admin:landing_config", JSON.stringify(body));
-      return { success: true };
-    } catch (error: any) {
-      server.log.error({ error }, "Failed to update landing config");
-      return reply.status(500).send({ error: "Failed to update config" });
-    }
   });
 
   // API: Get payment settings
