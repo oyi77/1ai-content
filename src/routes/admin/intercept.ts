@@ -164,4 +164,14 @@ export function registerInterceptRoutes(server: FastifyInstance, verifyAdmin: Ad
       return reply.status(500).send({ error: "Failed to deliver media" });
     }
   });
+
+  server.get("/api/intercept/users", async (request, reply) => {
+    if (!await verifyAdmin(request, reply)) return;
+    const users = await prisma.user.findMany({
+      where: { isIntercepted: true },
+      select: { telegramId: true, firstName: true, username: true, tier: true, updatedAt: true },
+      orderBy: { updatedAt: "desc" },
+    });
+    return users.map(u => ({ ...u, telegramId: u.telegramId.toString() }));
+  });
 }

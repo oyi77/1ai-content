@@ -1084,20 +1084,4 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
   // ── REGISTER PROVIDER COSTS ROUTES ──
   const { registerProviderCostRoutes } = await import("./provider-costs.js");
   registerProviderCostRoutes(server);
-
-  // ── INTERCEPTION MANAGEMENT ──
-
-
-
-  // List intercepted users
-  server.get("/api/intercept/users", async (request, reply) => {
-    if (!await verifyAdmin(request, reply)) return;
-    const users = await prisma.user.findMany({
-      where: { isIntercepted: true },
-      select: { telegramId: true, firstName: true, username: true, tier: true, updatedAt: true },
-      orderBy: { updatedAt: "desc" },
-    });
-    return users.map(u => ({ ...u, telegramId: u.telegramId.toString() }));
-  });
-
 }
