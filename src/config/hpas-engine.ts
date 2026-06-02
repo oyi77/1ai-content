@@ -9,6 +9,7 @@
 import { getConfig } from '@/config/env';
 import axios from 'axios';
 import { logger } from '@/utils/logger';
+import { ConfigError, ProviderError } from '@/utils/app-errors';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -530,7 +531,7 @@ export async function generateScenePromptsWithAI(
   const presetConfig = DURATION_PRESETS[preset];
   const scenes = presetConfig.scenesIncluded;
   const apiKey = getConfig().GEMINI_API_KEY;
-  if (!apiKey) throw new Error('No Gemini API key for AI storyboard');
+  if (!apiKey) throw new ConfigError('GEMINI_API_KEY');
 
   const sceneDescriptions = scenes.map(id => `${id}: ${HPAS_SCENES[id].description}`).join('\n');
 
@@ -577,7 +578,7 @@ export async function generateScenePromptsWithAI(
       }
     }
   }
-  if (aiScenes.length === 0) throw new Error('Gemini storyboard: no valid JSON array in response');
+  if (aiScenes.length === 0) throw new ProviderError("gemini-storyboard", "no valid JSON array in response");
 
   // Validate match rate — warn if Gemini returned wrong sceneId keys
   const matchedCount = scenes.filter(sceneId => aiScenes.some(s => s.sceneId === sceneId)).length;

@@ -20,6 +20,7 @@ import {
 import { NowPaymentsService, CRYPTO_PACKAGES, CRYPTO_COINS } from '@/services/nowpayments.service';
 import { prisma } from '@/config/database';
 import { t } from '@/i18n/translations';
+import { PaymentError } from '@/utils/app-errors';
 
 const formatIdr = (amount: number): string =>
   new Intl.NumberFormat('id-ID').format(amount);
@@ -182,7 +183,7 @@ export async function handlePaymentGateway(ctx: BotContext, packageId: string, g
         packageId,
         username: user.username || user.first_name,
       });
-      if (!res.success) throw new Error(res.error || 'Tripay error');
+      if (!res.success) throw new PaymentError('Tripay', res.error || 'Transaction error');
       transaction = res;
     } else {
       gatewayDisplayName = 'Midtrans';

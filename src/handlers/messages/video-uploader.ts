@@ -15,6 +15,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { execFile as execFileCallback } from "child_process";
 import { promisify } from "util";
+import { ProviderError } from '@/utils/app-errors';
 const execFile = promisify(execFileCallback);
 
 async function withConcurrency<T, R>(
@@ -242,14 +243,12 @@ export async function handleVideoCreationImage(
       await execFile('wget', ['-q', '-O', imagePath, primaryImageUrl]);
     } catch (wgetErr: any) {
       logger.error("wget failed downloading reference image:", wgetErr.message);
-      throw new Error(`Failed to download reference image: ${wgetErr.message}`);
+      throw new ProviderError("video-uploader", `Failed to download reference image: ${wgetErr.message}`);
     }
 
     if (!fs.existsSync(imagePath) || fs.statSync(imagePath).size === 0) {
       if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
-      throw new Error(
-        "Reference image download failed — file is empty or missing",
-      );
+      throw new ProviderError("video-uploader", "Reference image download failed — file is empty or missing");
     }
 
     // Run Gemini Vision analysis on ALL uploaded photos to extract product details

@@ -11,12 +11,13 @@ import { getConfig } from '@/config/env';
 import { VideoService } from '@/services/video.service';
 import { UserService } from '@/services/user.service';
 import { t } from '@/i18n/translations';
+import { ConfigError } from '@/utils/app-errors';
 
 /** Generate a signed download URL for a video job (valid 30d). Never exposes provider CDN URLs. */
 function makeDownloadUrl(jobId: string, userId: string): string {
   const base = (getConfig().WEBHOOK_URL || 'http://localhost:3000').replace(/\/webhook.*$/, '');
   const secret = getConfig().JWT_SECRET;
-  if (!secret) throw new Error('JWT_SECRET environment variable is required');
+  if (!secret) throw new ConfigError('JWT_SECRET');
   const token = jwt.sign({ telegramId: userId, jobId }, secret, { expiresIn: '30d' });
   return `${base}/video/${jobId}/download?token=${token}`;
 }

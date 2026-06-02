@@ -37,6 +37,7 @@ import { GamificationService } from '@/services/gamification.service';
 import { prisma } from '@/config/database';
 import { getAILabel, getLangConfig } from '@/config/languages';
 import { t } from '@/i18n/translations';
+import { ConfigError, ProviderError } from '@/utils/app-errors';
 
 const execFile = promisify(execFileCallback);
 
@@ -137,7 +138,7 @@ async function downloadVideo(url: string, outputPath: string): Promise<void> {
   await execFile('wget', ['-q', '--timeout=60', '--tries=2', '-O', outputPath, url]);
   if (!fs.existsSync(outputPath) || fs.statSync(outputPath).size < 1000) {
     if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
-    throw new Error(`Download failed or produced empty file: ${url.slice(0, 80)}`);
+    throw new ProviderError("download", `Download failed or produced empty file: ${url.slice(0, 80)}`);
   }
 }
 
@@ -193,7 +194,7 @@ async function generateVOScriptWithAI(
   totalDuration: number
 ): Promise<string> {
   const GEMINI_API_KEY = getConfig().GEMINI_API_KEY || '';
-  if (!GEMINI_API_KEY) throw new Error('No Gemini API key');
+  if (!GEMINI_API_KEY) throw new ConfigError('GEMINI_API_KEY');
 
   const [promptsCfg, taskCfg] = await Promise.all([
     AIConfigService.getPromptsConfig().catch(() => null),
@@ -256,7 +257,7 @@ Requirements:
         }
       );
       const text = response.data?.choices?.[0]?.message?.content;
-      if (!text) throw new Error('Empty Groq response');
+      if (!text) throw new ProviderError("groq", "Empty response");
       return text.trim();
     }
     // Fall through to Gemini if no Groq key
@@ -272,7 +273,7 @@ Requirements:
   }, { timeout: 30000 });
 
   const text = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) throw new Error('Empty Gemini response');
+  if (!text) throw new ProviderError("gemini", "Empty response");
 
   // Track VO script generation cost
   const usageMeta = response.data?.usageMetadata;
@@ -677,7 +678,7 @@ async function processExtendedScenes(
     }
 
     if (!result.success || !result.videoUrl) {
-      throw new Error(`Scene ${sceneIndex + 1} failed after 2 attempts: ${result.error}`);
+      throw new ProviderError("scene-generation", `Scene ${sceneIndex + 1} failed after 2 attempts: ${result.error}`);
     }
 
     try {
@@ -1124,7 +1125,7 @@ async function sendVideoToUser(
     const video = await VideoService.getByJobId(jobId);
     const userId = video?.userId?.toString() || '0';
     const jwtSecret = getConfig().JWT_SECRET;
-    if (!jwtSecret) throw new Error('JWT_SECRET environment variable is required');
+    if (!jwtSecret) throw new ConfigError('JWT_SECRET');
     const downloadToken = (await import('jsonwebtoken')).default.sign(
       { telegramId: userId, jobId },
       jwtSecret,

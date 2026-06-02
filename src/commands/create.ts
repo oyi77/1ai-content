@@ -28,6 +28,7 @@ import { promisify } from "util";
 import { execFile as execFileCallback } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
+import { ConfigError } from '@/utils/app-errors';
 
 const execFile = promisify(execFileCallback);
 
@@ -854,7 +855,7 @@ async function sendSuccessNotification(
   const webhookUrl = (getConfig().WEBHOOK_URL || "http://localhost:3000").replace(/\/webhook.*$/, "");
   const videoUserId = video.userId.toString();
   const jwtSecret = getConfig().JWT_SECRET;
-  if (!jwtSecret) throw new Error('JWT_SECRET environment variable is required');
+  if (!jwtSecret) throw new ConfigError('JWT_SECRET');
   const downloadToken = (await import("jsonwebtoken")).default.sign(
     { telegramId: videoUserId, jobId },
     jwtSecret,

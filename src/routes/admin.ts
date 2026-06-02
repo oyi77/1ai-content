@@ -47,6 +47,7 @@ import { registerInterceptRoutes } from "./admin/intercept";
 import { registerNicheRoutes } from "./admin/niches";
 import { registerFreeTrialRoutes } from "./admin/free-trial";
 import { registerSystemSettingsRoutes } from "./admin/system-settings";
+import { ConfigError } from '@/utils/app-errors';
 
 const LOGIN_RATE_LIMIT_MAX = 5;
 const LOGIN_RATE_LIMIT_WINDOW = 15 * 60; // 15 minutes in seconds
@@ -2077,7 +2078,7 @@ You are an expert system administrator and architect for this platform. Give spe
       // Auto-fallback to Gemini 2.0 Flash
       try {
         const geminiKey = getConfig().GEMINI_API_KEY;
-        if (!geminiKey) throw new Error('No Gemini key');
+        if (!geminiKey) throw new ConfigError('GEMINI_API_KEY');
         const geminiRes = await axios.post(
           `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
           { contents: [{ role: 'user', parts: [{ text: msgToSend }] }],

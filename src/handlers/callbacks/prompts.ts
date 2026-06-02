@@ -3,6 +3,7 @@ import { prisma } from "@/config/database";
 import { UserService } from "@/services/user.service";
 import { logger } from "@/utils/logger";
 import { t } from "@/i18n/translations";
+import { ConflictError, ProviderError } from '@/utils/app-errors';
 
 export async function handlePromptsCallback(ctx: BotContext, data: string): Promise<boolean> {
   try {
@@ -356,7 +357,7 @@ export async function handlePromptsCallback(ctx: BotContext, data: string): Prom
         });
 
         if (!result.success || !result.imageUrl) {
-          throw new Error(result.error || "Generation failed");
+          throw new ProviderError("prompts", result.error || "Generation failed");
         }
 
         // Deduct credits or mark bonus as used
@@ -370,7 +371,7 @@ export async function handlePromptsCallback(ctx: BotContext, data: string): Prom
             data: { welcomeBonusUsed: true },
           });
           if (updated.count === 0) {
-            throw new Error("Welcome bonus already used");
+            throw new ConflictError("Welcome bonus already used");
           }
         } else {
           await prisma.user.update({

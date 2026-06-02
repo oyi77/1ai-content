@@ -15,6 +15,7 @@ import { prisma } from '@/config/database';
 import { UserService } from '@/services/user.service';
 import { getConfig } from '@/config/env';
 import { redis } from '@/config/redis';
+import { ValidationError } from '@/utils/app-errors';
 
 const getJwtSecret = (): string => getConfig().JWT_SECRET!;
 
@@ -78,7 +79,7 @@ export async function agencyRoutes(server: FastifyInstance): Promise<void> {
           where: { userId: user.telegramId, revokedAt: null },
         });
         if (activeCount >= 5) {
-          throw new Error('MAX_KEYS');
+          throw new ValidationError('Maximum number of API keys reached', 'apiKeys');
         }
         return tx.apiKey.create({
           data: { userId: user.telegramId, keyHash, keySuffix, name: keyName },

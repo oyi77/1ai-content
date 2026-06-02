@@ -4,6 +4,7 @@ import { prisma } from "@/config/database";
 import { UserService } from "@/services/user.service";
 import { VideoService } from "@/services/video.service";
 import { t } from "@/i18n/translations";
+import { ProviderError } from '@/utils/app-errors';
 
 export async function handleLegacyCreationCallback(ctx: BotContext, data: string): Promise<boolean> {
     // ── Legacy vcreate_* → redirect to V3 flow ───────────────────────────────
@@ -148,7 +149,7 @@ export async function handleLegacyCreationCallback(ctx: BotContext, data: string
                 },
               });
             } else {
-              throw new Error(result.error || "Generation failed");
+              throw new ProviderError("generation", result.error || "Generation failed");
             }
           })
           .catch(async (error) => {

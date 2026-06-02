@@ -44,6 +44,7 @@ import {
   readLimiter,
 } from "@/middleware/rateLimit";
 import { tryApiKeyAuth } from "@/middleware/api-auth";
+import { ProviderError } from '@/utils/app-errors';
 
 const getJwtSecret = (): string => getConfig().JWT_SECRET!;
 function getBotToken(): string {
@@ -1341,7 +1342,7 @@ td{padding:8px;border-bottom:1px solid #eee}.total{font-size:24px;font-weight:bo
         try {
           const providerRes = await fetch(video.videoUrl);
           if (!providerRes.ok)
-            throw new Error(`Upstream fetch failed: ${providerRes.status}`);
+            throw new ProviderError("upstream", `Upstream fetch failed: ${providerRes.status}`);
           const filename = `berkahkarya-${jobId}.mp4`;
           reply.header("Content-Type", "video/mp4");
           reply.header(
