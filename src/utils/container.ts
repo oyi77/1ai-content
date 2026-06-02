@@ -10,12 +10,16 @@ type ServiceFactory<T> = () => T;
 class Container {
   private services = new Map<string, unknown>();
   private factories = new Map<string, ServiceFactory<unknown>>();
+  private mocks = new Map<string, unknown>();
 
   register<T>(name: string, factory: ServiceFactory<T>): void {
     this.factories.set(name, factory);
   }
 
   get<T>(name: string): T {
+    if (this.mocks.has(name)) {
+      return this.mocks.get(name) as T;
+    }
     if (!this.services.has(name)) {
       const factory = this.factories.get(name);
       if (!factory) {
@@ -26,12 +30,27 @@ class Container {
     return this.services.get(name) as T;
   }
 
+  /**
+   * Override a service with a mock for testing.
+   * Resets the cached instance so the next get() returns the mock.
+   */
+  registerMock<T>(name: string, mock: T): void {
+    this.mocks.set(name, mock);
+    this.services.delete(name);
+  }
+
+  clearMock(name: string): void {
+    this.mocks.delete(name);
+    this.services.delete(name);
+  }
+
   reset(): void {
     this.services.clear();
+    this.mocks.clear();
   }
 
   has(name: string): boolean {
-    return this.factories.has(name);
+    return this.factories.has(name) || this.mocks.has(name);
   }
 }
 
