@@ -58,6 +58,8 @@ import { registerV3Routes } from "./admin/v3";
 import { registerProviderMgmtRoutes } from "./admin/provider-mgmt";
 import { registerAIConfigRoutes } from "./admin/ai-config";
 import { registerSettingsRoutes } from "./admin/settings";
+import { registerAdminConfigRoutes } from "./admin/admin-config";
+import { registerPersonaRoutes } from "./admin/persona";
 import { trackingVars } from "./admin/shared";
 import { ConfigError } from '@/utils/app-errors';
 
@@ -205,6 +207,8 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
   await registerProviderMgmtRoutes(server, verifyAdmin);
   await registerAIConfigRoutes(server, verifyAdmin);
   await registerSettingsRoutes(server);
+  await registerAdminConfigRoutes(server, verifyAdmin);
+  await registerPersonaRoutes(server, verifyAdmin);
 
   // Login page (no auth required)
   server.get("/admin/login", async (_request, reply) => {
@@ -1075,167 +1079,6 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
       metrics: metricsData,
       queue: queueStats,
     };
-  });
-
-  // ── ADMIN CONFIG (runtime configurable values) ──
-
-  // GET /api/admin-config — get all runtime config by category
-  server.get("/api/admin-config", async (request, reply) => {
-    if (!await verifyAdmin(request, reply)) return;
-    const categories = ['provider', 'ai_param', 'timeout', 'retry', 'queue', 'retention', 'rate_limit', 'hpas'];
-    const result: Record<string, Record<string, any>> = {};
-    for (const cat of categories) {
-      result[cat] = await AdminConfigService.getCategory(cat);
-    }
-    return result;
-  });
-
-  // PUT /api/admin-config/:category/:key
-  server.put("/api/admin-config/:category/:key", async (request, reply) => {
-    if (!await verifyAdmin(request, reply)) return;
-    const { category, key } = request.params as { category: string; key: string };
-    const { value } = request.body as { value: any };
-    const allowedCategories = ['provider', 'ai_param', 'timeout', 'retry', 'queue', 'retention', 'rate_limit', 'hpas'];
-    if (!allowedCategories.includes(category)) {
-      return reply.status(400).send({ error: 'Invalid category' });
-    }
-    await AdminConfigService.set(category, key, value);
-    return { ok: true };
-  });
-
-  // DELETE /api/admin-config/:category/:key — reset to default
-  server.delete("/api/admin-config/:category/:key", async (request, reply) => {
-    if (!await verifyAdmin(request, reply)) return;
-    const { category, key } = request.params as { category: string; key: string };
-    await AdminConfigService.reset(category, key);
-    return { ok: true };
-  });
-
-  // ── API KEY MANAGEMENT ────────────────────────────────────────────────────
-
-  const API_KEY_REGISTRY: Record<string, string> = {
-    BOT_TOKEN: 'Telegram Bot Token', ADMIN_PASSWORD: 'Admin Password',
-    DATABASE_URL: 'Database URL', REDIS_URL: 'Redis URL',
-    WEBHOOK_URL: 'Webhook URL', WEBHOOK_SECRET: 'Webhook Secret',
-    OMNIROUTE_API_KEY: 'OmniRoute', OMNIROUTE_URL: 'OmniRoute URL',
-    GEMINI_API_KEY: 'Google Gemini', OPENAI_API_KEY: 'OpenAI',
-    XAI_API_KEY: 'xAI (Grok)', GROQ_API_KEY: 'Groq', AGENTROUTER_API_KEY: 'AgentRouter',
-    BYTEPLUS_API_KEY: 'BytePlus', LAOZHANG_API_KEY: 'LaoZhang',
-    EVOLINK_API_KEY: 'EvoLink', HYPEREAL_API_KEY: 'Hypereal',
-    SILICONFLOW_API_KEY: 'SiliconFlow', FALAI_API_KEY: 'Fal.ai',
-    KIE_API_KEY: 'Kie.ai', PIAPI_API_KEY: 'PiAPI', GEMINIGEN_API_KEY: 'GeminiGen',
-    LINGYAAI_API_KEY: 'LingyaAI', GETGOAPI_API_KEY: 'GetGoAPI', APIYI_API_KEY: 'APIyi',
-    ZAI_API_KEY: 'Z.ai', DID_API_KEY: 'D-ID', RUNWARE_API_KEY: 'Runware',
-    WAVESPEED_API_KEY: 'WaveSpeed', TOGETHER_API_KEY: 'Together AI',
-    SEGMIND_API_KEY: 'Segmind', NVIDIA_API_KEY: 'NVIDIA',
-    MIDTRANS_SERVER_KEY: 'Midtrans Server', MIDTRANS_CLIENT_KEY: 'Midtrans Client',
-    TRIPAY_API_KEY: 'Tripay', TRIPAY_PRIVATE_KEY: 'Tripay Private',
-    DUITKU_MERCHANT_CODE: 'DuitKu Merchant', DUITKU_API_KEY: 'DuitKu',
-    NOWPAYMENTS_API_KEY: 'NOWPayments',
-    AWS_ACCESS_KEY_ID: 'AWS Access Key', AWS_SECRET_ACCESS_KEY: 'AWS Secret',
-    AWS_S3_BUCKET: 'AWS S3 Bucket', R2_ACCESS_KEY_ID: 'R2 Access Key',
-    R2_SECRET_ACCESS_KEY: 'R2 Secret', R2_BUCKET_NAME: 'R2 Bucket', R2_ENDPOINT: 'R2 Endpoint',
-    USD_TO_IDR_RATE: 'USD→IDR Rate',
-  };
-
-  function maskKey(v: string): string {
-    if (!v) return '';
-    if (v.length <= 10) return '***';
-    return v.slice(0, 6) + '***' + v.slice(-4);
-  }
-
-  server.get('/api/admin/api-keys', async (request, reply) => {
-    if (!await verifyAdmin(request, reply)) return;
-    const dbRows = await prisma.pricingConfig.findMany({ where: { category: 'api_keys' } });
-    const dbMap: Record<string, string> = {};
-    for (const row of dbRows) dbMap[row.key] = String(row.value ?? '');
-    return Object.entries(API_KEY_REGISTRY).map(([k, label]) => {
-      const envVal = process.env[k] || '';
-      const dbVal = dbMap[k] || '';
-      const effective = dbVal || envVal;
-      return { key: k, label, masked: maskKey(effective), hasValue: !!effective, source: dbVal ? 'db' : (envVal ? 'env' : 'none') };
-    });
-  });
-
-  server.put('/api/admin/api-keys/:name', async (request, reply) => {
-    if (!await verifyAdmin(request, reply)) return;
-    const { name } = request.params as { name: string };
-    const { value } = request.body as { value?: string };
-    if (!API_KEY_REGISTRY[name]) return reply.status(400).send({ error: 'Unknown key' });
-    if (!value?.trim()) return reply.status(400).send({ error: 'Value required' });
-    const trimmed = value.trim();
-    await prisma.pricingConfig.upsert({
-      where: { category_key: { category: 'api_keys', key: name } },
-      create: { category: 'api_keys', key: name, value: trimmed },
-      update: { value: trimmed },
-    });
-    process.env[name] = trimmed;
-    initConfig(); // refresh cached config so getConfig() picks up new value immediately
-    return { ok: true };
-  });
-
-  server.delete('/api/admin/api-keys/:name', async (request, reply) => {
-    if (!await verifyAdmin(request, reply)) return;
-    const { name } = request.params as { name: string };
-    if (!API_KEY_REGISTRY[name]) return reply.status(400).send({ error: 'Unknown key' });
-    await prisma.pricingConfig.deleteMany({ where: { category: 'api_keys', key: name } });
-    return { ok: true };
-  });
-
-  // GET /admin/system — redirect to consolidated settings page
-  server.get("/admin/system", async (_request, reply) => {
-    return reply.redirect('/admin/settings');
-  });
-
-  // ── Persona Management ──
-  server.get('/api/personas', async (request, reply) => {
-    if (!await verifyAdmin(request, reply)) return;
-    const { getPersonasAsync } = await import('../config/personas.js');
-    return getPersonasAsync();
-  });
-
-  server.post('/api/personas', async (request, reply) => {
-    if (!await verifyAdmin(request, reply)) return;
-    const body = request.body as {
-      id: string;
-      allowedNiches?: string[] | string;
-      allowedPresets?: string[];
-      priceMultiplier?: number;
-    };
-    if (!body.id) return reply.status(400).send({ error: 'id required' });
-    await prisma.pricingConfig.upsert({
-      where: { category_key: { category: 'persona', key: body.id } },
-      create: { category: 'persona', key: body.id, value: JSON.parse(JSON.stringify(body)), updatedBy: BigInt(0) },
-      update: { value: JSON.parse(JSON.stringify(body)), updatedBy: BigInt(0) },
-    });
-    return { success: true };
-  });
-
-  server.get('/admin/personas', async (request, reply) => {
-    if (!await verifyAdmin(request, reply)) return;
-    const { getPersonasAsync } = await import('../config/personas.js');
-    const { NICHE_IDS } = await import('../config/niches.js');
-    const personas = await getPersonasAsync();
-    return reply.view('admin/personas', { personas, nicheIds: NICHE_IDS, ...trackingVars(), activePage: 'personas', title: 'Persona Management' }, { layout: 'admin/layout.ejs' });
-  });
-
-  // ── WELCOME MESSAGE OVERRIDE ──
-  server.post("/api/admin/welcome-message", { preHandler: validate({ body: welcomeMessageSchema }) }, async (request, reply) => {
-    await verifyAdmin(request, reply);
-    const { message } = request.body as { message?: string };
-    if (!message) return reply.status(400).send({ error: "Message required" });
-    await PaymentSettingsService.setPricingConfig(
-      "system",
-      "welcome_message",
-      message,
-    );
-    return { success: true };
-  });
-
-  // ── DYNAMIC PRICING PAGE ──
-  server.get("/admin/dynamic-pricing", async (request, reply) => {
-    if (!await verifyAdmin(request, reply)) return;
-    return reply.view("admin/dynamic-pricing", { ...trackingVars(), activePage: "dynamic-pricing", title: 'Dynamic Pricing' }, { layout: 'admin/layout.ejs' });
   });
 
   // ── REGISTER PROVIDER COSTS ROUTES ──
