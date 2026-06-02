@@ -8,6 +8,22 @@ import { logger } from '@/utils/logger';
 
 const execFileAsync = promisify(execFile);
 
+/**
+ * Safely parse frame rate string (e.g., "30/1", "30000/1001") to number.
+ * Replaces eval() which was a security vulnerability.
+ */
+function parseFrameRate(fps: string | undefined): number {
+  if (!fps) return 0;
+  const parts = fps.split('/');
+  if (parts.length === 2) {
+    const num = parseFloat(parts[0]);
+    const den = parseFloat(parts[1]);
+    if (!isNaN(num) && !isNaN(den) && den !== 0) return num / den;
+  }
+  const direct = parseFloat(fps);
+  return isNaN(direct) ? 0 : direct;
+}
+
 export interface EditOptions {
   inputPath: string;
   outputPath?: string;
@@ -398,7 +414,7 @@ export class VideoEditorService {
       width: stream.width || 0,
       height: stream.height || 0,
       duration: parseFloat(format.duration) || 0,
-      fps: eval(stream.r_frame_rate) || 0,
+      fps: parseFrameRate(stream.r_frame_rate),
       bitrate: parseInt(stream.bit_rate) || 0,
       codec: stream.codec_name || 'unknown',
       size: parseInt(format.size) || 0,
