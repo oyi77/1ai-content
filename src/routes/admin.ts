@@ -53,6 +53,7 @@ import { registerLandingConfigRoutes } from "./admin/landing-config";
 import { registerStatsRoutes } from "./admin/stats";
 import { registerUserMgmtRoutes } from "./admin/user-mgmt";
 import { registerSystemHealthRoutes } from "./admin/system-health";
+import { registerTokenUsageRoutes } from "./admin/token-usage";
 import { ConfigError } from '@/utils/app-errors';
 
 const LOGIN_RATE_LIMIT_MAX = 5;
@@ -204,6 +205,7 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
   await registerStatsRoutes(server);
   await registerUserMgmtRoutes(server);
   await registerSystemHealthRoutes(server);
+  await registerTokenUsageRoutes(server);
 
   // Login page (no auth required)
   server.get("/admin/login", async (_request, reply) => {
@@ -972,38 +974,6 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
     } catch {
       return reply.status(404).send({ error: "Not found" });
     }
-  });
-
-  server.get("/api/token-usage", async (request) => {
-    const {
-      limit = "50",
-      provider,
-      service,
-    } = request.query as {
-      limit?: string;
-      provider?: string;
-      service?: string;
-    };
-    const where: any = {};
-    if (provider) where.provider = provider;
-    if (service) where.service = service;
-    return prisma.tokenUsage.findMany({
-      where,
-      take: Math.min(Math.max(1, parseInt(limit) || 50), 200),
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        provider: true,
-        model: true,
-        service: true,
-        promptTokens: true,
-        completionTokens: true,
-        totalTokens: true,
-        costUsd: true,
-        costIdr: true,
-        createdAt: true,
-      },
-    });
   });
 
   // ── Analytics Dashboard ──
