@@ -39,6 +39,9 @@ import {
   handleEbookPreview,
 } from "./ebook";
 
+// Content commands (video clipper, editor, rework)
+import { ContentCommands } from "./content.commands";
+
 // Feature-based flows
 export * from "@/flows/generate";
 export * from "@/menus/main";
@@ -103,6 +106,13 @@ export function setupCommands(bot: Telegraf<BotContext>): void {
   bot.command("daily", dailyCommand);
   bot.command("trending", trendingCommand);
   bot.command("fingerprint", fingerprintCommand);
+
+  bot.command("viral", (ctx) => ContentCommands.handleViral(ctx as any));
+  bot.command("clip", (ctx) => ContentCommands.handleClip(ctx as any));
+  bot.command("edit", (ctx) => ContentCommands.handleEdit(ctx as any));
+  bot.command("rework", (ctx) => ContentCommands.handleRework(ctx as any));
+  bot.command("scrape", (ctx) => ContentCommands.handleScrape(ctx as any));
+
   // Admin commands (with middleware check)
   bot.command("broadcast", adminBroadcastCommand);
   bot.command("system_status", adminSystemStatusCommand);
@@ -127,6 +137,11 @@ export function setupCommands(bot: Telegraf<BotContext>): void {
     { command: "profile", description: "👤 Profil saya" },
     { command: "settings", description: "⚙️ Pengaturan" },
     { command: "ebook", description: "📖 Buat ebook dengan AI" },
+    { command: "viral", description: "🔥 Find viral videos" },
+    { command: "clip", description: "✂️ Download & clip videos" },
+    { command: "edit", description: "🎬 Edit videos" },
+    { command: "rework", description: "🔄 Anti-copyright rework" },
+    { command: "scrape", description: "🕵️ Scrape competitor content" },
     { command: "support", description: "🆘 Hubungi support" },
     { command: "help", description: "📖 Panduan lengkap" },
   ]).catch(() => { /* ignore - bot token may not be set yet */ });
