@@ -1,11 +1,11 @@
 import { describe, it, expect, jest } from '@jest/globals';
 import { SavedPromptService } from '@/services/saved-prompt.service';
 
-const mockCreate = jest.fn();
-const mockFindMany = jest.fn();
-const mockUpdate = jest.fn();
-const mockDeleteMany = jest.fn();
-const mockCount = jest.fn();
+const mockCreate = jest.fn<any>();
+const mockFindMany = jest.fn<any>();
+const mockUpdate = jest.fn<any>();
+const mockDeleteMany = jest.fn<any>();
+const mockCount = jest.fn<any>();
 
 jest.mock('@/config/database', () => ({
   prisma: {

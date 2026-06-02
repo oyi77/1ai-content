@@ -1,12 +1,12 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { ExchangeRateService } from '@/services/exchange-rate.service';
 
-const mockRedisGet = jest.fn();
-const mockRedisSetex = jest.fn();
-const mockRedisSet = jest.fn();
-const mockRedisDel = jest.fn();
-const mockPrismaFindUnique = jest.fn();
-const mockAxiosGet = jest.fn();
+const mockRedisGet = jest.fn<any>();
+const mockRedisSetex = jest.fn<any>();
+const mockRedisSet = jest.fn<any>();
+const mockRedisDel = jest.fn<any>();
+const mockPrismaFindUnique = jest.fn<any>();
+const mockAxiosGet = jest.fn<any>();
 
 jest.mock('@/config/redis', () => ({
   redis: {
