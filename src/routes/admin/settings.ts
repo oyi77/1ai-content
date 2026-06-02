@@ -332,7 +332,7 @@ export async function registerSettingsRoutes(server: FastifyInstance) {
     const amount = Number(transaction.amountIdr).toLocaleString("id-ID");
     await UserService.sendMessage(
       transaction.userId,
-      t("referral.cashout_completed", lang, { amount }),
+      t("referral.cashout_completed", lang).replace("{amount}", amount),
       { parse_mode: "Markdown" },
     );
 

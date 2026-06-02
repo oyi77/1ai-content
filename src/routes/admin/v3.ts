@@ -3,9 +3,9 @@ import { prisma } from "@/config/database";
 import { redis } from "@/config/redis";
 import { getConfig } from "@/config/env";
 import { GamificationService, BADGES } from "@/services/gamification.service";
-import { retentionQueue } from "@/config/queue";
+import { retentionQueue } from "@/workers/retention.worker";
 import { HOOK_VARIATIONS } from "@/services/campaign.service";
-import { CREDIT_PACKAGES_V3, SUBSCRIPTION_PLANS_V3, UNIT_COSTS, REFERRAL_COMMISSIONS_V3 } from "@/config/packages";
+import { CREDIT_PACKAGES_V3, SUBSCRIPTION_PLANS_V3, UNIT_COSTS, COMMISSIONS } from "@/config/packages";
 import { INDUSTRY_TEMPLATES, DURATION_PRESETS } from "@/config/hpas-engine";
 
 export async function registerV3Routes(server: FastifyInstance) {
@@ -95,7 +95,7 @@ export async function registerV3Routes(server: FastifyInstance) {
       packages: CREDIT_PACKAGES_V3,
       subscriptions: SUBSCRIPTION_PLANS_V3,
       unitCosts: UNIT_COSTS,
-      referralRates: REFERRAL_COMMISSIONS_V3,
+      referralRates: COMMISSIONS,
     };
   });
 
