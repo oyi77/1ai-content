@@ -34,7 +34,8 @@ import { UserService } from "@/services/user.service";
 import { t } from "@/i18n/translations";
 import { getConfig, getConfigForAdmin, initConfig } from "@/config/env";
 import { logger } from "@/utils/logger";
-import { validateBody, PricingConfigSchema, PricingDeleteSchema, CustomProviderSchema, PromptSchema } from "@/utils/validation";
+import { validateBody, validate, PricingConfigSchema, PricingDeleteSchema, CustomProviderSchema, PromptSchema, idParamSchema, jobIdParamSchema, providerKeyParamSchema, creditsBodySchema, tierBodySchema, banBodySchema, broadcastBodySchema, cancelSubscriptionSchema, extendSubscriptionSchema, landingConfigSchema, pixelConfigSchema, referralSettingsSchema, apiKeySchema, interceptToggleSchema, interceptUploadSchema, interceptDeliverSchema, welcomeMessageSchema } from "@/utils/validation";
+import { z } from "zod";
 import { ImageGenerationService } from "@/services/image.service";
 import { generateVideoWithFallback } from "@/services/video-fallback.service";
 import { CircuitBreaker } from "@/services/circuit-breaker.service";
@@ -401,13 +402,9 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
   });
 
   // API: Grant credits
-  server.post("/api/users/:id/credits", async (request, reply) => {
+  server.post("/api/users/:id/credits", { preHandler: validate({ params: idParamSchema, body: creditsBodySchema }) }, async (request, reply) => {
     const params = request.params as { id: string };
     const body = request.body as { amount: number; reason: string };
-
-    if (!body.amount || typeof body.amount !== 'number' || body.amount <= 0) {
-      return reply.status(400).send({ error: "Invalid amount" });
-    }
 
     try {
       const telegramId = BigInt(params.id);
@@ -448,7 +445,7 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
   });
 
   // API: Ban/Unban user
-  server.post("/api/users/:id/ban", async (request, reply) => {
+  server.post("/api/users/:id/ban", { preHandler: validate({ params: idParamSchema, body: z.object({ banned: z.boolean(), reason: z.string().min(1).max(500), durationDays: z.number().int().min(0).max(3650).optional() }) }) }, async (request, reply) => {
     const params = request.params as { id: string };
     const body = request.body as { banned: boolean; reason?: string };
 
@@ -558,7 +555,7 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
   });
 
   // API: Cancel subscription
-  server.post("/api/subscriptions/:id/cancel", async (request, reply) => {
+  server.post("/api/subscriptions/:id/cancel", { preHandler: validate({ params: idParamSchema, body: cancelSubscriptionSchema }) }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const subId = BigInt(id);
 
@@ -586,7 +583,7 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
   });
 
   // API: Extend subscription
-  server.post("/api/subscriptions/:id/extend", async (request, reply) => {
+  server.post("/api/subscriptions/:id/extend", { preHandler: validate({ params: idParamSchema, body: extendSubscriptionSchema }) }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const body = request.body as { days?: number };
     const subId = BigInt(id);
@@ -667,12 +664,8 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
   });
 
   // API: Broadcast message
-  server.post("/api/broadcast", async (request, reply) => {
+  server.post("/api/broadcast", { preHandler: validate({ body: broadcastBodySchema }) }, async (request, reply) => {
     const body = request.body as { message: string; tier?: string };
-
-    if (!body.message) {
-      return reply.status(400).send({ error: "Message required" });
-    }
 
     const where: any = { isBanned: false };
     if (body.tier) {
@@ -782,7 +775,7 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
   });
 
   // API: Update Landing Page Config
-  server.post("/api/landing-config", async (request, reply) => {
+  server.post("/api/landing-config", { preHandler: validate({ body: landingConfigSchema }) }, async (request, reply) => {
     try {
       const body = request.body as Record<string, unknown>;
       await redis.set("admin:landing_config", JSON.stringify(body));
@@ -1155,7 +1148,7 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
 
   // ── Change User Tier ──
 
-  server.patch("/api/users/:id/tier", async (request, reply) => {
+  server.patch("/api/users/:id/tier", { preHandler: validate({ params: idParamSchema, body: tierBodySchema }) }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const { tier } = request.body as { tier: string };
     const validTiers = ["free", "basic", "lite", "pro", "agency"];
@@ -2749,7 +2742,7 @@ You are an expert system administrator and architect for this platform. Give spe
   });
 
   // ── WELCOME MESSAGE OVERRIDE ──
-  server.post("/api/admin/welcome-message", async (request, reply) => {
+  server.post("/api/admin/welcome-message", { preHandler: validate({ body: welcomeMessageSchema }) }, async (request, reply) => {
     await verifyAdmin(request, reply);
     const { message } = request.body as { message?: string };
     if (!message) return reply.status(400).send({ error: "Message required" });
@@ -2787,7 +2780,7 @@ You are an expert system administrator and architect for this platform. Give spe
   });
 
   // Toggle intercept on a user
-  server.post("/api/intercept/toggle", async (request, reply) => {
+  server.post("/api/intercept/toggle", { preHandler: validate({ body: interceptToggleSchema }) }, async (request, reply) => {
     if (!await verifyAdmin(request, reply)) return;
     const { telegramId, enabled } = request.body as { telegramId: string; enabled: boolean };
     if (!telegramId) return reply.status(400).send({ error: "telegramId required" });
@@ -2887,7 +2880,7 @@ You are an expert system administrator and architect for this platform. Give spe
   });
 
   // Upload a media file and get back a URL for deliver
-  server.post("/api/intercept/upload", async (request, reply) => {
+  server.post("/api/intercept/upload", { preHandler: validate({ body: interceptUploadSchema }) }, async (request, reply) => {
     if (!await verifyAdmin(request, reply)) return;
     const fs = await import('fs');
     const path = await import('path');
@@ -2928,7 +2921,7 @@ You are an expert system administrator and architect for this platform. Give spe
   });
 
   // Admin delivers media to waiting job
-  server.post("/api/intercept/deliver", async (request, reply) => {
+  server.post("/api/intercept/deliver", { preHandler: validate({ body: interceptDeliverSchema }) }, async (request, reply) => {
     if (!await verifyAdmin(request, reply)) return;
     const { jobId, mediaUrl, mediaType } = request.body as {
       jobId: string; mediaUrl: string; mediaType: string;
