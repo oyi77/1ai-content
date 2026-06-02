@@ -51,6 +51,7 @@ import { registerBroadcastRoutes } from "./admin/broadcast";
 import { registerPlaygroundRoutes } from "./admin/playground";
 import { registerLandingConfigRoutes } from "./admin/landing-config";
 import { registerStatsRoutes } from "./admin/stats";
+import { registerUserMgmtRoutes } from "./admin/user-mgmt";
 import { ConfigError } from '@/utils/app-errors';
 
 const LOGIN_RATE_LIMIT_MAX = 5;
@@ -200,6 +201,7 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
   await registerPlaygroundRoutes(server);
   await registerLandingConfigRoutes(server);
   await registerStatsRoutes(server);
+  await registerUserMgmtRoutes(server);
 
   // Login page (no auth required)
   server.get("/admin/login", async (_request, reply) => {
@@ -967,51 +969,6 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
       return { ok: true };
     } catch {
       return reply.status(404).send({ error: "Not found" });
-    }
-  });
-
-  // ── User Search ──
-
-  server.get("/api/users/search", async (request) => {
-    const { q, limit = "20" } = request.query as { q?: string; limit?: string };
-    if (!q) return [];
-    return prisma.user.findMany({
-      where: {
-        OR: [
-          { username: { contains: q, mode: "insensitive" } },
-          { firstName: { contains: q, mode: "insensitive" } },
-        ],
-      },
-      take: parseInt(limit),
-      select: {
-        telegramId: true,
-        username: true,
-        firstName: true,
-        tier: true,
-        creditBalance: true,
-        isBanned: true,
-        createdAt: true,
-        lastActivityAt: true,
-      },
-    });
-  });
-
-  // ── Change User Tier ──
-
-  server.patch("/api/users/:id/tier", { preHandler: validate({ params: idParamSchema, body: tierBodySchema }) }, async (request, reply) => {
-    const { id } = request.params as { id: string };
-    const { tier } = request.body as { tier: string };
-    const validTiers = ["free", "basic", "lite", "pro", "agency"];
-    if (!tier || !validTiers.includes(tier.toLowerCase()))
-      return reply.status(400).send({ error: "Invalid tier" });
-    try {
-      const user = await prisma.user.update({
-        where: { telegramId: BigInt(id) },
-        data: { tier: tier.toLowerCase() },
-      });
-      return { success: true, tier: user.tier };
-    } catch (error: any) {
-      return reply.status(404).send({ error: "User not found or invalid ID" });
     }
   });
 
