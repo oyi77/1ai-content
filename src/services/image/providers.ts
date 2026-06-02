@@ -120,7 +120,7 @@ export async function generateViaGeminiGen(
     }
     throw new ProviderTimeoutError("GeminiGen", 0);
   }
-  throw new Error(`GeminiGen: unexpected status ${status}`);
+  throw new ProviderError("GeminiGen", `unexpected status ${status}`);
 }
 
 export async function generateViaFalai(
@@ -427,7 +427,7 @@ export async function generateViaLaoZhangKontext(
   params: ImageGenerationParams,
 ): Promise<ImageGenerationResult> {
   const imageUrl = params.referenceImageUrl;
-  if (!imageUrl) throw new Error("LaoZhang Kontext: no reference image URL");
+  if (!imageUrl) throw new ValidationError("reference image URL required", "referenceImageUrl");
 
   const imgResponse = await axios.get(imageUrl, {
     responseType: "arraybuffer",
@@ -466,7 +466,7 @@ export async function generateViaLaoZhangKontext(
         mode: "img2img",
       };
   }
-  throw new Error("LaoZhang Kontext: no image returned");
+  throw new ProviderError("LaoZhang", "Kontext: no image returned");
 }
 
 export async function generateViaLaoZhangGptImage(
@@ -525,7 +525,7 @@ export async function generateViaEvoLinkImg2Img(
   params: ImageGenerationParams,
 ): Promise<ImageGenerationResult> {
   const imageUrl = params.referenceImageUrl;
-  if (!imageUrl) throw new Error("EvoLink img2img: no reference image URL");
+  if (!imageUrl) throw new ValidationError("reference image URL required", "referenceImageUrl");
 
   const models = ["qwen-image-edit-plus", "wan2.5-image-to-image"];
   for (const model of models) {
@@ -535,7 +535,7 @@ export async function generateViaEvoLinkImg2Img(
       logger.warn(`EvoLink ${model} failed: ${err.message}`);
     }
   }
-  throw new Error("EvoLink img2img: all models failed");
+  throw new AllProvidersFailedError("EvoLink img2img");
 }
 
 async function evolinkImageGenerate(
@@ -559,7 +559,7 @@ async function evolinkImageGenerate(
   );
 
   const taskId = response.data?.id;
-  if (!taskId) throw new Error(`EvoLink img2img: no task ID`);
+  if (!taskId) throw new ProviderError("EvoLink", "img2img: no task ID");
 
   for (let i = 0; i < 60; i++) {
     const poll = await axios.get(`https://api.evolink.ai/v1/tasks/${taskId}`, {
@@ -582,16 +582,17 @@ async function evolinkImageGenerate(
           provider: `evolink_${model.replace(/[.-]/g, "_")}`,
           mode: imageUrl ? "img2img" : "text2img",
         };
-      throw new Error("EvoLink img2img: completed but no URL");
+      throw new ProviderError("EvoLink", "img2img: completed but no URL");
     }
     if (status === "failed" || status === "error") {
-      throw new Error(
-        `EvoLink img2img: ${poll.data?.error || "generation failed"}`,
+      throw new ProviderError(
+        "EvoLink",
+        `img2img: ${poll.data?.error || "generation failed"}`,
       );
     }
     await new Promise((r) => setTimeout(r, 5000));
   }
-  throw new Error("EvoLink img2img: poll timeout");
+  throw new ProviderTimeoutError("EvoLink", 0);
 }
 
 export async function generateViaPiAPI(
@@ -622,8 +623,9 @@ export async function generateViaPiAPI(
 
   const taskId = response.data?.data?.task_id;
   if (!taskId)
-    throw new Error(
-      `PiAPI: no task_id in response: ${JSON.stringify(response.data).slice(0, 200)}`,
+    throw new ProviderError(
+      "PiAPI",
+      `no task_id in response: ${JSON.stringify(response.data).slice(0, 200)}`,
     );
 
   for (let i = 0; i < 60; i++) {
@@ -655,16 +657,17 @@ export async function generateViaPiAPI(
           provider: "piapi_flux",
           mode: "text2img",
         };
-      throw new Error("PiAPI: completed but no image URL");
+      throw new ProviderError("PiAPI", "completed but no image URL");
     }
     if (status === "failed") {
-      throw new Error(
-        `PiAPI: task failed: ${pollData?.error || "Unknown error"}`,
+      throw new ProviderError(
+        "PiAPI",
+        `task failed: ${pollData?.error || "Unknown error"}`,
       );
     }
     await new Promise((r) => setTimeout(r, 3000));
   }
-  throw new Error("PiAPI: poll timeout");
+  throw new ProviderTimeoutError("PiAPI", 0);
 }
 
 export async function generateViaPiAPIImg2Img(
@@ -672,7 +675,7 @@ export async function generateViaPiAPIImg2Img(
   params: ImageGenerationParams,
 ): Promise<ImageGenerationResult> {
   const imageUrl = params.referenceImageUrl;
-  if (!imageUrl) throw new Error("PiAPI img2img: no reference image URL");
+  if (!imageUrl) throw new ValidationError("reference image URL required", "referenceImageUrl");
 
   const response = await axios.post(
     "https://api.piapi.ai/api/v1/task",
@@ -699,7 +702,7 @@ export async function generateViaPiAPIImg2Img(
   );
 
   const taskId = response.data?.data?.task_id;
-  if (!taskId) throw new Error(`PiAPI img2img: no task_id`);
+  if (!taskId) throw new ProviderError("PiAPI", "img2img: no task_id");
 
   for (let i = 0; i < 60; i++) {
     const poll = await axios.get(`https://api.piapi.ai/api/v1/task/${taskId}`, {
@@ -730,13 +733,13 @@ export async function generateViaPiAPIImg2Img(
           provider: "piapi_img2img",
           mode: "img2img",
         };
-      throw new Error("PiAPI img2img: completed but no image URL");
+      throw new ProviderError("PiAPI", "img2img: completed but no image URL");
     }
     if (status === "failed")
-      throw new Error(`PiAPI img2img: ${pollData?.error || "failed"}`);
+      throw new ProviderError("PiAPI", `img2img: ${pollData?.error || "failed"}`);
     await new Promise((r) => setTimeout(r, 3000));
   }
-  throw new Error("PiAPI img2img: poll timeout");
+  throw new ProviderTimeoutError("PiAPI", 0);
 }
 
 export async function generateViaTogether(
@@ -775,7 +778,7 @@ export async function generateViaTogether(
         mode: "text2img",
       };
   }
-  throw new Error("Together.ai: no image returned");
+  throw new ProviderError("Together.ai", "no image returned");
 }
 
 export async function generateViaSegmindIPAdapter(
@@ -783,7 +786,7 @@ export async function generateViaSegmindIPAdapter(
   params: ImageGenerationParams,
 ): Promise<ImageGenerationResult> {
   const avatarUrl = params.avatarImageUrl;
-  if (!avatarUrl) throw new Error("SegMind IP-Adapter: no avatar image URL");
+  if (!avatarUrl) throw new ValidationError("avatar image URL required", "avatarUrl");
 
   const response = await axios.post(
     "https://api.segmind.com/v1/flux-ipadapter",
@@ -817,7 +820,7 @@ export async function generateViaSegmindIPAdapter(
       mode: "ip_adapter",
     };
   }
-  throw new Error("SegMind IP-Adapter: no image returned");
+  throw new ProviderError("SegMind", "IP-Adapter: no image returned");
 }
 
 export async function generateViaSegmindImg2Img(
@@ -825,7 +828,7 @@ export async function generateViaSegmindImg2Img(
   params: ImageGenerationParams,
 ): Promise<ImageGenerationResult> {
   const imageUrl = params.referenceImageUrl;
-  if (!imageUrl) throw new Error("SegMind img2img: no reference image URL");
+  if (!imageUrl) throw new ValidationError("reference image URL required", "referenceImageUrl");
 
   const response = await axios.post(
     "https://api.segmind.com/v1/sdxl1.0-img2img",
@@ -855,7 +858,7 @@ export async function generateViaSegmindImg2Img(
       mode: "img2img",
     };
   }
-  throw new Error("SegMind img2img: no image returned");
+  throw new ProviderError("SegMind", "img2img: no image returned");
 }
 
 export async function generateViaRunwareImg(
@@ -890,7 +893,7 @@ export async function generateViaRunwareImg(
       provider: "runware",
       mode: "text2img",
     };
-  throw new Error("Runware image: no URL returned");
+  throw new ProviderError("Runware", "image: no URL returned");
 }
 
 export async function generateViaWaveSpeedImg(
@@ -924,7 +927,7 @@ export async function generateViaWaveSpeedImg(
       provider: "wavespeed",
       mode: "text2img",
     };
-  throw new Error("WaveSpeed image: no URL returned");
+  throw new ProviderError("WaveSpeed", "image: no URL returned");
 }
 
 export async function generateViaZAIImg(
@@ -953,7 +956,7 @@ export async function generateViaZAIImg(
     resp.data?.url || resp.data?.image_url || resp.data?.data?.[0]?.url;
   if (url)
     return { success: true, imageUrl: url, provider: "zai", mode: "text2img" };
-  throw new Error("Z.ai image: no URL returned");
+  throw new ProviderError("Z.ai", "image: no URL returned");
 }
 
 export async function generateViaOmniRoute(
@@ -994,7 +997,7 @@ export async function generateViaOmniRoute(
       mode: "text2img",
     };
   }
-  throw new Error("OmniRoute: no image returned");
+  throw new ProviderError("OmniRoute", "no image returned");
 }
 
 export function getProviders(): ImageProvider[] {

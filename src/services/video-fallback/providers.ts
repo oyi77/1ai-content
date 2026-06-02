@@ -104,9 +104,7 @@ async function pollUntilComplete(
     if (result.status === "failed")
       throw new ProviderError(providerName, "generation failed");
   }
-  throw new Error(
-    `${providerName} poll timeout after ${config.maxAttempts} attempts`,
-  );
+  throw new ProviderTimeoutError(providerName, config.maxAttempts * config.intervalMs);
 }
 
 // ── Provider implementations ──
@@ -154,7 +152,7 @@ async function generateViaGeminiGen(
     });
     const { status: s, generated_video, error_message } = poll.data;
     if (s === 3)
-      throw new Error(error_message || "GeminiGen generation failed");
+      throw new ProviderError("GeminiGen", error_message || "generation failed");
     if (s === 2 && generated_video?.length > 0) {
       return {
         status: "completed",
@@ -204,9 +202,7 @@ async function generateViaFalai(
   const statusUrl: string = submitRes.data?.status_url;
   const responseUrl: string = submitRes.data?.response_url;
   if (!requestId || !statusUrl || !responseUrl) {
-    throw new Error(
-      `Fal.ai: incomplete queue response — ${JSON.stringify(submitRes.data)}`,
-    );
+    throw new ProviderError("Fal.ai", `incomplete queue response: ${JSON.stringify(submitRes.data)}`);
   }
   logger.info(`Fal.ai video queued: ${requestId} (model: ${model})`);
 
@@ -223,9 +219,7 @@ async function generateViaFalai(
       );
     pollCount++;
     if (status === "FAILED")
-      throw new Error(
-        `Fal.ai: ${statusRes.data?.error || "generation failed"}`,
-      );
+      throw new ProviderError("Fal.ai", statusRes.data?.error || "generation failed");
     if (status === "COMPLETED") {
       const resultRes = await axios.get(responseUrl, {
         headers: { Authorization: `Key ${getConfig().FALAI_API_KEY || ""}` },
@@ -298,9 +292,7 @@ async function generateViaSiliconFlow(
       );
       const status = poll.data?.status;
       if (status === "Failed")
-        throw new Error(
-          `SiliconFlow: ${poll.data?.reason || "generation failed"}`,
-        );
+        throw new ProviderError("SiliconFlow", poll.data?.reason || "generation failed");
       if (status === "Succeed" && poll.data?.results?.videos?.[0]?.url) {
         return {
           status: "completed",
@@ -423,9 +415,7 @@ async function generateViaLaoZhang(
       : null;
 
   if (!urlMatch) {
-    throw new Error(
-      `LaoZhang: no video URL found in response: ${String(messageContent).substring(0, 200)}`,
-    );
+    throw new ProviderError("LaoZhang", `no video URL in response: ${String(messageContent).substring(0, 200)}`);
   }
 
   return { success: true, videoUrl: urlMatch[0], provider: "laozhang" };
@@ -466,7 +456,7 @@ async function generateViaEvoLink(
   if (!taskId) {
     const errMsg =
       response.data?.error?.message || JSON.stringify(response.data);
-    throw new Error(`EvoLink: no task ID: ${errMsg}`);
+    throw new ProviderError("EvoLink", `no task ID: ${errMsg}`);
   }
 
   const errorMsg = response.data?.error?.message || "";
@@ -474,7 +464,7 @@ async function generateViaEvoLink(
     errorMsg.toLowerCase().includes("insufficient") ||
     errorMsg.toLowerCase().includes("permanently rejected")
   ) {
-    throw new Error(`EvoLink: credits/access denied: ${errorMsg}`);
+    throw new ProviderError("EvoLink", `credits/access denied: ${errorMsg}`, 403);
   }
 
   const videoUrl = await pollUntilComplete("EvoLink", taskId, async (id) => {
@@ -484,9 +474,7 @@ async function generateViaEvoLink(
     });
     const status = poll.data?.status;
     if (status === "failed" || status === "error") {
-      throw new Error(
-        `EvoLink: task failed: ${poll.data?.error || "Unknown error"}`,
-      );
+      throw new ProviderError("EvoLink", `task failed: ${poll.data?.error || "Unknown error"}`);
     }
     if (status === "completed") {
       let url = "";
@@ -496,7 +484,7 @@ async function generateViaEvoLink(
         url = typeof first === "object" ? first.url || "" : String(first);
       }
       if (!url) url = poll.data?.output?.url || poll.data?.video_url || "";
-      if (!url) throw new Error("EvoLink: completed but no video URL");
+      if (!url) throw new ProviderError("EvoLink", "completed but no video URL");
       return { status: "completed", videoUrl: url };
     }
     return { status: "pending" };
@@ -542,9 +530,7 @@ async function generateViaHypereal(
 
   const jobId = response.data?.jobId;
   if (!jobId)
-    throw new Error(
-      `Hypereal: no jobId in response: ${JSON.stringify(response.data)}`,
-    );
+    throw new ProviderError("Hypereal", `no jobId in response: ${JSON.stringify(response.data)}`);
 
   logger.info(`Hypereal video started: ${jobId}`);
 
@@ -560,12 +546,10 @@ async function generateViaHypereal(
     );
     const status = poll.data?.status;
     if (status === "failed")
-      throw new Error(
-        `Hypereal: job failed: ${poll.data?.error || "Unknown error"}`,
-      );
+      throw new ProviderError("Hypereal", `job failed: ${poll.data?.error || "Unknown error"}`);
     if (status === "completed") {
       const url = poll.data?.outputUrl || poll.data?.output_url || "";
-      if (!url) throw new Error("Hypereal: completed but no video URL");
+      if (!url) throw new ProviderError("Hypereal", "completed but no video URL");
       return { status: "completed", videoUrl: url };
     }
     return { status: "pending" };
@@ -599,7 +583,7 @@ async function generateViaByteplus(
   );
 
   const id = response.data?.id;
-  if (!id) throw new Error("BytePlus: no job id");
+  if (!id) throw new ProviderError("BytePlus", "no job id");
 
   const videoUrl = await pollUntilComplete("BytePlus", id, async (jobId) => {
     const poll = await axios.get(
@@ -612,7 +596,7 @@ async function generateViaByteplus(
       },
     );
     if (poll.data?.status === "failed")
-      throw new Error(`BytePlus: ${poll.data?.error || "failed"}`);
+      throw new ProviderError("BytePlus", poll.data?.error || "failed");
     if (poll.data?.status === "completed" && poll.data?.output?.video_url) {
       return { status: "completed", videoUrl: poll.data.output.video_url };
     }
@@ -656,9 +640,7 @@ async function generateViaKie(
   );
 
   if (response.data?.code !== 200) {
-    throw new Error(
-      `Kie.ai API error: ${response.data?.msg || "Unknown error"}`,
-    );
+    throw new ProviderError("Kie.ai", response.data?.msg || "Unknown error");
   }
 
   const msg = response.data?.msg || "";
@@ -666,14 +648,12 @@ async function generateViaKie(
     msg.toLowerCase().includes("insufficient") ||
     msg.toLowerCase().includes("balance")
   ) {
-    throw new Error(`Kie.ai credits insufficient: ${msg}`);
+    throw new ProviderError("Kie.ai", `credits insufficient: ${msg}`, 402);
   }
 
   const taskId = response.data?.data?.taskId;
   if (!taskId)
-    throw new Error(
-      `Kie.ai: no taskId in response: ${JSON.stringify(response.data)}`,
-    );
+    throw new ProviderError("Kie.ai", `no taskId in response: ${JSON.stringify(response.data)}`);
 
   logger.info(`Kie.ai video started: ${taskId}`);
 
@@ -689,11 +669,11 @@ async function generateViaKie(
     const data = poll.data?.data || {};
     const status = data.state || data.status;
     if (status === "failed" || status === "error" || status === "fail") {
-      throw new Error(`Kie.ai task failed: ${data.msg || "Unknown error"}`);
+      throw new ProviderError("Kie.ai", `task failed: ${data.msg || "Unknown error"}`);
     }
     if (status === "success" || status === "completed") {
       const url = data.videoInfo?.videoUrl || data.videoUrl || "";
-      if (!url) throw new Error("Kie.ai: completed but no video URL");
+      if (!url) throw new ProviderError("Kie.ai", "completed but no video URL");
       return { status: "completed", videoUrl: url };
     }
     return { status: "pending" };
@@ -738,9 +718,7 @@ async function generateViaPiAPI(
 
   const taskId = response.data?.data?.task_id;
   if (!taskId)
-    throw new Error(
-      `PiAPI video: no task_id: ${JSON.stringify(response.data).slice(0, 200)}`,
-    );
+    throw new ProviderError("PiAPI", `video: no task_id: ${JSON.stringify(response.data).slice(0, 200)}`);
 
   logger.info(`PiAPI video started: ${taskId}`);
 
@@ -757,7 +735,7 @@ async function generateViaPiAPI(
     const pollData = poll.data?.data;
     const status = pollData?.status;
     if (status === "failed")
-      throw new Error(`PiAPI video: ${pollData?.error || "task failed"}`);
+      throw new ProviderError("PiAPI", `video: ${pollData?.error || "task failed"}`);
     if (status === "completed") {
       const output = pollData?.output;
       logger.info(
@@ -770,7 +748,7 @@ async function generateViaPiAPI(
         output?.result?.video_url ||
         output?.url ||
         output?.works?.[0]?.video?.url;
-      if (!url) throw new Error("PiAPI video: completed but no video URL");
+      if (!url) throw new ProviderError("PiAPI", "video: completed but no video URL");
       return { status: "completed", videoUrl: url };
     }
     return { status: "pending" };
@@ -806,7 +784,7 @@ async function generateViaLingyaAI(
     },
   );
   const taskId = resp.data?.id || resp.data?.taskId;
-  if (!taskId) throw new Error("LingyaAI: no task id");
+  if (!taskId) throw new ProviderError("LingyaAI", "no task id");
   const videoUrl = await pollUntilComplete("LingyaAI", taskId, async (id) => {
     const poll = await axios.get(
       `https://api.lingyaai.cn/v1/video/generations/${id}`,
@@ -818,7 +796,7 @@ async function generateViaLingyaAI(
         videoUrl: poll.data.video_url || poll.data.url || poll.data.output?.url,
       };
     if (poll.data?.status === "failed")
-      throw new Error("LingyaAI generation failed");
+      throw new ProviderError("LingyaAI", "generation failed");
     return { status: "pending" };
   });
   return { success: true, videoUrl, provider: "lingyaai" };
@@ -852,7 +830,7 @@ async function generateViaGetGoAPI(
     },
   );
   const taskId = resp.data?.id || resp.data?.taskId;
-  if (!taskId) throw new Error("GetGoAPI: no task id");
+  if (!taskId) throw new ProviderError("GetGoAPI", "no task id");
   const videoUrl = await pollUntilComplete("GetGoAPI", taskId, async (id) => {
     const poll = await axios.get(
       `https://api.getgoapi.com/v1/video/generations/${id}`,
@@ -864,7 +842,7 @@ async function generateViaGetGoAPI(
         videoUrl: poll.data.video_url || poll.data.url || poll.data.output?.url,
       };
     if (poll.data?.status === "failed")
-      throw new Error("GetGoAPI generation failed");
+      throw new ProviderError("GetGoAPI", "generation failed");
     return { status: "pending" };
   });
   return { success: true, videoUrl, provider: "getgoapi" };
@@ -897,7 +875,7 @@ async function generateViaApiYi(
     },
   );
   const taskId = resp.data?.id || resp.data?.taskId;
-  if (!taskId) throw new Error("ApiYi: no task id");
+  if (!taskId) throw new ProviderError("ApiYi", "no task id");
   const videoUrl = await pollUntilComplete("ApiYi", taskId, async (id) => {
     const poll = await axios.get(
       `https://api.apiyi.com/v1/videos/generations/${id}`,
@@ -909,7 +887,7 @@ async function generateViaApiYi(
         videoUrl: poll.data.video_url || poll.data.url,
       };
     if (poll.data?.status === "failed")
-      throw new Error("ApiYi generation failed");
+      throw new ProviderError("ApiYi", "generation failed");
     return { status: "pending" };
   });
   return { success: true, videoUrl, provider: "apiyi" };
@@ -942,7 +920,7 @@ async function generateViaRunware(
     },
   );
   const taskId = resp.data?.data?.[0]?.uuid || resp.data?.uuid;
-  if (!taskId) throw new Error("Runware: no task id");
+  if (!taskId) throw new ProviderError("Runware", "no task id");
   const videoUrl = await pollUntilComplete("Runware", taskId, async (id) => {
     const poll = await axios.get(`https://api.runware.ai/v1/video/${id}`, {
       headers: { Authorization: `Bearer ${API_KEY}` },
@@ -954,7 +932,7 @@ async function generateViaRunware(
         status: "completed",
         videoUrl: poll.data?.data?.[0]?.videoUrl || poll.data?.videoUrl,
       };
-    if (status === "failed") throw new Error("Runware generation failed");
+    if (status === "failed") throw new ProviderError("Runware", "generation failed");
     return { status: "pending" };
   });
   return { success: true, videoUrl, provider: "runware" };
@@ -987,7 +965,7 @@ async function generateViaWaveSpeed(
     },
   );
   const taskId = resp.data?.id || resp.data?.taskId;
-  if (!taskId) throw new Error("WaveSpeed: no task id");
+  if (!taskId) throw new ProviderError("WaveSpeed", "no task id");
   const videoUrl = await pollUntilComplete("WaveSpeed", taskId, async (id) => {
     const poll = await axios.get(
       `https://api.wavespeed.ai/v1/video/generations/${id}`,
@@ -999,7 +977,7 @@ async function generateViaWaveSpeed(
         videoUrl: poll.data.video_url || poll.data.url || poll.data.output?.url,
       };
     if (poll.data?.status === "failed")
-      throw new Error("WaveSpeed generation failed");
+      throw new ProviderError("WaveSpeed", "generation failed");
     return { status: "pending" };
   });
   return { success: true, videoUrl, provider: "wavespeed" };
@@ -1032,7 +1010,7 @@ async function generateViaZAI(
     },
   );
   const taskId = resp.data?.id || resp.data?.taskId;
-  if (!taskId) throw new Error("Z.ai: no task id");
+  if (!taskId) throw new ProviderError("Z.ai", "no task id");
   const videoUrl = await pollUntilComplete("ZAI", taskId, async (id) => {
     const poll = await axios.get(`https://api.z.ai/v1/video/generate/${id}`, {
       headers: { Authorization: `Bearer ${API_KEY}` },
@@ -1044,7 +1022,7 @@ async function generateViaZAI(
         videoUrl: poll.data.video_url || poll.data.url || poll.data.output?.url,
       };
     if (poll.data?.status === "failed")
-      throw new Error("Z.ai generation failed");
+      throw new ProviderError("Z.ai", "generation failed");
     return { status: "pending" };
   });
   return { success: true, videoUrl, provider: "zai_video" };
@@ -1082,7 +1060,7 @@ async function generateViaOmniRouteVideo(
   );
 
   const taskId = resp.data?.id || resp.data?.task_id;
-  if (!taskId) throw new Error("OmniRoute: no task id");
+  if (!taskId) throw new ProviderError("OmniRoute", "no task id");
 
   const videoUrl = await pollUntilComplete("OmniRoute", taskId, async (id) => {
     const poll = await axios.get(
@@ -1099,7 +1077,7 @@ async function generateViaOmniRouteVideo(
         videoUrl:
           poll.data?.video_url || poll.data?.url || poll.data?.output?.url,
       };
-    if (status === "failed") throw new Error("OmniRoute generation failed");
+    if (status === "failed") throw new ProviderError("OmniRoute", "generation failed");
     return { status: "pending" };
   });
   return { success: true, videoUrl, provider: "omniroute" };
