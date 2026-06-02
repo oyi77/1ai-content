@@ -11,6 +11,7 @@ import { BotContext } from "@/types";
 import { redis } from "@/config/redis";
 import { logger } from "@/utils/logger";
 import { getConfig } from "@/config/env";
+import { secureRandomString } from "@/utils/crypto";
 
 // ─── Telegram Bot Rate Limiter ─────────────────────────────────────────────────
 
@@ -118,7 +119,7 @@ export function createRateLimiter(config: RateLimitConfig) {
       pipeline.zcard(key);
 
       // Add current request with timestamp as score
-      pipeline.zadd(key, now, `${now}-${Math.random().toString(36).slice(2)}`);
+      pipeline.zadd(key, now, `${now}-${secureRandomString(6).toLowerCase()}`);
 
       // Set expiry on the key
       pipeline.pexpire(key, windowMs);

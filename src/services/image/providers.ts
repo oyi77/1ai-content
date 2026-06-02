@@ -1,6 +1,7 @@
 import { logger } from "@/utils/logger";
 import { AdminConfigService } from "@/services/admin-config.service";
 import { getConfig } from "@/config/env";
+import { secureRandomInt } from "@/utils/crypto";
 import axios from "axios";
 import FormData from "form-data";
 import * as fs from "fs";
@@ -791,7 +792,7 @@ export async function generateViaSegmindIPAdapter(
       cn_strength: 0.7,
       steps: 28,
       guidance_scale: 3.5,
-      seed: Math.floor(Math.random() * 2147483647),
+      seed: secureRandomInt(2147483647),
       width: getDims(params).width,
       height: getDims(params).height,
     },
@@ -833,13 +834,11 @@ export async function generateViaSegmindImg2Img(
       strength: 0.75,
       steps: 30,
       guidance_scale: 7,
-      seed: Math.floor(Math.random() * 2147483647),
+      seed: secureRandomInt(2147483647),
+      width: getDims(params).width,
+      height: getDims(params).height,
     },
     {
-      headers: {
-        "x-api-key": getConfig().SEGMIND_API_KEY || "",
-        "Content-Type": "application/json",
-      },
       timeout: 90000,
       responseType: "arraybuffer",
     },

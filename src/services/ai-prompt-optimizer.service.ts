@@ -23,6 +23,7 @@ import { trackTokens } from "@/services/token-tracker.service";
 import { getConfig } from "@/config/env";
 import { AIConfigService } from "@/services/ai-config.service";
 import { pipelineGenerate } from "@/services/shared-ai-pipeline.service";
+import { secureRandomString } from "@/utils/crypto";
 
 const LLM_TIMEOUT = 5000; // 5 seconds per LLM call
 const CACHE_TTL = 3600; // 1 hour in seconds
@@ -45,7 +46,7 @@ function buildMetaPrompt(
     : "";
 
   // Add variation seed so same prompt produces different enrichments each time
-  const variationSeed = Math.random().toString(36).slice(2, 6);
+  const variationSeed = secureRandomString(4).toLowerCase();
 
   // If admin has configured a custom template, use it with placeholder substitution
   if (templateOverride) {

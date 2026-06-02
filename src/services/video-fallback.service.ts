@@ -11,6 +11,7 @@ import { logger } from "@/utils/logger";
 import { AdminConfigService } from "@/services/admin-config.service";
 import { sendAdminAlert } from "@/services/admin-alert.service";
 import { trackTokens } from "@/services/token-tracker.service";
+import { secureRandomString } from "@/utils/crypto";
 import { CircuitBreaker } from "./circuit-breaker.service";
 import { ProviderRouter } from "./provider-router.service";
 import { PromptEngine } from "@/config/prompt-engine";
@@ -51,7 +52,7 @@ async function ensureLocalImage(refImage: string | null | undefined): Promise<st
     try {
       const axios = (await import("axios")).default;
       const os = (await import("os")).default;
-      const tmpPath = path.join(os.tmpdir(), `ref_img_${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`);
+      const tmpPath = path.join(os.tmpdir(), `ref_img_${Date.now()}_${secureRandomString(6).toLowerCase()}.jpg`);
       const response = await axios.get(refImage, { responseType: 'arraybuffer', timeout: 30000 });
       fs.writeFileSync(tmpPath, Buffer.from(response.data));
       return tmpPath;

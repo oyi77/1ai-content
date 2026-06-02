@@ -13,6 +13,7 @@
 
 import { logger } from '@/utils/logger';
 import { getConfig } from '@/config/env';
+import { secureRandomString } from '@/utils/crypto';
 import axios from 'axios';
 import { trackTokens } from '@/services/token-tracker.service';
 import { AIConfigService } from '@/services/ai-config.service';
@@ -104,7 +105,7 @@ export class QualityCheckService {
         fs.mkdirSync(FRAME_DIR, { recursive: true });
       }
 
-      const frameFile = `qc_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.jpg`;
+      const frameFile = `qc_${Date.now()}_${secureRandomString(6).toLowerCase()}.jpg`;
       const framePath = path.join(FRAME_DIR, frameFile);
 
       // Extract frame at 2s mark, fall back to first frame if video is too short
