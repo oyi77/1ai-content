@@ -41,6 +41,7 @@ import { CircuitBreaker } from "@/services/circuit-breaker.service";
 import { AdminConfigService } from "@/services/admin-config.service";
 import { ExchangeRateService } from "@/services/exchange-rate.service";
 import axios from "axios";
+import { registerPricingRoutes } from "./admin/pricing";
 
 const LOGIN_RATE_LIMIT_MAX = 5;
 const LOGIN_RATE_LIMIT_WINDOW = 15 * 60; // 15 minutes in seconds
@@ -179,6 +180,8 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
       await verifyAdmin(request, reply);
     }
   });
+
+  await registerPricingRoutes(server);
 
   // Login page (no auth required)
   server.get("/admin/login", async (_request, reply) => {
@@ -843,51 +846,6 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
       where: { category },
       orderBy: { key: "asc" },
     });
-  });
-
-  server.post("/api/pricing", async (request, reply) => {
-    const data = await validateBody(request, reply, PricingConfigSchema);
-    if (!data) return;
-    await PaymentSettingsService.setPricingConfig(data.category, data.key, data.value);
-    PaymentSettingsService.clearPricingCache();
-    return { success: true };
-  });
-
-  server.delete("/api/pricing", async (request, reply) => {
-    const data = await validateBody(request, reply, PricingDeleteSchema);
-    if (!data) return;
-    await PaymentSettingsService.deletePricingConfig(data.category, data.key);
-    PaymentSettingsService.clearPricingCache();
-    return { success: true };
-  });
-
-  server.get("/api/pricing-overview", async () => {
-    const [
-      packages,
-      subscriptions,
-      videoCosts,
-      imageCosts,
-      providerCosts,
-      global,
-      unitCosts,
-    ] = await Promise.all([
-      PaymentSettingsService.getAllPricingByCategory("package"),
-      PaymentSettingsService.getAllPricingByCategory("subscription"),
-      PaymentSettingsService.getAllPricingByCategory("video_credit"),
-      PaymentSettingsService.getAllPricingByCategory("image_credit"),
-      PaymentSettingsService.getAllPricingByCategory("provider_cost"),
-      PaymentSettingsService.getAllPricingByCategory("global"),
-      PaymentSettingsService.getAllPricingByCategory("unit_cost"),
-    ]);
-    return {
-      packages,
-      subscriptions,
-      videoCosts,
-      imageCosts,
-      providerCosts,
-      global,
-      unitCosts,
-    };
   });
 
   // ── Pricing Recommendation (admin tool) ──
