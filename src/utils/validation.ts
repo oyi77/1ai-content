@@ -53,3 +53,41 @@ export const NichePromptSchema = z.object({
   title: z.string().min(1).max(200),
   prompt: z.string().min(1).max(5000),
 });
+
+// Prisma Json Field Schemas
+export const StoryboardSceneSchema = z.object({
+  scene: z.number().int().positive(),
+  duration: z.number().positive(),
+  description: z.string(),
+});
+
+export const StoryboardSchema = z.array(StoryboardSceneSchema);
+
+export const ProductAnalysisSchema = z.object({
+  hasProduct: z.boolean(),
+  hasCharacter: z.boolean(),
+  productDesc: z.string(),
+  characterDesc: z.string(),
+  backgroundDesc: z.string(),
+});
+
+export const GenerationMetadataSchema = z.object({
+  provider: z.string(),
+  model: z.string().optional(),
+  duration: z.number().optional(),
+  tokenCount: z.number().optional(),
+});
+
+export const HashtagsSchema = z.array(z.string());
+
+export const RiskIssuesSchema = z.array(z.string());
+
+export const ViralVideoSchema = z.object({
+  url: z.string().url(),
+  title: z.string(),
+  platform: z.string(),
+  views: z.number().optional(),
+  score: z.number().optional(),
+});
+
+export const ViralResultsSchema = z.array(ViralVideoSchema);
