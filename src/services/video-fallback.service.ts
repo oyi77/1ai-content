@@ -163,7 +163,7 @@ export async function generateVideoWithFallback(
 
   // Build ordered provider list from scored keys
   const providerMap = new Map(allProviders.map((p) => [p.key, p]));
-  const providers: import("./video-fallback/providers").VideoProvider[] = [];
+  const providers: import("./video-fallback/providers/providers-registry").VideoProvider[] = [];
   for (const key of orderedKeys) {
     const p = providerMap.get(key);
     if (p) providers.push(p);
