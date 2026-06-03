@@ -43,6 +43,10 @@ export class VideoClipperService {
     this.ensureDir();
   }
 
+  getDownloadDir(): string {
+    return this.downloadDir;
+  }
+
   private async ensureDir() {
     await mkdir(this.downloadDir, { recursive: true });
   }

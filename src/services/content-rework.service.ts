@@ -47,6 +47,10 @@ export class ContentReworkService {
     this.ensureDir();
   }
 
+  getWorkDir(): string {
+    return this.workDir;
+  }
+
   private async ensureDir() {
     const { mkdir } = await import('fs/promises');
     await mkdir(this.workDir, { recursive: true });

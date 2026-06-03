@@ -10,7 +10,7 @@ describe('VideoEditorService', () => {
   describe('constructor', () => {
     it('should create service instance', () => {
       expect(service).toBeDefined();
-      expect(service.workDir).toBeDefined();
+      expect(service.getWorkDir()).toBeDefined();
     });
   });
 

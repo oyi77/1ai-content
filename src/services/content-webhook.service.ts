@@ -131,7 +131,7 @@ export class ContentWebhookService {
         return null;
       }
 
-      const result = await response.json();
+      const result = (await response.json()) as WebhookResponse;
       logger.info("Webhook sent successfully", {
         contentId: payload.content_id,
         postIds: result.post_ids,

@@ -342,11 +342,14 @@ export async function messageHandler(ctx: BotContext): Promise<void> {
       return;
     }
 
+    const messageText = "text" in message && message.text ? message.text : "";
+
     // ── Dispatch to focused handlers ──
     // Each handler returns true if it handled the current state.
-    const handlers = [
+    type SingleArgHandler = (ctx: BotContext) => Promise<boolean>;
+    const handlers: SingleArgHandler[] = [
       // V3 flow states
-      handleCustomDurationV3,
+      (c) => handleCustomDurationV3(c, messageText),
       handleAwaitingGenerateImage,
       handleCustomDurationInput,
       // Text input states

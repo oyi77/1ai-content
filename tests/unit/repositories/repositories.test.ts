@@ -27,7 +27,7 @@ describe("UserRepository", () => {
   });
 
   it("should return null for non-existent user", async () => {
-    const { prisma } = await import("@/config/database");
+    const { prisma } = await import("@/config/database.js");
     (prisma.user.findUnique as jest.Mock) = jest.fn().mockResolvedValue(null);
 
     const user = await UserRepository.findByTelegramId(BigInt(999999));
@@ -56,7 +56,7 @@ describe("VideoRepository", () => {
   });
 
   it("should return null for non-existent video", async () => {
-    const { prisma } = await import("@/config/database");
+    const { prisma } = await import("@/config/database.js");
     (prisma.video.findUnique as jest.Mock) = jest.fn().mockResolvedValue(null);
 
     const video = await VideoRepository.findByJobId("non-existent-job");
@@ -64,7 +64,7 @@ describe("VideoRepository", () => {
   });
 
   it("should return false when toggling favorite on non-existent video", async () => {
-    const { prisma } = await import("@/config/database");
+    const { prisma } = await import("@/config/database.js");
     (prisma.video.findUnique as jest.Mock) = jest.fn().mockResolvedValue(null);
 
     const result = await VideoRepository.toggleFavorite("non-existent-job");

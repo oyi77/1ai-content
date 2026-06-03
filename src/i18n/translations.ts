@@ -40,11 +40,37 @@ for (const [lang, data] of Object.entries(languageFiles)) {
  * Get translation for a key in the specified language.
  * Falls back to English if translation not found.
  * Falls back to key itself if not found in any language.
+ *
+ * Supports optional interpolation via the `params` object:
+ *   t('greeting', 'en', { name: 'World' })
  */
-export function t(key: string, lang: string = 'en'): string {
+export function t(
+  key: string,
+  langOrParams?: string | Record<string, string | number>,
+  paramsOrUndefined?: Record<string, string | number>
+): string {
+  let lang: string;
+  let params: Record<string, string | number> | undefined;
+  if (typeof langOrParams === 'string') {
+    lang = langOrParams;
+    params = paramsOrUndefined;
+  } else {
+    lang = 'en';
+    params = langOrParams;
+  }
+
   const entry = translations[key];
   if (!entry) return key;
-  return entry[lang] || entry['en'] || key;
+  let template = entry[lang] || entry['en'] || key;
+
+  if (params) {
+    for (const [paramKey, paramValue] of Object.entries(params)) {
+      const placeholder = `{${paramKey}}`;
+      template = template.split(placeholder).join(String(paramValue));
+    }
+  }
+
+  return template;
 }
 
 /**

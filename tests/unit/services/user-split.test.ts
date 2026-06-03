@@ -55,7 +55,7 @@ describe('UserReferralService', () => {
 
   it('should generate a referral code with REF- prefix', async () => {
     // Mock prisma
-    const { prisma } = await import('@/config/database');
+    const { prisma } = await import('@/config/database.js');
     (prisma.user.findUnique as jest.Mock) = jest.fn().mockResolvedValue(null);
 
     const code = await UserReferralService.generateReferralCode('TestUser');
@@ -63,7 +63,7 @@ describe('UserReferralService', () => {
   });
 
   it('should fallback to random code if name is empty', async () => {
-    const { prisma } = await import('@/config/database');
+    const { prisma } = await import('@/config/database.js');
     (prisma.user.findUnique as jest.Mock) = jest.fn().mockResolvedValue(null);
 
     const code = await UserReferralService.generateReferralCode('');
@@ -96,7 +96,7 @@ describe('UserStatsService', () => {
   });
 
   it('should return zero stats for non-existent user', async () => {
-    const { prisma } = await import('@/config/database');
+    const { prisma } = await import('@/config/database.js');
     (prisma.user.findUnique as jest.Mock) = jest.fn().mockResolvedValue(null);
 
     const stats = await UserStatsService.getStats(BigInt(999999));

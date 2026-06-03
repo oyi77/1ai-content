@@ -71,6 +71,10 @@ export class VideoEditorService {
     this.ensureDir();
   }
 
+  getWorkDir(): string {
+    return this.workDir;
+  }
+
   private async ensureDir() {
     await mkdir(this.workDir, { recursive: true });
   }

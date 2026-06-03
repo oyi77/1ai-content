@@ -10,7 +10,7 @@ describe('VideoClipperService', () => {
   describe('constructor', () => {
     it('should create service instance', () => {
       expect(service).toBeDefined();
-      expect(service.downloadDir).toBeDefined();
+      expect(service.getDownloadDir()).toBeDefined();
     });
   });
 
