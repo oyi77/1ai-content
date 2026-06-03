@@ -29,6 +29,15 @@ jest.mock("@/config/database", () => ({
   },
 }));
 
+jest.mock("@/config/env", () => {
+  const config: Record<string, unknown> = {
+    GEMINI_API_KEY: "test-key",
+  };
+  return {
+    getConfig: () => config,
+  };
+});
+
 jest.mock("@/utils/logger", () => ({
   logger: {
     info: jest.fn(),
