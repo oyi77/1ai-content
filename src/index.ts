@@ -70,6 +70,7 @@ async function main() {
   const port = appConfig.PORT;
 
   try {
+    const isPlaceholderToken = !appConfig.BOT_TOKEN || appConfig.BOT_TOKEN.startsWith("placeholder");
     logger.info("🚀 Starting OpenClaw Bot v3.0.0...");
 
     // Initialize database
@@ -98,9 +99,9 @@ async function main() {
     logger.info("💾 Initializing Redis...");
     await initializeRedis();
     logger.info("✅ Redis connected");
-    
-    // Run Seeder
-    await runSeeder();
+
+    // Run Seeder in background (non-blocking) — don't delay HTTP server startup
+    runSeeder().catch(err => logger.error('[SEEDER] Background seeder failed:', err.message));
 
     // Initialize queue
     logger.info("📋 Initializing queue...");
@@ -109,8 +110,12 @@ async function main() {
 
     // Start video generation worker
     try {
-      startVideoWorker(bot);
-      logger.info("✅ Video generation worker started");
+      if (isPlaceholderToken) {
+        logger.warn("⚠️ Skipping video worker (placeholder BOT_TOKEN)");
+      } else {
+        startVideoWorker(bot);
+        logger.info("✅ Video generation worker started");
+      }
     } catch (workerErr) {
       logger.warn(
         "⚠️ Video worker failed to start, falling back to direct async:",
@@ -120,16 +125,24 @@ async function main() {
 
     // Start avatar talk worker
     try {
-      startAvatarTalkWorker(bot);
-      logger.info("✅ Avatar talk worker started");
+      if (isPlaceholderToken) {
+        logger.warn("⚠️ Skipping avatar talk worker (placeholder BOT_TOKEN)");
+      } else {
+        startAvatarTalkWorker(bot);
+        logger.info("✅ Avatar talk worker started");
+      }
     } catch (avatarWorkerErr) {
       logger.warn("⚠️ Avatar talk worker failed to start:", avatarWorkerErr);
     }
 
     // Start daily report worker (sends activity report at 00:00 WIB)
     try {
-      startDailyReportWorker(bot);
-      logger.info("✅ Daily report worker started");
+      if (isPlaceholderToken) {
+        logger.warn("⚠️ Skipping daily report worker (placeholder BOT_TOKEN)");
+      } else {
+        startDailyReportWorker(bot);
+        logger.info("✅ Daily report worker started");
+      }
     } catch (reportErr) {
       logger.warn("⚠️ Daily report worker failed to start:", reportErr);
     }
@@ -181,18 +194,27 @@ async function main() {
     }
 
     // Set telegram instance for cleanup notifications, admin alerts, and run startup cleanup
-    setCleanupTelegram(bot.telegram);
-    setAlertTelegram(bot.telegram);
-    if (appConfig.ADMIN_ALERT_CHAT_ID) {
+    if (!isPlaceholderToken) {
+      setCleanupTelegram(bot.telegram);
+      setAlertTelegram(bot.telegram);
+    }
+    if (appConfig.ADMIN_ALERT_CHAT_ID && !isPlaceholderToken) {
       sendGroupAlert('info', 'Bot Started', { version: 'v3.0', env: appConfig.NODE_ENV });
     }
-    try {
-      const stuckCount = await cleanupStuckVideos(bot.telegram);
-      if (stuckCount > 0) {
-        logger.info(`✅ Startup cleanup: resolved ${stuckCount} stuck videos`);
+    if (!isPlaceholderToken) {
+      try {
+        const stuckCount = await Promise.race([
+          cleanupStuckVideos(bot.telegram),
+          new Promise<number>((resolve) => setTimeout(() => resolve(0), 10000)),
+        ]);
+        if (stuckCount > 0) {
+          logger.info(`✅ Startup cleanup: resolved ${stuckCount} stuck videos`);
+        }
+      } catch (cleanupErr) {
+        logger.warn("⚠️ Startup stuck video cleanup failed:", cleanupErr);
       }
-    } catch (cleanupErr) {
-      logger.warn("⚠️ Startup stuck video cleanup failed:", cleanupErr);
+    } else {
+      logger.warn("⚠️ Skipping startup cleanup (placeholder BOT_TOKEN)");
     }
 
     // Setup middleware
@@ -327,14 +349,21 @@ async function main() {
     const webhookUrl = appConfig.WEBHOOK_URL;
     const forcePolling = appConfig.FORCE_POLLING;
 
-    if (!forcePolling && appConfig.NODE_ENV === "production" && webhookUrl) {
+    if (isPlaceholderToken) {
+      logger.warn("⚠️ BOT_TOKEN is placeholder — skipping Telegram bot initialization (HTTP server will still start)");
+    } else if (!forcePolling && appConfig.NODE_ENV === "production" && webhookUrl) {
       // In production, set Telegram webhook to point at our Fastify route
-      const webhookSecret = appConfig.WEBHOOK_SECRET || "";
-      const fullUrl = `${webhookUrl}/webhook/telegram`;
-      await bot.telegram.setWebhook(fullUrl, {
-        secret_token: webhookSecret,
-      });
-      logger.info(`🤖 Bot webhook set: ${fullUrl}`);
+      try {
+        const webhookSecret = appConfig.WEBHOOK_SECRET || "";
+        const fullUrl = `${webhookUrl}/webhook/telegram`;
+        await Promise.race([
+          bot.telegram.setWebhook(fullUrl, { secret_token: webhookSecret }),
+          new Promise((_, reject) => setTimeout(() => reject(new Error("setWebhook timeout 10s")), 10000)),
+        ]);
+        logger.info(`🤖 Bot webhook set: ${fullUrl}`);
+      } catch (webhookErr: any) {
+        logger.warn(`⚠️ Failed to set Telegram webhook (${webhookErr.message}) — continuing without webhook`);
+      }
     } else {
       if (forcePolling) {
         logger.info("🤖 FORCE_POLLING enabled - starting with polling mode...");
@@ -344,7 +373,10 @@ async function main() {
 
       try {
         // Delete any existing webhook first
-        await bot.telegram.deleteWebhook({ drop_pending_updates: true });
+        await Promise.race([
+          bot.telegram.deleteWebhook({ drop_pending_updates: true }),
+          new Promise((_, reject) => setTimeout(() => reject(new Error("deleteWebhook timeout 5s")), 5000)),
+        ]).catch(() => {});
         await new Promise((resolve) => setTimeout(resolve, 1000));
 
         await bot.launch();

@@ -8,8 +8,15 @@ module.exports = {
     autorestart: true,
     watch: false,
     max_memory_restart: '1G',
+    min_uptime: '120s',
+    max_restarts: 3,
+    restart_delay: 10000,
+    kill_timeout: 15000,
     env: {
-      NODE_ENV: 'production'
+      NODE_ENV: 'production',
+      WEBHOOK_URL: 'https://content.aitradepulse.com',
+      PUBLIC_URL: 'https://content.aitradepulse.com',
+      PORT: 3000
     }
   }]
 };

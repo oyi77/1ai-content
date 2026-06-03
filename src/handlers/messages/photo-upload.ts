@@ -177,7 +177,6 @@ export async function handleImageReferenceWaiting(ctx: BotContext): Promise<bool
     referenceImageUrl: referenceUrl,
     mode: "img2img",
   };
-  const refImgLang = ctx.session?.userLang || "id";
   await ctx.reply(t("msg.ref_image_received", refImgLang), {
     parse_mode: "Markdown",
     reply_markup: {
