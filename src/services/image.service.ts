@@ -6,7 +6,7 @@
  *   - Image-to-image (with reference): only img2img-capable providers
  *   - IP-Adapter (avatar consistency): only IP-Adapter-capable providers
  *
- * Provider implementations live in ./image/providers.ts
+ * Provider implementations live in ./image/providers/ (split into text2img, img2img, and registry).
  */
 
 import { logger } from "@/utils/logger";
@@ -18,11 +18,11 @@ import { WatermarkService } from "./watermark.service";
 import { PromptEngine } from "@/config/prompt-engine";
 import { AIPromptOptimizer } from "./ai-prompt-optimizer.service";
 import { getConfig } from "@/config/env";
-import { getProviders } from "./image/providers";
+import { getProviders } from "./image/providers/providers-registry";
 
 // Re-export provider types for backward compatibility
-export type { ImageProvider, ProviderFn } from "./image/providers";
-export { getProviders as getProviderList } from "./image/providers";
+export type { ImageProvider, ProviderFn } from "./image/providers/providers-registry";
+export { getProviders as getProviderList } from "./image/providers/providers-registry";
 
 // Read dynamically so tests can toggle it
 function isDemoMode(): boolean {
@@ -406,7 +406,7 @@ export class ImageGenerationService {
   }
 
   private static async generateWithProviders(
-    providers: import("./image/providers").ImageProvider[],
+    providers: import("./image/providers/providers-registry").ImageProvider[],
     enriched: { full: string; provider_hint: string },
     params: ImageGenerationParams,
     mode: ImageGenerationMode,

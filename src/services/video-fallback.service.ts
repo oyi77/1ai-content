@@ -4,7 +4,7 @@
  * Orchestrator that routes through providers with circuit breaker, prompt enrichment,
  * smart router ordering, and multi-scene concatenation for long durations.
  *
- * Provider implementations live in ./video-fallback/providers.ts
+ * Provider implementations live in ./video-fallback/providers/ (split into video-async, video-sync, and registry).
  */
 
 import { logger } from "@/utils/logger";
@@ -26,8 +26,8 @@ export type {
   VideoFallbackParams,
   VideoFallbackResult,
   VideoProvider,
-} from "./video-fallback/providers";
-export { getProviders } from "./video-fallback/providers";
+} from "./video-fallback/providers/providers-registry";
+export { getProviders } from "./video-fallback/providers/providers-registry";
 
 // ── Helpers used by orchestrator ──
 
@@ -71,8 +71,8 @@ async function ensureLocalImage(refImage: string | null | undefined): Promise<st
  * Tries each provider in priority order with circuit breaker.
  */
 export async function generateVideoWithFallback(
-  params: import("./video-fallback/providers").VideoFallbackParams,
-): Promise<import("./video-fallback/providers").VideoFallbackResult> {
+  params: import("./video-fallback/providers/providers-registry").VideoFallbackParams,
+): Promise<import("./video-fallback/providers/providers-registry").VideoFallbackResult> {
   // All video providers require minimum 5s duration
   params.duration = Math.max(5, params.duration);
 
@@ -86,7 +86,7 @@ export async function generateVideoWithFallback(
 
   try {
 
-  const { getProviders } = await import("./video-fallback/providers.js");
+  const { getProviders } = await import("./video-fallback/providers/providers-registry.js");
   const allProviders = getProviders().filter((p: { enabled: boolean }) => p.enabled);
 
   if (allProviders.length === 0) {
