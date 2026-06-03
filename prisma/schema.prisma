@@ -11,80 +11,140 @@ datasource db {
 }
 
 // =============================================================================
+// ENUMS — Phase 5.3 of REFACTORING_AUDIT.md
+// These enums replace 22+ string columns. Migration pending.
+// =============================================================================
+
+enum UserTier {
+  free
+  basic
+  lite
+  pro
+  agency
+}
+
+enum VideoStatus {
+  processing
+  completed
+  failed
+  deleted
+}
+
+enum TransactionStatus {
+  pending
+  success
+  failed
+  expired
+}
+
+enum Platform {
+  tiktok
+  instagram
+  youtube
+  facebook
+  twitter
+}
+
+enum Niche {
+  fnb
+  realestate
+  product
+  car
+  beauty
+  services
+}
+
+enum TransactionType {
+  topup
+  welcome_bonus
+  refund
+  subscription
+}
+
+enum PaymentGateway {
+  tripay
+  duitku
+  nowpayments
+  stars
+  midtrans
+  system
+}
+
+// =============================================================================
 // USER MODEL
 // =============================================================================
 model User {
-  id                BigInt    @id @default(autoincrement())
-  telegramId        BigInt    @unique @map("telegram_id")
-  uuid              String    @unique @default(uuid()) @db.Uuid
-  username          String?   @db.VarChar(32)
-  firstName         String    @map("first_name") @db.VarChar(64)
-  lastName          String?   @map("last_name") @db.VarChar(64)
-  phoneNumber       String?   @map("phone_number") @db.VarChar(20)
-  
+  id          BigInt  @id @default(autoincrement())
+  telegramId  BigInt  @unique @map("telegram_id")
+  uuid        String  @unique @default(uuid()) @db.Uuid
+  username    String? @db.VarChar(32)
+  firstName   String  @map("first_name") @db.VarChar(64)
+  lastName    String? @map("last_name") @db.VarChar(64)
+  phoneNumber String? @map("phone_number") @db.VarChar(20)
+
   // Tier & Credits
-  tier              String    @default("free") @db.VarChar(16)
-  creditBalance     Decimal   @default(0) @map("credit_balance") @db.Decimal(10, 2)
-  subscriptionCredits Int     @default(0) @map("subscription_credits")
-  creditExpiresAt   DateTime? @map("credit_expires_at")
-  
+  tier                String    @default("free") @db.VarChar(16)
+  creditBalance       Decimal   @default(0) @map("credit_balance") @db.Decimal(10, 2)
+  subscriptionCredits Int       @default(0) @map("subscription_credits")
+  creditExpiresAt     DateTime? @map("credit_expires_at")
+
   // Referral
-  referralCode      String?   @unique @map("referral_code") @db.VarChar(32)
-  referredBy        String?   @map("referred_by") @db.Uuid
-  referralTier      Int       @default(1) @map("referral_tier")
-  
+  referralCode String? @unique @map("referral_code") @db.VarChar(32)
+  referredBy   String? @map("referred_by") @db.Uuid
+  referralTier Int     @default(1) @map("referral_tier")
+
   // Settings
-  language          String    @default("id") @db.VarChar(5)
+  language             String  @default("id") @db.VarChar(5)
   notificationsEnabled Boolean @default(true) @map("notifications_enabled")
-  autoRenewal       Boolean   @default(false) @map("auto_renewal")
-  
+  autoRenewal          Boolean @default(false) @map("auto_renewal")
+
   // Free Trial
-  welcomeBonusUsed  Boolean   @default(false) @map("welcome_bonus_used")
-  dailyFreeUsed     Boolean   @default(false) @map("daily_free_used")
-  dailyFreeResetAt  DateTime? @map("daily_free_reset_at")
-  selectedNiche     String?   @map("selected_niche") @db.VarChar(32)
-  userMode          String?   @map("user_mode") @db.VarChar(32)
+  welcomeBonusUsed Boolean   @default(false) @map("welcome_bonus_used")
+  dailyFreeUsed    Boolean   @default(false) @map("daily_free_used")
+  dailyFreeResetAt DateTime? @map("daily_free_reset_at")
+  selectedNiche    String?   @map("selected_niche") @db.VarChar(32)
+  userMode         String?   @map("user_mode") @db.VarChar(32)
 
   // Security
-  isBanned          Boolean   @default(false) @map("is_banned")
-  banReason         String?   @map("ban_reason")
-  bannedAt          DateTime? @map("banned_at")
-  fraudScore        Int       @default(0) @map("fraud_score")
-  isIntercepted     Boolean   @default(false) @map("is_intercepted")
+  isBanned      Boolean   @default(false) @map("is_banned")
+  banReason     String?   @map("ban_reason")
+  bannedAt      DateTime? @map("banned_at")
+  fraudScore    Int       @default(0) @map("fraud_score")
+  isIntercepted Boolean   @default(false) @map("is_intercepted")
 
   // Metadata
-  createdAt         DateTime  @default(now()) @map("created_at")
-  updatedAt         DateTime  @updatedAt @map("updated_at")
-  lastActivityAt    DateTime  @default(now()) @map("last_activity_at")
-  
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  lastActivityAt DateTime @default(now()) @map("last_activity_at")
+
   // UTM & Attribution Tracking (Full Funnel)
-  utmSource         String?   @map("utm_source") @db.VarChar(255)
-  utmMedium         String?   @map("utm_medium") @db.VarChar(255)
-  utmCampaign       String?   @map("utm_campaign") @db.VarChar(255)
-  utmContent        String?   @map("utm_content") @db.VarChar(255)
-  lpVariant         String?   @map("lp_variant") @db.VarChar(50)
-  
+  utmSource   String? @map("utm_source") @db.VarChar(255)
+  utmMedium   String? @map("utm_medium") @db.VarChar(255)
+  utmCampaign String? @map("utm_campaign") @db.VarChar(255)
+  utmContent  String? @map("utm_content") @db.VarChar(255)
+  lpVariant   String? @map("lp_variant") @db.VarChar(50)
+
   // Attribution IDs (for platform matching)
-  fbc               String?   @map("fbc") @db.VarChar(500) // Facebook Click ID
-  fbp               String?   @map("fbp") @db.VarChar(500) // Facebook Pixel ID
-  ttclid            String?   @map("ttclid") @db.VarChar(500) // TikTok Click ID
-  
+  fbc    String? @map("fbc") @db.VarChar(500) // Facebook Click ID
+  fbp    String? @map("fbp") @db.VarChar(500) // Facebook Pixel ID
+  ttclid String? @map("ttclid") @db.VarChar(500) // TikTok Click ID
+
   // LTV Metrics
-  daysToFirstPurchase Int?    @map("days_to_first_purchase")
-  signupToFirstVideoMin Int?  @map("signup_to_first_video_min")
-  totalSpent        Decimal   @default(0) @map("total_spent") @db.Decimal(12, 2)
-  
+  daysToFirstPurchase   Int?    @map("days_to_first_purchase")
+  signupToFirstVideoMin Int?    @map("signup_to_first_video_min")
+  totalSpent            Decimal @default(0) @map("total_spent") @db.Decimal(12, 2)
+
   // Relations
-  transactions      Transaction[]
-  videos            Video[]
-  commissions       Commission[]
-  subscriptions     Subscription[]
-  socialAccounts    SocialAccount[]
-  avatars           UserAvatar[]
-  apiKeys           ApiKey[]
-  videoClips        VideoClip[]
-  videoReworks      VideoRework[]
-  viralScans        ViralScan[]
+  transactions   Transaction[]
+  videos         Video[]
+  commissions    Commission[]
+  subscriptions  Subscription[]
+  socialAccounts SocialAccount[]
+  avatars        UserAvatar[]
+  apiKeys        ApiKey[]
+  videoClips     VideoClip[]
+  videoReworks   VideoRework[]
+  viralScans     ViralScan[]
 
   @@index([telegramId])
   @@index([referralCode])
@@ -115,45 +175,45 @@ model ApiKey {
 // TRANSACTION MODEL
 // =============================================================================
 model Transaction {
-  id                    BigInt    @id @default(autoincrement())
-  orderId               String    @unique @map("order_id") @db.VarChar(64)
-  userId                BigInt    @map("user_id")
-  
+  id      BigInt @id @default(autoincrement())
+  orderId String @unique @map("order_id") @db.VarChar(64)
+  userId  BigInt @map("user_id")
+
   // Transaction details
-  type                  String    @db.VarChar(32)
-  packageName           String?   @map("package_name") @db.VarChar(32)
-  amountIdr             Decimal   @map("amount_idr") @db.Decimal(12, 2)
-  creditsAmount         Decimal?  @map("credits_amount") @db.Decimal(10, 2)
-  
+  type          String   @db.VarChar(32)
+  packageName   String?  @map("package_name") @db.VarChar(32)
+  amountIdr     Decimal  @map("amount_idr") @db.Decimal(12, 2)
+  creditsAmount Decimal? @map("credits_amount") @db.Decimal(10, 2)
+
   // Payment details
-  gateway               String    @db.VarChar(16)
-  gatewayTransactionId  String?   @unique @map("gateway_transaction_id") @db.VarChar(128)
-  paymentMethod         String?   @map("payment_method") @db.VarChar(32)
-  paymentChannel        String?   @map("payment_channel") @db.VarChar(32)
-  
+  gateway              String  @db.VarChar(16)
+  gatewayTransactionId String? @unique @map("gateway_transaction_id") @db.VarChar(128)
+  paymentMethod        String? @map("payment_method") @db.VarChar(32)
+  paymentChannel       String? @map("payment_channel") @db.VarChar(32)
+
   // Status tracking
-  status                String    @default("pending") @db.VarChar(16)
-  statusHistory         Json?     @map("status_history")
-  
+  status        String @default("pending") @db.VarChar(16)
+  statusHistory Json?  @map("status_history")
+
   // Timestamps
-  createdAt             DateTime  @default(now()) @map("created_at")
-  paidAt                DateTime? @map("paid_at")
-  expiredAt             DateTime? @default(dbgenerated("NOW() + INTERVAL '30 minutes'")) @map("expired_at")
-  
+  createdAt DateTime  @default(now()) @map("created_at")
+  paidAt    DateTime? @map("paid_at")
+  expiredAt DateTime? @default(dbgenerated("NOW() + INTERVAL '30 minutes'")) @map("expired_at")
+
   // Metadata
-  ipAddress             String?   @map("ip_address") @db.Inet
-  userAgent             String?   @map("user_agent")
-  metadata              Json?
-  
+  ipAddress String? @map("ip_address") @db.Inet
+  userAgent String? @map("user_agent")
+  metadata  Json?
+
   // UTM & Attribution (for LTV tracking)
-  utmCampaign           String?   @map("utm_campaign") @db.VarChar(255)
-  utmContent            String?   @map("utm_content") @db.VarChar(255)
-  lpVariant             String?   @map("lp_variant") @db.VarChar(50)
-  daysToConversion      Int?      @map("days_to_conversion")
-  
+  utmCampaign      String? @map("utm_campaign") @db.VarChar(255)
+  utmContent       String? @map("utm_content") @db.VarChar(255)
+  lpVariant        String? @map("lp_variant") @db.VarChar(50)
+  daysToConversion Int?    @map("days_to_conversion")
+
   // Relations
-  user                  User      @relation(fields: [userId], references: [telegramId])
-  
+  user User @relation(fields: [userId], references: [telegramId])
+
   @@index([userId])
   @@index([status])
   @@index([createdAt])
@@ -164,50 +224,50 @@ model Transaction {
 // VIDEO MODEL
 // =============================================================================
 model Video {
-  id              BigInt    @id @default(autoincrement())
-  userId          BigInt    @map("user_id")
-  jobId           String    @unique @map("job_id") @db.VarChar(64)
-  
+  id     BigInt @id @default(autoincrement())
+  userId BigInt @map("user_id")
+  jobId  String @unique @map("job_id") @db.VarChar(64)
+
   // Video details
-  title           String?   @db.VarChar(255)
-  description     String?   @db.Text
-  
+  title       String? @db.VarChar(255)
+  description String? @db.Text
+
   // Generation params
-  niche           String    @db.VarChar(32)
-  platform        String    @db.VarChar(32)
-  duration        Int
-  scenes          Int
-  
+  niche    String @db.VarChar(32)
+  platform String @db.VarChar(32)
+  duration Int
+  scenes   Int
+
   // Output
-  thumbnailUrl    String?   @map("thumbnail_url")
-  videoUrl        String?   @map("video_url")
-  downloadUrl     String?   @map("download_url")
-  
+  thumbnailUrl String? @map("thumbnail_url")
+  videoUrl     String? @map("video_url")
+  downloadUrl  String? @map("download_url")
+
   // Status
-  status          String    @default("processing") @db.VarChar(16)
-  progress        Int       @default(0)
-  errorMessage    String?   @map("error_message")
-  favorited       Boolean   @default(false)
+  status       String  @default("processing") @db.VarChar(16)
+  progress     Int     @default(0)
+  errorMessage String? @map("error_message")
+  favorited    Boolean @default(false)
 
   // Credits
-  creditsUsed     Decimal   @map("credits_used") @db.Decimal(10, 2)
+  creditsUsed Decimal @map("credits_used") @db.Decimal(10, 2)
 
   // Phase 1: Multi-provider & style fields
   styles             String[]
   storyboard         Json?
-  providerChain      String[]  @map("provider_chain")
-  optimizedPrompts   Json?     @map("optimized_prompts")
-  productAnalysis    Json?     @map("product_analysis")
-  generationMetadata Json?     @map("generation_metadata")
-  finalProvider      String?   @map("final_provider")
+  providerChain      String[] @map("provider_chain")
+  optimizedPrompts   Json?    @map("optimized_prompts")
+  productAnalysis    Json?    @map("product_analysis")
+  generationMetadata Json?    @map("generation_metadata")
+  finalProvider      String?  @map("final_provider")
 
   // Timestamps
-  createdAt       DateTime  @default(now()) @map("created_at")
-  completedAt     DateTime? @map("completed_at")
-  expiresAt       DateTime? @default(dbgenerated("NOW() + INTERVAL '30 days'")) @map("expires_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  completedAt DateTime? @map("completed_at")
+  expiresAt   DateTime? @default(dbgenerated("NOW() + INTERVAL '30 days'")) @map("expires_at")
 
   // Relations
-  user            User      @relation(fields: [userId], references: [telegramId])
+  user User @relation(fields: [userId], references: [telegramId])
 
   @@index([userId])
   @@index([status])
@@ -220,26 +280,26 @@ model Video {
 // COMMISSION MODEL (Affiliate)
 // =============================================================================
 model Commission {
-  id              BigInt    @id @default(autoincrement())
-  referrerId      BigInt    @map("referrer_id")
-  referredId      BigInt    @map("referred_id")
-  
+  id         BigInt @id @default(autoincrement())
+  referrerId BigInt @map("referrer_id")
+  referredId BigInt @map("referred_id")
+
   // Commission details
-  amount          Decimal   @db.Decimal(12, 2)
-  tier            Int
-  status          String    @default("pending") @db.VarChar(16)
-  
+  amount Decimal @db.Decimal(12, 2)
+  tier   Int
+  status String  @default("pending") @db.VarChar(16)
+
   // Availability
-  availableAt     DateTime  @map("available_at")
-  withdrawnAt     DateTime? @map("withdrawn_at")
-  
+  availableAt DateTime  @map("available_at")
+  withdrawnAt DateTime? @map("withdrawn_at")
+
   // Timestamps
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
-  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
   // Relations
-  referrer        User      @relation(fields: [referrerId], references: [telegramId])
-  
+  referrer User @relation(fields: [referrerId], references: [telegramId])
+
   @@index([referrerId])
   @@index([status])
   @@index([availableAt])
@@ -250,30 +310,30 @@ model Commission {
 // SUBSCRIPTION MODEL
 // =============================================================================
 model Subscription {
-  id                  BigInt    @id @default(autoincrement())
-  userId              BigInt    @map("user_id")
-  
-  plan                String    @db.VarChar(16)
-  billingCycle        String    @map("billing_cycle") @db.VarChar(16)
-  
-  status              String    @default("active") @db.VarChar(16)
-  
-  currentPeriodStart  DateTime  @map("current_period_start")
-  currentPeriodEnd    DateTime  @map("current_period_end")
-  
-  cancelAtPeriodEnd   Boolean   @default(false) @map("cancel_at_period_end")
-  cancelledAt         DateTime? @map("cancelled_at")
-  
-  paymentMethodId     String?   @map("payment_method_id") @db.VarChar(64)
-  
-  metadata            Json?
-  
-  createdAt           DateTime  @default(now()) @map("created_at")
-  updatedAt           DateTime  @updatedAt @map("updated_at")
-  
+  id     BigInt @id @default(autoincrement())
+  userId BigInt @map("user_id")
+
+  plan         String @db.VarChar(16)
+  billingCycle String @map("billing_cycle") @db.VarChar(16)
+
+  status String @default("active") @db.VarChar(16)
+
+  currentPeriodStart DateTime @map("current_period_start")
+  currentPeriodEnd   DateTime @map("current_period_end")
+
+  cancelAtPeriodEnd Boolean   @default(false) @map("cancel_at_period_end")
+  cancelledAt       DateTime? @map("cancelled_at")
+
+  paymentMethodId String? @map("payment_method_id") @db.VarChar(64)
+
+  metadata Json?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
   // Relations
-  user                User      @relation(fields: [userId], references: [telegramId])
-  
+  user User @relation(fields: [userId], references: [telegramId])
+
   @@index([userId])
   @@index([status])
   @@index([currentPeriodEnd])
@@ -284,18 +344,18 @@ model Subscription {
 // AUDIT LOG MODEL
 // =============================================================================
 model AuditLog {
-  id          BigInt    @id @default(autoincrement())
-  userId      BigInt?   @map("user_id")
-  action      String    @db.VarChar(64)
-  entityType  String    @map("entity_type") @db.VarChar(32)
-  entityId    String    @map("entity_id") @db.VarChar(64)
-  oldValue    Json?     @map("old_value")
-  newValue    Json?     @map("new_value")
-  ipAddress   String?   @map("ip_address") @db.Inet
-  userAgent   String?   @map("user_agent")
-  metadata    Json?
-  createdAt   DateTime  @default(now()) @map("created_at")
-  
+  id         BigInt   @id @default(autoincrement())
+  userId     BigInt?  @map("user_id")
+  action     String   @db.VarChar(64)
+  entityType String   @map("entity_type") @db.VarChar(32)
+  entityId   String   @map("entity_id") @db.VarChar(64)
+  oldValue   Json?    @map("old_value")
+  newValue   Json?    @map("new_value")
+  ipAddress  String?  @map("ip_address") @db.Inet
+  userAgent  String?  @map("user_agent")
+  metadata   Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+
   @@index([userId])
   @@index([action])
   @@index([entityType, entityId])
@@ -307,18 +367,18 @@ model AuditLog {
 // SOCIAL ACCOUNT MODEL (PostBridge Integration)
 // =============================================================================
 model SocialAccount {
-  id              Int      @id @default(autoincrement())
-  userId          BigInt   @map("user_id")
-  platform        String   @db.VarChar(32) // tiktok, facebook, instagram, etc
-  pbAccountId     String   @unique @map("pb_account_id") @db.VarChar(64)
-  accountName     String?  @map("account_name") @db.VarChar(128)
-  avatarUrl       String?  @map("avatar_url")
-  status          String   @default("active") @db.VarChar(16)
-  
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
-  
-  user            User     @relation(fields: [userId], references: [telegramId])
+  id          Int     @id @default(autoincrement())
+  userId      BigInt  @map("user_id")
+  platform    String  @db.VarChar(32) // tiktok, facebook, instagram, etc
+  pbAccountId String  @unique @map("pb_account_id") @db.VarChar(64)
+  accountName String? @map("account_name") @db.VarChar(128)
+  avatarUrl   String? @map("avatar_url")
+  status      String  @default("active") @db.VarChar(16)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [telegramId])
 
   @@index([userId])
   @@map("social_accounts")
@@ -328,13 +388,13 @@ model SocialAccount {
 // PAYMENT SETTINGS MODEL
 // =============================================================================
 model PaymentSettings {
-  id                    Int      @id @default(autoincrement())
-  key                   String   @unique @db.VarChar(64)
-  value                 String   @db.VarChar(256)
-  description           String?  @db.VarChar(256)
-  updatedAt             DateTime @updatedAt @map("updated_at")
-  updatedBy             BigInt?  @map("updated_by")
-  
+  id          Int      @id @default(autoincrement())
+  key         String   @unique @db.VarChar(64)
+  value       String   @db.VarChar(256)
+  description String?  @db.VarChar(256)
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  updatedBy   BigInt?  @map("updated_by")
+
   @@map("payment_settings")
 }
 
@@ -350,6 +410,7 @@ model ProviderHealth {
   avgResponseTime     Int?      @map("avg_response_time")
   circuitBreakerState String    @default("closed") @map("circuit_breaker_state")
   updatedAt           DateTime  @updatedAt @map("updated_at")
+
   @@map("provider_health")
 }
 
@@ -357,16 +418,17 @@ model ProviderHealth {
 // PROMPT CACHE MODEL (Phase 1)
 // =============================================================================
 model PromptCache {
-  id              Int      @id @default(autoincrement())
-  promptHash      String   @unique @map("prompt_hash") @db.VarChar(32)
-  rawPrompt       String   @map("raw_prompt") @db.Text
-  provider        String   @db.VarChar(50)
-  styleKey        String?  @map("style_key") @db.VarChar(100)
-  optimizedPrompt String   @map("optimized_prompt") @db.Text
-  tokenEstimate   Int?     @map("token_estimate")
-  hitCount        Int      @default(0) @map("hit_count")
-  createdAt       DateTime @default(now()) @map("created_at")
+  id              Int       @id @default(autoincrement())
+  promptHash      String    @unique @map("prompt_hash") @db.VarChar(32)
+  rawPrompt       String    @map("raw_prompt") @db.Text
+  provider        String    @db.VarChar(50)
+  styleKey        String?   @map("style_key") @db.VarChar(100)
+  optimizedPrompt String    @map("optimized_prompt") @db.Text
+  tokenEstimate   Int?      @map("token_estimate")
+  hitCount        Int       @default(0) @map("hit_count")
+  createdAt       DateTime  @default(now()) @map("created_at")
   expiresAt       DateTime? @map("expires_at")
+
   @@index([promptHash])
   @@index([expiresAt])
   @@map("prompt_cache")
@@ -376,18 +438,18 @@ model PromptCache {
 // USER AVATAR MODEL (Persistent character/identity for consistent generation)
 // =============================================================================
 model UserAvatar {
-  id              Int       @id @default(autoincrement())
-  userId          BigInt    @map("user_id")
-  name            String    @db.VarChar(64)
-  imageUrl        String    @map("image_url")
-  localPath       String?   @map("local_path")
-  description     String?   @db.Text
-  features        Json?
-  isDefault       Boolean   @default(false) @map("is_default")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  id          Int      @id @default(autoincrement())
+  userId      BigInt   @map("user_id")
+  name        String   @db.VarChar(64)
+  imageUrl    String   @map("image_url")
+  localPath   String?  @map("local_path")
+  description String?  @db.Text
+  features    Json?
+  isDefault   Boolean  @default(false) @map("is_default")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
-  user            User      @relation(fields: [userId], references: [telegramId])
+  user User @relation(fields: [userId], references: [telegramId])
 
   @@index([userId])
   @@index([userId, isDefault])
@@ -398,12 +460,12 @@ model UserAvatar {
 // PRICING CONFIG MODEL (Dynamic pricing — packages, subscriptions, provider costs)
 // =============================================================================
 model PricingConfig {
-  id          Int      @id @default(autoincrement())
-  category    String   @db.VarChar(32)
-  key         String   @db.VarChar(64)
-  value       Json
-  updatedAt   DateTime @updatedAt @map("updated_at")
-  updatedBy   BigInt?  @map("updated_by")
+  id        Int      @id @default(autoincrement())
+  category  String   @db.VarChar(32)
+  key       String   @db.VarChar(64)
+  value     Json
+  updatedAt DateTime @updatedAt @map("updated_at")
+  updatedBy BigInt?  @map("updated_by")
 
   @@unique([category, key])
   @@index([category])
@@ -414,16 +476,16 @@ model PricingConfig {
 // SAVED PROMPTS — User custom prompt library
 // =============================================================================
 model SavedPrompt {
-  id          Int      @id @default(autoincrement())
-  userId      BigInt   @map("user_id")
-  title       String   @db.VarChar(100)
-  prompt      String   @db.Text
-  niche       String   @db.VarChar(32)        // fnb, fashion, tech, etc
-  source      String   @default("custom") @db.VarChar(16) // custom | library | daily
-  sourceId    String?  @map("source_id") @db.VarChar(32)  // original prompt id if from library
-  usageCount  Int      @default(0) @map("usage_count")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id         Int      @id @default(autoincrement())
+  userId     BigInt   @map("user_id")
+  title      String   @db.VarChar(100)
+  prompt     String   @db.Text
+  niche      String   @db.VarChar(32) // fnb, fashion, tech, etc
+  source     String   @default("custom") @db.VarChar(16) // custom | library | daily
+  sourceId   String?  @map("source_id") @db.VarChar(32) // original prompt id if from library
+  usageCount Int      @default(0) @map("usage_count")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
   @@index([userId])
   @@index([userId, niche])
@@ -447,6 +509,7 @@ model GenerationAnalytics {
   duration         Int?
   creditsUsed      Decimal? @map("credits_used") @db.Decimal(3, 1)
   createdAt        DateTime @default(now()) @map("created_at")
+
   @@index([userId])
   @@index([niche])
   @@index([createdAt])
@@ -478,26 +541,26 @@ model TokenUsage {
 // =============================================================================
 
 model UserStreak {
-  id              BigInt    @id @default(autoincrement())
-  userId          BigInt    @unique @map("user_id")
-  currentStreak   Int       @default(0) @map("current_streak")
-  longestStreak   Int       @default(0) @map("longest_streak")
+  id               BigInt    @id @default(autoincrement())
+  userId           BigInt    @unique @map("user_id")
+  currentStreak    Int       @default(0) @map("current_streak")
+  longestStreak    Int       @default(0) @map("longest_streak")
   lastGenerateDate DateTime? @map("last_generate_date") @db.Date
-  streakStartDate DateTime? @map("streak_start_date") @db.Date
-  totalGenerates  Int       @default(0) @map("total_generates")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  streakStartDate  DateTime? @map("streak_start_date") @db.Date
+  totalGenerates   Int       @default(0) @map("total_generates")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
 
   @@index([userId])
   @@map("user_streaks")
 }
 
 model UserBadge {
-  id          BigInt    @id @default(autoincrement())
-  userId      BigInt    @map("user_id")
-  badgeId     String    @map("badge_id") @db.VarChar(50)
-  awardedAt   DateTime  @default(now()) @map("awarded_at")
-  notified    Boolean   @default(false)
+  id        BigInt   @id @default(autoincrement())
+  userId    BigInt   @map("user_id")
+  badgeId   String   @map("badge_id") @db.VarChar(50)
+  awardedAt DateTime @default(now()) @map("awarded_at")
+  notified  Boolean  @default(false)
 
   @@unique([userId, badgeId])
   @@index([userId])
@@ -505,11 +568,11 @@ model UserBadge {
 }
 
 model RetentionLog {
-  id          BigInt    @id @default(autoincrement())
-  userId      BigInt    @map("user_id")
-  triggerType String    @map("trigger_type") @db.VarChar(50)
-  sentAt      DateTime  @default(now()) @map("sent_at")
-  responded   Boolean   @default(false)
+  id          BigInt   @id @default(autoincrement())
+  userId      BigInt   @map("user_id")
+  triggerType String   @map("trigger_type") @db.VarChar(50)
+  sentAt      DateTime @default(now()) @map("sent_at")
+  responded   Boolean  @default(false)
 
   @@index([userId])
   @@index([triggerType])
@@ -557,47 +620,47 @@ model TemplateVideo {
 // VIDEO CLIP MODEL (Downloaded viral videos for reuse)
 // =============================================================================
 model VideoClip {
-  id              BigInt    @id @default(autoincrement())
-  userId          BigInt    @map("user_id")
-  
+  id     BigInt @id @default(autoincrement())
+  userId BigInt @map("user_id")
+
   // Source info
-  sourceUrl       String    @map("source_url") @db.VarChar(1024)
-  platform        String    @db.VarChar(32) // youtube, tiktok, instagram
-  originalTitle   String?   @map("original_title") @db.VarChar(255)
-  originalAuthor  String?   @map("original_author") @db.VarChar(128)
-  
+  sourceUrl      String  @map("source_url") @db.VarChar(1024)
+  platform       String  @db.VarChar(32) // youtube, tiktok, instagram
+  originalTitle  String? @map("original_title") @db.VarChar(255)
+  originalAuthor String? @map("original_author") @db.VarChar(128)
+
   // Video details
-  title           String?   @db.VarChar(255)
-  description     String?   @db.Text
-  duration        Int       // seconds
-  width           Int?
-  height          Int?
-  
+  title       String? @db.VarChar(255)
+  description String? @db.Text
+  duration    Int // seconds
+  width       Int?
+  height      Int?
+
   // Storage
-  localPath       String    @map("local_path") @db.VarChar(512)
-  thumbnailUrl    String?   @map("thumbnail_url")
-  fileSize        BigInt    @map("file_size")
-  format          String    @default("mp4") @db.VarChar(16)
-  
+  localPath    String  @map("local_path") @db.VarChar(512)
+  thumbnailUrl String? @map("thumbnail_url")
+  fileSize     BigInt  @map("file_size")
+  format       String  @default("mp4") @db.VarChar(16)
+
   // Metadata
-  views           BigInt    @default(0)
-  likes           BigInt    @default(0)
-  viralityScore   Int       @default(0) @map("virality_score")
-  hashtags        Json?     // string[]
-  
+  views         BigInt @default(0)
+  likes         BigInt @default(0)
+  viralityScore Int    @default(0) @map("virality_score")
+  hashtags      Json? // string[]
+
   // Status
-  status          String    @default("ready") @db.VarChar(16) // ready, processing, failed
-  errorMessage    String?   @map("error_message")
-  
+  status       String  @default("ready") @db.VarChar(16) // ready, processing, failed
+  errorMessage String? @map("error_message")
+
   // Timestamps
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
-  expiresAt       DateTime? @map("expires_at")
-  
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  expiresAt DateTime? @map("expires_at")
+
   // Relations
-  user            User      @relation(fields: [userId], references: [telegramId])
-  reworks         VideoRework[]
-  
+  user    User          @relation(fields: [userId], references: [telegramId])
+  reworks VideoRework[]
+
   @@index([userId])
   @@index([platform])
   @@index([viralityScore])
@@ -609,45 +672,45 @@ model VideoClip {
 // VIDEO REWORK MODEL (Anti-copyright transformations)
 // =============================================================================
 model VideoRework {
-  id              BigInt    @id @default(autoincrement())
-  userId          BigInt    @map("user_id")
-  clipId          BigInt    @map("clip_id")
-  
+  id     BigInt @id @default(autoincrement())
+  userId BigInt @map("user_id")
+  clipId BigInt @map("clip_id")
+
   // Transform options applied
-  mirror          Boolean   @default(false)
-  cropPercent     Int       @default(0)
-  colorShift      Int       @default(0)
-  brightness      Float     @default(1.0)
-  contrast        Float     @default(1.0)
-  saturation      Float     @default(1.0)
-  speed           Float     @default(1.0)
-  pitchShift      Int       @default(0)
-  watermarkText   String?   @map("watermark_text")
-  
+  mirror        Boolean @default(false)
+  cropPercent   Int     @default(0)
+  colorShift    Int     @default(0)
+  brightness    Float   @default(1.0)
+  contrast      Float   @default(1.0)
+  saturation    Float   @default(1.0)
+  speed         Float   @default(1.0)
+  pitchShift    Int     @default(0)
+  watermarkText String? @map("watermark_text")
+
   // Metadata changes
-  newTitle        String?   @map("new_title")
-  newDescription  String?   @map("new_description")
-  
+  newTitle       String? @map("new_title")
+  newDescription String? @map("new_description")
+
   // Output
-  outputPath      String    @map("output_path") @db.VarChar(512)
-  fileSize        BigInt    @map("file_size")
-  
+  outputPath String @map("output_path") @db.VarChar(512)
+  fileSize   BigInt @map("file_size")
+
   // Copyright check
-  copyrightRisk   String    @default("low") @map("copyright_risk") @db.VarChar(16)
-  riskIssues      Json?     @map("risk_issues") // string[]
-  
+  copyrightRisk String @default("low") @map("copyright_risk") @db.VarChar(16)
+  riskIssues    Json?  @map("risk_issues") // string[]
+
   // Status
-  status          String    @default("completed") @db.VarChar(16)
-  errorMessage    String?   @map("error_message")
-  
+  status       String  @default("completed") @db.VarChar(16)
+  errorMessage String? @map("error_message")
+
   // Timestamps
-  createdAt       DateTime  @default(now()) @map("created_at")
-  completedAt     DateTime? @map("completed_at")
-  
+  createdAt   DateTime  @default(now()) @map("created_at")
+  completedAt DateTime? @map("completed_at")
+
   // Relations
-  user            User      @relation(fields: [userId], references: [telegramId])
-  clip            VideoClip @relation(fields: [clipId], references: [id])
-  
+  user User      @relation(fields: [userId], references: [telegramId])
+  clip VideoClip @relation(fields: [clipId], references: [id])
+
   @@index([userId])
   @@index([clipId])
   @@index([createdAt])
@@ -658,22 +721,23 @@ model VideoRework {
 // VIRAL SCAN MODEL (Cache viral video scans)
 // =============================================================================
 model ViralScan {
-  id              BigInt    @id @default(autoincrement())
-  userId          BigInt    @map("user_id")
-  
+  id     BigInt @id @default(autoincrement())
+  userId BigInt @map("user_id")
+
   // Scan params
-  query           String    @db.VarChar(255)
-  platform        String    @db.VarChar(32)
-  niche           String?   @db.VarChar(64)
-  
+  query    String  @db.VarChar(255)
+  platform String  @db.VarChar(32)
+  niche    String? @db.VarChar(64)
+
   // Results
-  resultCount     Int       @default(0) @map("result_count")
-  results         Json?     // ViralVideo[]
-  
+  resultCount Int   @default(0) @map("result_count")
+  results     Json? // ViralVideo[]
+
   // Timestamps
-  createdAt       DateTime  @default(now()) @map("created_at")
-  expiresAt       DateTime  @map("expires_at")
-  
+  createdAt DateTime @default(now()) @map("created_at")
+  expiresAt DateTime @map("expires_at")
+  User      User     @relation(fields: [userId], references: [id])
+
   @@index([userId])
   @@index([query])
   @@index([createdAt])
