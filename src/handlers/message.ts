@@ -6,6 +6,8 @@
 
 import { handleDisassemble, handleVideoCreationImage, handleSkipImageReference, handleVideoElementPrecheck } from "./messages/video-uploader";
 export { handleDisassemble, handleVideoCreationImage, handleSkipImageReference, handleVideoElementPrecheck };
+import { updateSessionDirectly, SESSION_TTL } from "./messages/session";
+export { updateSessionDirectly };
 import { BotContext } from "@/types";
 import { logger } from "@/utils/logger";
 import { videosCommand } from "@/commands/videos";
@@ -48,36 +50,8 @@ import { t } from "@/i18n/translations";
 import { getPersonaForUser, isNicheAllowedForPersona } from "@/config/personas";
 import { resolveNicheKey } from "@/config/niches";
 
-const SESSION_TTL = 86400; // 24h
-
-/** Write session data directly to Redis without going through middleware */
-export async function updateSessionDirectly(
-  userId: number,
-  updater: (session: { state?: string; stateData?: Record<string, unknown>; [key: string]: unknown }) => void,
-): Promise<void> {
-  const key = `session:${userId}`;
-  const lockKey = `session-lock:${userId}`;
-  // Try to acquire lock (expires in 2s to prevent deadlock)
-  const locked = await redis.set(lockKey, '1', 'EX', 2, 'NX');
-  if (!locked) {
-    // Lock held by concurrent request — skip this update to avoid corruption
-    logger.warn(`Session update skipped for user ${userId}: lock held by concurrent request`);
-    return;
-  }
-  try {
-    const raw = await redis.get(key);
-    const session = raw
-      ? JSON.parse(raw)
-      : { state: "DASHBOARD", stateData: {}, lastActivity: new Date() };
-    updater(session);
-    await redis.setex(key, SESSION_TTL, JSON.stringify(session));
-  } finally {
-    await redis.del(lockKey).catch(() => {});
-  }
-}
-
 /**
- * Handle disassemble — extract prompt from user's uploaded media
+ * Handle incoming messages
  */
 
 
