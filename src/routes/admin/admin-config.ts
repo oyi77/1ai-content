@@ -3,6 +3,8 @@ import { AdminConfigService } from "@/services/admin-config.service";
 import { prisma } from "@/config/database";
 import { initConfig } from "@/config/env";
 import { trackingVars } from "./shared";
+import { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
 
 const API_KEY_REGISTRY: Record<string, string> = {
   BOT_TOKEN: 'Telegram Bot Token', ADMIN_PASSWORD: 'Admin Password',
@@ -29,6 +31,25 @@ const API_KEY_REGISTRY: Record<string, string> = {
   USD_TO_IDR_RATE: 'USD→IDR Rate',
 };
 
+const ALLOWED_CONFIG_CATEGORIES = ['provider', 'ai_param', 'timeout', 'retry', 'queue', 'retention', 'rate_limit', 'hpas'] as const;
+
+const configKeyParamSchema = zodToJsonSchema(z.object({
+  category: z.enum(ALLOWED_CONFIG_CATEGORIES),
+  key: z.string().min(1).max(128),
+}), "configKeyParam");
+
+const configValueBodySchema = zodToJsonSchema(z.object({
+  value: z.unknown(),
+}), "configValueBody");
+
+const apiKeyNameParamSchema = zodToJsonSchema(z.object({
+  name: z.string().min(1).max(64),
+}), "apiKeyNameParam");
+
+const apiKeyValueBodySchema = zodToJsonSchema(z.object({
+  value: z.string().min(1).max(512),
+}), "apiKeyValueBody");
+
 function maskKey(v: string): string {
   if (!v) return '';
   if (v.length <= 10) return '***';
@@ -51,19 +72,22 @@ export async function registerAdminConfigRoutes(
     return result;
   });
 
-  server.put("/api/admin-config/:category/:key", async (request, reply) => {
+  server.put("/api/admin-config/:category/:key", {
+    schema: {
+      params: configKeyParamSchema,
+      body: configValueBodySchema,
+    },
+  }, async (request, reply) => {
     if (!await verifyAdmin(request, reply)) return;
     const { category, key } = request.params as { category: string; key: string };
-    const { value } = request.body as { value: any };
-    const allowedCategories = ['provider', 'ai_param', 'timeout', 'retry', 'queue', 'retention', 'rate_limit', 'hpas'];
-    if (!allowedCategories.includes(category)) {
-      return reply.status(400).send({ error: 'Invalid category' });
-    }
+    const { value } = request.body as { value: unknown };
     await AdminConfigService.set(category, key, value);
     return { ok: true };
   });
 
-  server.delete("/api/admin-config/:category/:key", async (request, reply) => {
+  server.delete("/api/admin-config/:category/:key", {
+    schema: { params: configKeyParamSchema },
+  }, async (request, reply) => {
     if (!await verifyAdmin(request, reply)) return;
     const { category, key } = request.params as { category: string; key: string };
     await AdminConfigService.reset(category, key);
@@ -85,24 +109,29 @@ export async function registerAdminConfigRoutes(
     });
   });
 
-  server.put('/api/admin/api-keys/:name', async (request, reply) => {
+  server.put('/api/admin/api-keys/:name', {
+    schema: {
+      params: apiKeyNameParamSchema,
+      body: apiKeyValueBodySchema,
+    },
+  }, async (request, reply) => {
     if (!await verifyAdmin(request, reply)) return;
     const { name } = request.params as { name: string };
-    const { value } = request.body as { value?: string };
+    const { value } = request.body as { value: string };
     if (!API_KEY_REGISTRY[name]) return reply.status(400).send({ error: 'Unknown key' });
-    if (!value?.trim()) return reply.status(400).send({ error: 'Value required' });
-    const trimmed = value.trim();
     await prisma.pricingConfig.upsert({
       where: { category_key: { category: 'api_keys', key: name } },
-      create: { category: 'api_keys', key: name, value: trimmed },
-      update: { value: trimmed },
+      create: { category: 'api_keys', key: name, value: value.trim() },
+      update: { value: value.trim() },
     });
-    process.env[name] = trimmed;
+    process.env[name] = value.trim();
     initConfig();
     return { ok: true };
   });
 
-  server.delete('/api/admin/api-keys/:name', async (request, reply) => {
+  server.delete('/api/admin/api-keys/:name', {
+    schema: { params: apiKeyNameParamSchema },
+  }, async (request, reply) => {
     if (!await verifyAdmin(request, reply)) return;
     const { name } = request.params as { name: string };
     if (!API_KEY_REGISTRY[name]) return reply.status(400).send({ error: 'Unknown key' });

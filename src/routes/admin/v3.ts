@@ -7,6 +7,12 @@ import { retentionQueue } from "@/workers/retention.worker";
 import { HOOK_VARIATIONS } from "@/services/campaign.service";
 import { CREDIT_PACKAGES_V3, SUBSCRIPTION_PLANS_V3, UNIT_COSTS, COMMISSIONS } from "@/config/packages";
 import { INDUSTRY_TEMPLATES, DURATION_PRESETS } from "@/config/hpas-engine";
+import { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
+
+const retentionTriggerSchema = zodToJsonSchema(z.object({
+  type: z.enum(["dormancy", "reengagement", "winback", "upgrade"]),
+}), "retentionTrigger");
 
 export async function registerV3Routes(server: FastifyInstance) {
   // ── v3.0 Gamification ──
@@ -52,9 +58,10 @@ export async function registerV3Routes(server: FastifyInstance) {
   });
 
   /** POST /api/v3/retention/trigger — Manual trigger for testing */
-  server.post("/api/v3/retention/trigger", async (request: any, reply) => {
+  server.post("/api/v3/retention/trigger", {
+    schema: { body: retentionTriggerSchema },
+  }, async (request, reply) => {
     const { type } = request.body as { type: string };
-    if (!type) return reply.status(400).send({ error: "type required" });
     try {
       await retentionQueue.add("run_checks", { type });
       return { queued: true, type };

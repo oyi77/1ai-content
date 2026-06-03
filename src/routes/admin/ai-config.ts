@@ -11,6 +11,16 @@ import { ConfigError } from "@/utils/app-errors";
 import { validateBody, CustomProviderSchema } from "@/utils/validation";
 import axios from "axios";
 import { logger } from "@/utils/logger";
+import { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
+
+const aiTasksBodySchema = zodToJsonSchema(z.object({}), "aiTasksBody");
+const aiConfigTaskBodySchema = zodToJsonSchema(z.object({}), "aiConfigTaskBody");
+const aiConfigPromptBodySchema = zodToJsonSchema(z.object({}), "aiConfigPromptBody");
+const aiConfigChatBodySchema = zodToJsonSchema(z.object({}), "aiConfigChatBody");
+const customProviderIdParamSchema = zodToJsonSchema(z.object({ id: z.string().uuid() }), "customProviderIdParam");
+const customProviderUpdateBodySchema = zodToJsonSchema(z.object({}).passthrough(), "customProviderUpdateBody");
+const customProviderTestBodySchema = zodToJsonSchema(z.object({ model: z.string().optional() }), "customProviderTestBody");
 
 export async function registerAIConfigRoutes(
   server: FastifyInstance,
@@ -23,7 +33,9 @@ export async function registerAIConfigRoutes(
     return reply.send(settings);
   });
 
-  server.post("/api/admin/ai-tasks/settings", async (request, reply) => {
+  server.post("/api/admin/ai-tasks/settings", {
+    schema: { body: aiTasksBodySchema },
+  }, async (request, reply) => {
     const body = request.body as Record<string, unknown>;
     await AITaskSettingsService.updateSettings(body as Parameters<typeof AITaskSettingsService.updateSettings>[0]);
     return reply.send({ ok: true });
@@ -37,21 +49,27 @@ export async function registerAIConfigRoutes(
     return reply.send(config);
   });
 
-  server.post('/api/admin/ai-config/tasks', async (request, reply) => {
+  server.post('/api/admin/ai-config/tasks', {
+    schema: { body: aiConfigTaskBodySchema },
+  }, async (request, reply) => {
     if (!await verifyAdmin(request, reply)) return;
     const body = request.body as Record<string, unknown>;
     await AIConfigService.updateTasksConfig(body as Parameters<typeof AIConfigService.updateTasksConfig>[0]);
     return reply.send({ ok: true });
   });
 
-  server.post('/api/admin/ai-config/prompts', async (request, reply) => {
+  server.post('/api/admin/ai-config/prompts', {
+    schema: { body: aiConfigPromptBodySchema },
+  }, async (request, reply) => {
     if (!await verifyAdmin(request, reply)) return;
     const body = request.body as Record<string, unknown>;
     await AIConfigService.updatePromptsConfig(body as Parameters<typeof AIConfigService.updatePromptsConfig>[0]);
     return reply.send({ ok: true });
   });
 
-  server.post('/api/admin/ai-config/chat', async (request, reply) => {
+  server.post('/api/admin/ai-config/chat', {
+    schema: { body: aiConfigChatBodySchema },
+  }, async (request, reply) => {
     if (!await verifyAdmin(request, reply)) return;
     const body = request.body as Record<string, unknown>;
     await AIConfigService.updateChatConfig(body as Parameters<typeof AIConfigService.updateChatConfig>[0]);
@@ -82,7 +100,12 @@ export async function registerAIConfigRoutes(
     return reply.send(provider);
   });
 
-  server.put('/api/admin/custom-providers/:id', async (request, reply) => {
+  server.put('/api/admin/custom-providers/:id', {
+    schema: {
+      params: customProviderIdParamSchema,
+      body: customProviderUpdateBodySchema,
+    },
+  }, async (request, reply) => {
     if (!await verifyAdmin(request, reply)) return;
     const { id } = request.params as { id: string };
     const data = request.body as Record<string, unknown>;
@@ -90,21 +113,34 @@ export async function registerAIConfigRoutes(
     return reply.send(provider);
   });
 
-  server.delete('/api/admin/custom-providers/:id', async (request, reply) => {
+  server.delete('/api/admin/custom-providers/:id', {
+    schema: {
+      params: customProviderIdParamSchema,
+    },
+  }, async (request, reply) => {
     if (!await verifyAdmin(request, reply)) return;
     const { id } = request.params as { id: string };
     await CustomProviderService.delete(id);
     return reply.send({ ok: true });
   });
 
-  server.post('/api/admin/custom-providers/:id/fetch-models', async (request, reply) => {
+  server.post('/api/admin/custom-providers/:id/fetch-models', {
+    schema: {
+      params: customProviderIdParamSchema,
+    },
+  }, async (request, reply) => {
     if (!await verifyAdmin(request, reply)) return;
     const { id } = request.params as { id: string };
     const models = await CustomProviderService.fetchModels(id);
     return reply.send({ ok: true, count: models.length, models });
   });
 
-  server.post('/api/admin/custom-providers/:id/test', async (request, reply) => {
+  server.post('/api/admin/custom-providers/:id/test', {
+    schema: {
+      params: customProviderIdParamSchema,
+      body: customProviderTestBodySchema,
+    },
+  }, async (request, reply) => {
     if (!await verifyAdmin(request, reply)) return;
     const { id } = request.params as { id: string };
     const body = (request.body as Record<string, unknown>) || {};
@@ -113,7 +149,11 @@ export async function registerAIConfigRoutes(
     return reply.send(result);
   });
 
-  server.post('/api/admin/custom-providers/:id/check-balance', async (request, reply) => {
+  server.post('/api/admin/custom-providers/:id/check-balance', {
+    schema: {
+      params: customProviderIdParamSchema,
+    },
+  }, async (request, reply) => {
     if (!await verifyAdmin(request, reply)) return;
     const { id } = request.params as { id: string };
     try {

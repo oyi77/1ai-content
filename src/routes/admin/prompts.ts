@@ -1,6 +1,28 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { prisma } from "@/config/database";
 import { trackingVars } from "./shared";
+import { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
+
+const adminPromptQuerySchema = zodToJsonSchema(z.object({
+  niche: z.string().optional(),
+}), "adminPromptQuery");
+
+const createPromptBodySchema = zodToJsonSchema(z.object({
+  niche: z.string().min(1).max(64),
+  title: z.string().min(1).max(100),
+  prompt: z.string().min(1).max(5000),
+}), "createPromptBody");
+
+const updatePromptBodySchema = zodToJsonSchema(z.object({
+  title: z.string().min(1).max(100).optional(),
+  prompt: z.string().min(1).max(5000).optional(),
+  niche: z.string().min(1).max(64).optional(),
+}), "updatePromptBody");
+
+const promptIdParamSchema = zodToJsonSchema(z.object({
+  id: z.string().regex(/^\d+$/).transform(Number),
+}), "promptIdParam");
 
 export async function registerPromptsRoutes(server: FastifyInstance) {
   server.get("/admin/prompts", async (_request, reply) => {
@@ -20,8 +42,10 @@ export async function registerPromptsRoutes(server: FastifyInstance) {
   });
 
   // API: Get all admin prompts (global, visible to all users)
-  server.get("/api/admin-prompts", async (request: FastifyRequest) => {
-    const niche = (request.query as Record<string, string>).niche;
+  server.get("/api/admin-prompts", {
+    schema: { querystring: adminPromptQuerySchema },
+  }, async (request) => {
+    const { niche } = request.query as { niche?: string };
     const prompts = await prisma.savedPrompt.findMany({
       where: {
         userId: BigInt(0), // userId=0 means admin/global prompt
@@ -44,11 +68,10 @@ export async function registerPromptsRoutes(server: FastifyInstance) {
   });
 
   // API: Create admin prompt
-  server.post("/api/admin-prompts", async (request: FastifyRequest, reply: FastifyReply) => {
-    const { niche, title, prompt } = request.body as Record<string, string>;
-    if (!niche || !title || !prompt) {
-      return reply.status(400).send({ error: "niche, title, prompt required" });
-    }
+  server.post("/api/admin-prompts", {
+    schema: { body: createPromptBodySchema },
+  }, async (request, reply) => {
+    const { niche, title, prompt } = request.body as { niche: string; title: string; prompt: string };
     const created = await prisma.savedPrompt.create({
       data: {
         userId: BigInt(0),
@@ -62,11 +85,14 @@ export async function registerPromptsRoutes(server: FastifyInstance) {
   });
 
   // API: Update admin prompt
-  server.put("/api/admin-prompts/:id", async (request: FastifyRequest, reply: FastifyReply) => {
-    const id = parseInt((request.params as Record<string, string>).id);
-    if (!Number.isInteger(id) || id <= 0)
-      return reply.status(400).send({ error: "Invalid id" });
-    const { title, prompt, niche } = request.body as Record<string, string>;
+  server.put("/api/admin-prompts/:id", {
+    schema: {
+      params: promptIdParamSchema,
+      body: updatePromptBodySchema,
+    },
+  }, async (request, reply) => {
+    const { id } = request.params as { id: number };
+    const { title, prompt, niche } = request.body as { title?: string; prompt?: string; niche?: string };
     try {
       await prisma.savedPrompt.update({
         where: { id },
@@ -83,10 +109,10 @@ export async function registerPromptsRoutes(server: FastifyInstance) {
   });
 
   // API: Delete admin prompt
-  server.delete("/api/admin-prompts/:id", async (request: FastifyRequest, reply: FastifyReply) => {
-    const id = parseInt((request.params as Record<string, string>).id);
-    if (!Number.isInteger(id) || id <= 0)
-      return reply.status(400).send({ error: "Invalid id" });
+  server.delete("/api/admin-prompts/:id", {
+    schema: { params: promptIdParamSchema },
+  }, async (request, reply) => {
+    const { id } = request.params as { id: number };
     try {
       await prisma.savedPrompt.delete({ where: { id } });
       return { ok: true };

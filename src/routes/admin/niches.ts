@@ -6,6 +6,22 @@
  */
 import { FastifyInstance } from "fastify";
 import { prisma } from "@/config/database";
+import { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
+
+const nicheBodySchema = zodToJsonSchema(z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  icon: z.string(),
+  tag: z.string(),
+  prompt: z.string(),
+  enabled: z.boolean().default(true),
+}), "nicheBody");
+
+const nicheParamSchema = zodToJsonSchema(z.object({
+  id: z.string().min(1).max(64),
+}), "nicheParam");
 
 type AdminVerifier = (request: any, reply: any) => Promise<boolean>;
 
@@ -17,17 +33,10 @@ export async function registerNicheRoutes(server: FastifyInstance, verifyAdmin: 
   });
 
   // Create or update a niche
-  server.post("/api/niches", async (request, reply) => {
-    const body = request.body as {
-      id: string;
-      name: string;
-      emoji: string;
-      keywords?: string[];
-      colorPalettes?: string[];
-    };
-    if (!body.id || !body.name) {
-      return reply.status(400).send({ error: "id and name required" });
-    }
+  server.post("/api/niches", {
+    schema: { body: nicheBodySchema },
+  }, async (request, reply) => {
+    const body = request.body as { id: string; name: string; description: string; icon: string; tag: string; prompt: string; enabled?: boolean };
     await prisma.pricingConfig.upsert({
       where: { category_key: { category: "niche", key: body.id } },
       create: {
@@ -42,7 +51,9 @@ export async function registerNicheRoutes(server: FastifyInstance, verifyAdmin: 
   });
 
   // Delete a niche
-  server.delete("/api/niches/:id", async (request) => {
+  server.delete("/api/niches/:id", {
+    schema: { params: nicheParamSchema },
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
     await prisma.pricingConfig.deleteMany({
       where: { category: "niche", key: id },

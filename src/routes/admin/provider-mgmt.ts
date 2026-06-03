@@ -6,6 +6,10 @@ import { ProviderBalanceService } from "@/services/provider-balance.service";
 import { CircuitBreaker } from "@/services/circuit-breaker.service";
 import { PROVIDER_CONFIG } from "@/config/providers";
 import { trackingVars } from "./shared";
+import { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
+
+const providerOverrideSchema = zodToJsonSchema(z.record(z.string(), z.unknown()), "providerOverride");
 
 export async function registerProviderMgmtRoutes(
   server: FastifyInstance,
@@ -193,15 +197,14 @@ export async function registerProviderMgmtRoutes(
   });
 
   /** POST /api/admin/settings/providers — Update dynamic provider overrides */
-  server.post("/api/admin/settings/providers", async (request, reply) => {
+  server.post("/api/admin/settings/providers", {
+    schema: {
+      body: providerOverrideSchema,
+    },
+  }, async (request, reply) => {
     if (!await verifyAdmin(request, reply)) return;
     const body = request.body as Record<string, unknown>;
-    if (!body || typeof body !== "object") {
-      return reply.status(400).send({ error: "Invalid settings object" });
-    }
-
     await ProviderSettingsService.updateSettings(body as Parameters<typeof ProviderSettingsService.updateSettings>[0]);
-
     await redis.publish(
       "admin_events",
       JSON.stringify({
@@ -210,7 +213,6 @@ export async function registerProviderMgmtRoutes(
         timestamp: new Date().toISOString(),
       }),
     );
-
     return { success: true };
   });
 }

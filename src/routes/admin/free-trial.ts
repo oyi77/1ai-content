@@ -6,6 +6,14 @@
  */
 import { FastifyInstance } from "fastify";
 import { prisma } from "@/config/database";
+import { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
+
+const freeTrialBodySchema = zodToJsonSchema(z.object({
+  enabled: z.boolean().optional(),
+  durationSeconds: z.number().int().min(0).optional(),
+  credits: z.number().int().min(0).optional(),
+}), "freeTrialBody");
 
 type AdminVerifier = (request: any, reply: any) => Promise<boolean>;
 
@@ -17,7 +25,9 @@ export async function registerFreeTrialRoutes(server: FastifyInstance, verifyAdm
   });
 
   // Update free trial config
-  server.post("/api/settings/free-trial", async (request) => {
+  server.post("/api/settings/free-trial", {
+    schema: { body: freeTrialBodySchema },
+  }, async (request, reply) => {
     const body = request.body as Record<string, unknown>;
     await prisma.pricingConfig.upsert({
       where: { category_key: { category: "free_trial", key: "config" } },

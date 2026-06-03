@@ -6,6 +6,24 @@ import { PaymentSettingsService } from "@/services/payment-settings.service";
 import { UserService } from "@/services/user.service";
 import { t } from "@/i18n/translations";
 import { PROVIDER_CONFIG } from "@/config/providers";
+import { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
+
+const landingConfigBodySchema = zodToJsonSchema(z.object({
+  headline: z.string().optional().default(""),
+  subheadline: z.string().optional().default(""),
+  ctaText: z.string().optional().default(""),
+  heroImageUrl: z.string().url().optional().default(""),
+  heroVideo: z.string().optional().default(""),
+  testimonials: z.array(z.unknown()).optional().default([]),
+  pricingNote: z.string().optional().default(""),
+  footerText: z.string().optional().default(""),
+  videoDuration: z.string().optional().default("60"),
+  botUsername: z.string().optional().default("berkahkarya_saas_bot"),
+  proofStats: z.array(z.unknown()).optional().default([]),
+  problemCards: z.array(z.unknown()).optional().default([]),
+  solutionCards: z.array(z.unknown()).optional().default([]),
+}), "landingConfigBody");
 
 export async function registerSettingsRoutes(server: FastifyInstance) {
   // ── Landing Page Config ──
@@ -31,27 +49,31 @@ export async function registerSettingsRoutes(server: FastifyInstance) {
     };
   });
 
-  server.post("/api/settings/landing", async (request, reply) => {
-    const body = request.body as Record<string, unknown>;
-    if (!body || typeof body !== "object") {
+  server.post("/api/settings/landing", {
+    schema: {
+      body: landingConfigBodySchema,
+    },
+  }, async (request, reply) => {
+    const data = request.body as Record<string, unknown>;
+    if (!data || typeof data !== "object") {
       return reply.status(400).send({ error: "Invalid payload" });
     }
     const config = {
-      headline: body.headline || "",
-      subheadline: body.subheadline || "",
-      ctaText: body.ctaText || "",
-      heroImageUrl: body.heroImageUrl || "",
-      heroVideo: body.heroVideo || "",
-      testimonials: Array.isArray(body.testimonials) ? body.testimonials : [],
-      pricingNote: body.pricingNote || "",
-      footerText: body.footerText || "",
-      videoDuration: body.videoDuration || "60",
+      headline: data.headline || "",
+      subheadline: data.subheadline || "",
+      ctaText: data.ctaText || "",
+      heroImageUrl: data.heroImageUrl || "",
+      heroVideo: data.heroVideo || "",
+      testimonials: Array.isArray(data.testimonials) ? data.testimonials : [],
+      pricingNote: data.pricingNote || "",
+      footerText: data.footerText || "",
+      videoDuration: data.videoDuration || "60",
       botUsername:
-        body.botUsername || getConfig().BOT_USERNAME || "berkahkarya_saas_bot",
-      proofStats: Array.isArray(body.proofStats) ? body.proofStats : [],
-      problemCards: Array.isArray(body.problemCards) ? body.problemCards : [],
-      solutionCards: Array.isArray(body.solutionCards)
-        ? body.solutionCards
+        data.botUsername || getConfig().BOT_USERNAME || "berkahkarya_saas_bot",
+      proofStats: Array.isArray(data.proofStats) ? data.proofStats : [],
+      problemCards: Array.isArray(data.problemCards) ? data.problemCards : [],
+      solutionCards: Array.isArray(data.solutionCards)
+        ? data.solutionCards
         : [],
       updatedAt: new Date().toISOString(),
     };
