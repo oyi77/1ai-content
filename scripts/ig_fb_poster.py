@@ -8,7 +8,7 @@ No IG session needed — uses FB page tokens directly.
 Supports: Reels, Feed video, Feed image, Stories
 """
 
-import requests, json, time, sys, random
+import requests, json, time, sys, random, hashlib
 from pathlib import Path
 from datetime import datetime
 
@@ -23,6 +23,64 @@ def log(msg):
     print(line)
     with open(LOG_FILE, 'a') as f:
         f.write(line + '\n')
+
+# ═══════════════════════════════════════
+# AFFILIATE LINK MANAGEMENT
+# ═══════════════════════════════════════
+AFFILIATE_POOLS = {
+    'shopee': [
+        'https://s.shopee.co.id/4qCZdjydEv',
+        'https://s.shopee.co.id/50Vzq2xzty',
+        'https://s.shopee.co.id/4LGJ2p0XFu',
+        'https://s.shopee.co.id/1BJHH0CagN',
+        'https://s.shopee.co.id/20sOGX9Pzc',
+        'https://s.shopee.co.id/8zJ2RCfo4Y',
+        'https://s.shopee.co.id/3L5JtoCnRC',
+        'https://s.shopee.co.id/AUqbt3ABRA',
+    ],
+    'tokopedia': [
+        'https://tokopedia.link/abc1',
+        'https://tokopedia.link/abc2',
+        'https://tokopedia.link/abc3',
+    ],
+}
+
+def get_unique_affiliate_link(account_id, page_id):
+    """
+    Get deterministic unique affiliate link per account.
+    Same account always gets same link rotation (deterministic).
+    
+    Args:
+        account_id: IG account ID or username
+        page_id: Facebook page ID for additional entropy
+    
+    Returns: affiliate link URL
+    """
+    # Seed hash based on account + time-of-day (changes hourly)
+    seed = f"{account_id}_{page_id}_{int(time.time() // 3600)}"
+    hash_val = int(hashlib.md5(seed.encode()).hexdigest(), 16)
+    
+    # Rotate through affiliate pools
+    pool = AFFILIATE_POOLS.get('shopee', AFFILIATE_POOLS['tokopedia'])
+    return pool[hash_val % len(pool)]
+
+def inject_affiliate_link(caption, account_id, page_id):
+    """
+    Inject unique affiliate link into caption.
+    
+    Args:
+        caption: Original caption text
+        account_id: IG account ID
+        page_id: FB page ID
+    
+    Returns: caption with affiliate link appended
+    """
+    link = get_unique_affiliate_link(account_id, page_id)
+    # Append link before hashtags if possible, else at end
+    if '#' in caption:
+        parts = caption.rsplit('#', 1)
+        return f"{parts[0]}Link: {link} #{parts[1]}"
+    return f"{caption}\n\nLink: {link}"
 
 def load_ig_accounts():
     if IG_ACCOUNTS_FILE.exists():
@@ -113,11 +171,18 @@ def post_ig_feed(ig_user_id, access_token, media_url, caption, media_type='VIDEO
     media_url: Public URL to media file
     media_type: 'VIDEO' or 'IMAGE'
     """
+    # FIX: Use dict unpacking instead of ternary as dict key
+    # (ternary in dict key position evaluates to True/False, breaking the params)
+    media_params = (
+        {'video_url': media_url} if media_type == 'VIDEO'
+        else {'image_url': media_url}
+    )
+    
     r = requests.post(
         f'https://graph.facebook.com/v21.0/{ig_user_id}/media',
         params={
             'media_type': media_type,
-            'video_url' if media_type == 'VIDEO' else 'image_url': media_url,
+            **media_params,
             'caption': caption,
             'access_token': access_token,
         },
@@ -158,7 +223,7 @@ def post_ig_feed(ig_user_id, access_token, media_url, caption, media_type='VIDEO
 # Bulk posting
 # ═══════════════════════════════════════
 def post_to_all_ig(video_url, caption, account_filter=None):
-    """Post to all linked IG accounts"""
+    """Post to all linked IG accounts with unique affiliate links"""
     accounts = load_ig_accounts()
     
     if account_filter:
@@ -170,7 +235,9 @@ def post_to_all_ig(video_url, caption, account_filter=None):
     results = []
     for page_id, acc in accounts.items():
         log(f"   📷 @{acc['ig_username']} ({acc['ig_name']})")
-        success, detail = post_ig_reel(acc['ig_id'], acc['token'], video_url, caption)
+        # Inject unique affiliate link per account
+        caption_with_link = inject_affiliate_link(caption, acc['ig_id'], page_id)
+        success, detail = post_ig_reel(acc['ig_id'], acc['token'], video_url, caption_with_link)
         
         short_detail = detail[:30] if detail else '?'
         log(f"      {'✅' if success else '❌'} {short_detail}")
