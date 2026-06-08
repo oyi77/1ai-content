@@ -665,6 +665,59 @@ async function generateViaOmniRouteVideo(params: VideoFallbackParams): Promise<V
   return { success: true, videoUrl, provider: "omniroute" };
 }
 
+async function generateViaMPT(params: VideoFallbackParams): Promise<VideoFallbackResult> {
+  const config = getConfig();
+  const PEXELS_API_KEY = config.PEXELS_API_KEYS?.split(",")?.[0] || config.PEXELS_API_KEY || "";
+  
+  if (!PEXELS_API_KEY) {
+    return { success: false, error: "PEXELS_API_KEY not configured", provider: "mpt" };
+  }
+
+  try {
+    const { MoneyPrinterService } = await import("@/services/money-printer.service");
+    const mpt = new MoneyPrinterService();
+    
+    const mptParams = {
+      audio_file: "",
+      voice_text: params.prompt,
+      output_dir: path.join(getVideoDir(), `mpt-${Date.now()}`),
+      materials_source: "pexels",
+      materials_api_key: PEXELS_API_KEY,
+      materials_query: params.prompt,
+      video_aspect: params.aspectRatio === "9:16" ? "9:16" : params.aspectRatio === "1:1" ? "1:1" : "16:9",
+      video_concat_mode: "sequential",
+      max_clip_duration: Math.min(10, params.duration),
+      subtitle_enabled: false,
+      voice_name: "en-US-ChristopherNeural",
+      n_threads: 2,
+    };
+
+    const result = await mpt.generateVideo(mptParams);
+    
+    if (!result.success || !result.video_paths?.length) {
+      return {
+        success: false,
+        error: result.error || "MPT generation failed",
+        provider: "mpt",
+      };
+    }
+
+    return {
+      success: true,
+      videoUrl: `file://${result.video_paths[0]}`,
+      provider: "mpt",
+    };
+  } catch (err) {
+    const error = err as Error;
+    logger.error("MPT generation error:", { message: error.message });
+    return {
+      success: false,
+      error: `MPT error: ${error.message}`,
+      provider: "mpt",
+    };
+  }
+}
+
 export {
   generateViaGeminiGen,
   generateViaFalai,
@@ -682,4 +735,5 @@ export {
   generateViaWaveSpeed,
   generateViaZAI,
   generateViaOmniRouteVideo,
+  generateViaMPT,
 };
