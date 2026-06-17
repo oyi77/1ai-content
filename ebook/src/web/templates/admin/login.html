@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin Login — 1AI Ebook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/admin.css">
+<style>
+.login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg)}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:2.5rem;width:100%;max-width:380px}
+.login-card h1{font-size:1.4rem;margin-bottom:0.25rem;color:var(--text)}
+.login-card p{color:var(--text-muted);margin-bottom:2rem;font-size:0.9rem}
+.form-group{margin-bottom:1.25rem}
+.form-group label{display:block;margin-bottom:0.4rem;font-size:0.85rem;color:var(--text-muted)}
+.form-group input{width:100%;padding:0.65rem 0.85rem;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:0.95rem;box-sizing:border-box}
+.form-group input:focus{outline:none;border-color:var(--primary)}
+.btn-block{width:100%;padding:0.75rem;background:var(--primary);color:#fff;border:none;border-radius:var(--radius);font-size:0.95rem;font-weight:600;cursor:pointer}
+.btn-block:hover{background:var(--primary-dark)}
+.error-msg{background:rgba(239,68,68,0.1);border:1px solid var(--danger);color:var(--danger);padding:0.65rem 1rem;border-radius:var(--radius);margin-bottom:1rem;font-size:0.875rem}
+</style>
+</head>
+<body>
+<div class="login-wrap">
+  <div class="login-card">
+    <h1>1AI Admin</h1>
+    <p>Sign in to manage your ebook pipeline</p>
+    {% if error %}
+    <div class="error-msg">{{ error }}</div>
+    {% endif %}
+    <form method="POST" action="/admin/login">
+      <div class="form-group">
+        <label>Admin Password</label>
+        <input type="password" name="password" placeholder="Enter admin key" autofocus required>
+      </div>
+      <button type="submit" class="btn-block">Sign In &rarr;</button>
+    </form>
+  </div>
+</div>
+</body>
+</html>

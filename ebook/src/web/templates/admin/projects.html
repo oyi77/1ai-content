@@ -1,0 +1,75 @@
+{% extends "admin/layout.html" %}
+
+{% block content %}
+<!-- Search + filter bar -->
+<section class="filter-bar">
+  <input
+    type="text"
+    id="searchInput"
+    class="input-search"
+    placeholder="Search by title..."
+    autocomplete="off"
+  >
+  <select id="statusFilter" class="select-filter">
+    <option value="">All Statuses</option>
+    <option value="draft">Draft</option>
+    <option value="generating">Generating</option>
+    <option value="completed">Completed</option>
+    <option value="failed">Failed</option>
+  </select>
+  <span class="filter-count">Showing {{ projects|length }} projects</span>
+</section>
+
+<!-- Projects table -->
+<section class="section">
+  <div class="table-wrapper">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Title</th>
+          <th>Status</th>
+          <th>Mode</th>
+          <th>Chapters</th>
+          <th>Language</th>
+          <th>Created</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in projects %}
+        <tr data-status="{{ p.status }}">
+          <td class="cell-id">{{ p.id }}</td>
+          <td class="cell-title">{{ p.title }}</td>
+          <td><span class="badge badge-{{ p.status }}">{{ p.status }}</span></td>
+          <td>{{ p.mode }}</td>
+          <td>{{ p.chapter_count }}</td>
+          <td>{{ p.language }}</td>
+          <td class="cell-date">{{ p.created }}</td>
+          <td class="cell-actions">
+            <a href="/admin/projects/{{ p.id }}" class="btn btn-sm btn-secondary">Details</a>
+            <button class="btn btn-sm btn-danger" onclick="deleteProject({{ p.id }})">Delete</button>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="8" class="empty-row">No projects found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Delete confirmation modal -->
+<div class="modal-overlay" id="deleteModal" style="display:none">
+  <div class="modal">
+    <h3>Delete Project</h3>
+    <p>Delete project #<span id="deleteProjectId"></span>? This cannot be undone.</p>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="cancelDelete()">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+{% endblock %}

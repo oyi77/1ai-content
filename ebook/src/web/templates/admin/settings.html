@@ -1,0 +1,201 @@
+{% extends "admin/layout.html" %}
+
+{% block content %}
+{% if message %}
+<div class="alert {% if 'error' in message.lower() or 'fail' in message.lower() %}alert--error{% else %}alert--success{% endif %}">
+  {{ message }}
+</div>
+{% endif %}
+
+<form action="/admin/api/settings" method="POST" class="settings-form">
+
+  <!-- AI Models section -->
+  <datalist id="model-options">
+    {% for m in available_models %}
+    <option value="{{ m }}">
+    {% endfor %}
+  </datalist>
+
+  <section class="section">
+    <h2 class="section-title">AI Models</h2>
+    <p class="section-hint">Pick a combo (e.g. <code>auto/pro-fast</code>) or type any model name. Combos auto-select the best available provider.</p>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label" for="default_model">Default Model</label>
+        <input type="text" id="default_model" name="default_model"
+          class="form-input" list="model-options"
+          value="{{ config.default_model }}" placeholder="auto/pro-fast">
+        <span class="form-hint">Used for manuscript writing</span>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="outline_model">Outline Model</label>
+        <input type="text" id="outline_model" name="outline_model"
+          class="form-input" list="model-options"
+          value="{{ config.outline_model }}" placeholder="auto/pro-reasoning">
+        <span class="form-hint">Chapter structure + word targets</span>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="strategy_model">Strategy Model</label>
+        <input type="text" id="strategy_model" name="strategy_model"
+          class="form-input" list="model-options"
+          value="{{ config.strategy_model }}" placeholder="auto/pro-chat">
+        <span class="form-hint">Audience, tone, positioning</span>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="cover_model">Cover Model</label>
+        <input type="text" id="cover_model" name="cover_model"
+          class="form-input" list="model-options"
+          value="{{ config.cover_model }}" placeholder="auto/pro-fast">
+        <span class="form-hint">Cover prompt generation</span>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="qa_model">QA Model</label>
+        <input type="text" id="qa_model" name="qa_model"
+          class="form-input" list="model-options"
+          value="{{ config.qa_model }}" placeholder="auto/free-fast">
+        <span class="form-hint">Quality checks (can use free combo)</span>
+      </div>
+    </div>
+
+    <div class="combo-reference">
+      <p class="combo-ref-title">Quick reference:</p>
+      <div class="combo-tags">
+        <span class="combo-tag combo-tag--speed" onclick="setAllModels('auto/pro-fast')">⚡ auto/pro-fast — balanced speed</span>
+        <span class="combo-tag combo-tag--quality" onclick="setAllModels('auto/pro-reasoning')">🧠 auto/pro-reasoning — best quality</span>
+        <span class="combo-tag combo-tag--free" onclick="setAllModels('auto/free-chat')">🆓 auto/free-chat — free tier</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Token Budgets section -->
+  <section class="section">
+    <h2 class="section-title">Token Budgets</h2>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label" for="tokens_intro">Intro Tokens</label>
+        <input
+          type="number"
+          id="tokens_intro"
+          name="tokens_intro"
+          class="form-input"
+          value="{{ config.tokens_intro }}"
+          min="1"
+        >
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="tokens_subchapter">Subchapter Tokens</label>
+        <input
+          type="number"
+          id="tokens_subchapter"
+          name="tokens_subchapter"
+          class="form-input"
+          value="{{ config.tokens_subchapter }}"
+          min="1"
+        >
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="tokens_outro">Outro Tokens</label>
+        <input
+          type="number"
+          id="tokens_outro"
+          name="tokens_outro"
+          class="form-input"
+          value="{{ config.tokens_outro }}"
+          min="1"
+        >
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="tokens_strategy">Strategy Tokens</label>
+        <input
+          type="number"
+          id="tokens_strategy"
+          name="tokens_strategy"
+          class="form-input"
+          value="{{ config.tokens_strategy }}"
+          min="1"
+        >
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="tokens_outline">Outline Tokens</label>
+        <input
+          type="number"
+          id="tokens_outline"
+          name="tokens_outline"
+          class="form-input"
+          value="{{ config.tokens_outline }}"
+          min="1"
+        >
+      </div>
+    </div>
+  </section>
+
+  <!-- QA Thresholds section -->
+  <section class="section">
+    <h2 class="section-title">QA Thresholds</h2>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label" for="qa_word_count_tolerance">Word Count Tolerance</label>
+        <input
+          type="number"
+          id="qa_word_count_tolerance"
+          name="qa_word_count_tolerance"
+          class="form-input"
+          value="{{ config.qa_word_count_tolerance }}"
+          step="0.01"
+          min="0"
+          max="1"
+        >
+        <span class="form-hint">Fraction, e.g. 0.20 = ±20%</span>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="min_chapter_words">Min Chapter Words</label>
+        <input
+          type="number"
+          id="min_chapter_words"
+          name="min_chapter_words"
+          class="form-input"
+          value="{{ config.min_chapter_words }}"
+          min="1"
+        >
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="max_retry_attempts">Max Retry Attempts</label>
+        <input
+          type="number"
+          id="max_retry_attempts"
+          name="max_retry_attempts"
+          class="form-input"
+          value="{{ config.max_retry_attempts }}"
+          min="0"
+        >
+      </div>
+    </div>
+  </section>
+
+  <div class="form-actions">
+    <button type="submit" class="btn btn-primary">Save Settings</button>
+  </div>
+
+</form>
+
+<style>
+.section-hint { color: #888; font-size: 13px; margin: -8px 0 16px; }
+.section-hint code { background: #f0f0f0; padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+.combo-reference { margin-top: 20px; padding: 14px 16px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e9ecef; }
+.combo-ref-title { font-size: 12px; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 10px; }
+.combo-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.combo-tag { font-size: 12px; padding: 5px 12px; border-radius: 20px; cursor: pointer; font-weight: 500; transition: opacity 0.15s; }
+.combo-tag:hover { opacity: 0.75; }
+.combo-tag--speed { background: #e8f4fd; color: #1a6fa8; }
+.combo-tag--quality { background: #f0e8fd; color: #6a1ab8; }
+.combo-tag--free { background: #e8fdf0; color: #1a8a4a; }
+</style>
+
+<script>
+function setAllModels(model) {
+  ['default_model','outline_model','strategy_model','cover_model','qa_model'].forEach(function(id) {
+    document.getElementById(id).value = model;
+  });
+}
+</script>
+{% endblock %}

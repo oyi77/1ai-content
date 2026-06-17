@@ -1,0 +1,125 @@
+<style>
+body {
+  background: #f4f4f4;
+  font-family: 'Arial', sans-serif;
+  position: relative;
+}
+.header-band {
+  position: absolute; top: 0; left: 0; right: 0; height: 920px;
+  background: linear-gradient(150deg, {{ primary }} 0%, {{ secondary }} 100%);
+}
+.header-pattern {
+  position: absolute; top: 0; left: 0; right: 0; height: 920px;
+  opacity: 0.07;
+  background-image: repeating-linear-gradient(
+    45deg, #fff 0, #fff 1px, transparent 0, transparent 50%
+  );
+  background-size: 24px 24px;
+}
+.diagonal-cut {
+  position: absolute; top: 860px; left: 0; right: 0;
+  width: 0; height: 0;
+  border-left: 1200px solid transparent;
+  border-top: 120px solid {{ primary }};
+  opacity: 0.15;
+}
+.side-accent {
+  position: absolute; top: 0; left: 0; width: 10px; height: 920px;
+  background: {{ accent }};
+}
+.top-content {
+  position: absolute; top: 0; left: 0; right: 0; height: 920px;
+  display: flex; flex-direction: column;
+  padding: 70px 80px 80px 100px;
+}
+.mode-label {
+  font-size: 18px; letter-spacing: 5px; text-transform: uppercase;
+  color: {{ accent }}; font-weight: bold;
+  margin-bottom: 48px;
+}
+.title {
+  font-size: {{ title_size }}px; font-weight: 900;
+  color: #ffffff; line-height: 1.1;
+  word-wrap: break-word;
+}
+.title-rule {
+  width: 120px; height: 5px;
+  background: {{ accent }};
+  margin: 32px 0;
+}
+.subtitle {
+  font-size: 28px; color: rgba(255,255,255,0.78);
+  font-style: italic; line-height: 1.5;
+  max-width: 900px;
+}
+.bottom-content {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 760px;
+  display: flex; flex-direction: column;
+  justify-content: space-between;
+  padding: 60px 80px 70px 100px;
+}
+.chapter-lines {
+  display: flex; flex-direction: column; gap: 16px;
+}
+.chapter-line {
+  height: 3px; background: #ddd; border-radius: 2px;
+}
+.chapter-line.accent { background: {{ accent }}; width: 60%; }
+.chapter-line.w80 { width: 80%; }
+.chapter-line.w50 { width: 50%; }
+.chapter-line.w70 { width: 70%; }
+.bottom-meta {
+  display: flex; justify-content: space-between; align-items: flex-end;
+}
+.edition-badge {
+  background: {{ primary }};
+  color: white;
+  padding: 14px 32px;
+  font-size: 20px; font-weight: bold; letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.author-block { text-align: right; }
+.author {
+  font-size: 30px; font-weight: bold; color: #222;
+  border-bottom: 3px solid {{ accent }};
+  padding-bottom: 8px;
+}
+.publisher {
+  font-size: 18px; color: #888; margin-top: 8px; letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.footer-band {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 10px;
+  background: {{ accent }};
+}
+</style>
+<div class="header-band"></div>
+<div class="header-pattern"></div>
+<div class="diagonal-cut"></div>
+<div class="side-accent"></div>
+
+<div class="top-content">
+  <div class="mode-label">{{ mode_label }}</div>
+  <div class="title">{{ title }}</div>
+  <div class="title-rule"></div>
+  {% if subtitle %}<div class="subtitle">{{ subtitle }}</div>{% endif %}
+</div>
+
+<div class="bottom-content">
+  <div class="chapter-lines">
+    <div class="chapter-line accent"></div>
+    <div class="chapter-line w80"></div>
+    <div class="chapter-line w50"></div>
+    <div class="chapter-line w70"></div>
+    <div class="chapter-line w80"></div>
+    <div class="chapter-line w50"></div>
+  </div>
+  <div class="bottom-meta">
+    <div class="edition-badge">First Edition</div>
+    <div class="author-block">
+      <div class="author">{{ author }}</div>
+      <div class="publisher">Academic Press</div>
+    </div>
+  </div>
+</div>
+<div class="footer-band"></div>

@@ -1,0 +1,16 @@
+version: "3.8"
+
+services:
+  app:
+    build: .
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./projects:/app/projects
+      - ./data:/app/data
+    environment:
+      - OMNIROUTE_BASE_URL=${OMNIROUTE_BASE_URL:-http://localhost:20128/v1}
+      - APP_SECRET=${APP_SECRET:-dev-secret}
+      - MAX_WORDS=${MAX_WORDS:-50000}
+      - MAX_RETRIES=${MAX_RETRIES:-3}
+    restart: unless-stopped

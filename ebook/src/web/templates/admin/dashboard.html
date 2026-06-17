@@ -1,0 +1,99 @@
+{% extends "admin/layout.html" %}
+
+{% block content %}
+<!-- Stats row -->
+<section class="stats-row">
+  <div class="stat-card">
+    <div class="stat-label">Total Ebooks</div>
+    <div class="stat-value" id="stat-total">{{ stats.total }}</div>
+  </div>
+  <div class="stat-card stat-card--success">
+    <div class="stat-label">Completed</div>
+    <div class="stat-value" id="stat-completed">{{ stats.completed }}</div>
+  </div>
+  <div class="stat-card stat-card--warning">
+    <div class="stat-label">Generating</div>
+    <div class="stat-value" id="stat-generating">{{ stats.generating }}</div>
+  </div>
+  <div class="stat-card stat-card--danger">
+    <div class="stat-label">Failed</div>
+    <div class="stat-value" id="stat-failed">{{ stats.failed }}</div>
+  </div>
+</section>
+
+<!-- Recent Projects table -->
+<section class="section">
+  <div class="section-header">
+    <h2 class="section-title">Recent Projects</h2>
+  </div>
+  <div class="table-wrapper">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Title</th>
+          <th>Status</th>
+          <th>Mode</th>
+          <th>Created</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in recent %}
+        <tr data-status="{{ p.status }}">
+          <td class="cell-id">{{ p.id }}</td>
+          <td class="cell-title">{{ p.title }}</td>
+          <td><span class="badge badge-{{ p.status }}">{{ p.status }}</span></td>
+          <td>{{ p.mode }}</td>
+          <td class="cell-date">{{ p.created }}</td>
+          <td class="cell-actions">
+            <a href="/admin/projects/{{ p.id }}" class="btn btn-sm btn-secondary">View</a>
+            <button class="btn btn-sm btn-danger" onclick="deleteProject({{ p.id }})">Delete</button>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" class="empty-row">No projects yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- System Health -->
+<section class="section">
+  <div class="section-header">
+    <h2 class="section-title">System Health</h2>
+    <button class="btn btn-secondary btn-sm" onclick="refreshStats()">Refresh</button>
+  </div>
+  <div class="health-grid">
+    <div class="health-card">
+      <div class="health-label">API</div>
+      <div class="health-value">
+        <a href="/health" class="link-muted">/health</a>
+      </div>
+    </div>
+    <div class="health-card">
+      <div class="health-label">AI Model</div>
+      <div class="health-value">{{ system.model }}</div>
+    </div>
+    <div class="health-card">
+      <div class="health-label">Storage</div>
+      <div class="health-value">{{ system.storage_mb }} MB used</div>
+    </div>
+  </div>
+</section>
+
+<!-- Delete confirmation modal -->
+<div class="modal-overlay" id="deleteModal" style="display:none">
+  <div class="modal">
+    <h3>Delete Project</h3>
+    <p>Delete project #<span id="deleteProjectId"></span>? This cannot be undone.</p>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="cancelDelete()">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+{% endblock %}

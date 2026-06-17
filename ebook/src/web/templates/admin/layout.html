@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ page_title }} — 1AI Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/admin.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <span class="logo-text">1AI Admin</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="/admin" class="nav-link {% if active_page == 'dashboard' %}active{% endif %}">
+          <span class="nav-icon">🏠</span>
+          <span class="nav-label">Dashboard</span>
+        </a>
+        <a href="/admin/projects" class="nav-link {% if active_page == 'projects' %}active{% endif %}">
+          <span class="nav-icon">📚</span>
+          <span class="nav-label">Projects</span>
+        </a>
+        <a href="/admin/settings" class="nav-link {% if active_page == 'settings' %}active{% endif %}">
+          <span class="nav-icon">⚙️</span>
+          <span class="nav-label">Settings</span>
+        </a>
+        <a href="/app" class="nav-link" target="_blank" rel="noopener noreferrer">
+          <span class="nav-icon">↗️</span>
+          <span class="nav-label">Open App</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <a href="/docs" class="nav-link">
+          <span class="nav-icon">📖</span>
+          <span class="nav-label">API Docs</span>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main content area -->
+    <div class="main-wrapper">
+      <!-- Topbar -->
+      <header class="topbar">
+        <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle sidebar">&#9776;</button>
+        <h1 class="page-title">{{ page_title }}</h1>
+      </header>
+
+      <!-- Page content -->
+      <main class="content">
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+
+  <!-- Toast container -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <script src="/static/js/admin.js"></script>
+</body>
+</html>

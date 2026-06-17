@@ -1,0 +1,27 @@
+---------- coverage: platform linux, python 3.13.11-final-0 ----------
+Name                                Stmts   Miss  Cover   Missing
+-----------------------------------------------------------------
+src/__init__.py                         0      0   100%
+src/ai_client.py                       42      9    79%   56, 90-91, 94-99
+src/cover/cover_generator.py           41      3    93%   105-107
+src/db/database.py                     14      0   100%
+src/db/models.py                       38      0   100%
+src/db/repository.py                   67     12    82%   46, 67-75, 98, 117-123
+src/db/schema.py                        6      0   100%
+src/export/docx_generator.py           72      9    88%   58, 74-78, 104-106
+src/export/export_orchestrator.py      50      5    90%   60, 64-68
+src/export/pdf_converter.py            23      4    83%   20, 40, 45, 50
+src/jobs/queue.py                      63      3    95%   58, 91-92
+src/pipeline/intake.py                 30      1    97%   34
+src/pipeline/manuscript_engine.py      46      0   100%
+src/pipeline/orchestrator.py          111     25    77%   54-56, 67-68, 72-73, 80, 110-112, 127-129, 151-154, 174-175, 195-196, 208-210
+src/pipeline/outline_generator.py      27      0   100%
+src/pipeline/qa_engine.py              46      0   100%
+src/pipeline/strategy_planner.py       28      0   100%
+src/utils.py                           23     23     0%   1-28
+-----------------------------------------------------------------
+TOTAL                                 727     94    87%
+
+=========================== short test summary info ============================
+FAILED tests/test_export/test_pdf_converter.py::test_error_when_libreoffice_missing
+======================== 1 failed, 43 passed in 13.95s =========================

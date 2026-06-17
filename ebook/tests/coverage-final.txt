@@ -1,0 +1,33 @@
+........................................................................ [100%]
+
+---------- coverage: platform linux, python 3.13.11-final-0 ----------
+Name                                Stmts   Miss  Cover   Missing
+-----------------------------------------------------------------
+src/__init__.py                         0      0   100%
+src/ai_client.py                       74     15    80%   75, 80, 112-123, 138-139
+src/cover/cover_generator.py           68      4    94%   47, 144-146
+src/db/database.py                     14      0   100%
+src/db/models.py                       39      0   100%
+src/db/repository.py                   85     22    74%   46, 67-75, 94-106, 129, 148-154
+src/db/schema.py                        6      0   100%
+src/export/docx_generator.py           96      4    96%   59, 112, 141-142
+src/export/export_orchestrator.py      50      5    90%   60, 64-68
+src/export/pdf_converter.py            26      4    85%   20, 43, 48, 53
+src/i18n/__init__.py                    0      0   100%
+src/i18n/languages.py                  10      0   100%
+src/jobs/queue.py                      63      3    95%   58, 91-92
+src/pipeline/content_safety.py         14      2    86%   24, 32
+src/pipeline/intake.py                 44     10    77%   41, 46-54
+src/pipeline/manuscript_engine.py      99     39    61%   52-58, 125-143, 156-189, 227
+src/pipeline/orchestrator.py          113     25    78%   55-57, 68-69, 73-74, 81, 113-115, 131-133, 157-160, 181-182, 202-203, 215-217
+src/pipeline/outline_generator.py      32      1    97%   47
+src/pipeline/pipeline_profile.py       14      0   100%
+src/pipeline/qa_engine.py              68     13    81%   48, 100-120
+src/pipeline/refinement_engine.py      18      0   100%
+src/pipeline/strategy_planner.py       33      1    97%   41
+src/pipeline/style_context.py          19      1    95%   19
+src/utils.py                           23     23     0%   1-28
+-----------------------------------------------------------------
+TOTAL                                1008    172    83%
+
+72 passed in 13.91s

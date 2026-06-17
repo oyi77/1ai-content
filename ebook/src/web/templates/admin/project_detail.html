@@ -1,0 +1,154 @@
+{% extends "admin/layout.html" %}
+
+{% block content %}
+<!-- Project header -->
+<div class="project-header">
+  <div class="project-header-main">
+    <h2 class="project-title">{{ project.title }}</h2>
+    <span class="badge badge-{{ project.status }}">{{ project.status }}</span>
+    <span class="badge badge-mode">{{ project.mode }}</span>
+  </div>
+  <div class="project-meta-row">
+    <span class="text-muted">Created: {{ project.created }}</span>
+  </div>
+</div>
+
+<!-- Metadata grid -->
+<section class="section">
+  <h3 class="section-title">Details</h3>
+  <div class="meta-grid">
+    <div class="meta-item">
+      <span class="meta-label">Idea</span>
+      <span class="meta-value">{{ project.idea }}</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Language</span>
+      <span class="meta-value">{{ project.language }}</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Chapter Count</span>
+      <span class="meta-value">{{ project.chapter_count }}</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Word Count</span>
+      <span class="meta-value">{{ project.word_count }}</span>
+    </div>
+  </div>
+</section>
+
+<!-- Cover image -->
+{% if project.has_cover %}
+<section class="section">
+  <h3 class="section-title">Cover</h3>
+  <div class="cover-preview">
+    <img src="/admin/api/projects/{{ project.id }}/cover" alt="Ebook cover for {{ project.title }}" class="cover-img">
+  </div>
+</section>
+{% endif %}
+
+<!-- File listing -->
+<section class="section">
+  <h3 class="section-title">Project Files</h3>
+  {% if files %}
+  <div class="table-wrapper">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>File</th>
+          <th>Size</th>
+          <th>Download</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for f in files %}
+        <tr>
+          <td>{{ f.name }}</td>
+          <td class="cell-size">{{ f.size }}</td>
+          <td>
+            <a href="{{ f.path }}" class="btn btn-sm btn-secondary" download>Download</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="text-muted">No files available.</p>
+  {% endif %}
+</section>
+
+<!-- QA Report -->
+{% if qa %}
+<section class="section">
+  <h3 class="section-title">QA Report</h3>
+
+  {% if qa.issues %}
+  <div class="qa-issues">
+    <h4 class="subsection-title">Issues</h4>
+    <ul class="issue-list">
+      {% for issue in qa.issues %}
+      <li class="issue-item">{{ issue }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% if qa.scores %}
+  <div class="qa-scores">
+    <h4 class="subsection-title">Scores</h4>
+    <table class="data-table data-table--compact">
+      <thead>
+        <tr>
+          <th>Metric</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for key, value in qa.scores.items() %}
+        <tr>
+          <td>{{ key }}</td>
+          <td>{{ value }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</section>
+{% endif %}
+
+<!-- Danger zone -->
+<section class="section section--danger">
+  <h3 class="section-title section-title--danger">Danger Zone</h3>
+  <div class="danger-actions">
+    <div class="danger-action">
+      <div>
+        <strong>Regenerate Project</strong>
+        <p class="text-muted">Re-run the full generation pipeline for this project.</p>
+      </div>
+      <button class="btn btn-warning" onclick="if(confirm('Regenerate project {{ project.id }}?')) location.href='/admin/api/projects/{{ project.id }}/regenerate'">
+        Regenerate
+      </button>
+    </div>
+    <div class="danger-action">
+      <div>
+        <strong>Delete Project</strong>
+        <p class="text-muted">Permanently delete this project and all its files.</p>
+      </div>
+      <button class="btn btn-danger" onclick="deleteProject({{ project.id }})">Delete</button>
+    </div>
+  </div>
+</section>
+
+<!-- Delete confirmation modal -->
+<div class="modal-overlay" id="deleteModal" style="display:none">
+  <div class="modal">
+    <h3>Delete Project</h3>
+    <p>Delete project #<span id="deleteProjectId"></span>? This cannot be undone.</p>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="cancelDelete()">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+{% endblock %}

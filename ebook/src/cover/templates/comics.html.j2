@@ -1,0 +1,74 @@
+<style>
+body {
+  background: {{ primary }};
+  font-family: 'Impact', 'Arial Black', sans-serif;
+  position: relative;
+  overflow: hidden;
+}
+.speed-lines {
+  position: absolute; top: 50%; left: 50%;
+  width: 200%; height: 200%;
+  transform: translate(-50%, -50%);
+  background: repeating-conic-gradient(
+    {{ accent }}11 0deg, transparent 1deg,
+    transparent 5deg, {{ accent }}08 6deg
+  );
+}
+.panel-border {
+  position: absolute; top: 20px; left: 20px; right: 20px; bottom: 20px;
+  border: 8px solid {{ accent }};
+  pointer-events: none; z-index: 10;
+}
+.inner-border {
+  position: absolute; top: 32px; left: 32px; right: 32px; bottom: 32px;
+  border: 3px solid {{ accent }}88;
+  pointer-events: none; z-index: 10;
+}
+.content {
+  position: absolute; left: 0; right: 0; top: 0; bottom: 0;
+  display: flex; flex-direction: column;
+  justify-content: space-between;
+  padding: 80px 70px;
+  z-index: 5;
+}
+.format-label {
+  font-size: 24px; letter-spacing: 8px;
+  color: {{ accent }}; text-transform: uppercase;
+  background: rgba(0,0,0,0.5);
+  display: inline-block; padding: 8px 20px;
+  align-self: flex-start;
+  border: 2px solid {{ accent }};
+}
+.title {
+  font-size: {{ title_size }}px; font-weight: 900;
+  color: #ffffff; line-height: 0.95;
+  text-transform: uppercase;
+  text-shadow: 6px 6px 0px {{ accent }}88, -2px -2px 0 #000;
+  word-wrap: break-word;
+  transform: skew(-2deg);
+}
+.vol-badge {
+  background: {{ accent }};
+  color: #000; font-size: 28px; font-weight: 900;
+  padding: 8px 24px;
+  display: inline-block;
+  transform: skew(-5deg);
+  margin-top: 20px;
+}
+.author {
+  font-size: 26px; color: rgba(255,255,255,0.7);
+  letter-spacing: 4px; text-transform: uppercase;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+}
+</style>
+<div class="speed-lines"></div>
+<div class="panel-border"></div>
+<div class="inner-border"></div>
+<div class="content">
+  <div class="format-label">{{ mode_label }}</div>
+  <div>
+    <div class="title">{{ title }}</div>
+    <div class="vol-badge">Volume 1</div>
+  </div>
+  <div class="author">{{ author }}</div>
+</div>
