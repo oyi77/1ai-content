@@ -78,7 +78,37 @@ OpenClaw Bot memungkinkan pengguna untuk:
 │                   OPENCLAW CORE                             │
 │         (Parent System - API Integration)                   │
 └─────────────────────────────────────────────────────────────┘
+                        │
+┌───────────────────────▼─────────────────────────────────────┐
+│                 EBOOK SERVICE (FastAPI)                     │
+│     Sibling `ebook/` directory - port 8765                  │
+│  AI-powered ebook generation: outline → manuscript → QA   │
+│  → cover → export (DOCX/PDF)                                │
+└─────────────────────────────────────────────────────────────┘
 ```
+
+### Ebook Generation Service
+
+The `/ebook` Telegram command is handled by `src/commands/ebook.ts` and `src/services/ebook.service.ts`.
+It calls the **sibling `ebook/` FastAPI service** (default `http://localhost:8765`).
+
+| Env Var | Default | Purpose |
+|---------|---------|---------|
+| `EBOOK_API_URL` | `http://localhost:8765` | Base URL of ebook FastAPI service |
+| `EBOOK_API_KEY` | (empty) | Optional authentication key |
+
+To start the ebook service alongside the bot:
+
+```bash
+cd ebook
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+python run_api.py
+```
+
+Or use `docker-compose.ebook.yml` (if available) or the root `docker-compose.yml` after adding the ebook service.
+
+See `ebook/README.md` for full ebook service documentation.
 
 ---
 

@@ -27,6 +27,15 @@ Telegram bot SaaS platform for AI-powered video generation. Built with TypeScrip
 | `scripts/` | DevOps scripts (see `scripts/AGENTS.md`) |
 | `docs/` | Product documentation (see `docs/AGENTS.md`) |
 | `monitoring/` | Prometheus + Grafana configs (see `monitoring/AGENTS.md`) |
+| `ebook/` | AI ebook generator FastAPI service (sibling; port 8765) |
+
+## Sibling Services
+
+| Service | Entry | Bot Integration |
+|---------|-------|-----------------|
+| `ebook/` | `ebook/run_api.py` → uvicorn on port `8765` | `src/commands/ebook.ts` + `src/services/ebook.service.ts` |
+
+Environment: `EBOOK_API_URL` (default `http://localhost:8765`), `EBOOK_API_KEY` (optional).
 
 ## For AI Agents
 

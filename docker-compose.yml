@@ -109,6 +109,33 @@ services:
       - monitoring
 
   # ==========================================================================
+  # EBOOK GENERATION SERVICE (Sibling ebook/ FastAPI)
+  # ==========================================================================
+  ebook:
+    build:
+      context: ./ebook
+      dockerfile: Dockerfile
+    container_name: openclaw-ebook
+    restart: unless-stopped
+    ports:
+      - "8765:8765"
+    env_file:
+      - .env
+    environment:
+      - EBOOK_API_KEY=${EBOOK_API_KEY:-}
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - openclaw-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8765/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # ==========================================================================
   # PROMETHEUS (Optional - for metrics)
   # ==========================================================================
   prometheus:
