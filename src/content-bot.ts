@@ -16,6 +16,7 @@ import { initializeDatabase, disconnectDatabase, prisma } from "@/config/databas
 import { initializeRedis, disconnectRedis } from "@/config/redis";
 import { logger } from "@/utils/logger";
 import { UserService } from "@/services/user.service";
+import { WhiteLabelService } from "@/services/whitelabel.service";
 import {
   sunoCommand,
   voiceCommand,
@@ -138,6 +139,130 @@ bot.command("storyboard", async (ctx) => {
 bot.command("analyze", async (ctx) => {
   if (!(await ensureUser(ctx))) return;
   await analyzeCommand(ctx);
+});
+
+// ══════════════════════════════════════════════════════════════
+// WHITELABEL COMMANDS
+// ══════════════════════════════════════════════════════════════
+
+bot.command("whitelabel", async (ctx) => {
+  if (!(await ensureUser(ctx))) return;
+  const userId = ctx.from!.id;
+  const args = ctx.message && "text" in ctx.message ? ctx.message.text.replace(/^\/whitelabel\s*/, "").trim() : "";
+
+  if (!args) {
+    await ctx.reply(
+      "🏷️ *Whitelabel Bot System*\n\n" +
+      "Jual bot kami dengan brand kamu sendiri!\n\n" +
+      "*Commission:* 30% dari setiap transaksi user kamu\n" +
+      "*MLM:* +15%/5%/2% dari referral 3 level\n\n" +
+      "*Commands:*\n" +
+      "/whitelabel register <bot_token> <brand_name> — Daftarkan bot\n" +
+      "/whitelabel stats — Lihat statistik\n" +
+      "/whitelabel withdraw <amount> — Tarik komisi\n" +
+      "/whitelabel list — Daftar bot kamu\n\n" +
+      "*Cara kerja:*\n" +
+      "1. Buat bot baru via @BotFather\n" +
+      "2. Register token di sini\n" +
+      "3. Share bot kamu ke orang lain\n" +
+      "4. Setiap transaksi user = kamu dapat 30%!",
+      { parse_mode: "Markdown" },
+    );
+    return;
+  }
+
+  const parts = args.split("\s+");
+  const subcommand = parts[0];
+
+  // ── /whitelabel register <token> <brand_name> ──
+  if (subcommand === "register") {
+    const token = parts[1];
+    const brandName = parts.slice(2).join(" ");
+    if (!token || !brandName) {
+      await ctx.reply("❌ Format: /whitelabel register <bot_token> <brand_name>");
+      return;
+    }
+    try {
+      const bot = await WhiteLabelService.register({
+        ownerId: BigInt(userId),
+        botToken: token,
+        brandName,
+      });
+      await ctx.reply(
+        `✅ *Bot Whitelabel Terdaftar!*\n\n` +
+        `Brand: ${bot.brandName}\n` +
+        `Commission: ${Number(bot.commissionRate) * 100}%\n\n` +
+        `Bot kamu sekarang aktif! Share link bot kamu ke orang lain.\n` +
+        `Setiap transaksi = kamu dapat komisi.`,
+        { parse_mode: "Markdown" },
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      await ctx.reply(`❌ Gagal register: ${msg}`);
+    }
+    return;
+  }
+
+  // ── /whitelabel stats ──
+  if (subcommand === "stats") {
+    try {
+      const stats = await WhiteLabelService.getStats(BigInt(userId));
+      await ctx.reply(
+        `📊 *Whitelabel Stats*\n\n` +
+        `Bot terdaftar: ${stats.botCount} (${stats.activeBots} aktif)\n` +
+        `Total user: ${stats.totalUsers}\n` +
+        `Total penjualan: Rp ${stats.totalSales.toLocaleString()}\n` +
+        `Total komisi: Rp ${stats.totalEarned.toLocaleString()}\n` +
+        `Sudah ditarik: Rp ${stats.totalWithdrawn.toLocaleString()}\n` +
+        `Saldo tersedia: Rp ${stats.availableBalance.toLocaleString()}\n\n` +
+        stats.bots.map((b) => `• ${b.brandName} (@${b.botUsername || "-"}) — ${b.userCount} users — Rp ${b.totalEarned.toLocaleString()}`).join("\n"),
+        { parse_mode: "Markdown" },
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      await ctx.reply(`❌ ${msg}`);
+    }
+    return;
+  }
+
+  // ── /whitelabel withdraw <amount> ──
+  if (subcommand === "withdraw") {
+    const amount = parseInt(parts[1]);
+    if (!amount || amount < 10000) {
+      await ctx.reply("❌ Minimal withdraw: Rp 10.000\nFormat: /whitelabel withdraw <amount>");
+      return;
+    }
+    try {
+      await WhiteLabelService.withdraw(BigInt(userId), amount);
+      await ctx.reply(`✅ Withdraw Rp ${amount.toLocaleString()} berhasil!\nDana akan diproses admin dalam 1x24 jam.`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      await ctx.reply(`❌ ${msg}`);
+    }
+    return;
+  }
+
+  // ── /whitelabel list ──
+  if (subcommand === "list") {
+    try {
+      const bots = await WhiteLabelService.getByOwner(BigInt(userId));
+      if (!bots.length) {
+        await ctx.reply("Kamu belum punya bot whitelabel.\nKetik /whitelabel register untuk mulai.");
+        return;
+      }
+      const list = bots.map((b) =>
+        `${b.isActive ? "✅" : "❌"} *${b.brandName}*\n` +
+        `  @${b.botUsername || "pending"} | ${b.userCount} users | Rp ${Number(b.totalEarned).toLocaleString()}`
+      ).join("\n\n");
+      await ctx.reply(`🏷️ *Bot Whitelabel Kamu*\n\n${list}`, { parse_mode: "Markdown" });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      await ctx.reply(`❌ ${msg}`);
+    }
+    return;
+  }
+
+  await ctx.reply("❌ Subcommand tidak dikenal. Ketik /whitelabel untuk bantuan.");
 });
 
 

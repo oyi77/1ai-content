@@ -144,6 +144,7 @@ model User {
   apiKeys        ApiKey[]
   videoClips     VideoClip[]
   videoReworks   VideoRework[]
+  whiteLabelBots WhiteLabelBot[]
   viralScans     ViralScan[]
 
   @@index([telegramId])
@@ -742,4 +743,41 @@ model ViralScan {
   @@index([query])
   @@index([createdAt])
   @@map("viral_scans")
+}
+
+// =============================================================================
+// WHITELABEL BOT MODEL (Partner bots with custom branding)
+// =============================================================================
+model WhiteLabelBot {
+  id          BigInt  @id @default(autoincrement())
+  ownerId     BigInt  @map("owner_id") // telegramId of the partner
+  uuid        String  @unique @default(uuid()) @db.Uuid
+  botToken    String  @unique @map("bot_token") @db.VarChar(255)
+  botUsername String? @map("bot_username") @db.VarChar(64)
+
+  // Branding
+  brandName   String  @map("brand_name") @db.VarChar(128)
+  welcomeMsg  String? @map("welcome_msg") @db.Text
+  logoUrl     String? @map("logo_url") @db.VarChar(512)
+
+  // Commission
+  commissionRate Decimal @default(0.30) @map("commission_rate") @db.Decimal(5, 4) // 30%
+  totalEarned    Decimal @default(0) @map("total_earned") @db.Decimal(12, 2)
+  totalWithdrawn Decimal @default(0) @map("total_withdrawn") @db.Decimal(12, 2)
+
+  // Stats
+  userCount  Int @default(0) @map("user_count")
+  totalSales Decimal @default(0) @map("total_sales") @db.Decimal(12, 2)
+
+  // Status
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  owner User @relation(fields: [ownerId], references: [telegramId])
+
+  @@index([ownerId])
+  @@index([botUsername])
+  @@map("whitelabel_bots")
 }
