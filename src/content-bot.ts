@@ -407,22 +407,18 @@ async function main() {
   } catch { /* ok */ }
 
   bot.launch().catch((err) => logger.error("[Bot] launch error:", err));
-  logger.info("✅ Vilona Content Bot is LIVE");
 
   await bot.telegram.setMyCommands([
-    { command: "menu", description: "🏠 Menu utama" },
     { command: "suno", description: "🎵 Generate musik AI" },
     { command: "voice", description: "🎙️ AI voiceover" },
     { command: "music", description: "🎶 Background music" },
     { command: "loop", description: "🔁 Video loop" },
     { command: "storyboard", description: "📋 Visual storyboard" },
     { command: "analyze", description: "📊 Analisa channel" },
-    { command: "publish", description: "📤 Post ke sosmed" },
-    { command: "topup", description: "💳 Top up credits" },
-    { command: "credits", description: "📋 Cek saldo" },
-    { command: "profile", description: "👤 Profil" },
-    { command: "help", description: "❓ Bantuan" },
+    { command: "whitelabel", description: "🏷️ Whitelabel bot" },
   ]).catch(() => {});
+  logger.info("✅ Vilona Content Bot is LIVE");
+
 
   const shutdown = async (signal: string) => {
     logger.info(`${signal} — shutting down...`);
