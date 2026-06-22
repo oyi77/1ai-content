@@ -104,6 +104,25 @@ export class ContentWebhookService {
     });
   }
 
+
+  async notifyTikTokUpload(params: {
+    contentId: string;
+    videoPath: string;
+    caption: string;
+    hashtags?: string[];
+  }): Promise<WebhookResponse | null> {
+    return this.sendWebhook({
+      source: "1ai-content",
+      event_type: "tiktok_upload",
+      content_id: params.contentId,
+      content_type: "video",
+      caption: params.caption,
+      hashtags: params.hashtags,
+      platform: "tiktok",
+      metadata: { video_path: params.videoPath },
+    });
+  }
+
   private async sendWebhook(payload: WebhookPayload): Promise<WebhookResponse | null> {
     try {
       const headers: Record<string, string> = {
