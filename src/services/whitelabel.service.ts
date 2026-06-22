@@ -136,7 +136,7 @@ export class WhiteLabelService {
       0,
     );
     const totalWithdrawn = bots.reduce(
-      (sum, b) => sum + Number(b.totalWithDrawn),
+      (sum, b) => sum + Number(b.totalWithdrawn),
       0,
     );
     const available = totalEarned - totalWithdrawn;

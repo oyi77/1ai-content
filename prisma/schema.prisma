@@ -781,3 +781,185 @@ model WhiteLabelBot {
   @@index([botUsername])
   @@map("whitelabel_bots")
 }
+
+// =============================================================================
+// YOUTUBE WORKFLOW MODELS (v4.0 — Multi-Niche Multi-Country Pipeline)
+// =============================================================================
+
+model YtChannel {
+  id                String    @id @default(cuid())
+  channelId         String    @unique @map("channel_id") @db.VarChar(64)
+  gmailAccount      String?   @map("gmail_account") @db.VarChar(128)
+  adsensePubId      String?   @map("adsense_pub_id") @db.VarChar(32)
+  nicheVertical     String    @map("niche_vertical") @db.VarChar(32)
+  nicheName         String?   @map("niche_name") @db.VarChar(128)
+  productionFormat  String    @map("production_format") @db.VarChar(32)
+  targetCountry     String?   @map("target_country") @db.VarChar(8)
+  targetLanguage    String?   @map("target_language") @db.VarChar(8)
+  cpmTier           String    @default("tier_D") @map("cpm_tier") @db.VarChar(8)
+  ytOauthToken      String?   @map("yt_oauth_token") // encrypted at app layer
+  tier              String    @default("tier_1_cold_start") @map("tier") @db.VarChar(32)
+  totalPublished    Int       @default(0) @map("total_published")
+  channelAgeDays    Int       @default(0) @map("channel_age_days")
+  trafficStatus     String    @default("unproven") @map("traffic_status") @db.VarChar(16)
+  isMasterChannel   Boolean   @default(false) @map("is_master_channel")
+  masterChannelId   String?   @map("master_channel_id") @db.VarChar(64)
+  trafficScore      Float?    @map("traffic_score")
+  quarantineStarted DateTime? @map("quarantine_started")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  setupComplete     Boolean   @default(false) @map("setup_complete")
+
+  publishedVideos   YtPublishedVideo[]
+  ideas             YtIdea[]
+  quarantineLogs    YtQuarantineLog[]
+
+  @@index([nicheVertical])
+  @@index([trafficStatus])
+  @@index([setupComplete])
+  @@map("yt_channels")
+}
+
+model YtPublishedVideo {
+  id               String    @id @default(cuid())
+  videoId          String    @unique @map("video_id") @db.VarChar(64)
+  channelId        String    @map("channel_id") @db.VarChar(64)
+  channel          YtChannel @relation(fields: [channelId], references: [channelId])
+  ideaId           String?   @map("idea_id") @db.VarChar(64)
+  nicheVertical    String?   @map("niche_vertical") @db.VarChar(32)
+  productionFormat String?   @map("production_format") @db.VarChar(32)
+  title            String?   @db.VarChar(255)
+  durationMinutes  Int?      @map("duration_minutes")
+  tier             String?   @db.VarChar(16)
+  toneVariant      String?   @map("tone_variant") @db.VarChar(32)
+  publishedAt      DateTime? @map("published_at")
+  monitoringStart  DateTime? @map("monitoring_start")
+  status           String    @default("monitoring") @map("status") @db.VarChar(20)
+  breakoutCluster  String?   @map("breakout_cluster")
+  triageDecision   String?   @map("triage_decision") @db.VarChar(20)
+  triageAt         DateTime? @map("triage_at")
+
+  metrics          YtVideoMetrics[]
+
+  @@index([channelId])
+  @@index([status])
+  @@index([publishedAt])
+  @@map("yt_published_videos")
+}
+
+model YtIdea {
+  id               String    @id @default(uuid())
+  channelId        String    @map("channel_id") @db.VarChar(64)
+  channel          YtChannel @relation(fields: [channelId], references: [channelId])
+  nicheVertical    String?   @map("niche_vertical") @db.VarChar(32)
+  productionFormat String?   @map("production_format") @db.VarChar(32)
+  batchId          String?   @map("batch_id") @db.VarChar(64)
+  titleDraft       String?   @map("title_draft") @db.VarChar(255)
+  nicheCategory    String?   @map("niche_category") @db.VarChar(64)
+  subNiche         String?   @map("sub_niche") @db.VarChar(64)
+  hookType         String?   @map("hook_type") @db.VarChar(20)
+  toneVariant      String?   @map("tone_variant") @db.VarChar(32)
+  summary          String?   @db.Text
+  genre            String?   @db.VarChar(64)
+  mood             String?   @db.VarChar(32)
+  visualStyle      String?   @map("visual_style") @db.VarChar(64)
+  useCase          String?   @map("use_case") @db.VarChar(32)
+  durationMinutes  Int?      @map("duration_minutes")
+  potentialScore   String?   @map("potential_score") @db.VarChar(10)
+  conflictVersions Boolean   @default(false) @map("conflict_versions")
+  breakoutBias     Json?     @map("breakout_bias")
+  priority         String    @default("NORMAL") @db.VarChar(10)
+  status           String    @default("pending") @db.VarChar(16)
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  @@index([channelId])
+  @@index([status])
+  @@index([priority])
+  @@map("yt_ideas")
+}
+
+model YtVideoMetrics {
+  id          BigInt    @id @default(autoincrement())
+  videoId     String    @map("video_id") @db.VarChar(64)
+  video       YtPublishedVideo @relation(fields: [videoId], references: [videoId])
+  checkAt     String    @map("check_at") @db.VarChar(10)
+  views       Int?
+  ctr         Float?
+  avgViewPct  Float?    @map("avg_view_pct")
+  avdSeconds  Int?      @map("avd_seconds")
+  trafficSrc  Json?     @map("traffic_src")
+  recordedAt  DateTime  @default(now()) @map("recorded_at")
+
+  @@index([videoId])
+  @@index([checkAt])
+  @@map("yt_video_metrics")
+}
+
+model YtQuarantineLog {
+  id               BigInt    @id @default(autoincrement())
+  channelId        String    @map("channel_id") @db.VarChar(64)
+  channel          YtChannel @relation(fields: [channelId], references: [channelId])
+  action           String    @db.VarChar(16)
+  triggerType      String?   @map("trigger_type") @db.VarChar(32)
+  channelAgeDays   Int?      @map("channel_age_days")
+  trafficDropPct   Float?    @map("traffic_drop_pct")
+  recoveryPct      Float?    @map("recovery_pct")
+  quarantineMonths Float?    @map("quarantine_months")
+  details          Json?
+  recordedAt       DateTime  @default(now()) @map("recorded_at")
+
+  @@index([channelId])
+  @@index([action])
+  @@map("yt_quarantine_logs")
+}
+
+model YtNicheCpmResearch {
+  id              BigInt    @id @default(autoincrement())
+  researchDate    DateTime  @default(now()) @map("research_date")
+  rawReport       Json?     @map("raw_report")
+  cpmSnapshot     Json?     @map("cpm_snapshot")
+  nicheAnalysis   Json?     @map("niche_analysis")
+  crossNiche      Json?     @map("cross_niche")
+  recommendations Json?
+  appliedTo       String[]  @map("applied_to")
+
+  @@index([researchDate])
+  @@map("yt_niche_cpm_research")
+}
+
+model YtBreakoutCluster {
+  id                   String    @id @default(uuid())
+  channelId            String?   @map("channel_id") @db.VarChar(64)
+  nicheVertical        String?   @map("niche_vertical") @db.VarChar(32)
+  triggerVideoId       String?   @map("trigger_video_id") @db.VarChar(64)
+  primaryElement       String?   @map("primary_element") @db.VarChar(128)
+  secondaryElements    Json?     @map("secondary_elements")
+  storyType            String?   @map("story_type") @db.VarChar(32)
+  genreMood            String?   @map("genre_mood") @db.VarChar(32)
+  toneVariant          String?   @map("tone_variant") @db.VarChar(32)
+  trafficDriver        String?   @map("traffic_driver") @db.VarChar(16)
+  bestDurationTier     String?   @map("best_duration_tier") @db.VarChar(16)
+  active               Boolean   @default(true)
+  revisitScheduledAt   DateTime? @map("revisit_scheduled_at")
+  createdAt            DateTime  @default(now()) @map("created_at")
+
+  @@index([channelId])
+  @@index([active])
+  @@map("yt_breakout_clusters")
+}
+
+model YtAgentTaskLog {
+  id          BigInt    @id @default(autoincrement())
+  agentName   String    @map("agent_name") @db.VarChar(64)
+  phase       String?   @db.VarChar(32)
+  inputRef    String?   @map("input_ref") @db.VarChar(128)
+  outputRef   String?   @map("output_ref") @db.VarChar(128)
+  status      String?   @db.VarChar(16)
+  errorMsg    String?   @map("error_message")
+  startedAt   DateTime? @map("started_at")
+  finishedAt  DateTime? @map("finished_at")
+
+  @@index([agentName])
+  @@index([status])
+  @@index([startedAt])
+  @@map("yt_agent_task_logs")
+}

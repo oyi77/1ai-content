@@ -15,6 +15,11 @@ export const GEMINIGEN_API_BASE = "https://api.geminigen.ai/uapi/v1";
 const POLL_INTERVAL = 5000;
 const POLL_MAX_ATTEMPTS = 60;
 
+
+function getVideoDir(): string {
+  return getConfig().VIDEO_DIR || '/tmp/videos';
+}
+
 export interface VideoFallbackParams {
   prompt: string;
   duration: number;
@@ -674,7 +679,7 @@ async function generateViaMPT(params: VideoFallbackParams): Promise<VideoFallbac
   }
 
   try {
-    const { MoneyPrinterService } = await import("@/services/money-printer.service");
+    const { MoneyPrinterService } = require("@/services/money-printer.service");
     const mpt = new MoneyPrinterService();
     
     const mptParams = {

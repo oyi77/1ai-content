@@ -8,11 +8,10 @@
  * Output: JSON with video_paths, duration, errors
  */
 
-import { execFile } from "child_process";
-import { promisify } from "util";
+import { spawn } from "child_process";
 import { resolve as resolvePath } from "path";
 
-const execFileAsync = promisify(execFile);
+
 
 export interface VideoGenerationParams {
 	audio_file: string;
@@ -66,16 +65,23 @@ export class MoneyPrinterService {
 		const input = JSON.stringify(params);
 
 		try {
-			const { stdout, stderr } = await execFileAsync(
-				this.#pythonPath,
-				["-m", "app.cli"],
-				{
+			const { stdout, stderr } = await new Promise<{ stdout: string; stderr: string }>((resolve, reject) => {
+				const proc = spawn(this.#pythonPath, ['-m', 'app.cli'], {
 					cwd: this.#mptPath,
-					input,
 					timeout: this.#timeout,
-					maxBuffer: 10 * 1024 * 1024, // 10MB output buffer
-				},
-			);
+				});
+				let out = '';
+				let err = '';
+				proc.stdout.on('data', (d: Buffer) => { out += d.toString(); });
+				proc.stderr.on('data', (d: Buffer) => { err += d.toString(); });
+				proc.on('close', (code) => {
+					if (code === 0) resolve({ stdout: out, stderr: err });
+					else reject(new Error(`MPT exited with code ${code}: ${err}`));
+				});
+				proc.on('error', reject);
+				proc.stdin.write(input);
+				proc.stdin.end();
+			});
 
 			if (stderr) {
 				console.warn("MPT stderr:", stderr);

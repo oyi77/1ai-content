@@ -17,6 +17,7 @@ import { initializeRedis, disconnectRedis } from "@/config/redis";
 import { logger } from "@/utils/logger";
 import { UserService } from "@/services/user.service";
 import { WhiteLabelService } from "@/services/whitelabel.service";
+import { PaymentService } from "@/services/payment.service";
 import {
   sunoCommand,
   voiceCommand,
