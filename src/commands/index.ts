@@ -54,9 +54,7 @@ import {
   adminDeductCreditsCommand,
 } from "./admin/grantCredits";
 import { paymentSettingsCommand } from "./admin/paymentSettings";
-import { registerChannelCommands } from "./youtube/channel";
-import { registerVideoCommands } from "./youtube/video";
-import { registerReportCommands } from "./youtube/report";
+import { showYouTubeMenu, showChannelList, showChannelDetail, showReports, triggerResearch, showResearchResults, showQuarantine, showAgentLogs } from "./youtube/youtube.menu";
 
 /**
  * Setup all bot commands
@@ -116,10 +114,22 @@ export function setupCommands(bot: Telegraf<BotContext>): void {
   bot.command("rework", (ctx) => ContentCommands.handleRework(ctx as any));
   bot.command("scrape", (ctx) => ContentCommands.handleScrape(ctx as any));
 
-  // YouTube workflow commands
-  registerChannelCommands(bot);
-  registerVideoCommands(bot);
-  registerReportCommands(bot);
+  // YouTube workflow — button-based menu
+  bot.command("yt", (ctx) => showYouTubeMenu(ctx));
+  bot.command("youtube", (ctx) => showYouTubeMenu(ctx));
+
+  // YouTube callback handlers
+  bot.action("yt_menu_refresh", (ctx) => showYouTubeMenu(ctx));
+  bot.action("yt_menu_channels", (ctx) => showChannelList(ctx));
+  bot.action("yt_menu_reports", (ctx) => showReports(ctx));
+  bot.action("yt_menu_research", (ctx) => triggerResearch(ctx));
+  bot.action("yt_menu_results", (ctx) => showResearchResults(ctx));
+  bot.action("yt_menu_quarantine", (ctx) => showQuarantine(ctx));
+  bot.action("yt_menu_logs", (ctx) => showAgentLogs(ctx));
+  bot.action(/^yt_channel_(.+)$/, (ctx) => {
+    const match = ctx.match as RegExpMatchArray;
+    return showChannelDetail(ctx, match[1]);
+  });
 
   // Admin commands (with middleware check)
   bot.command("broadcast", adminBroadcastCommand);
@@ -150,10 +160,7 @@ export function setupCommands(bot: Telegraf<BotContext>): void {
     { command: "edit", description: "🎬 Edit videos" },
     { command: "rework", description: "🔄 Anti-copyright rework" },
     { command: "scrape", description: "🕵️ Scrape competitor content" },
-    { command: "yt_channels", description: "📺 YouTube channels" },
-    { command: "yt_report", description: "📈 YouTube report" },
-    { command: "yt_quarantine", description: "🔒 Quarantine status" },
-    { command: "yt_research", description: "🔍 Niche research" },
+    { command: "yt", description: "📺 YouTube Dashboard" },
     { command: "support", description: "🆘 Hubungi support" },
     { command: "help", description: "📖 Panduan lengkap" },
   ]).catch(() => { /* ignore - bot token may not be set yet */ });
