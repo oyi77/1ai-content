@@ -54,6 +54,9 @@ import {
   adminDeductCreditsCommand,
 } from "./admin/grantCredits";
 import { paymentSettingsCommand } from "./admin/paymentSettings";
+import { registerChannelCommands } from "./youtube/channel";
+import { registerVideoCommands } from "./youtube/video";
+import { registerReportCommands } from "./youtube/report";
 
 /**
  * Setup all bot commands
@@ -113,6 +116,10 @@ export function setupCommands(bot: Telegraf<BotContext>): void {
   bot.command("rework", (ctx) => ContentCommands.handleRework(ctx as any));
   bot.command("scrape", (ctx) => ContentCommands.handleScrape(ctx as any));
 
+  // YouTube workflow commands
+  registerChannelCommands(bot);
+  registerVideoCommands(bot);
+  registerReportCommands(bot);
 
   // Admin commands (with middleware check)
   bot.command("broadcast", adminBroadcastCommand);
@@ -143,6 +150,10 @@ export function setupCommands(bot: Telegraf<BotContext>): void {
     { command: "edit", description: "🎬 Edit videos" },
     { command: "rework", description: "🔄 Anti-copyright rework" },
     { command: "scrape", description: "🕵️ Scrape competitor content" },
+    { command: "yt_channels", description: "📺 YouTube channels" },
+    { command: "yt_report", description: "📈 YouTube report" },
+    { command: "yt_quarantine", description: "🔒 Quarantine status" },
+    { command: "yt_research", description: "🔍 Niche research" },
     { command: "support", description: "🆘 Hubungi support" },
     { command: "help", description: "📖 Panduan lengkap" },
   ]).catch(() => { /* ignore - bot token may not be set yet */ });

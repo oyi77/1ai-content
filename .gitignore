@@ -36,3 +36,4 @@ tmp/
 uploads/
 .vscode/
 *.zip
+__pycache__/
