@@ -63,10 +63,10 @@ export function registerReportCommands(bot: Telegraf<Context>): void {
     try {
       const result = await runNicheCpmResearch();
       const topOpps = result.recommendations.slice(0, 3);
-      const lines = topOpps.map((r, i) => `${i + 1}. ${r.nicheVertical} × ${r.targetCountry} | CPM $${r.estimatedCpm} | ${r.priority}`);
-      await ctx.reply(`🌍 *Research Complete*\n\nTop opportunities:\n${lines.join("\n")}`, { parse_mode: "Markdown" });
+      const lines = topOpps.map((r: { nicheVertical: string; targetCountry: string; estimatedCpm: number; priority: string }, i: number) => `${i + 1}. ${r.nicheVertical} x ${r.targetCountry} | CPM USD ${r.estimatedCpm} | ${r.priority}`);
+      await ctx.reply("Research Complete\n\nTop opportunities:\n" + lines.join("\n"));
     } catch (err) {
-      await ctx.reply(`❌ Research failed: ${err}`);
+      await ctx.reply("Research failed: " + String(err));
     }
   });
 
