@@ -351,14 +351,6 @@ bot.on("callback_query", async (ctx) => {
   
   
   
-  if (menuHints[data]) {
-    await ctx.answerCbQuery();
-    await ctx.editMessageText(menuHints[data], {
-      parse_mode: "Markdown",
-      reply_markup: { inline_keyboard: [[{ text: "◀️ Kembali", callback_data: "back_menu" }]] },
-    });
-    return;
-  }
 
   // ── Topup callbacks ──
   if (data.startsWith("topup_")) {
