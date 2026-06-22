@@ -36,6 +36,18 @@ import { handleVoiceTextWaiting, handleLoopAudioWaiting } from "@/handlers/messa
 const appConfig = initConfig();
 const bot = new Telegraf<BotContext>(appConfig.BOT_TOKEN);
 
+bot.use(async (ctx, next) => {
+  if (!ctx.session) {
+    ctx.session = {
+      state: "START",
+      stateData: {},
+      lastActivity: new Date(),
+    } as any;
+  }
+  ctx.session.lastActivity = new Date();
+  await next();
+});
+
 // ponytail: in-memory session, swap to Redis if multi-instance needed
 const sessions = new Map<string, { state: string; data: Record<string, unknown> }>();
 
