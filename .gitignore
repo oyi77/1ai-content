@@ -37,3 +37,6 @@ uploads/
 .vscode/
 *.zip
 __pycache__/
+
+# External tools — install via pip, don't clone
+tools/tiktok-carousel-generator/
