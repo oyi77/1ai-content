@@ -27,17 +27,9 @@ import {
   loopCommand,
   analyzeCommand,
   publishCommand,
-  facelessCommand,
-  productCommand,
-  clipCommand,
-  trendsCommand,
-  autopilotCommand,
-  calendarCommand,
-  analyticsCommand,
-  brandCommand,
 } from "@/commands/content-factory.commands";
 import { storyboardCommand } from "@/commands/storyboard";
-import { accountsCommand, connectCommand, handleConnectApi, handleConnectBrowser, handleConnectProfile, handleDisconnectAccount } from "@/commands/social";
+import { socialCommand } from "@/commands/social";
 
 // Content factory callback & message handlers
 import { handleContentFactoryCallbacks } from "@/handlers/callbacks/content-factory";
@@ -101,16 +93,6 @@ bot.command("loop", loopCommand);
 bot.command("analyze", analyzeCommand);
 bot.command("publish", publishCommand);
 bot.command("storyboard", storyboardCommand);
-bot.command("faceless", facelessCommand);
-bot.command("product", productCommand);
-bot.command("clip", clipCommand);
-bot.command("trends", trendsCommand);
-bot.command("autopilot", autopilotCommand);
-bot.command("accounts", accountsCommand);
-bot.command("connect", connectCommand);
-bot.command("calendar", calendarCommand);
-bot.command("analytics", analyticsCommand);
-bot.command("brand", brandCommand);
 
 // ── Credits & Payment ──────────────────────────────────────
 
@@ -198,25 +180,6 @@ bot.on("callback_query", async (ctx) => {
 
 
   // Social account callbacks
-  if (data === "connect_new") {
-    await connectCommand(ctx);
-    return;
-  }
-  if (data.startsWith("connect_api_")) {
-    if (await handleConnectApi(ctx, data.replace("connect_api_", ""))) return;
-  }
-  if (data.startsWith("connect_browser_")) {
-    if (await handleConnectBrowser(ctx, data.replace("connect_browser_", ""))) return;
-  }
-  if (data.startsWith("connect_profile_")) {
-    const parts = data.replace("connect_profile_", "").split("_");
-    const profileId = parts[0];
-    const platform = parts.slice(1).join("_");
-    if (await handleConnectProfile(ctx, profileId, platform)) return;
-  }
-  if (data.startsWith("disconnect_account_")) {
-    if (await handleDisconnectAccount(ctx, data.replace("disconnect_account_", ""))) return;
-  }
   if (data === "noop") {
     await ctx.answerCbQuery().catch(() => {});
     return;
@@ -339,16 +302,6 @@ async function main() {
   await bot.telegram.setMyCommands([
     { command: "start", description: "🏠 Start & show commands" },
     { command: "clip", description: "✂️ Auto-clip video → viral shorts" },
-    { command: "faceless", description: "🎬 Generate faceless video" },
-    { command: "product", description: "🛍️ Generate product video" },
-    { command: "analyze", description: "📊 Analyze & clone channel" },
-    { command: "trends", description: "🔥 Scan trending topics" },
-    { command: "autopilot", description: "🤖 Auto-generate & publish 24/7" },
-    { command: "calendar", description: "📅 Content calendar" },
-    { command: "analytics", description: "📊 Performance analytics" },
-    { command: "brand", description: "🎨 Brand settings" },
-    { command: "accounts", description: "📱 Manage connected accounts" },
-    { command: "connect", description: "➕ Connect social media account" },
     { command: "suno", description: "🎵 Generate music (Suno AI)" },
     { command: "voice", description: "🎙️ AI voiceover generator" },
     { command: "music", description: "🎶 Background music generator" },
