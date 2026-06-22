@@ -79,7 +79,7 @@ async function analyzeYouTube(url: string): Promise<AnalysisResult> {
   const { execSync } = await import("child_process");
   try {
     const raw = execSync(
-      `yt-dlp --dump-json --no-download --flat-playlist "${url}" 2>/dev/null | head -1`,
+      `python3 -m yt_dlp --dump-json --no-download --flat-playlist "${url}" 2>/dev/null | head -1`,
       { timeout: 30000, encoding: "utf-8" },
     );
     const data = JSON.parse(raw);
@@ -119,7 +119,7 @@ async function analyzeTikTok(url: string): Promise<AnalysisResult> {
   const { execSync } = await import("child_process");
   try {
     const raw = execSync(
-      `yt-dlp --dump-json --no-download "${url}" 2>/dev/null`,
+      `python3 -m yt_dlp --dump-json --no-download "${url}" 2>/dev/null`,
       { timeout: 30000, encoding: "utf-8" },
     );
     const data = JSON.parse(raw);
