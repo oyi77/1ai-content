@@ -2,10 +2,10 @@
  * Open-Sora Service Client — AI Video Generation
  * Text-to-video via open-source Open-Sora model.
  */
+import { logger } from "@/utils/logger";
 
-import { logger } from '@/utils/logger';
+const STACK_BASE = process.env.STACK_CONTENT_URL || 'http://localhost:8770';
 
-const OPENSORA_BASE = process.env.OPEN_SORA_API_URL || 'http://localhost:8771';
 
 // ── Types ──
 
@@ -51,7 +51,7 @@ export async function generateVideo(req: SoraGenerateRequest): Promise<SoraGener
   };
 
   try {
-    const res = await fetch(`${OPENSORA_BASE}/generate`, {
+    const res = await fetch(`${STACK_BASE}/sora/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -86,7 +86,7 @@ export async function generateVideo(req: SoraGenerateRequest): Promise<SoraGener
 
 export async function getStatus(): Promise<SoraStatus> {
   try {
-    const res = await fetch(`${OPENSORA_BASE}/status`, {
+    const res = await fetch(`${STACK_BASE}/health`, {
       signal: AbortSignal.timeout(5000),
     });
     const data = (await res.json()) as Record<string, unknown>;
@@ -106,12 +106,12 @@ export async function getStatus(): Promise<SoraStatus> {
 }
 
 export async function getVideoUrl(jobId: string): Promise<string> {
-  return `${OPENSORA_BASE}/file/${jobId}`;
+  return `${STACK_BASE}/file/${jobId}`;
 }
 
 export async function isAvailable(): Promise<boolean> {
   try {
-    const res = await fetch(`${OPENSORA_BASE}/health`, { signal: AbortSignal.timeout(5000) });
+    const res = await fetch(`${STACK_BASE}/health`, { signal: AbortSignal.timeout(5000) });
     return res.ok;
   } catch {
     return false;

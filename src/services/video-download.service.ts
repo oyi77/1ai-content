@@ -4,9 +4,8 @@
  */
 
 import { logger } from '@/utils/logger';
-import { getConfig } from '@/config/env';
+const STACK_BASE = process.env.STACK_CONTENT_URL || 'http://localhost:8770';
 
-const VIDBEE_BASE = process.env.VIDBEE_API_URL || 'http://localhost:8772';
 
 // ── Types ──
 
@@ -61,7 +60,7 @@ export async function downloadVideo(req: DownloadRequest): Promise<DownloadResul
   };
 
   try {
-    const res = await fetch(`${VIDBEE_BASE}/download`, {
+    const res = await fetch(`${STACK_BASE}/download`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -100,7 +99,7 @@ export async function downloadVideo(req: DownloadRequest): Promise<DownloadResul
 
 export async function getVideoInfo(url: string): Promise<VideoInfo> {
   try {
-    const res = await fetch(`${VIDBEE_BASE}/info`, {
+    const res = await fetch(`${STACK_BASE}/info`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url }),
@@ -146,12 +145,12 @@ export async function getVideoInfo(url: string): Promise<VideoInfo> {
 }
 
 export async function getDownloadUrl(jobId: string): Promise<string> {
-  return `${VIDBEE_BASE}/file/${jobId}`;
+  return `${STACK_BASE}/file/${jobId}`;
 }
 
 export async function deleteDownload(jobId: string): Promise<boolean> {
   try {
-    const res = await fetch(`${VIDBEE_BASE}/file/${jobId}`, { method: 'DELETE' });
+    const res = await fetch(`${STACK_BASE}/file/${jobId}`, { method: 'DELETE' });
     const data = (await res.json()) as Record<string, unknown>;
     return Boolean(data.deleted);
   } catch {
@@ -161,7 +160,7 @@ export async function deleteDownload(jobId: string): Promise<boolean> {
 
 export async function isAvailable(): Promise<boolean> {
   try {
-    const res = await fetch(`${VIDBEE_BASE}/health`, { signal: AbortSignal.timeout(5000) });
+    const res = await fetch(`${STACK_BASE}/health`, { signal: AbortSignal.timeout(5000) });
     return res.ok;
   } catch {
     return false;

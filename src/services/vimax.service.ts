@@ -2,10 +2,10 @@
  * ViMax Service Client — Agentic Video Generation
  * Director, Screenwriter, Producer all-in-one.
  */
+import { logger } from "@/utils/logger";
 
-import { logger } from '@/utils/logger';
+const STACK_BASE = process.env.STACK_CONTENT_URL || 'http://localhost:8770';
 
-const VIMAX_BASE = process.env.VIMAX_API_URL || 'http://localhost:8770';
 
 // ── Types ──
 
@@ -95,7 +95,7 @@ export async function ideaToVideo(req: IdeaRequest): Promise<AgentResult> {
   };
 
   try {
-    const res = await fetch(`${VIMAX_BASE}/idea-to-video`, {
+    const res = await fetch(`${STACK_BASE}/vimax/idea-to-video`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -130,7 +130,7 @@ export async function generateScript(req: ScriptRequest): Promise<AgentResult> {
   };
 
   try {
-    const res = await fetch(`${VIMAX_BASE}/generate-script`, {
+    const res = await fetch(`${STACK_BASE}/vimax/generate-script`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -157,7 +157,7 @@ export async function generateScript(req: ScriptRequest): Promise<AgentResult> {
 
 export async function isAvailable(): Promise<boolean> {
   try {
-    const res = await fetch(`${VIMAX_BASE}/health`, { signal: AbortSignal.timeout(5000) });
+    const res = await fetch(`${STACK_BASE}/health`, { signal: AbortSignal.timeout(5000) });
     return res.ok;
   } catch {
     return false;

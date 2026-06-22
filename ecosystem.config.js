@@ -20,35 +20,17 @@ module.exports = {
     }
   },
   {
-    name: "vidbee",
+    name: "stack-content",
     script: "python3",
-    args: "-m uvicorn services.vidbee.service:app --host 0.0.0.0 --port 8772",
+    args: "-m uvicorn services.stack-content.service:app --host 0.0.0.0 --port 8770",
     cwd: "/home/openclaw/projects/1ai-content",
     instances: 1,
     autorestart: true,
     watch: false,
-    max_memory_restart: '512M',
+    max_memory_restart: '256M',
     min_uptime: '10s',
     max_restarts: 5,
     restart_delay: 5000,
-    env: {
-      PYTHONUNBUFFERED: '1'
-    }
-  },
-  {
-    name: "vimax",
-    script: "python3",
-    args: "-m uvicorn services.vimax.service:app --host 0.0.0.0 --port 8770",
-    cwd: "/home/openclaw/projects/1ai-content",
-    instances: 1,
-    autorestart: true,
-    watch: false,
-    max_memory_restart: '512M',
-    min_uptime: '10s',
-    max_restarts: 5,
-    restart_delay: 5000,
-    env: {
-      PYTHONUNBUFFERED: '1'
-    }
+    env: { PYTHONUNBUFFERED: '1' }
   }]
 };
