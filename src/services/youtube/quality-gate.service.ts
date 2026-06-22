@@ -120,7 +120,7 @@ export function validateSeo(title: string, description: string, tags: string[]):
   if (title.length > getMaxTitleLength()) failures.push(`Title ${title.length} chars > ${getMaxTitleLength()}`);
   if (tags.length < getMinTags()) warnings.push(`Tags ${tags.length} < recommended ${getMinTags()}`);
   if (tags.length > getMaxTags()) warnings.push(`Tags ${tags.length} > max ${getMaxTags()}`);
-  if (description.length < getConfig().YT_MIN_DESCRIPTION_LENGTH || 100) warnings.push("Description too short");
+  if (description.length < (getConfig().YT_MIN_DESCRIPTION_LENGTH || 200)) warnings.push("Description too short");
 
   return { failures, warnings };
 }

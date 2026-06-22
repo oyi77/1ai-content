@@ -63,7 +63,7 @@ function generateDescription(summary: string, niche: string, title: string): str
   return desc;
 }
 
-function generateTags(niche: string, title: string, summary: string): string[] {
+function generateTags(niche: string, title: string, _summary: string): string[] {
   const broadTags = [niche.replace(/_/g, " "), "history", "documentary", "storytelling", "explained"];
   const titleWords = title.toLowerCase().split(/\s+/).filter((w) => w.length > 3);
   const nicheTags = niche.split("_");
