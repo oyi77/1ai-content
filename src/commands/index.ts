@@ -54,6 +54,7 @@ import {
   adminDeductCreditsCommand,
 } from "./admin/grantCredits";
 import { paymentSettingsCommand } from "./admin/paymentSettings";
+import { downloadCommand, soraCommand, vimaxCommand, scriptCommand } from "./stack-content";
 
 /**
  * Setup all bot commands
@@ -112,6 +113,12 @@ export function setupCommands(bot: Telegraf<BotContext>): void {
   bot.command("edit", (ctx) => ContentCommands.handleEdit(ctx as any));
   bot.command("rework", (ctx) => ContentCommands.handleRework(ctx as any));
   bot.command("scrape", (ctx) => ContentCommands.handleScrape(ctx as any));
+
+  // Stack Content (VidBee + Open-Sora + ViMax)
+  bot.command("download", downloadCommand);
+  bot.command("sora", soraCommand);
+  bot.command("vimax", vimaxCommand);
+  bot.command("script", scriptCommand);
 
   // Admin commands (with middleware check)
   bot.command("broadcast", adminBroadcastCommand);

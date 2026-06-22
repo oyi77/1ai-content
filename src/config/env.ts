@@ -116,6 +116,15 @@ const envSchema = z.object({
   FEATURE_REFERRAL: boolStr,
   FEATURE_VIDEO_GENERATION: boolStr,
 
+  // ── Stack Content Integrations ──
+  VIDBEE_ENABLED: boolStr,
+  VIDBEE_API_URL: z.string().default("http://localhost:8772"),
+  OPEN_SORA_ENABLED: boolStr,
+  OPEN_SORA_API_URL: z.string().default("http://localhost:8771"),
+  VIMAX_ENABLED: boolStr,
+  VIMAX_API_URL: z.string().default("http://localhost:8770"),
+  VIMAX_LLM_PROVIDER: z.string().default("openai"),
+
   // ── Other ──
   USD_TO_IDR_RATE: z.string().default("16000").transform(Number),
 });
