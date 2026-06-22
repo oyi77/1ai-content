@@ -150,7 +150,31 @@ bot.command("storyboard", async (ctx) => {
 
 bot.command("analyze", async (ctx) => {
   if (!(await ensureUser(ctx))) return;
-  await analyzeCommand(ctx);
+  const userId = ctx.from!.id;
+  const args = ctx.message && "text" in ctx.message ? ctx.message.text.replace(/^\/analyze\s*/, "").trim() : "";
+  if (!args) {
+    await ctx.reply("📊 Kirim URL YouTube/TikTok untuk dianalisa.\nContoh: /analyze https://youtube.com/@channel");
+    return;
+  }
+  const p = getPipeline(userId);
+  p.step = "analyzing";
+  p.inputSource = args;
+  p.inputType = detectInputType(args);
+  await ctx.reply("⏳ Sedang analisa...");
+  try {
+    const analysis = await analyzeInput(args, p.inputType!);
+    p.analysis = analysis;
+    p.step = "analysis_done";
+    const rendered = renderStep(userId);
+    await ctx.reply(rendered.text, {
+      parse_mode: "Markdown",
+      reply_markup: { inline_keyboard: rendered.buttons as never },
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    p.step = "input";
+    await ctx.reply(`❌ Analisa gagal: ${msg}`);
+  }
 });
 
 // ══════════════════════════════════════════════════════════════
