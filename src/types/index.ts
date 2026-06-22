@@ -150,7 +150,14 @@ export type BotState =
   | "EBOOK_TITLE"
   | "EBOOK_CHAPTERS"
   | "EBOOK_LANGUAGE"
-  | "EBOOK_MODE";
+  | "EBOOK_MODE"
+  | "VOICE_TEXT_WAITING"
+  | "LOOP_AUDIO_WAITING"
+  | "ANALYZE_CHANNEL_WAITING"
+  | "SUNO_PROMPT_WAITING"
+  | "MUSIC_PROMPT_WAITING"
+  | "STORYBOARD_AWAITING_PROMPT"
+  | "STORYBOARD_CONFIRM";
 
 // =============================================================================
 // USER TYPES

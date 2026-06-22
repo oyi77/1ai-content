@@ -35,6 +35,7 @@ const envSchema = z.object({
   AUDIO_DIR: z.string().default("/tmp/audio"),
   EBOOK_API_URL: z.string().default("http://localhost:8765"),
   EBOOK_API_KEY: z.string().optional(),
+  CONTENT_FACTORY_URL: z.string().default("http://localhost:8767"),
 
   // ── Admin ──
   ADMIN_TELEGRAM_IDS: z.string().optional(),

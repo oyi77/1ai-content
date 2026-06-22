@@ -7,7 +7,8 @@ docs/assets/
 downloads/
 .DS_Store
 dump.rdb
-.env
+__pycache__/
+*.pyc
 .env.local
 .env.production
 .idea/

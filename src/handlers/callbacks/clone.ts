@@ -7,42 +7,128 @@ import {
   getVideoCreditCostAsync,
 } from "@/config/pricing";
 import { enqueueVideoGeneration } from "@/config/queue";
+import { ImageGenerationService } from "@/services/image.service";
 import { t } from "@/i18n/translations";
 
 const btnBackMain = (lang: string) => ({ text: t('btn.main_menu', lang), callback_data: "main_menu" });
 
+/**
+ * Generate storyboard images with retry logic
+ */
+async function generateStoryboardImages(
+  scenes: Array<{ scene: number; duration: number; type: string; description: string; prompt: string }>,
+  niche: string,
+): Promise<Array<{ scene: number; url: string }>> {
+  const images: Array<{ scene: number; url: string }> = [];
+  const MAX_RETRIES = 3;
+
+  for (const scene of scenes) {
+    let success = false;
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const result = await ImageGenerationService.generateImage({
+          prompt: scene.prompt,
+          category: niche,
+          aspectRatio: '9:16',
+          style: 'commercial',
+          mode: 'text2img',
+        });
+        if (result.success && result.imageUrl) {
+          images.push({ scene: scene.scene, url: result.imageUrl });
+          success = true;
+          break;
+        }
+      } catch (err) {
+        logger.warn(`Storyboard image scene ${scene.scene} attempt ${attempt}/${MAX_RETRIES} failed:`, err);
+      }
+      if (attempt < MAX_RETRIES) {
+        await new Promise(r => setTimeout(r, 1000));
+      }
+    }
+    if (!success) {
+      logger.error(`Storyboard image scene ${scene.scene} failed after ${MAX_RETRIES} attempts`);
+    }
+  }
+
+  return images;
+}
+
 async function handleStoryboardRequest(ctx: BotContext, niche: string) {
   try {
+    const lang = ctx.session?.userLang || 'id';
+
+    // Show generating message
+    await ctx.editMessageText(
+      t('cb.storyboard_generating', lang, { niche: niche.toUpperCase() }),
+      { parse_mode: 'Markdown' },
+    );
+
     const storyboard = await VideoService.generateStoryboard({
       niche,
       duration: 30,
     });
 
-    const lang = ctx.session?.userLang || 'id';
+    // Generate images for each scene
+    await ctx.reply(t('cb.storyboard_generating_images', lang));
+    const images = await generateStoryboardImages(storyboard.scenes, niche);
+
+    // Store in session for downstream use
+    if (ctx.session) {
+      ctx.session.stateData = {
+        ...(ctx.session.stateData || {}),
+        storyboardScenes: storyboard.scenes,
+        storyboardImages: images,
+        storyboardNiche: niche,
+      };
+    }
+
+    // Send images as media group (if any generated successfully)
+    if (images.length > 0) {
+      const BATCH_SIZE = 10;
+      for (let i = 0; i < images.length; i += BATCH_SIZE) {
+        const batch = images.slice(i, i + BATCH_SIZE);
+        const mediaGroup = batch.map((img, idx) => ({
+          type: 'photo' as const,
+          media: img.url,
+          ...(i === 0 && idx === 0
+            ? { caption: t('cb.storyboard_images_title', lang, { total: images.length }), parse_mode: 'Markdown' as const }
+            : {}),
+        }));
+        try {
+          await ctx.replyWithMediaGroup(mediaGroup);
+        } catch (err) {
+          logger.warn('Failed to send storyboard media group batch:', err);
+        }
+      }
+    }
+
+    // Build scene descriptions with individual status
     let message = t('cb.storyboard_title', lang, { niche: niche.toUpperCase() }) + '\n\n';
 
     storyboard.scenes.forEach((s) => {
-      message += t('cb.storyboard_scene', lang, { scene: s.scene, duration: s.duration, type: s.type, description: s.description }) + '\n\n';
+      const hasImage = images.some(img => img.scene === s.scene);
+      const checkIcon = hasImage ? '✅' : '❌';
+      message += `${checkIcon} *Scene ${s.scene}* (${s.duration}s, ${s.type})\n`;
+      message += `${s.description}\n\n`;
     });
 
     message += t('cb.storyboard_caption', lang, { caption: storyboard.caption }) + '\n\n';
-    message += t('cb.storyboard_cost', lang);
+    message += t('cb.storyboard_cost', lang) + '\n\n';
+    message += t('cb.storyboard_approve_prompt', lang);
 
-    await ctx.editMessageText(message, {
-      parse_mode: "Markdown",
+    await ctx.reply(message, {
+      parse_mode: 'Markdown',
       reply_markup: {
         inline_keyboard: [
           [
-            {
-              text: t('btn.create_video_now', lang),
-              callback_data: 'confirm_create',
-            },
+            { text: '✅ ' + t('btn.approve', lang), callback_data: 'sba_approve' },
+            { text: '❌ ' + t('btn.reject', lang), callback_data: 'sba_reject' },
           ],
           [
-            {
-              text: t('btn.back_to_selection', lang),
-              callback_data: "storyboard_create",
-            },
+            { text: '🔄 ' + t('cb.storyboard_regenerate', lang), callback_data: `sba_regenerate_${niche}` },
+          ],
+          [
+            { text: t('btn.main_menu', lang), callback_data: 'main_menu' },
           ],
         ],
       },
@@ -50,7 +136,9 @@ async function handleStoryboardRequest(ctx: BotContext, niche: string) {
   } catch (error) {
     logger.error("Storyboard error:", error);
     const lang = ctx.session?.userLang || 'id';
-    await ctx.answerCbQuery(t('cb.storyboard_failed', lang));
+    try {
+      await ctx.answerCbQuery(t('cb.storyboard_failed', lang));
+    } catch { /* ignore */ }
   }
 }
 

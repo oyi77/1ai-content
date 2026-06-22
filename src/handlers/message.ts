@@ -33,6 +33,7 @@ import {
   handleCloneVideoWaiting,
 } from "./messages/image-gen";
 import { routeMenuButton, detectVideoIntent } from "./messages/menu-router";
+import { handleStoryboardPrompt } from "@/commands/storyboard";
 import { tryAIChat } from "./messages/ai-chat";
 
 import { BotContext } from "@/types";
@@ -367,6 +368,14 @@ export async function messageHandler(ctx: BotContext): Promise<void> {
       handleImageGenerationWaiting,
       handleCloneEditDescWaiting,
       handleCloneVideoWaiting,
+      // Storyboard visual prompt handler
+      async (c) => {
+        if (c.session?.state === 'STORYBOARD_AWAITING_PROMPT') {
+          await handleStoryboardPrompt(c);
+          return true;
+        }
+        return false;
+      },
     ];
 
     for (const handler of handlers) {
@@ -385,6 +394,8 @@ export async function messageHandler(ctx: BotContext): Promise<void> {
         "CUSTOM_PROMPT_CREATION",
         "CUSTOM_PROMPT_INPUT",
         "WAITING_ACCOUNT_ID",
+      "STORYBOARD_AWAITING_PROMPT",
+      "STORYBOARD_CONFIRM",
       ];
       if (activeStates.includes(state || "")) return;
 
