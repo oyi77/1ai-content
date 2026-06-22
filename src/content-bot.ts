@@ -15,6 +15,7 @@ import { Telegraf } from "telegraf";
 import { BotContext } from "@/types";
 import { initConfig } from "@/config/env";
 import { initializeDatabase, disconnectDatabase } from "@/config/database";
+import { prisma } from "@/config/database";
 import { initializeRedis, disconnectRedis } from "@/config/redis";
 import { logger } from "@/utils/logger";
 
@@ -41,6 +42,11 @@ import { accountsCommand, connectCommand, handleConnectApi, handleConnectBrowser
 // Content factory callback & message handlers
 import { handleContentFactoryCallbacks } from "@/handlers/callbacks/content-factory";
 import { handleVoiceTextWaiting, handleLoopAudioWaiting } from "@/handlers/messages/content-factory";
+// Payment & credits
+import { UserService } from "@/services/user.service";
+import { PaymentService } from "@/services/payment.service";
+import { PaymentSettingsService } from "@/services/payment-settings.service";
+import { getPackagesAsync } from "@/config/pricing";
 
 // ── Config ────────────────────────────────────────────────────
 
@@ -105,9 +111,91 @@ bot.command("connect", connectCommand);
 bot.command("calendar", calendarCommand);
 bot.command("analytics", analyticsCommand);
 bot.command("brand", brandCommand);
+
+// ── Credits & Payment ──────────────────────────────────────
+
+bot.command("credits", async (ctx) => {
+  const userId = ctx.from?.id;
+  if (!userId) return;
+  try {
+    const user = await UserService.findByTelegramId(BigInt(userId));
+    if (!user) {
+      await ctx.reply("❌ User tidak ditemukan. Ketik /start dulu.");
+      return;
+    }
+    const balance = Number(user.creditBalance);
+    await ctx.reply(
+      `💳 *Credit Balance*\n\n` +
+      `Saldo: *${balance}* credits\n` +
+      `Tier: ${user.tier}\n\n` +
+      `Ketik /topup untuk isi ulang.`,
+      { parse_mode: "Markdown" }
+    );
+  } catch (err: unknown) {
+    logger.error("[Credits] Error:", err);
+    await ctx.reply("❌ Gagal cek saldo.");
+  }
+});
+
+bot.command("topup", async (ctx) => {
+  const userId = ctx.from?.id;
+  if (!userId) return;
+  try {
+    const packages = await getPackagesAsync();
+    const rows = packages.map((pkg: { id: string; name: string; priceIdr: number; credits: number }) => [
+      { text: `${pkg.name} — Rp ${pkg.priceIdr.toLocaleString()} (${pkg.credits} credits)`, callback_data: `topup_${pkg.id}` },
+    ]);
+    await ctx.reply(
+      `💳 *Top Up Credits*\n\n` +
+      `Pilih paket:`,
+      {
+        parse_mode: "Markdown",
+        reply_markup: { inline_keyboard: rows },
+      }
+    );
+  } catch (err: unknown) {
+    logger.error("[Topup] Error:", err);
+    await ctx.reply("❌ Gagal load paket.");
+  }
+});
+
 bot.on("callback_query", async (ctx) => {
   const data = "data" in (ctx.callbackQuery ?? {}) ? (ctx.callbackQuery as any).data : undefined;
   if (!data) return;
+
+  // Topup callbacks
+  if (data.startsWith("topup_")) {
+    const packageName = data.replace("topup_", "");
+    const userId = ctx.from?.id;
+    if (!userId) return;
+    try {
+      await ctx.answerCbQuery();
+      const user = await UserService.findByTelegramId(BigInt(userId));
+      if (!user) { await ctx.reply("❌ User tidak ditemukan."); return; }
+      const result = await PaymentService.createTransaction({
+        userId: BigInt(userId),
+        packageId: packageName,
+        username: user.firstName || "User",
+      });
+      const snapUrl = result.redirectUrl;
+      if (snapUrl) {
+        await ctx.reply(
+          `💳 *Pembayaran ${packageName}*\n\n` +
+          `Order: ${result.orderId}\n\n` +
+          `[Klik di sini untuk bayar](${snapUrl})\n\n` +
+          `Setelah bayar, credits otomatis masuk.`,
+          { parse_mode: "Markdown" }
+        );
+      } else {
+        await ctx.reply("❌ Gagal membuat pembayaran. Coba lagi.");
+      }
+    } catch (err: unknown) {
+      logger.error("[Topup] Error:", err);
+      await ctx.reply("❌ Gagal proses topup.");
+    }
+    return;
+  }
+
 
   // Social account callbacks
   if (data === "connect_new") {
