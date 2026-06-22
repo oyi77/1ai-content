@@ -55,6 +55,12 @@ import {
 } from "./admin/grantCredits";
 import { paymentSettingsCommand } from "./admin/paymentSettings";
 import { showYouTubeMenu, showChannelList, showChannelDetail, showReports, triggerResearch, showResearchResults, showQuarantine, showAgentLogs } from "./youtube/youtube.menu";
+import {
+  showMainDashboard, showCreateMenu, showImageMenu, showChatMenu, showPromptsMenu,
+  showVideosMenu, showTopupMenu, showSubscriptionMenu, showProfileMenu,
+  showReferralMenu, showSettingsMenu, showSupportMenu, showHelpMenu,
+  showEbookMenu, showTrendingMenu,
+} from "../menus/unified-dashboard";
 
 /**
  * Setup all bot commands
@@ -130,6 +136,23 @@ export function setupCommands(bot: Telegraf<BotContext>): void {
     const match = ctx.match as RegExpMatchArray;
     return showChannelDetail(ctx, match[1]);
   });
+
+  // Unified dashboard — button navigation for all sections
+  bot.action("menu_main", (ctx) => showMainDashboard(ctx));
+  bot.action("menu_create", (ctx) => showCreateMenu(ctx));
+  bot.action("menu_image", (ctx) => showImageMenu(ctx));
+  bot.action("menu_chat", (ctx) => showChatMenu(ctx));
+  bot.action("menu_prompts", (ctx) => showPromptsMenu(ctx));
+  bot.action("menu_videos", (ctx) => showVideosMenu(ctx));
+  bot.action("menu_topup", (ctx) => showTopupMenu(ctx));
+  bot.action("menu_subscription", (ctx) => showSubscriptionMenu(ctx));
+  bot.action("menu_profile", (ctx) => showProfileMenu(ctx));
+  bot.action("menu_referral", (ctx) => showReferralMenu(ctx));
+  bot.action("menu_settings", (ctx) => showSettingsMenu(ctx));
+  bot.action("menu_support", (ctx) => showSupportMenu(ctx));
+  bot.action("menu_help", (ctx) => showHelpMenu(ctx));
+  bot.action("menu_ebook", (ctx) => showEbookMenu(ctx));
+  bot.action("menu_trending", (ctx) => showTrendingMenu(ctx));
 
   // Admin commands (with middleware check)
   bot.command("broadcast", adminBroadcastCommand);

@@ -14,6 +14,7 @@ import { sendVilonaWelcomeAnimation } from "@/services/vilona-animation.service"
 import { PaymentSettingsService } from "@/services/payment-settings.service";
 
 import { getMainMenuKeyboard } from "@/config/pricing";
+import { showMainDashboard } from "@/menus/unified-dashboard";
 
 /**
  * Map Telegram language_code to our 4 supported UI languages.
@@ -133,7 +134,10 @@ export async function startCommand(ctx: BotContext): Promise<void> {
         );
       }
 
-      // Also send inline menu buttons (quick actions)
+      // Also send unified dashboard (button-based navigation)
+      await showMainDashboard(ctx);
+
+      // Legacy inline menu (kept for backward compat)
       await ctx.reply(t("cb.main_menu_quick_actions", lang), {
         parse_mode: "Markdown",
         reply_markup: {
