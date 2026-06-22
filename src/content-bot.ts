@@ -157,6 +157,48 @@ bot.command("analyze", async (ctx) => {
 // WHITELABEL COMMANDS
 // ══════════════════════════════════════════════════════════════
 
+
+// ══════════════════════════════════════════════════════════════
+// /create — Content Pipeline
+// ══════════════════════════════════════════════════════════════
+
+bot.command("create", async (ctx) => {
+  if (!(await ensureUser(ctx))) return;
+  const userId = ctx.from!.id;
+  const args = ctx.message && "text" in ctx.message ? ctx.message.text.replace(/^\/create\s*/, "").trim() : "";
+  const p = getPipeline(userId);
+
+  if (args) {
+    // User provided input directly: /create <url or text>
+    p.step = "analyzing";
+    p.inputSource = args;
+    p.inputType = detectInputType(args);
+    await ctx.reply("⏳ Sedang analisa...");
+    try {
+      const analysis = await analyzeInput(args, p.inputType!);
+      p.analysis = analysis;
+      p.step = "analysis_done";
+      const rendered = renderStep(userId);
+      await ctx.reply(rendered.text, {
+        parse_mode: "Markdown",
+        reply_markup: { inline_keyboard: rendered.buttons as never },
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      p.step = "input";
+      p.error = msg;
+      await ctx.reply(`❌ Analisa gagal: ${msg}`);
+    }
+    return;
+  }
+
+  // No args — show instructions
+  const rendered = renderStep(userId);
+  await ctx.reply(rendered.text, {
+    parse_mode: "Markdown",
+    reply_markup: rendered.buttons.length ? { inline_keyboard: rendered.buttons as never } : undefined,
+  });
+});
 bot.command("whitelabel", async (ctx) => {
   if (!(await ensureUser(ctx))) return;
   const userId = ctx.from!.id;
@@ -351,6 +393,85 @@ bot.on("callback_query", async (ctx) => {
   }
 
   // ── Content factory callbacks ──
+
+  // ── Pipeline callbacks ──
+  if (data.startsWith("pipe_")) {
+    const userId = ctx.from?.id;
+    if (!userId) return;
+    const p = getPipeline(userId);
+    await ctx.answerCbQuery();
+
+    if (data === "pipe_script") {
+      if (!p.analysis) { await ctx.reply("❌ Analisa dulu."); return; }
+      p.script = generateScript(p.analysis);
+      p.step = "script_done";
+      const rendered = renderStep(userId);
+      await ctx.editMessageText(rendered.text, {
+        parse_mode: "Markdown",
+        reply_markup: { inline_keyboard: rendered.buttons as never },
+      });
+      return;
+    }
+
+    if (data === "pipe_generate") {
+      p.step = "generate";
+      await ctx.editMessageText("🎬 Generating video... Mohon tunggu.");
+      // TODO: queue video generation via BullMQ
+      p.step = "done";
+      const rendered = renderStep(userId);
+      await ctx.reply(rendered.text, {
+        parse_mode: "Markdown",
+        reply_markup: { inline_keyboard: rendered.buttons as never },
+      });
+      return;
+    }
+
+    if (data === "pipe_reanalyze") {
+      if (!p.inputSource) { await ctx.reply("❌ Input tidak ditemukan."); return; }
+      p.step = "analyzing";
+      await ctx.editMessageText("⏳ Re-analisa...");
+      const analysis = await analyzeInput(p.inputSource, p.inputType || "text_prompt");
+      p.analysis = analysis;
+      p.step = "analysis_done";
+      const rendered = renderStep(userId);
+      await ctx.reply(rendered.text, {
+        parse_mode: "Markdown",
+        reply_markup: { inline_keyboard: rendered.buttons as never },
+      });
+      return;
+    }
+
+    if (data === "pipe_back_analysis") {
+      if (p.analysis) {
+        p.step = "analysis_done";
+        const rendered = renderStep(userId);
+        await ctx.editMessageText(rendered.text, {
+          parse_mode: "Markdown",
+          reply_markup: { inline_keyboard: rendered.buttons as never },
+        });
+      }
+      return;
+    }
+
+    if (data === "pipe_edit_script") {
+      await ctx.reply("✏️ Kirim script baru dalam format markdown:");
+      // TODO: handle script edit in message handler
+      return;
+    }
+
+    if (data === "pipe_publish") {
+      await ctx.reply("📤 Fitur publish coming soon!");
+      return;
+    }
+
+    if (data === "pipe_new" || data === "pipe_cancel") {
+      pipelines.delete(userId);
+      await ctx.reply("🎬 Ketik /create untuk buat konten baru.");
+      return;
+    }
+
+    return;
+  }
   if (await handleContentFactoryCallbacks(ctx, data)) return;
 
   // ── Unknown ──
@@ -377,10 +498,38 @@ bot.on("message", async (ctx) => {
     if (await handleLoopAudioWaiting(ctx)) return;
   }
 
-  // Default: show help hint
-  await ctx.reply(
-    "🤔 Saya belum mengerti pesan itu.\n\nKetik /menu untuk melihat daftar command.",
-  );
+  // Pipeline: detect URL in message
+  const userId = ctx.from?.id;
+  if (userId) {
+    const p = getPipeline(userId);
+    const text = msg.text.trim();
+    const isUrl = /https?:\/\//.test(text);
+
+    if (isUrl || text.endsWith(".md") || text.endsWith(".txt")) {
+      p.step = "analyzing";
+      p.inputSource = text;
+      p.inputType = detectInputType(text);
+      await ctx.reply("⏳ Sedang analisa...");
+      try {
+        const analysis = await analyzeInput(text, p.inputType!);
+        p.analysis = analysis;
+        p.step = "analysis_done";
+        const rendered = renderStep(userId);
+        await ctx.reply(rendered.text, {
+          parse_mode: "Markdown",
+          reply_markup: { inline_keyboard: rendered.buttons as never },
+        });
+      } catch (err) {
+        const errMsg = err instanceof Error ? err.message : String(err);
+        p.step = "input";
+        await ctx.reply(`❌ Analisa gagal: ${errMsg}`);
+      }
+      return;
+    }
+  }
+
+  // Default
+  await ctx.reply("🤔 Ketik /create untuk buat konten.");
 });
 
 // ══════════════════════════════════════════════════════════════
@@ -409,6 +558,7 @@ async function main() {
   bot.launch().catch((err) => logger.error("[Bot] launch error:", err));
 
   await bot.telegram.setMyCommands([
+    { command: "create", description: "🎬 Buat konten dari ide/link/file" },
     { command: "suno", description: "🎵 Generate musik AI" },
     { command: "voice", description: "🎙️ AI voiceover" },
     { command: "music", description: "🎶 Background music" },
@@ -435,3 +585,74 @@ main().catch((err) => {
   logger.error("❌ Fatal:", err);
   process.exit(1);
 });
+
+// ══════════════════════════════════════════════════════════════
+// CONTENT PIPELINE
+// ══════════════════════════════════════════════════════════════
+
+import {
+  detectInputType,
+  analyzeInput,
+  generateScript,
+  formatAnalysis,
+  formatScript,
+  type PipelineState,
+  type AnalysisResult,
+  type ContentScript,
+} from "@/services/content-pipeline.service";
+
+// Per-user pipeline state (in-memory)
+const pipelines = new Map<number, PipelineState>();
+
+function getPipeline(userId: number): PipelineState {
+  if (!pipelines.has(userId)) pipelines.set(userId, { step: "input" });
+  return pipelines.get(userId)!;
+}
+
+function renderStep(userId: number): { text: string; buttons: unknown[][] } {
+  const p = getPipeline(userId);
+  switch (p.step) {
+    case "input":
+      return {
+        text: "🎬 *Buat Konten*\n\nKirim salah satu:\n• URL YouTube/TikTok\n• File .md / .txt\n• Prompt text\n\nBot akan analisa dan buatkan script + video.",
+        buttons: [],
+      };
+    case "analyzing":
+      return { text: "⏳ Sedang analisa...", buttons: [] };
+    case "analysis_done": {
+      const a = p.analysis!;
+      return {
+        text: formatAnalysis(a) + "\n\nMau lanjut buat script?",
+        buttons: [
+          [{ text: "📝 Buat Script", callback_data: "pipe_script" }],
+          [{ text: "🔄 Analisa Ulang", callback_data: "pipe_reanalyze" }],
+          [{ text: "❌ Batal", callback_data: "pipe_cancel" }],
+        ],
+      };
+    }
+    case "script_done": {
+      const s = p.script!;
+      return {
+        text: formatScript(s),
+        buttons: [
+          [{ text: "🎬 Generate Video", callback_data: "pipe_generate" }],
+          [{ text: "✏️ Edit Script", callback_data: "pipe_edit_script" }],
+          [{ text: "🔄 Buat Ulang Script", callback_data: "pipe_script" }],
+          [{ text: "◀️ Kembali ke Analysis", callback_data: "pipe_back_analysis" }],
+        ],
+      };
+    }
+    case "generate":
+      return { text: "🎬 Generating video... Mohon tunggu.", buttons: [] };
+    case "done":
+      return {
+        text: "✅ Video selesai! Mau publish ke sosmed?",
+        buttons: [
+          [{ text: "📤 Publish", callback_data: "pipe_publish" }],
+          [{ text: "🎬 Buat Lagi", callback_data: "pipe_new" }],
+        ],
+      };
+    default:
+      return { text: "Ketik /create untuk mulai.", buttons: [] };
+  }
+}
