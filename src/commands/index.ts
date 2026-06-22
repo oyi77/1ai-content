@@ -42,19 +42,6 @@ import {
 // Content commands (video clipper, editor, rework)
 import { ContentCommands } from "./content.commands";
 
-import { storyboardCommand } from "./storyboard";
-
-// Content Factory commands (suno, voice, music, loop, analyze, publish)
-
-import {
-  sunoCommand,
-  voiceCommand,
-  musicCommand,
-  loopCommand,
-  analyzeCommand,
-  publishCommand,
-} from "./content-factory.commands";
-
 // Feature-based flows
 export * from "@/flows/generate";
 export * from "@/menus/main";
@@ -126,16 +113,6 @@ export function setupCommands(bot: Telegraf<BotContext>): void {
   bot.command("rework", (ctx) => ContentCommands.handleRework(ctx as any));
   bot.command("scrape", (ctx) => ContentCommands.handleScrape(ctx as any));
 
-  bot.command("storyboard", storyboardCommand);
-  // Content Factory commands
-  bot.command("suno", sunoCommand);
-  bot.command("voice", voiceCommand);
-  bot.command("music", musicCommand);
-  bot.command("loop", loopCommand);
-  bot.command("analyze", analyzeCommand);
-  bot.command("publish", publishCommand);
-  bot.command("storyboard", storyboardCommand);
-
   // Admin commands (with middleware check)
   bot.command("broadcast", adminBroadcastCommand);
   bot.command("system_status", adminSystemStatusCommand);
@@ -160,19 +137,11 @@ export function setupCommands(bot: Telegraf<BotContext>): void {
     { command: "profile", description: "👤 Profil saya" },
     { command: "settings", description: "⚙️ Pengaturan" },
     { command: "ebook", description: "📖 Buat ebook dengan AI" },
-    { command: "storyboard", description: "📋 Storyboard visual preview" },
     { command: "viral", description: "🔥 Find viral videos" },
     { command: "clip", description: "✂️ Download & clip videos" },
     { command: "edit", description: "🎬 Edit videos" },
     { command: "rework", description: "🔄 Anti-copyright rework" },
     { command: "scrape", description: "🕵️ Scrape competitor content" },
-    { command: "storyboard", description: "🎬 Visual storyboard generator" },
-    { command: "suno", description: "🎵 Generate music (Suno AI)" },
-    { command: "voice", description: "🎙️ AI voiceover generator" },
-    { command: "music", description: "🎶 Background music generator" },
-    { command: "loop", description: "🔁 Create looping video" },
-    { command: "analyze", description: "📊 Analyze YouTube/TikTok channel" },
-    { command: "publish", description: "📤 Publish to social media" },
     { command: "support", description: "🆘 Hubungi support" },
     { command: "help", description: "📖 Panduan lengkap" },
   ]).catch(() => { /* ignore - bot token may not be set yet */ });

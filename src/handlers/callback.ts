@@ -24,8 +24,6 @@ import { handleAccountCallback } from "./callbacks/account";
 import { handleAvatarTalkCallbacks } from "./callbacks/avatar-talk";
 import { handleMediaIntentCallback } from "./callbacks/media-intent";
 import { handleEbookCallbacks } from "./callbacks/ebook";
-import { handleStoryboardCallbacks } from './callbacks/storyboard';
-import { handleContentFactoryCallbacks } from "./callbacks/content-factory";
 
 /**
  * Handle callback queries
@@ -88,16 +86,11 @@ export async function callbackHandler(ctx: BotContext): Promise<void> {
     // Social / post automation (auto_post_*, publish_video_*, manage_accounts, connect_account_*, etc.)
     if (await handleSocialCallbacks(ctx, data)) return;
 
-    // Storyboard visual (sba_approve, sba_reject, sba_regenerate)
-    if (await handleStoryboardCallbacks(ctx, data)) return;
-
     // Clone, storyboard, repurpose, disassemble, copy_prompt
     if (await handleCloneCallbacks(ctx, data)) return;
 
     // Ebook generation (ebook_*)
     if (await handleEbookCallbacks(ctx, data)) return;
-    // Content Factory (suno_*, voice_*, music_*, loop_*, publish_*)
-    if (await handleContentFactoryCallbacks(ctx, data)) return;
 
     // Unknown callback
     logger.warn("Unknown callback:", data);
