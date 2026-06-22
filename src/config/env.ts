@@ -51,6 +51,10 @@ const envSchema = z.object({
   PEXELS_API_KEYS: z.string().optional(),
   PEXELS_API_KEY: z.string().optional(),
   // ── YouTube Workflow (all optional — sensible defaults) ──
+  YT_MONITOR_CHECK_24H: z.string().default('24').transform(Number),
+  YT_MONITOR_CHECK_48H: z.string().default('48').transform(Number),
+  YT_MONITOR_CHECK_10D: z.string().default('240').transform(Number),
+  YT_QUARANTINE_EARLY_MIN_AGE: z.string().default('150').transform(Number),
   YT_US_UPLOAD_TIME_WIB: z.string().default('15:00'),
   YT_ID_UPLOAD_TIME_WIB: z.string().default('20:00'),
   YT_MAX_UPLOADS_PER_DAY: z.string().default('2').transform(Number),

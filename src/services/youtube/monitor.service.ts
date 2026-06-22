@@ -5,7 +5,8 @@
  * All thresholds from config — zero hardcoded values.
  */
 
-import { logger } from "@/utils/logger";
+import { getConfig } from "@/config/env";
+import { logger} from "@/utils/logger";
 import { prisma } from "@/config/database";
 import { getAnalytics } from "./youtube-api.service";
 import { getBreakoutViewsMultiplier, getBreakoutCtrThreshold, getBreakoutAvdThreshold } from "@/config/youtube.config";
@@ -91,9 +92,12 @@ export async function runScheduledChecks(): Promise<void> {
     const hoursSince = (now - video.monitoringStart.getTime()) / (1000 * 60 * 60);
 
     let checkAt: string | null = null;
-    if (hoursSince >= 24 && hoursSince < 48) checkAt = "24h";
-    else if (hoursSince >= 48 && hoursSince < 240) checkAt = "48h";
-    else if (hoursSince >= 240) checkAt = "10d";
+    const check24h = getConfig().YT_MONITOR_CHECK_24H || 24;
+    const check48h = getConfig().YT_MONITOR_CHECK_48H || 48;
+    const check10d = getConfig().YT_MONITOR_CHECK_10D || 240;
+    if (hoursSince >= check24h && hoursSince < check48h) checkAt = "24h";
+    else if (hoursSince >= check48h && hoursSince < check10d) checkAt = "48h";
+    else if (hoursSince >= check10d) checkAt = "10d";
 
     if (checkAt) {
       const existing = await prisma.ytVideoMetrics.findFirst({

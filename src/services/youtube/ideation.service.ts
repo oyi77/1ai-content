@@ -5,7 +5,8 @@
  * 70% proven theme, 30% experiment. All config from env.
  */
 
-import { logger } from "@/utils/logger";
+import { getConfig } from "@/config/env";
+import { logger} from "@/utils/logger";
 import { prisma } from "@/config/database";
 import { getProvenThemeRatio } from "@/config/youtube.config";
 import { NICHE_VERTICALS } from "@/config/youtube.config";
@@ -76,7 +77,7 @@ export async function generateIdeas(channelId: string, batchSize = 15): Promise<
 
   const filtered = ideas.filter((idea) => {
     const title = idea.titleDraft || "";
-    return !pastTitles.some((past) => past && similarity(title, past) > 0.8);
+    return !pastTitles.some((past) => past && similarity(title, past) > (getConfig().YT_MAX_SIMILARITY_SCORE || 0.70));
   });
 
   await prisma.ytIdea.createMany({

@@ -17,7 +17,7 @@ interface SynthesisResult {
 
 interface VoiceProvider {
   name: string;
-  synthesize: (text: string, outputPath: string, _tone: string) => Promise<SynthesisResult>;
+  synthesize: (text: string, outputPath: string, tone: string) => Promise<SynthesisResult>;
 }
 
 const providerFailures = new Map<string, { count: number; lastFailure: number }>();

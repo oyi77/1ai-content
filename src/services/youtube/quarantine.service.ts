@@ -5,11 +5,12 @@
  * All thresholds from config — zero hardcoded values.
  */
 
-import { logger } from "@/utils/logger";
+import { getConfig } from "@/config/env";
+import { logger} from "@/utils/logger";
 import { prisma } from "@/config/database";
 import {
   getQuarantineTriggerAgeDays, getTrafficDropThreshold,
-  getRecoveryThreshold, getQuarantineFailedMonths,
+  getRecoveryThreshold,
 } from "@/config/youtube.config";
 import type { YtQuarantineEligibility } from "@/types/youtube.types";
 
@@ -35,7 +36,7 @@ export async function checkQuarantineEligibility(channelId: string): Promise<YtQ
   if (isAgeTrigger) {
     return { eligible: true, trigger: "scheduled_only", confidence: "MEDIUM", channelAgeDays: ageDays, trafficDropPct, note: "Traffic not yet dropped significantly" };
   }
-  if (isTrafficDrop && ageDays > 150) {
+  if (isTrafficDrop && ageDays > (getConfig().YT_QUARANTINE_EARLY_MIN_AGE || 150)) {
     return { eligible: true, trigger: "traffic_drop_early", confidence: "MEDIUM", channelAgeDays: ageDays, trafficDropPct, note: "Early quarantine due to traffic drop" };
   }
 

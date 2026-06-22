@@ -11,11 +11,11 @@ import { getConfig } from "@/config/env";
 import { logger } from "@/utils/logger";
 import type { YtQualityGateResult, YtVideoPackage } from "@/types/youtube.types";
 import {
-  getMinSampleRate, getTargetLufs,
+  getMinSampleRate,
   getMinVideoWidth, getMinVideoHeight, getMaxVideoFileSizeMb,
   getMinThumbWidth, getMinThumbHeight,
   getMaxTitleLength, getMinTags, getMaxTags,
-  getMaxSimilarityScore,
+  
 } from "@/config/youtube.config";
 
 const execFileAsync = promisify(execFile);
