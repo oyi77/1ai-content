@@ -18,19 +18,5 @@ module.exports = {
       PUBLIC_URL: 'https://content.aitradepulse.com',
       PORT: 3000
     }
-  },
-  {
-    name: "stack-content",
-    script: "python3",
-    args: "-m uvicorn services.stack-content.service:app --host 0.0.0.0 --port 8770",
-    cwd: "/home/openclaw/projects/1ai-content",
-    instances: 1,
-    autorestart: true,
-    watch: false,
-    max_memory_restart: '256M',
-    min_uptime: '10s',
-    max_restarts: 5,
-    restart_delay: 5000,
-    env: { PYTHONUNBUFFERED: '1' }
   }]
 };

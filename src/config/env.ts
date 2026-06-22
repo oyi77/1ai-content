@@ -116,9 +116,6 @@ const envSchema = z.object({
   FEATURE_REFERRAL: boolStr,
   FEATURE_VIDEO_GENERATION: boolStr,
 
-  // ── Stack Content (unified service) ──
-  STACK_CONTENT_ENABLED: boolStr,
-  STACK_CONTENT_URL: z.string().default("http://localhost:8770"),
 
   // ── Other ──
   USD_TO_IDR_RATE: z.string().default("16000").transform(Number),
