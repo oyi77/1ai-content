@@ -16,8 +16,6 @@ import { initializeDatabase, disconnectDatabase, prisma } from "@/config/databas
 import { initializeRedis, disconnectRedis } from "@/config/redis";
 import { logger } from "@/utils/logger";
 import { UserService } from "@/services/user.service";
-import { PaymentService } from "@/services/payment.service";
-import { getPackagesAsync } from "@/config/pricing";
 import {
   sunoCommand,
   voiceCommand,
@@ -71,36 +69,11 @@ async function ensureUser(ctx: BotContext): Promise<boolean> {
   }
 }
 
-async function getCredits(userId: number): Promise<number> {
-  const user = await UserService.findByTelegramId(BigInt(userId));
-  return user ? Number(user.creditBalance) : 0;
-}
 
 // ══════════════════════════════════════════════════════════════
 // MENU TEXT
 // ══════════════════════════════════════════════════════════════
 
-function buildMenuText(name: string, credits: number): string {
-  const credEmoji = credits === 0 ? "⚠️" : credits < 3 ? "🟡" : "🟢";
-  return (
-    `🎬 *Vilona Content Factory*\n\n` +
-    `Halo ${name}! ${credEmoji} Credits: *${credits}*\n\n` +
-    `*🎵 Content Creation:*\n` +
-    `/suno <prompt> — Generate musik AI\n` +
-    `/voice <text> — Buat voiceover\n` +
-    `/music <prompt> — Background music\n` +
-    `/loop — Video loop dari audio\n` +
-    `/storyboard — Visual storyboard\n\n` +
-    `*📊 Riset & Publish:*\n` +
-    `/analyze <url> — Analisa channel\n` +
-    `/publish — Posting ke sosmed\n\n` +
-    `*💳 Billing:*\n` +
-    `/credits — Cek saldo\n` +
-    `/topup — Isi ulang credits\n` +
-    `/profile — Profil kamu\n\n` +
-    `Ketik command atau tap tombol di bawah 👇`
-  );
-}
 
 // ══════════════════════════════════════════════════════════════
 // /start & /menu
@@ -112,51 +85,26 @@ bot.start(async (ctx) => {
     return;
   }
   const name = ctx.from?.first_name || "Creator";
-  const credits = await getCredits(ctx.from!.id);
-  await ctx.reply(buildMenuText(name, credits), {
-    parse_mode: "Markdown",
-    reply_markup: {
-      inline_keyboard: [
-        [
-          { text: "🎵 Suno AI", callback_data: "menu_suno" },
-          { text: "🎙️ Voice", callback_data: "menu_voice" },
-        ],
-        [
-          { text: "🎶 Music", callback_data: "menu_music" },
-          { text: "🔁 Loop", callback_data: "menu_loop" },
-        ],
-        [
-          { text: "📊 Analyze", callback_data: "menu_analyze" },
-          { text: "📤 Publish", callback_data: "menu_publish" },
-        ],
-        [
-          { text: "💳 Top Up", callback_data: "menu_topup" },
-          { text: "📋 Credits", callback_data: "menu_credits" },
-        ],
-        [
-          { text: "👤 Profile", callback_data: "menu_profile" },
-          { text: "❓ Help", callback_data: "menu_help" },
-        ],
-      ],
-    },
-  });
+  await ctx.reply(
+    `🎬 *Vilona Content Factory*\n\n` +
+    `Halo ${name}! Bot khusus buat konten.\n\n` +
+    `*Commands:*\n` +
+    `🎵 /suno <prompt> — Musik AI\n` +
+    `🎙️ /voice <text> — Voiceover\n` +
+    `🎶 /music <prompt> — Background music\n` +
+    `🔁 /loop — Video loop\n` +
+    `📋 /storyboard — Visual storyboard\n` +
+    `📊 /analyze <url> — Analisa channel\n\n` +
+    `Untuk top up & profile, gunakan @berkahkarya_saas_bot`,
+    { parse_mode: "Markdown" },
+  );
 });
 
 // ══════════════════════════════════════════════════════════════
 // /help
 // ══════════════════════════════════════════════════════════════
 
-bot.command("help", async (ctx) => {
-  const name = ctx.from?.first_name || "Creator";
-  const credits = await getCredits(ctx.from!.id);
-  await ctx.reply(buildMenuText(name, credits), { parse_mode: "Markdown" });
-});
 
-bot.command("menu", async (ctx) => {
-  const name = ctx.from?.first_name || "Creator";
-  const credits = await getCredits(ctx.from!.id);
-  await ctx.reply(buildMenuText(name, credits), { parse_mode: "Markdown" });
-});
 
 // ══════════════════════════════════════════════════════════════
 // CONTENT COMMANDS
@@ -192,92 +140,21 @@ bot.command("analyze", async (ctx) => {
   await analyzeCommand(ctx);
 });
 
-bot.command("publish", async (ctx) => {
-  if (!(await ensureUser(ctx))) return;
-  await publishCommand(ctx);
-});
 
 // ══════════════════════════════════════════════════════════════
 // /credits
 // ══════════════════════════════════════════════════════════════
 
-bot.command("credits", async (ctx) => {
-  if (!(await ensureUser(ctx))) return;
-  const userId = ctx.from!.id;
-  try {
-    const user = await UserService.findByTelegramId(BigInt(userId));
-    if (!user) { await ctx.reply("❌ User tidak ditemukan."); return; }
-    const balance = Number(user.creditBalance);
-    const credEmoji = balance === 0 ? "⚠️" : balance < 3 ? "🟡" : "🟢";
-    await ctx.reply(
-      `${credEmoji} *Credit Balance*\n\n` +
-      `Saldo: *${balance}* credits\n` +
-      `Tier: ${user.tier}\n\n` +
-      balance === 0
-        ? `⚠️ Credits habis! Ketik /topup untuk isi ulang.`
-        : `✅ Siap untuk membuat konten!`,
-      { parse_mode: "Markdown" },
-    );
-  } catch (err) {
-    logger.error("[Credits] Error:", err);
-    await ctx.reply("❌ Gagal cek saldo.");
-  }
-});
 
 // ══════════════════════════════════════════════════════════════
 // /topup
 // ══════════════════════════════════════════════════════════════
 
-bot.command("topup", async (ctx) => {
-  if (!(await ensureUser(ctx))) return;
-  try {
-    const packages = await getPackagesAsync();
-    if (!packages.length) {
-      await ctx.reply("❌ Paket belum tersedia. Hubungi admin.");
-      return;
-    }
-    const rows = packages.map((pkg: { id: string; name: string; priceIdr: number; credits: number }) => [
-      { text: `${pkg.name} — Rp ${pkg.priceIdr.toLocaleString()} (${pkg.credits} cr)`, callback_data: `topup_${pkg.id}` },
-    ]);
-    rows.push([{ text: "◀️ Kembali", callback_data: "back_menu" }]);
-    await ctx.reply(`💳 *Top Up Credits*\n\nPilih paket:`, {
-      parse_mode: "Markdown",
-      reply_markup: { inline_keyboard: rows },
-    });
-  } catch (err) {
-    logger.error("[Topup] Error:", err);
-    await ctx.reply("❌ Gagal load paket.");
-  }
-});
 
 // ══════════════════════════════════════════════════════════════
 // /profile
 // ══════════════════════════════════════════════════════════════
 
-bot.command("profile", async (ctx) => {
-  if (!(await ensureUser(ctx))) return;
-  const userId = ctx.from!.id;
-  try {
-    const user = await UserService.findByTelegramId(BigInt(userId));
-    if (!user) { await ctx.reply("❌ User tidak ditemukan."); return; }
-    const videos = await prisma.video.count({ where: { userId: BigInt(userId) } });
-    const txns = await prisma.transaction.count({ where: { userId: BigInt(userId), status: "success" } });
-    await ctx.reply(
-      `👤 *Profil*\n\n` +
-      `Nama: ${user.firstName} ${user.lastName || ""}\n` +
-      `Username: @${user.username || "-"}\n` +
-      `Tier: ${user.tier}\n` +
-      `Credits: ${Number(user.creditBalance)}\n` +
-      `Video dibuat: ${videos}\n` +
-      `Transaksi sukses: ${txns}\n` +
-      `Bergabung: ${user.createdAt.toLocaleDateString("id-ID")}`,
-      { parse_mode: "Markdown" },
-    );
-  } catch (err) {
-    logger.error("[Profile] Error:", err);
-    await ctx.reply("❌ Gagal load profil.");
-  }
-});
 
 // ══════════════════════════════════════════════════════════════
 // CALLBACK HANDLER
@@ -289,110 +166,12 @@ bot.on("callback_query", async (ctx) => {
   const data = raw.data;
 
   // ── Menu navigation ──
-  if (data === "back_menu") {
-    await ctx.answerCbQuery();
-    const name = ctx.from?.first_name || "Creator";
-    const credits = await getCredits(ctx.from!.id);
-    await ctx.editMessageText(buildMenuText(name, credits), {
-      parse_mode: "Markdown",
-      reply_markup: {
-        inline_keyboard: [
-          [
-            { text: "🎵 Suno AI", callback_data: "menu_suno" },
-            { text: "🎙️ Voice", callback_data: "menu_voice" },
-          ],
-          [
-            { text: "🎶 Music", callback_data: "menu_music" },
-            { text: "🔁 Loop", callback_data: "menu_loop" },
-          ],
-          [
-            { text: "📊 Analyze", callback_data: "menu_analyze" },
-            { text: "📤 Publish", callback_data: "menu_publish" },
-          ],
-          [
-            { text: "💳 Top Up", callback_data: "menu_topup" },
-            { text: "📋 Credits", callback_data: "menu_credits" },
-          ],
-          [
-            { text: "👤 Profile", callback_data: "menu_profile" },
-            { text: "❓ Help", callback_data: "menu_help" },
-          ],
-        ],
-      },
-    });
-    return;
-  }
-
+  
   // ── Menu shortcuts → reply with usage hint ──
-  const menuHints: Record<string, string> = {
-    menu_suno: "🎵 *Suno AI Music*\n\nKetik: `/suno lo-fi chill beats`\n\nAtau kirim prompt langsung.",
-    menu_voice: "🎙️ *AI Voiceover*\n\nKetik: `/voice Beli sekarang di Shopee!`",
-    menu_music: "🎶 *Background Music*\n\nKetik: `/music corporate upbeat`",
-    menu_loop: "🔁 *Looping Video*\n\nKetik: `/loop` lalu kirim audio file.",
-    menu_analyze: "📊 *Channel Analyzer*\n\nKetik: `/analyze https://youtube.com/@channel`",
-    menu_publish: "📤 *Publish ke Sosmed*\n\nKetik: `/publish` untuk pilih platform.",
-    menu_topup: "", // handled separately
-    menu_credits: "", // handled separately
-    menu_profile: "", // handled separately
-    menu_help: "", // handled separately
-  };
-
-  if (data === "menu_topup") {
-    await ctx.answerCbQuery();
-    // Trigger /topup inline
-    const packages = await getPackagesAsync();
-    if (!packages.length) {
-      await ctx.reply("❌ Paket belum tersedia.");
-      return;
-    }
-    const rows = packages.map((pkg: { id: string; name: string; priceIdr: number; credits: number }) => [
-      { text: `${pkg.name} — Rp ${pkg.priceIdr.toLocaleString()} (${pkg.credits} cr)`, callback_data: `topup_${pkg.id}` },
-    ]);
-    rows.push([{ text: "◀️ Kembali", callback_data: "back_menu" }]);
-    await ctx.editMessageText(`💳 *Top Up Credits*\n\nPilih paket:`, {
-      parse_mode: "Markdown",
-      reply_markup: { inline_keyboard: rows },
-    });
-    return;
-  }
-
-  if (data === "menu_credits") {
-    await ctx.answerCbQuery();
-    const user = await UserService.findByTelegramId(BigInt(ctx.from!.id));
-    const balance = user ? Number(user.creditBalance) : 0;
-    await ctx.editMessageText(
-      `💳 *Credits: ${balance}*\n\nTier: ${user?.tier || "free"}`,
-      {
-        parse_mode: "Markdown",
-        reply_markup: { inline_keyboard: [[{ text: "💳 Top Up", callback_data: "menu_topup" }, { text: "◀️ Kembali", callback_data: "back_menu" }]] },
-      },
-    );
-    return;
-  }
-
-  if (data === "menu_profile") {
-    await ctx.answerCbQuery();
-    const user = await UserService.findByTelegramId(BigInt(ctx.from!.id));
-    if (user) {
-      await ctx.editMessageText(
-        `👤 *${user.firstName} ${user.lastName || ""}*\n@${user.username || "-"}\nTier: ${user.tier} | Credits: ${Number(user.creditBalance)}`,
-        { parse_mode: "Markdown", reply_markup: { inline_keyboard: [[{ text: "◀️ Kembali", callback_data: "back_menu" }]] } },
-      );
-    }
-    return;
-  }
-
-  if (data === "menu_help") {
-    await ctx.answerCbQuery();
-    const name = ctx.from?.first_name || "Creator";
-    const credits = await getCredits(ctx.from!.id);
-    await ctx.editMessageText(buildMenuText(name, credits), {
-      parse_mode: "Markdown",
-      reply_markup: { inline_keyboard: [[{ text: "◀️ Kembali", callback_data: "back_menu" }]] },
-    });
-    return;
-  }
-
+  
+  
+  
+  
   if (menuHints[data]) {
     await ctx.answerCbQuery();
     await ctx.editMessageText(menuHints[data], {
