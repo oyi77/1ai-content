@@ -1,0 +1,22 @@
+[Unit]
+Description=1ai-content Telegram Bot — YouTube Workflow + Carousel Generator
+After=network.target redis.service postgresql.service
+Wants=redis.service postgresql.service
+
+[Service]
+Type=simple
+User=openclaw
+WorkingDirectory=/home/openclaw/projects/1ai-content
+ExecStart=/home/openclaw/.nvm/versions/node/v22.22.3/bin/npx tsx src/index.ts
+Restart=always
+RestartSec=10
+Environment=NODE_ENV=production
+EnvironmentFile=/home/openclaw/projects/1ai-content/.env
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=1ai-content
+MemoryMax=1G
+CPUQuota=80%
+
+[Install]
+WantedBy=multi-user.target
