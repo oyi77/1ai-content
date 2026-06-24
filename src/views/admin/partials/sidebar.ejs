@@ -10,26 +10,44 @@
     <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">Admin Dashboard v3</div>
   </div>
   <nav style="flex: 1; padding: 12px 0; overflow-y: auto;">
+    <!-- 📊 Business Intelligence -->
+    <div style="padding: 4px 20px; font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;">📊 Business</div>
     <div class="<%= _nav('dashboard') %>" id="nav-dashboard" onclick="window.location='/admin/dashboard'">📊 Overview</div>
     <div class="nav-item" id="nav-users" onclick="window.location='/admin/dashboard#users'">👥 Users</div>
     <div class="nav-item" id="nav-transactions" onclick="window.location='/admin/dashboard#transactions'">💳 Transactions</div>
     <div class="nav-item" id="nav-analytics" onclick="window.location='/admin/dashboard#analytics'">📈 Analytics</div>
-    <div class="nav-item" id="nav-pricing" onclick="window.location='/admin/dashboard#pricing'">💰 Pricing</div>
-    <div class="nav-item" id="nav-tokens" onclick="window.location='/admin/dashboard#tokens'">🪙 Token Usage</div>
     <div class="nav-item" id="nav-profit" onclick="window.location='/admin/dashboard#profit'">💹 Revenue</div>
+    <div class="nav-item" id="nav-tokens" onclick="window.location='/admin/dashboard#tokens'">🪙 Token Usage</div>
+
+    <!-- 💰 Pricing & Monetization -->
+    <div style="margin: 12px 0 4px; padding: 4px 20px; font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;">💰 Monetization</div>
+    <div class="nav-item" id="nav-pricing" onclick="window.location='/admin/dashboard#pricing'">💰 Pricing</div>
+    <div class="<%= _nav('dynamic-pricing') %>" onclick="window.location='/admin/dynamic-pricing'">💵 Dynamic Pricing</div>
     <div class="nav-item" id="nav-niches" onclick="window.location='/admin/dashboard#niches'">🏷️ Niches</div>
     <div class="nav-item" id="nav-landing-page" onclick="window.location='/admin/dashboard#landing-page'">🌐 Landing Page</div>
-    <div style="margin: 8px 0; border-top: 1px solid var(--border);"></div>
+
+    <!-- 🎬 Content & Creative -->
+    <div style="margin: 12px 0 4px; padding: 4px 20px; font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;">🎬 Content</div>
     <div class="<%= _nav('medias') %>" onclick="window.location='/admin/medias'">🎬 Media Gallery</div>
     <div class="<%= _nav('prompts') %>" onclick="window.location='/admin/prompts'">✍️ Prompts</div>
+    <div class="<%= _nav('personas') %>" onclick="window.location='/admin/personas'">🎭 Personas</div>
+    <div class="<%= _nav('playground') %>" onclick="window.location='/admin/playground'">🧪 Playground</div>
+
+    <!-- 📱 Social Media -->
+    <div style="margin: 12px 0 4px; padding: 4px 20px; font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;">📱 Social Media</div>
+    <div class="<%= _nav('meta-pages') %>" onclick="window.location='/admin/meta-pages'">📄 FB Pages</div>
+    <div class="<%= _nav('content-calendar') %>" onclick="window.location='/admin/content-calendar'">📅 Calendar</div>
+    <div class="<%= _nav('bulk-scheduler') %>" onclick="window.location='/admin/bulk-scheduler'">⏰ Bulk Scheduler</div>
+
+    <!-- 🔌 Technical -->
+    <div style="margin: 12px 0 4px; padding: 4px 20px; font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;">🔌 Technical</div>
     <div class="<%= _nav('providers') %>" onclick="window.location='/admin/providers'">🔌 Providers</div>
     <div class="<%= _nav('ai-config') %>" onclick="window.location='/admin/ai-config'">🤖 AI Config</div>
-    <div class="<%= _nav('dynamic-pricing') %>" onclick="window.location='/admin/dynamic-pricing'">💵 Dynamic Pricing</div>
-    <div class="<%= _nav('playground') %>" onclick="window.location='/admin/playground'">🧪 Playground</div>
-    <div class="<%= _nav('personas') %>" onclick="window.location='/admin/personas'">🎭 Personas</div>
     <div class="<%= _nav('interceptions') %>" onclick="window.location='/admin/interceptions'">🎯 Interceptions</div>
+
+    <!-- ⚙️ System -->
+    <div style="margin: 12px 0 4px; padding: 4px 20px; font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;">⚙️ System</div>
     <div class="<%= _nav('settings') %>" onclick="window.location='/admin/settings'">⚙️ Settings</div>
-    <div style="margin: 8px 0; border-top: 1px solid var(--border);"></div>
     <div class="nav-item" onclick="window.location='/admin/dashboard#ai-assistant'">🤖 AI Assistant</div>
   </nav>
   <div style="padding: 16px 20px; border-top: 1px solid var(--border);">
@@ -55,7 +73,7 @@ function updateDashboardNav() {
   }
 
   // Remove active class from all dashboard subsections
-  const subsections = ['users', 'transactions', 'analytics', 'pricing', 'tokens', 'profit', 'niches', 'landing-page'];
+  const subsections = ['users', 'transactions', 'analytics', 'pricing', 'tokens', 'profit', 'niches', 'landing-page', 'meta-pages', 'content-calendar', 'bulk-scheduler'];
   subsections.forEach(section => {
     const el = document.getElementById(`nav-${section}`);
     if (el) el.classList.remove('active');

@@ -137,7 +137,7 @@ export async function handleSubscriptionPurchase(
       },
     });
 
-    const webhookUrl = getConfig().WEBHOOK_URL || 'http://localhost:3000';
+    const webhookUrl = getConfig().WEBHOOK_URL;
     const response = await axios.post(
       `${getDuitkuBaseUrl()}/webapi/api/merchant/v2/inquiry`,
       {

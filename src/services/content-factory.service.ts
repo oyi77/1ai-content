@@ -14,6 +14,7 @@
 import axios, { AxiosInstance } from 'axios';
 import fs from 'fs';
 import path from 'path';
+import { getConfig } from '@/config/env';
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -105,7 +106,7 @@ class ContentFactoryService {
   private baseUrl: string;
 
   constructor() {
-    this.baseUrl = process.env.CONTENT_FACTORY_URL || 'http://localhost:8767';
+    this.baseUrl = getConfig().CONTENT_FACTORY_URL;
     this.client = axios.create({
       baseURL: this.baseUrl,
       timeout: 300_000, // 5 min — video/loop generation can be slow

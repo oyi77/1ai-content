@@ -24,6 +24,7 @@ import crypto from 'crypto';
 import { prisma } from '@/config/database';
 import { logger } from '@/utils/logger';
 import { getPackagesAsync } from '@/config/pricing';
+import { getConfig } from '@/config/env';
 import { ValidationError, PaymentError } from '@/utils/app-errors';
 
 export interface CreatePaymentParams {
@@ -147,8 +148,8 @@ export abstract class PaymentGatewayBase {
    */
   async createTransaction(params: CreatePaymentParams): Promise<CreatePaymentResult> {
     const order = await this.buildOrderContext(params);
-    const callbackUrl = `${process.env.WEBHOOK_URL || 'http://localhost:3000'}/webhook/${this.gatewayName}`;
-    const returnUrl = `${process.env.WEBHOOK_URL || 'http://localhost:3000'}/payment/finish`;
+    const callbackUrl = `${getConfig().WEBHOOK_URL}/webhook/${this.gatewayName}`;
+    const returnUrl = `${getConfig().WEBHOOK_URL}/payment/finish`;
     const payload = this.buildCreatePaymentPayload(order, callbackUrl, returnUrl);
 
     try {

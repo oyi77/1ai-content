@@ -26,10 +26,10 @@ function getPipelineConfig(): AIPipelineConfig | null {
   const config = getConfig();
 
   // Only initialise if at least one routing URL is available
-  const directUrl = process.env.AI_PIPELINE_DIRECT_URL || config.OMNIROUTE_URL || 'http://localhost:20128/v1';
+  const directUrl = getConfig().AI_PIPELINE_DIRECT_URL;
   const directApiKey = process.env.AI_PIPELINE_DIRECT_API_KEY || config.OMNIROUTE_API_KEY || '';
-  const hubUrl = process.env.AI_PIPELINE_HUB_URL;
-  const mode = (process.env.AI_PIPELINE_MODE as 'direct' | 'hub') || 'direct';
+  const hubUrl = getConfig().AI_PIPELINE_HUB_URL;
+  const mode = getConfig().AI_PIPELINE_MODE as 'direct' | 'hub';
 
   // Must have a URL to work with
   if (mode === 'hub' && !hubUrl) return null;

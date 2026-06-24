@@ -43,7 +43,7 @@ export class GrokApiService {
   private context: GrokConversationContext | null = null;
 
   constructor(
-    private baseUrl: string = getConfig().GROK_API_URL || 'http://localhost:6969',
+    private baseUrl: string = getConfig().GROK_API_URL,
     private defaultModel: string = 'grok-3-fast',
     private proxy: string = '',
     private autoStart: boolean = true,
@@ -195,7 +195,7 @@ export class GrokApiService {
       const resp = await axios.post<{
         choices: Array<{ message: { content: string } }>;
       }>(
-        'http://localhost:30000/v1/chat/completions',
+        `${getConfig().GROK_NIM_URL}/chat/completions`,
         {
           model: 'meta/llama-3.3-70b-instruct',
           messages: [{ role: 'user', content: message }],

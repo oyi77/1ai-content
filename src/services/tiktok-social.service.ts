@@ -20,7 +20,7 @@ interface TikTokUploadResult {
   error?: string;
 }
 
-const SOCIAL_API_BASE = process.env.SOCIAL_API_URL || "http://localhost:8200";
+const SOCIAL_API_BASE = getConfig().SOCIAL_API_URL;
 
 export async function uploadToTikTok(params: TikTokUploadParams): Promise<TikTokUploadResult> {
   try {

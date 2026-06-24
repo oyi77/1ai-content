@@ -342,7 +342,7 @@ export async function generateViaOmniRoute(
   params: ImageGenerationParams,
 ): Promise<ImageGenerationResult> {
   const config = getConfig();
-  const OMNIROUTE_URL = config.OMNIROUTE_URL || "http://localhost:20128/v1";
+  const OMNIROUTE_URL = config.OMNIROUTE_URL;
   const OMNIROUTE_API_KEY = config.OMNIROUTE_API_KEY || "";
   if (!OMNIROUTE_API_KEY) return { success: false, error: "OMNIROUTE_API_KEY not configured" };
 

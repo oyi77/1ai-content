@@ -1,3 +1,4 @@
+import { getConfig } from '@/config/env';
 import { prisma } from '@/config/database';
 import { redis } from '@/config/redis';
 import { logger } from '@/utils/logger';
@@ -10,7 +11,7 @@ const INTERCEPT_CACHE_TTL = 60; // seconds
  * ioredis queues all commands behind a blocking BLPOP on the same connection,
  * which would hang every other Redis call (del, get, publish) while waiting.
  */
-const blpopRedis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
+const blpopRedis = new Redis(getConfig().REDIS_URL, {
   maxRetriesPerRequest: null,
   enableReadyCheck: false,
   lazyConnect: false,

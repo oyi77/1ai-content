@@ -6,9 +6,10 @@
 
 import Redis from 'ioredis';
 import { logger } from '@/utils/logger';
+import { getConfig } from '@/config/env';
 
 // Redis client instance (general use)
-export const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
+export const redis = new Redis(getConfig().REDIS_URL, {
   retryStrategy: (times) => {
     const delay = Math.min(times * 50, 2000);
     return delay;
@@ -17,7 +18,7 @@ export const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379'
 });
 
 // Redis client for BullMQ (requires maxRetriesPerRequest: null)
-export const bullmqRedis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
+export const bullmqRedis = new Redis(getConfig().REDIS_URL, {
   retryStrategy: (times) => {
     const delay = Math.min(times * 50, 2000);
     return delay;

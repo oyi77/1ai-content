@@ -24,7 +24,7 @@ export const openApiSpec = {
   },
   servers: [
     { url: "https://api.openclaw.ai", description: "Production" },
-    { url: "http://localhost:3000", description: "Local development" },
+    { url: `http://localhost:${process.env.PORT || '3000'}`, description: "Local development" },
   ],
   tags: [
     { name: "Web", description: "Public web pages (landing, FAQ, terms)" },

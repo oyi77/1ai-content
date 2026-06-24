@@ -9,6 +9,7 @@ import { logger } from '@/utils/logger';
 import { contentFactoryService } from '@/services/content-factory.service';
 import fs from 'fs';
 import path from 'path';
+import { getConfig } from '@/config/env';
 
 /**
  * Handle content factory callbacks.
@@ -208,7 +209,7 @@ export async function handleContentFactoryCallbacks(ctx: BotContext, data: strin
         if (profiles.profiles.length === 0) {
           await ctx.reply(
             `❌ Belum ada profile CloakBrowser untuk platform ini.\n\n` +
-            `Setup CloakBrowser dulu di http://localhost:8090`,
+            `Setup CloakBrowser dulu di ${getConfig().CLOAKBROWSER_URL}`,
           );
           return true;
         }

@@ -56,7 +56,9 @@ export function registerProviderCostRoutes(server: FastifyInstance): void {
 
       // For now, this would trigger an API call to the provider to fetch current pricing
       // Most providers don't have pricing APIs, so this is mostly for manual input
-      // TODO: Implement provider-specific pricing API calls where available
+      // DEFERRED: Provider-specific pricing APIs not universally available.
+      // Most providers (Gemini, OpenAI) don't expose pricing endpoints.
+      // Using manual admin input + static config as fallback. See ProviderCostTrackerService.
 
       // For now, just re-sync from static config
       const cost = await ProviderCostTrackerService.getProviderCost(key);

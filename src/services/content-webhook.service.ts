@@ -34,9 +34,8 @@ export class ContentWebhookService {
   private apiKey: string;
 
   constructor() {
-    const config = getConfig();
-    this.webhookUrl = process.env.SOCIAL_WEBHOOK_URL || "http://localhost:8200/api/webhooks/content";
-    this.apiKey = process.env.CONTENT_WEBHOOK_SECRET || "";
+    this.webhookUrl = getConfig().SOCIAL_WEBHOOK_URL;
+    this.apiKey = getConfig().CONTENT_WEBHOOK_SECRET || "";
   }
 
   async notifyVideoCompleted(params: {

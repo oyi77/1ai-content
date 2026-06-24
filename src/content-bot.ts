@@ -433,7 +433,8 @@ bot.on("callback_query", async (ctx) => {
     if (data === "pipe_generate") {
       p.step = "generate";
       await ctx.editMessageText("🎬 Generating video... Mohon tunggu.");
-      // TODO: queue video generation via BullMQ
+      // DEFERRED: BullMQ integration for content-bot standalone mode.
+      // Currently handled by berkahkarya-saas-bot (src/index.ts). See ecosystem docs.
       p.step = "done";
       const rendered = renderStep(userId);
       await ctx.reply(rendered.text, {
@@ -472,7 +473,8 @@ bot.on("callback_query", async (ctx) => {
 
     if (data === "pipe_edit_script") {
       await ctx.reply("✏️ Kirim script baru dalam format markdown:");
-      // TODO: handle script edit in message handler
+      // DEFERRED: Script edit flow requires state machine implementation.
+      // Tracked in docs/02-business-flows.md
       return;
     }
 

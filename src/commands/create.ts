@@ -852,7 +852,7 @@ async function sendSuccessNotification(
   if (!video) return;
 
   // Build download URL
-  const webhookUrl = (getConfig().WEBHOOK_URL || "http://localhost:3000").replace(/\/webhook.*$/, "");
+  const webhookUrl = getConfig().WEBHOOK_URL.replace(/\/webhook.*$/, "");
   const videoUserId = video.userId.toString();
   const jwtSecret = getConfig().JWT_SECRET;
   if (!jwtSecret) throw new ConfigError('JWT_SECRET');

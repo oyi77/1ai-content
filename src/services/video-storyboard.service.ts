@@ -135,7 +135,7 @@ async function callLLMForText(
     return content || null;
   }
   if (providerConfig.provider === 'omniroute') {
-    const omniUrl = config.OMNIROUTE_URL || 'http://localhost:20128/v1';
+    const omniUrl = config.OMNIROUTE_URL;
     const model = providerConfig.model || 'gpt-4';
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     const apiKey = config.OMNIROUTE_API_KEY;

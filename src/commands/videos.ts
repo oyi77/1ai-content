@@ -15,7 +15,7 @@ import { ConfigError } from '@/utils/app-errors';
 
 /** Generate a signed download URL for a video job (valid 30d). Never exposes provider CDN URLs. */
 function makeDownloadUrl(jobId: string, userId: string): string {
-  const base = (getConfig().WEBHOOK_URL || 'http://localhost:3000').replace(/\/webhook.*$/, '');
+  const base = getConfig().WEBHOOK_URL.replace(/\/webhook.*$/, '');
   const secret = getConfig().JWT_SECRET;
   if (!secret) throw new ConfigError('JWT_SECRET');
   const token = jwt.sign({ telegramId: userId, jobId }, secret, { expiresIn: '30d' });

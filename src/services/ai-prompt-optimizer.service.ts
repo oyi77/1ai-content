@@ -6,7 +6,7 @@
  *
  * LLM rotation (first success wins):
  *   1. Gemini (GEMINI_API_KEY)
- *   2. OmniRoute (localhost:20128 — OpenAI-compatible)
+ *   2. OmniRoute (OMNIROUTE_URL env var — OpenAI-compatible)
  *   3. Rule-based fallback (existing PromptOptimizer)
  *
  * Constraints:
@@ -195,7 +195,7 @@ async function tryGemini(metaPrompt: string, modelOverride?: string): Promise<st
 /** Tier 2: OmniRoute (OpenAI-compatible) */
 async function tryOmniRoute(metaPrompt: string, modelOverride?: string): Promise<string | null> {
   const config = getConfig();
-  const OMNIROUTE_URL = config.OMNIROUTE_URL || "http://localhost:20128/v1";
+  const OMNIROUTE_URL = config.OMNIROUTE_URL;
   const OMNIROUTE_API_KEY = config.OMNIROUTE_API_KEY || "";
   const model = modelOverride || "antigravity/gemini-2.5-flash";
   try {

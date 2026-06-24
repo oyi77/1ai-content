@@ -103,7 +103,7 @@ export class ProviderBalanceService {
       if (cached) return JSON.parse(cached);
     } catch (err) { logger.debug("Cache miss:", err); }
 
-    const omnirouteUrl = config.OMNIROUTE_URL || "http://localhost:20128";
+    const omnirouteUrl = config.OMNIROUTE_URL;
 
     const urlMap: Record<string, string> = {
       omniroute: `${omnirouteUrl}/v1`,
@@ -204,7 +204,7 @@ export class ProviderBalanceService {
         };
     } catch (err) { logger.debug("Cache miss:", err); }
 
-    const omnirouteUrl = config.OMNIROUTE_URL || "http://localhost:20128";
+    const omnirouteUrl = config.OMNIROUTE_URL;
 
     const urlMap: Record<string, string> = {
       omniroute: `${omnirouteUrl}/v1/models`,

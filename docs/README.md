@@ -1,47 +1,42 @@
-# OpenClaw Bot Documentation
+# Documentation Index
 
-Welcome to the OpenClaw Bot documentation. This directory contains comprehensive documentation for the OpenClaw Bot system.
+## Reading Order
 
-## 📚 Documentation Structure
+### For Humans (New Engineers)
+1. [00-overview.md](00-overview.md) — What is this project?
+2. [01-architecture.md](01-architecture.md) — How is it built?
+3. [02-business-flows.md](02-business-flows.md) — What does it do?
+4. [03-user-flows.md](03-user-flows.md) — How do users interact?
+5. [04-api-reference.md](04-api-reference.md) — API details
+6. [06-data-model.md](06-data-model.md) — Database structure
+7. [08-glossary.md](08-glossary.md) — Terms and definitions
 
-| Document | Description |
-|----------|-------------|
-| [MASTER_PROMPT.md](MASTER_PROMPT.md) | Complete bot behavior specification and AI instructions |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | System architecture, design patterns, and component diagrams |
-| [API.md](API.md) | API contracts, endpoints, and integration guides |
-| [DATABASE.md](DATABASE.md) | Database schema, migrations, and optimization |
-| [SECURITY.md](SECURITY.md) | Security policies, authentication, and compliance |
-| [DEPLOYMENT.md](DEPLOYMENT.md) | Deployment guides, CI/CD, and infrastructure |
-| [MONITORING.md](MONITORING.md) | Observability, metrics, and alerting |
-| [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | Common issues, debugging, and solutions |
+### For AI Agents (Coding)
+1. [../llms.txt](../llms.txt) — Quick navigation index
+2. [../AGENTS.md](../AGENTS.md) — Project-wide conventions
+3. [00-overview.md](00-overview.md) — System context
+4. [01-architecture.md](01-architecture.md) — Component structure
+5. [04-api-reference.md](04-api-reference.md) — API contracts
+6. [06-data-model.md](06-data-model.md) — Data structure
+7. [07-modularity-recommendations.md](07-modularity-recommendations.md) — Improvement roadmap
 
-## 🎯 Quick Links
+## Document List
 
-### For Developers
-- [Setup Guide](../README.md#quick-start) - Get started with development
-- [Contributing Guide](../CONTRIBUTING.md) - How to contribute
-- [Architecture](ARCHITECTURE.md) - System design overview
+| File | Purpose | Audience |
+|------|---------|----------|
+| [00-overview.md](00-overview.md) | Project overview, tech stack | Both |
+| [01-architecture.md](01-architecture.md) | System architecture, diagrams | Both |
+| [02-business-flows.md](02-business-flows.md) | Domain model, business rules | Both |
+| [03-user-flows.md](03-user-flows.md) | User journeys, navigation | Humans |
+| [04-api-reference.md](04-api-reference.md) | API endpoints, contracts | Both |
+| [06-data-model.md](06-data-model.md) | Database schema, ER diagram | Both |
+| [07-modularity-recommendations.md](07-modularity-recommendations.md) | Architecture improvements | AI Agents |
+| [08-glossary.md](08-glossary.md) | Terms and definitions | Humans |
+| [ECOSYSTEM_ARCHITECTURE.md](ECOSYSTEM_ARCHITECTURE.md) | 1ai integration | Both |
+| [AUDIT_REPORT.md](AUDIT_REPORT.md) | Codebase quality audit | Both |
 
-### For Operators
-- [Deployment](DEPLOYMENT.md) - Deploy to production
-- [Monitoring](MONITORING.md) - Monitor system health
-- [Troubleshooting](TROUBLESHOOTING.md) - Resolve issues
+## Related Documentation
 
-### For Business
-- [Master Prompt](MASTER_PROMPT.md) - Bot behavior specification
-- [Security](SECURITY.md) - Security and compliance
-
-## 📖 Reading Guide
-
-1. **New to the project?** Start with [../README.md](../README.md)
-2. **Want to understand the system?** Read [ARCHITECTURE.md](ARCHITECTURE.md)
-3. **Need to deploy?** Follow [DEPLOYMENT.md](DEPLOYMENT.md)
-4. **Having issues?** Check [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
-
-## 🔄 Document Updates
-
-Documents are updated as part of each release. See [CHANGELOG.md](../CHANGELOG.md) for document change history.
-
----
-
-*Last updated: 2024-XX-XX*
+- [../README.md](../README.md) — Project README
+- [../AGENTS.md](../AGENTS.md) — AI agent conventions
+- [../llms.txt](../llms.txt) — Machine-readable index

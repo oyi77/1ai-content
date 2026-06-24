@@ -191,7 +191,7 @@ export class OmniRouteService {
 
   constructor() {
     const config = getConfig();
-    const omniUrl = config.OMNIROUTE_URL || 'http://localhost:20128/v1';
+    const omniUrl = config.OMNIROUTE_URL;
     const omniApiKey = config.OMNIROUTE_API_KEY || '';
     this.client = axios.create({
       baseURL: omniUrl,

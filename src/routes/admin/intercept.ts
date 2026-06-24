@@ -68,7 +68,7 @@ export function registerInterceptRoutes(server: FastifyInstance, verifyAdmin: Ad
 
     const channel = `chat-events:${telegramId}`;
     const Redis = (await import("ioredis")).default;
-    const subClient = new Redis(getConfig().REDIS_URL || "redis://localhost:6379", {
+    const subClient = new Redis(getConfig().REDIS_URL, {
       maxRetriesPerRequest: null,
     });
     await subClient.subscribe(channel);
@@ -134,7 +134,7 @@ export function registerInterceptRoutes(server: FastifyInstance, verifyAdmin: Ad
         data.file.on('error', reject);
       });
 
-      const baseUrl = (getConfig().WEBHOOK_URL || 'http://localhost:3000').replace(/\/webhook.*$/, '');
+      const baseUrl = getConfig().WEBHOOK_URL.replace(/\/webhook.*$/, '');
       const publicUrl = `${baseUrl}/admin/uploads/${filename}`;
 
       const imageExts = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];

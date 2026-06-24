@@ -607,7 +607,7 @@ async function callLLMForPromptGen(prompt: string, cfg: AITaskProvider): Promise
   }
 
   if (cfg.provider === 'omniroute') {
-    const omniUrl = config.OMNIROUTE_URL || 'http://localhost:20128/v1';
+    const omniUrl = config.OMNIROUTE_URL;
     const apiKey = config.OMNIROUTE_API_KEY || '';
     const model = cfg.model || 'antigravity/gemini-2.5-flash';
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };

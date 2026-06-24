@@ -1121,7 +1121,7 @@ async function sendVideoToUser(
 ): Promise<void> {
   try {
     // Build download URL
-    const webhookUrl = (getConfig().WEBHOOK_URL || 'http://localhost:3000').replace(/\/webhook.*$/, '');
+    const webhookUrl = getConfig().WEBHOOK_URL.replace(/\/webhook.*$/, '');
     const video = await VideoService.getByJobId(jobId);
     const userId = video?.userId?.toString() || '0';
     const jwtSecret = getConfig().JWT_SECRET;

@@ -1,0 +1,62 @@
+# 1ai-content
+
+> Telegram bot SaaS platform for AI-powered video generation. Multi-provider AI with 9-tier fallback, credit-based pricing, BullMQ job queues, and admin dashboard. Part of the 1ai ecosystem (1ai-content + 1ai-social + 1ai-affiliate).
+
+## Docs
+
+- [docs/00-overview.md](docs/00-overview.md) — What the system is, tech stack, architecture overview
+- [docs/01-architecture.md](docs/01-architecture.md) — Components, data flow, diagrams
+- [docs/02-business-flows.md](docs/02-business-flows.md) — Domain model, business rules, entity lifecycles
+- [docs/03-user-flows.md](docs/03-user-flows.md) — User journeys (Telegram bot, admin dashboard)
+- [docs/04-api-reference.md](docs/04-api-reference.md) — Endpoints, contracts, auth
+- [docs/06-data-model.md](docs/06-data-model.md) — Prisma schema, entities, relationships
+- [docs/07-modularity-recommendations.md](docs/07-modularity-recommendations.md) — Architecture improvements roadmap
+- [docs/08-glossary.md](docs/08-glossary.md) — Domain & technical terms
+- [docs/ECOSYSTEM_ARCHITECTURE.md](docs/ECOSYSTEM_ARCHITECTURE.md) — 1ai-content ↔ 1ai-social ↔ 1ai-affiliate integration
+- [docs/AUDIT_REPORT.md](docs/AUDIT_REPORT.md) — Codebase quality audit
+
+## Modules
+
+- [src/AGENTS.md](src/AGENTS.md) — Source code conventions for AI agents
+- [src/services/AGENTS.md](src/services/AGENTS.md) — Service layer patterns
+- [src/routes/AGENTS.md](src/routes/AGENTS.md) — API route conventions
+- [src/workers/AGENTS.md](src/workers/AGENTS.md) — Background worker patterns
+- [src/handlers/AGENTS.md](src/handlers/AGENTS.md) — Telegram handler patterns
+- [prisma/AGENTS.md](prisma/AGENTS.md) — Database schema conventions
+- [tests/AGENTS.md](tests/AGENTS.md) — Testing conventions
+
+## API
+
+- [src/routes/admin.ts](src/routes/admin.ts) — Admin dashboard routes
+- [src/routes/webhook.ts](src/routes/webhook.ts) — Payment webhook handlers
+- [src/routes/ecosystem.ts](src/routes/ecosystem.ts) — Ecosystem integration endpoints
+- [src/routes/content-api.ts](src/routes/content-api.ts) — Content generation API
+
+## Config
+
+- [config/database.yml](config/database.yml) — Database configuration reference
+- [config/payment.yml](config/payment.yml) — Payment gateway configuration
+- [config/ai.yml](config/ai.yml) — AI provider configuration
+- [config/features.yml](config/features.yml) — Feature flags
+
+## Infrastructure
+
+- [Dockerfile](Dockerfile) — Production container build
+- [docker-compose.yml](docker-compose.yml) — Full stack: app, PostgreSQL, Redis, Prometheus, Grafana
+- [monitoring/AGENTS.md](monitoring/AGENTS.md) — Prometheus + Grafana setup
+
+## Research
+
+- [docs/research/FEATURE_MATRIX.md](docs/research/FEATURE_MATRIX.md) — Competitor feature comparison
+- [docs/research/GAP_ANALYSIS.md](docs/research/GAP_ANALYSIS.md) — Prioritized gap registry
+- [docs/research/competitors/google-veo.md](docs/research/competitors/google-veo.md) — Google Veo 3.1 profile
+- [docs/research/competitors/kling-ai.md](docs/research/competitors/kling-ai.md) — Kling AI 3.0 profile
+- [docs/research/competitors/runway.md](docs/research/competitors/runway.md) — Runway Gen-4.5 profile
+
+## Exploration
+
+- [docs/exploration/CODEBASE_AUDIT.md](docs/exploration/CODEBASE_AUDIT.md) — Living codebase audit
+
+## Sprints
+
+- [docs/sprints/SPRINT_1.md](docs/sprints/SPRINT_1.md) — Sprint 1 summary

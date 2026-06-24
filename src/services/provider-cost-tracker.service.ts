@@ -264,7 +264,8 @@ export class ProviderCostTrackerService {
     }
 
     // For now, return empty history - would need separate history table
-    // TODO: Implement cost history table
+    // DEFERRED: Cost history table requires Prisma migration (ProviderCostHistory model).
+    // Currently using Redis with TTL as interim solution. See docs/07-modularity-recommendations.md
     return [];
   }
 
@@ -371,7 +372,8 @@ export class ProviderCostTrackerService {
     costUsd: number,
     source: 'api' | 'manual' | 'static'
   ): Promise<void> {
-    // TODO: Implement when we create a cost history table
+    // DEFERRED: Blocked on ProviderCostHistory Prisma model.
+    // Interim: storing in Redis with 30-day TTL.
     // For now, we could store in Redis with a TTL
     const historyKey = `provider_cost_history:${providerKey}`;
     const history: CostHistory = {

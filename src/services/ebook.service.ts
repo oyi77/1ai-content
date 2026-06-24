@@ -60,8 +60,8 @@ export class EbookService {
 
   constructor() {
     const config = getConfig();
-    const baseUrl = process.env.EBOOK_API_URL || "http://localhost:8765";
-    this.apiKey = process.env.EBOOK_API_KEY || "";
+    const baseUrl = getConfig().EBOOK_API_URL;
+    this.apiKey = getConfig().EBOOK_API_KEY || '';
 
     this.client = axios.create({
       baseURL: baseUrl,
@@ -169,7 +169,7 @@ export class EbookService {
    * Get download URL for ebook file
    */
   getDownloadUrl(projectId: number, format: "pdf" | "docx" | "epub"): string {
-    const baseUrl = process.env.EBOOK_API_URL || "http://localhost:8765";
+    const baseUrl = getConfig().EBOOK_API_URL;
     return `${baseUrl}/api/projects/${projectId}/download/${format}?key=${this.apiKey}`;
   }
 
