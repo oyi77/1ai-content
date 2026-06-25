@@ -10,45 +10,83 @@
     <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">Admin Dashboard v3</div>
   </div>
   <nav style="flex: 1; padding: 12px 0; overflow-y: auto;">
+
     <!-- 📊 Business Intelligence -->
-    <div style="padding: 4px 20px; font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;">📊 Business</div>
-    <div class="<%= _nav('dashboard') %>" id="nav-dashboard" onclick="window.location='/admin/dashboard'">📊 Overview</div>
-    <div class="nav-item" id="nav-users" onclick="window.location='/admin/dashboard#users'">👥 Users</div>
-    <div class="nav-item" id="nav-transactions" onclick="window.location='/admin/dashboard#transactions'">💳 Transactions</div>
-    <div class="nav-item" id="nav-analytics" onclick="window.location='/admin/dashboard#analytics'">📈 Analytics</div>
-    <div class="nav-item" id="nav-profit" onclick="window.location='/admin/dashboard#profit'">💹 Revenue</div>
-    <div class="nav-item" id="nav-tokens" onclick="window.location='/admin/dashboard#tokens'">🪙 Token Usage</div>
+    <div class="nav-category" onclick="toggleCategory(this)">
+      <span class="nav-category-icon">📊</span>
+      <span class="nav-category-label">Business</span>
+      <span class="nav-category-arrow">▶</span>
+    </div>
+    <div class="nav-category-items" id="cat-business">
+      <div class="<%= _nav('dashboard') %>" id="nav-dashboard" onclick="window.location='/admin/dashboard'">📊 Overview</div>
+      <div class="nav-item" id="nav-users" onclick="window.location='/admin/dashboard#users'">👥 Users</div>
+      <div class="nav-item" id="nav-transactions" onclick="window.location='/admin/dashboard#transactions'">💳 Transactions</div>
+      <div class="nav-item" id="nav-analytics" onclick="window.location='/admin/dashboard#analytics'">📈 Analytics</div>
+      <div class="nav-item" id="nav-profit" onclick="window.location='/admin/dashboard#profit'">💹 Revenue</div>
+      <div class="nav-item" id="nav-tokens" onclick="window.location='/admin/dashboard#tokens'">🪙 Token Usage</div>
+    </div>
 
     <!-- 💰 Pricing & Monetization -->
-    <div style="margin: 12px 0 4px; padding: 4px 20px; font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;">💰 Monetization</div>
-    <div class="nav-item" id="nav-pricing" onclick="window.location='/admin/dashboard#pricing'">💰 Pricing</div>
-    <div class="<%= _nav('dynamic-pricing') %>" onclick="window.location='/admin/dynamic-pricing'">💵 Dynamic Pricing</div>
-    <div class="nav-item" id="nav-niches" onclick="window.location='/admin/dashboard#niches'">🏷️ Niches</div>
-    <div class="nav-item" id="nav-landing-page" onclick="window.location='/admin/dashboard#landing-page'">🌐 Landing Page</div>
+    <div class="nav-category" onclick="toggleCategory(this)">
+      <span class="nav-category-icon">💰</span>
+      <span class="nav-category-label">Monetization</span>
+      <span class="nav-category-arrow">▶</span>
+    </div>
+    <div class="nav-category-items" id="cat-monetization">
+      <div class="nav-item" id="nav-pricing" onclick="window.location='/admin/dashboard#pricing'">💰 Pricing</div>
+      <div class="<%= _nav('dynamic-pricing') %>" onclick="window.location='/admin/dynamic-pricing'">💵 Dynamic Pricing</div>
+      <div class="nav-item" id="nav-niches" onclick="window.location='/admin/dashboard#niches'">🏷️ Niches</div>
+      <div class="nav-item" id="nav-landing-page" onclick="window.location='/admin/dashboard#landing-page'">🌐 Landing Page</div>
+    </div>
 
     <!-- 🎬 Content & Creative -->
-    <div style="margin: 12px 0 4px; padding: 4px 20px; font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;">🎬 Content</div>
-    <div class="<%= _nav('medias') %>" onclick="window.location='/admin/medias'">🎬 Media Gallery</div>
-    <div class="<%= _nav('prompts') %>" onclick="window.location='/admin/prompts'">✍️ Prompts</div>
-    <div class="<%= _nav('personas') %>" onclick="window.location='/admin/personas'">🎭 Personas</div>
-    <div class="<%= _nav('playground') %>" onclick="window.location='/admin/playground'">🧪 Playground</div>
+    <div class="nav-category" onclick="toggleCategory(this)">
+      <span class="nav-category-icon">🎬</span>
+      <span class="nav-category-label">Content</span>
+      <span class="nav-category-arrow">▶</span>
+    </div>
+    <div class="nav-category-items" id="cat-content">
+      <div class="<%= _nav('medias') %>" onclick="window.location='/admin/medias'">🎬 Media Gallery</div>
+      <div class="<%= _nav('prompts') %>" onclick="window.location='/admin/prompts'">✍️ Prompts</div>
+      <div class="<%= _nav('personas') %>" onclick="window.location='/admin/personas'">🎭 Personas</div>
+      <div class="<%= _nav('playground') %>" onclick="window.location='/admin/playground'">🧪 Playground</div>
+    </div>
 
     <!-- 📱 Social Media -->
-    <div style="margin: 12px 0 4px; padding: 4px 20px; font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;">📱 Social Media</div>
-    <div class="<%= _nav('meta-pages') %>" onclick="window.location='/admin/meta-pages'">📄 FB Pages</div>
-    <div class="<%= _nav('content-calendar') %>" onclick="window.location='/admin/content-calendar'">📅 Calendar</div>
-    <div class="<%= _nav('bulk-scheduler') %>" onclick="window.location='/admin/bulk-scheduler'">⏰ Bulk Scheduler</div>
+    <div class="nav-category" onclick="toggleCategory(this)">
+      <span class="nav-category-icon">📱</span>
+      <span class="nav-category-label">Social Media</span>
+      <span class="nav-category-arrow">▶</span>
+    </div>
+    <div class="nav-category-items" id="cat-social">
+      <div class="<%= _nav('meta-pages') %>" onclick="window.location='/admin/meta-pages'">📄 FB Pages</div>
+      <div class="<%= _nav('content-calendar') %>" onclick="window.location='/admin/content-calendar'">📅 Calendar</div>
+      <div class="<%= _nav('bulk-scheduler') %>" onclick="window.location='/admin/bulk-scheduler'">⏰ Bulk Scheduler</div>
+    </div>
 
     <!-- 🔌 Technical -->
-    <div style="margin: 12px 0 4px; padding: 4px 20px; font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;">🔌 Technical</div>
-    <div class="<%= _nav('providers') %>" onclick="window.location='/admin/providers'">🔌 Providers</div>
-    <div class="<%= _nav('ai-config') %>" onclick="window.location='/admin/ai-config'">🤖 AI Config</div>
-    <div class="<%= _nav('interceptions') %>" onclick="window.location='/admin/interceptions'">🎯 Interceptions</div>
+    <div class="nav-category" onclick="toggleCategory(this)">
+      <span class="nav-category-icon">🔌</span>
+      <span class="nav-category-label">Technical</span>
+      <span class="nav-category-arrow">▶</span>
+    </div>
+    <div class="nav-category-items" id="cat-technical">
+      <div class="<%= _nav('providers') %>" onclick="window.location='/admin/providers'">🔌 Providers</div>
+      <div class="<%= _nav('ai-config') %>" onclick="window.location='/admin/ai-config'">🤖 AI Config</div>
+      <div class="<%= _nav('interceptions') %>" onclick="window.location='/admin/interceptions'">🎯 Interceptions</div>
+    </div>
 
     <!-- ⚙️ System -->
-    <div style="margin: 12px 0 4px; padding: 4px 20px; font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;">⚙️ System</div>
-    <div class="<%= _nav('settings') %>" onclick="window.location='/admin/settings'">⚙️ Settings</div>
-    <div class="nav-item" onclick="window.location='/admin/dashboard#ai-assistant'">🤖 AI Assistant</div>
+    <div class="nav-category" onclick="toggleCategory(this)">
+      <span class="nav-category-icon">⚙️</span>
+      <span class="nav-category-label">System</span>
+      <span class="nav-category-arrow">▶</span>
+    </div>
+    <div class="nav-category-items" id="cat-system">
+      <div class="<%= _nav('settings') %>" onclick="window.location='/admin/settings'">⚙️ Settings</div>
+      <div class="nav-item" onclick="window.location='/admin/dashboard#ai-assistant'">🤖 AI Assistant</div>
+    </div>
+
   </nav>
   <div style="padding: 16px 20px; border-top: 1px solid var(--border);">
     <div id="live-clock" style="font-size: 12px; color: var(--muted); font-family: monospace;"></div>
@@ -56,7 +94,99 @@
   </div>
 </div>
 
+<style>
+  .nav-category {
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    margin: 4px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+  }
+  .nav-category:hover {
+    background: rgba(255,255,255,0.05);
+  }
+  .nav-category-icon {
+    font-size: 14px;
+    margin-right: 8px;
+  }
+  .nav-category-label {
+    flex: 1;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .nav-category-arrow {
+    font-size: 10px;
+    color: var(--muted);
+    transition: transform 0.2s;
+  }
+  .nav-category.open .nav-category-arrow {
+    transform: rotate(90deg);
+  }
+  .nav-category-items {
+    display: none;
+    padding: 0 0 4px 0;
+  }
+  .nav-category-items.open {
+    display: block;
+  }
+  .nav-category-items .nav-item {
+    padding-left: 36px;
+  }
+</style>
+
 <script>
+// Toggle category expand/collapse
+function toggleCategory(el) {
+  const items = el.nextElementSibling;
+  const isOpen = items.classList.contains('open');
+  
+  // Close all categories
+  document.querySelectorAll('.nav-category-items').forEach(item => {
+    item.classList.remove('open');
+  });
+  document.querySelectorAll('.nav-category').forEach(cat => {
+    cat.classList.remove('open');
+  });
+  
+  // Toggle clicked category
+  if (!isOpen) {
+    items.classList.add('open');
+    el.classList.add('open');
+    // Save state
+    localStorage.setItem('nav_cat_' + items.id, 'open');
+  } else {
+    localStorage.removeItem('nav_cat_' + items.id);
+  }
+}
+
+// Restore category states on load
+function restoreCategoryStates() {
+  document.querySelectorAll('.nav-category-items').forEach(items => {
+    if (localStorage.getItem('nav_cat_' + items.id) === 'open') {
+      items.classList.add('open');
+      items.previousElementSibling.classList.add('open');
+    }
+  });
+}
+
+// Auto-expand category containing active item
+function expandActiveCategory() {
+  const activeItem = document.querySelector('.nav-item.active');
+  if (activeItem) {
+    const categoryItems = activeItem.closest('.nav-category-items');
+    if (categoryItems) {
+      categoryItems.classList.add('open');
+      categoryItems.previousElementSibling.classList.add('open');
+    }
+  }
+}
+
 // Handle hash-based active states for dashboard subsections
 function updateDashboardNav() {
   const hash = window.location.hash.replace('#', '');
@@ -84,12 +214,19 @@ function updateDashboardNav() {
     const activeEl = document.getElementById(`nav-${hash}`);
     if (activeEl) activeEl.classList.add('active');
   }
+  
+  // Expand category containing active item
+  expandActiveCategory();
 }
 
-// Update on page load and hash change
+// Initialize
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', updateDashboardNav);
+  document.addEventListener('DOMContentLoaded', () => {
+    restoreCategoryStates();
+    updateDashboardNav();
+  });
 } else {
+  restoreCategoryStates();
   updateDashboardNav();
 }
 window.addEventListener('hashchange', updateDashboardNav);
