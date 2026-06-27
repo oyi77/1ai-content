@@ -174,6 +174,39 @@ function getCategories() {
   return Object.keys(CTA_VARIATIONS).filter(k => k !== '_default');
 }
 
+// ── Content Diversity Engine (Item 7) ───────────────────────────
+
+/**
+ * Generate diverse content variants to avoid Facebook spam detection.
+ * Rotates: CTA, hashtags, emoji, caption order, line breaks.
+ */
+function generateDiverseVariants(category, affiliateLink, count = 5) {
+  const variants = [];
+  const used = new Set();
+  
+  for (let i = 0; i < count; i++) {
+    let caption;
+    let attempts = 0;
+    do {
+      caption = generateCaption(category, affiliateLink);
+      attempts++;
+    } while (used.has(caption) && attempts < 10);
+    
+    used.add(caption);
+    
+    // Add variant metadata
+    variants.push({
+      variant_id: `V${i + 1}`,
+      caption: caption,
+      category: normalizeCategory(category),
+      has_affiliate_link: caption.includes(affiliateLink),
+      word_count: caption.split(/\s+/).length,
+    });
+  }
+  
+  return variants;
+}
+
 // ── Exports ──────────────────────────────────────────────────────
 
 module.exports = {
@@ -183,5 +216,6 @@ module.exports = {
   generateHashtags,
   generateCaption,
   generateCaptionBatch,
+  generateDiverseVariants,
   getCategories,
 };
