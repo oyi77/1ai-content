@@ -16,7 +16,7 @@ module.exports = {
       NODE_ENV: 'production',
       WEBHOOK_URL: 'https://content.aitradepulse.com',
       PUBLIC_URL: 'https://content.aitradepulse.com',
-      PORT: 3000
+      PORT: 3002
     }
   }]
 };

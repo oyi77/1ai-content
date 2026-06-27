@@ -23,6 +23,7 @@ import { agencyRoutes } from "@/routes/agency";
 import { contentApiRoutes } from "@/routes/content-api";
 import { youtubeDashboardRoutes } from "@/routes/youtube/dashboard.route";
 import { ecosystemRoutes } from "@/routes/ecosystem";
+import { analyticsRoutes } from "@/routes/analytics-api";
 import type { Telegraf } from "telegraf";
 
 /**
@@ -148,6 +149,9 @@ export async function registerRoutes(
 
   // YouTube dashboard (internal)
   await app.register(youtubeDashboardRoutes);
+
+  // Analytics API
+  await app.register(analyticsRoutes);
 
   if (config.NODE_ENV === "test") {
     const testRoutes = require("./routes/test").default;

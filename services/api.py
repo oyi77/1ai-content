@@ -519,6 +519,404 @@ async def upload_audio(file: UploadFile = File(...)):
 
 
 # ══════════════════════════════════════════════════════════════
+# CAROUSEL (TikTok Image Carousel)
+# ══════════════════════════════════════════════════════════════
+_carousel = None
+
+def get_carousel():
+    global _carousel
+    if _carousel is None:
+        from services.carousel.assembler import CarouselAssembler
+        _carousel = CarouselAssembler()
+    return _carousel
+
+
+class CarouselRequest(BaseModel):
+    topic: str
+    num_slides: int = Field(default=7, ge=3, le=10)
+    style: str = "outline"
+    platform: str = "tiktok"
+    language: str = "id"
+
+
+@app.post("/carousel/create")
+async def carousel_create(req: CarouselRequest):
+    """Generate a TikTok carousel from a topic."""
+    try:
+        assembler = get_carousel()
+        result = assembler.create(
+            topic=req.topic,
+            num_slides=req.num_slides,
+            style=req.style,
+            platform=req.platform,
+            language=req.language,
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/carousel/styles")
+async def carousel_styles():
+    """List available carousel styles."""
+    from services.carousel.generator import STYLE_PRESETS
+    return {"styles": {k: {"name": v["name"], "description": v["description"]} for k, v in STYLE_PRESETS.items()}}
+
+
+# ══════════════════════════════════════════════════════════════
+# AUTOMATION (AutoPilot)
+# ══════════════════════════════════════════════════════════════
+_autopilot = None
+
+def get_autopilot():
+    global _autopilot
+    if _autopilot is None:
+        from services.autopilot.tiktok_publisher import AutoPilotTikTokPublisher
+        _autopilot = AutoPilotTikTokPublisher()
+    return _autopilot
+
+
+class AutoPilotJobRequest(BaseModel):
+    name: str
+    niche: str
+    platforms: list[str] = ["tiktok"]
+    videos_per_day: int = 3
+    posting_times: list[str] = ["11:00", "15:00", "19:00"]
+    content_type: str = "video"
+    style: str = "educational"
+    language: str = "id"
+    auto_publish: bool = True
+    tiktok_profile_id: str = ""
+
+
+@app.post("/autopilot/create")
+async def autopilot_create(req: AutoPilotJobRequest):
+    """Create an autopilot job."""
+    try:
+        pub = get_autopilot()
+        result = pub.create_job(
+            name=req.name,
+            niche=req.niche,
+            platforms=req.platforms,
+            videos_per_day=req.videos_per_day,
+            posting_times=req.posting_times,
+            content_type=req.content_type,
+            style=req.style,
+            language=req.language,
+            auto_publish=req.auto_publish,
+            tiktok_profile_id=req.tiktok_profile_id,
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/autopilot/status")
+async def autopilot_status():
+    """Get autopilot status."""
+    try:
+        pub = get_autopilot()
+        return pub.get_status()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/autopilot/run")
+async def autopilot_run():
+    """Check and run all ready autopilot jobs."""
+    try:
+        pub = get_autopilot()
+        results = pub.check_and_run()
+        return {"jobs_run": len(results), "results": results}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ══════════════════════════════════════════════════════════════
+# TRENDING (Scan + Auto-Generate)
+# ══════════════════════════════════════════════════════════════
+_scanner = None
+
+def get_scanner():
+    global _scanner
+    if _scanner is None:
+        from services.trends.scanner import TrendScanner
+        _scanner = TrendScanner()
+    return _scanner
+
+
+@app.get("/trending/scan")
+async def trending_scan(niche: str = "", region: str = "ID"):
+    """Scan trending content across platforms."""
+    try:
+        scanner = get_scanner()
+        results = scanner.scan_all(niche=niche, region=region)
+        return results
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/trending/generate")
+async def trending_generate(topic: str, content_type: str = "video", platform: str = "tiktok", language: str = "id"):
+    """Generate content from a trending topic."""
+    try:
+        if content_type == "carousel":
+            assembler = get_carousel()
+            result = assembler.create(topic=topic, platform=platform, language=language)
+        else:
+            orch = AutoPilotOrchestrator()
+            result = orch.faceless_engine.generate_video(topic=topic, platform=platform, language=language)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ══════════════════════════════════════════════════════════════
+# CALENDAR
+# ══════════════════════════════════════════════════════════════
+_calendar = None
+
+def get_calendar():
+    global _calendar
+    if _calendar is None:
+        from services.calendar.content_calendar import ContentCalendarService
+        _calendar = ContentCalendarService()
+    return _calendar
+
+
+class CalendarEntryRequest(BaseModel):
+    user_id: int
+    topic: str
+    scheduled_at: str
+    platform: str = "tiktok"
+    content_type: str = "video"
+    caption: str = ""
+    hashtags: list[str] = []
+    niche: str = ""
+    style: str = "educational"
+    language: str = "id"
+    auto_post: bool = False
+
+
+@app.post("/calendar/schedule")
+async def calendar_schedule(req: CalendarEntryRequest):
+    """Schedule a content piece."""
+    try:
+        cal = get_calendar()
+        entry = cal.schedule_content(
+            user_id=req.user_id,
+            topic=req.topic,
+            scheduled_at=req.scheduled_at,
+            platform=req.platform,
+            content_type=req.content_type,
+            caption=req.caption,
+            hashtags=req.hashtags,
+            niche=req.niche,
+            style=req.style,
+            language=req.language,
+            auto_post=req.auto_post,
+        )
+        return entry
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/calendar/list/{user_id}")
+async def calendar_list(user_id: int, status: Optional[str] = None, platform: Optional[str] = None):
+    """List calendar entries for a user."""
+    try:
+        cal = get_calendar()
+        entries = cal.get_entries(user_id, status=status, platform=platform)
+        return {"entries": entries, "count": len(entries)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ══════════════════════════════════════════════════════════════
+# A/B TESTING
+# ══════════════════════════════════════════════════════════════
+_ab_testing = None
+
+def get_ab_testing():
+    global _ab_testing
+    if _ab_testing is None:
+        from services.ab_testing.service import ABTestingService
+        _ab_testing = ABTestingService()
+    return _ab_testing
+
+
+class ABTestRequest(BaseModel):
+    user_id: int
+    name: str
+    topic: str
+    platform: str = "tiktok"
+    content_type: str = "caption"
+    language: str = "id"
+
+
+@app.post("/ab-test/create")
+async def ab_test_create(req: ABTestRequest):
+    """Create an A/B test."""
+    try:
+        ab = get_ab_testing()
+        test = ab.create_test(
+            user_id=req.user_id,
+            name=req.name,
+            topic=req.topic,
+            platform=req.platform,
+            content_type=req.content_type,
+            language=req.language,
+        )
+        return test
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/ab-test/list/{user_id}")
+async def ab_test_list(user_id: int, status: Optional[str] = None):
+    """List A/B tests for a user."""
+    try:
+        ab = get_ab_testing()
+        tests = ab.get_tests(user_id, status=status)
+        return {"tests": tests, "count": len(tests)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/ab-test/{test_id}/start")
+async def ab_test_start(user_id: int, test_id: str):
+    """Start an A/B test."""
+    try:
+        ab = get_ab_testing()
+        test = ab.start_test(user_id, test_id)
+        return test if test else {"error": "Test not found"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/ab-test/{test_id}/end")
+async def ab_test_end(user_id: int, test_id: str):
+    """End test and determine winner."""
+    try:
+        ab = get_ab_testing()
+        test = ab.end_test(user_id, test_id)
+        return test if test else {"error": "Test not found"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
+# ══════════════════════════════════════════════════════════════
+# CAROUSEL TEMPLATES
+# ══════════════════════════════════════════════════════════════
+
+@app.get("/carousel/templates")
+async def carousel_templates(niche: str = ""):
+    """List carousel templates, optionally filtered by niche."""
+    from services.carousel.templates import list_templates, get_templates_by_niche, list_niches
+    if niche:
+        return {"templates": get_templates_by_niche(niche), "niche": niche}
+    return {"templates": list_templates(), "niches": list_niches()}
+
+
+@app.get("/carousel/templates/{template_id}")
+async def carousel_template(template_id: str):
+    """Get a specific carousel template."""
+    from services.carousel.templates import get_template
+    t = get_template(template_id)
+    return t if t else {"error": "Template not found"}
+
+
+# ══════════════════════════════════════════════════════════════
+# CAPTION STYLES
+# ══════════════════════════════════════════════════════════════
+
+@app.get("/captions/styles")
+async def caption_styles():
+    """List available caption styles."""
+    from services.carousel.caption_styles import list_styles
+    return {"styles": list_styles()}
+
+
+@app.get("/captions/presets")
+async def caption_presets():
+    """List available caption presets."""
+    from services.carousel.caption_presets import list_presets
+    return {"presets": list_presets()}
+
+
+class CaptionRequest(BaseModel):
+    topic: str
+    style: str = "hype"
+    platform: str = "tiktok"
+    language: str = "id"
+    max_length: int = 2200
+    include_hashtags: bool = True
+    hashtag_count: int = 10
+
+
+@app.post("/captions/generate")
+async def caption_generate(req: CaptionRequest):
+    """Generate a caption in a specific style."""
+    try:
+        from services.carousel.caption_styles import CaptionGenerator
+        gen = CaptionGenerator()
+        result = gen.generate(
+            topic=req.topic, style=req.style, platform=req.platform,
+            language=req.language, max_length=req.max_length,
+            include_hashtags=req.include_hashtags, hashtag_count=req.hashtag_count,
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ══════════════════════════════════════════════════════════════
+# ENGAGEMENT (Auto-Reply)
+# ══════════════════════════════════════════════════════════════
+_engagement = None
+
+def get_engagement():
+    global _engagement
+    if _engagement is None:
+        from services.engagement import AutoReplyEngine
+        _engagement = AutoReplyEngine()
+    return _engagement
+
+
+class ReplyRequest(BaseModel):
+    profile_id: str
+    comment_text: str
+    platform: str = "tiktok"
+    post_context: str = ""
+
+
+@app.post("/engagement/reply")
+async def engagement_reply(req: ReplyRequest):
+    """Generate and post a reply to a comment."""
+    try:
+        engine = get_engagement()
+        result = engine.reply_to_comment(
+            profile_id=req.profile_id, comment_text=req.comment_text,
+            platform=req.platform, post_context=req.post_context,
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/engagement/stats")
+async def engagement_stats(profile_id: str = ""):
+    """Get engagement reply statistics."""
+    try:
+        engine = get_engagement()
+        return engine.get_reply_stats(profile_id or None)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ══════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════
 # MAIN
 # ══════════════════════════════════════════════════════════════
 

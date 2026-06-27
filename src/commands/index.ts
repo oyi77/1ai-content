@@ -41,6 +41,7 @@ import {
 
 // Content commands (video clipper, editor, rework)
 import { ContentCommands } from "./content.commands";
+import { carouselCommand, autopilotCommand, calendarCommand, abtestCommand } from "./tiktok-automation.commands";
 
 // Feature-based flows
 export * from "@/flows/generate";
@@ -57,9 +58,9 @@ import { paymentSettingsCommand } from "./admin/paymentSettings";
 import { showYouTubeMenu, showChannelList, showChannelDetail, showReports, triggerResearch, showResearchResults, showQuarantine, showAgentLogs } from "./youtube/youtube.menu";
 import {
   showMainDashboard, showCreateMenu, showImageMenu, showChatMenu, showPromptsMenu,
-  showVideosMenu, showTopupMenu, showSubscriptionMenu, showProfileMenu,
-  showReferralMenu, showSettingsMenu, showSupportMenu, showHelpMenu,
-  showEbookMenu, showTrendingMenu,
+  showVideosMenu, showProfileMenu,
+  showSettingsMenu, showSupportMenu, showHelpMenu,
+  showTrendingMenu, showCalendarMenu, showABTestMenu,
 } from "../menus/unified-dashboard";
 
 /**
@@ -120,6 +121,12 @@ export function setupCommands(bot: Telegraf<BotContext>): void {
   bot.command("rework", (ctx) => ContentCommands.handleRework(ctx as any));
   bot.command("scrape", (ctx) => ContentCommands.handleScrape(ctx as any));
 
+  // TikTok automation commands
+  bot.command("carousel", carouselCommand);
+  bot.command("autopilot", autopilotCommand);
+  bot.command("calendar", calendarCommand);
+  bot.command("abtest", abtestCommand);
+
   // YouTube workflow — button-based menu
   bot.command("yt", (ctx) => showYouTubeMenu(ctx));
   bot.command("youtube", (ctx) => showYouTubeMenu(ctx));
@@ -144,15 +151,13 @@ export function setupCommands(bot: Telegraf<BotContext>): void {
   bot.action("menu_chat", (ctx) => showChatMenu(ctx));
   bot.action("menu_prompts", (ctx) => showPromptsMenu(ctx));
   bot.action("menu_videos", (ctx) => showVideosMenu(ctx));
-  bot.action("menu_topup", (ctx) => showTopupMenu(ctx));
-  bot.action("menu_subscription", (ctx) => showSubscriptionMenu(ctx));
   bot.action("menu_profile", (ctx) => showProfileMenu(ctx));
-  bot.action("menu_referral", (ctx) => showReferralMenu(ctx));
   bot.action("menu_settings", (ctx) => showSettingsMenu(ctx));
   bot.action("menu_support", (ctx) => showSupportMenu(ctx));
   bot.action("menu_help", (ctx) => showHelpMenu(ctx));
-  bot.action("menu_ebook", (ctx) => showEbookMenu(ctx));
   bot.action("menu_trending", (ctx) => showTrendingMenu(ctx));
+  bot.action("menu_calendar", (ctx) => showCalendarMenu(ctx));
+  bot.action("menu_abtest", (ctx) => showABTestMenu(ctx));
 
   // Admin commands (with middleware check)
   bot.command("broadcast", adminBroadcastCommand);
@@ -162,28 +167,24 @@ export function setupCommands(bot: Telegraf<BotContext>): void {
   bot.command("payment_settings", paymentSettingsCommand);
   bot.command("admin", paymentSettingsCommand); // Alias
 
-  // Set bot commands menu - show all features accessible
+  // Set bot commands menu — Vilona Content Automation
   bot.telegram.setMyCommands([
     { command: "start", description: "🏠 Start bot & main menu" },
     { command: "create", description: "🎬 Buat video baru" },
     { command: "image", description: "🖼️ Buat foto produk/logo" },
+    { command: "carousel", description: "🖼️ Buat TikTok carousel" },
+    { command: "autopilot", description: "🤖 Auto-generate & publish" },
+    { command: "calendar", description: "📅 Content calendar" },
+    { command: "abtest", description: "🧪 A/B testing konten" },
     { command: "chat", description: "💬 Chat dengan AI Assistant" },
     { command: "prompts", description: "📚 Browse prompt library" },
-    { command: "trending", description: "🔥 Prompt trending minggu ini" },
-    { command: "daily", description: "🎁 Mystery prompt harian" },
-    { command: "videos", description: "📁 Video saya" },
-    { command: "topup", description: "💰 Beli kredit" },
-    { command: "subscription", description: "⭐ Upgrade langganan" },
-    { command: "referral", description: "👥 Referral & affiliate" },
-    { command: "profile", description: "👤 Profil saya" },
-    { command: "settings", description: "⚙️ Pengaturan" },
-    { command: "ebook", description: "📖 Buat ebook dengan AI" },
+    { command: "trending", description: "🔥 Trending content" },
     { command: "viral", description: "🔥 Find viral videos" },
     { command: "clip", description: "✂️ Download & clip videos" },
-    { command: "edit", description: "🎬 Edit videos" },
-    { command: "rework", description: "🔄 Anti-copyright rework" },
     { command: "scrape", description: "🕵️ Scrape competitor content" },
-    { command: "yt", description: "📺 YouTube Dashboard" },
+    { command: "videos", description: "📁 Video saya" },
+    { command: "profile", description: "👤 Profil saya" },
+    { command: "settings", description: "⚙️ Pengaturan" },
     { command: "support", description: "🆘 Hubungi support" },
     { command: "help", description: "📖 Panduan lengkap" },
   ]).catch(() => { /* ignore - bot token may not be set yet */ });

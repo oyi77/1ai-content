@@ -1,86 +1,71 @@
-# Gap Analysis — 1ai-content
-
-**Last Updated:** 2026-06-24
-
-## Priority Classification
-- **P0** — Competitor has it, we don't. Blocker to being competitive. Fix first.
-- **P1** — We have it but competitor does it better. Fix to surpass.
-- **P2** — Nobody has it. First-mover opportunity. Reserve 20% capacity.
+# GAP_ANALYSIS.md — 1AI-Content Prioritized Gap Registry
+## Date: 2026-06-26
 
 ---
 
-## P0 — Critical Gaps (Must Fix)
+## P0 — Competitor has it, we don't. Blocker to being competitive.
 
-### GAP-001: 4K Video Generation
-- **Status:** ❌ Missing
-- **Impact:** All competitors offer 4K, we max at 1080p
-- **Effort:** L (requires provider upgrade)
-- **Solution:** Add Veo 3.1 or Kling 3.0 to provider chain
-
-### GAP-002: 60fps Support
-- **Status:** ❌ Missing
-- **Impact:** Kling AI offers 60fps for smooth social content
-- **Effort:** M (provider capability)
-- **Solution:** Enable 60fps flag in video generation pipeline
-
-### GAP-003: Audio-Video Sync
-- **Status:** ❌ Missing
-- **Impact:** Veo 3.1 has native 48kHz sync
-- **Effort:** L (requires audio pipeline integration)
-- **Solution:** Add audio generation service (ElevenLabs, Bark)
+| GAP-ID | Feature | Who Has It | Impact | Effort | Status |
+|--------|---------|------------|--------|--------|--------|
+| GAP-001 | **Web Dashboard (full)** | All 12 competitors | Users expect visual UI, not just Telegram | XL | 🚧 Partial (landing page exists) |
+| GAP-002 | **DM/Comment Auto-Reply** | Hyper, Hoox, Predis | "Agentic" engagement is 2026 standard | L | ❌ |
+| GAP-003 | **Mobile App** | CapCut, Buffer, Symphony | Creator workflow is mobile-first | XL | ❌ |
+| GAP-004 | **Analytics Dashboard** | Hyper, Buffer, Symphony, Predis | Users need to see ROI/metrics visually | L | 🚧 Partial (Prometheus/Grafana exists) |
 
 ---
 
-## P1 — Competitive Gaps (Improve to Surpass)
+## P1 — We have it but competitor does it better. Fix to surpass.
 
-### GAP-004: Human Motion Quality
-- **Status:** 🚧 Partial
-- **Impact:** Kling AI leads in realistic human motion
-- **Effort:** M (model selection + prompt engineering)
-- **Solution:** Prioritize Kling 3.0 for human-centric content
-
-### GAP-005: Multi-shot Consistency
-- **Status:** 🚧 Partial
-- **Impact:** Veo and Runway maintain character across shots
-- **Effort:** L (requires identity-preserving generation)
-- **Solution:** Implement character consistency pipeline
-
-### GAP-006: Creative Control
-- **Status:** 🚧 Partial
-- **Impact:** Runway offers motion brushes and camera controls
-- **Effort:** L (UI/UX overhaul)
-- **Solution:** Add advanced editing controls to Telegram flow
+| GAP-ID | Feature | Competitor Does Better | Gap | Effort | Status |
+|--------|---------|----------------------|-----|--------|--------|
+| GAP-005 | **Video Quality** | InVideo (Veo 3.1), HeyGen (photorealistic) | Our video gen uses stock footage + basic AI | XL | ✅ Have, need quality upgrade |
+| GAP-006 | **Carousel Templates** | PostNitro, aiCarousels | We have 6 styles; competitors have 50+ templates | M | ✅ Have, need more templates |
+| GAP-007 | **Multi-Platform Analytics** | Buffer, Hyper | We track per-video; they show cross-platform dashboards | L | 🚧 Partial |
+| GAP-008 | **Content Calendar UI** | Buffer, Predis | We have file-based calendar; they have drag-and-drop UI | M | ✅ Backend exists, needs UI |
+| GAP-009 | **Auto-Captions** | CapCut (beat-sync), Submagic | Our captions are basic; theirs are dynamic/styled | M | 🚧 Partial |
+| GAP-010 | **TikTok Native Integration** | Symphony | We use CDP; they use official TikTok API | L | ❌ (API access limited) |
 
 ---
 
-## P2 — First-Mover Opportunities (20% Capacity)
+## P2 — Nobody has it. First-mover opportunity. Reserve 20% capacity.
 
-### GAP-007: AI Video Thumbnails
-- **Status:** ❌ Missing
-- **Impact:** No competitor offers auto-generated thumbnails
-- **Effort:** S
-- **Solution:** Generate thumbnails from video keyframes
-
-### GAP-008: Viral Score Prediction
-- **Status:** ❌ Missing
-- **Impact:** Predict virality before publishing
-- **Effort:** M
-- **Solution:** Train model on historical viral content
-
-### GAP-009: Multi-language Dubbing
-- **Status:** ❌ Missing
-- **Impact:** Auto-dub to multiple languages
-- **Effort:** M
-- **Solution:** Integrate speech synthesis + translation
+| GAP-ID | Feature | Why It's a Moat | Effort | Status |
+|--------|---------|----------------|--------|--------|
+| GAP-011 | **Telegram Bot as Full CMS** | No competitor offers chat-based content management | M | ⭐ We have this |
+| GAP-012 | **Looping Video for Passive Income** | YouTube AdSense via looping content, unique | S | ⭐ We have this |
+| GAP-013 | **Stealth Browser Multi-Account** | CDP-based anti-detection posting, no competitor | M | ⭐ We have this |
+| GAP-014 | **AI Music + Video + Voice Pipeline** | End-to-end content creation with original music | L | ⭐ We have this |
+| GAP-015 | **White-Label Reseller Bot** | Partners can rebrand and sell our bot | M | ⭐ We have this |
+| GAP-016 | **A/B Testing for TikTok Content** | No competitor offers built-in A/B testing | S | ⭐ Just built this |
+| GAP-017 | **Credit-Based Micro-Pricing** | Rp 148K/month entry, cheaper than all competitors | S | ⭐ We have this |
+| GAP-018 | **AI Content Calendar + AutoPilot** | Automated scheduling + generation, rare combo | M | ⭐ Just built this |
 
 ---
 
-## Summary
+## Priority Summary
 
-| Priority | Count | Status |
+| Priority | Count | Action |
 |----------|-------|--------|
-| P0 | 3 | 🔴 Must fix |
-| P1 | 3 | 🟡 Improve |
-| P2 | 3 | 🟢 Opportunity |
+| **P0** | 4 | Fix first. These block competitiveness. |
+| **P1** | 6 | Fix to surpass. These differentiate quality. |
+| **P2** | 8 | Our moats. Protect and enhance. |
 
-**Next Action:** Implement GAP-001 (4K) by adding Veo 3.1 to provider chain.
+## Recommended Sprint Order
+
+### Sprint 1 (Next 2 weeks) — P0 Quick Wins
+1. **GAP-001**: Build minimal web dashboard (Next.js) showing videos, credits, calendar
+2. **GAP-004**: Expose analytics via API → simple dashboard charts
+
+### Sprint 2 (Week 3-4) — P1 Quality
+3. **GAP-006**: Add 20+ carousel templates (seasonal, niche-specific)
+4. **GAP-008**: Calendar drag-and-drop UI in web dashboard
+5. **GAP-009**: Dynamic caption styles (hype, minimal, neon, handwritten)
+
+### Sprint 3 (Week 5-6) — P1 + P0
+6. **GAP-002**: Comment auto-reply via CloakBrowser
+7. **GAP-007**: Cross-platform analytics dashboard
+8. **GAP-005**: Upgrade video gen to use Kling AI / Veo for higher quality
+
+### Sprint 4 (Week 7-8) — P0 + Enhancement
+9. **GAP-003**: PWA mobile app (installable from Telegram)
+10. **GAP-010**: TikTok Creator API integration (when available)

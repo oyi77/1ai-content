@@ -20,6 +20,7 @@ Usage:
 """
 
 import uuid
+from typing import Optional
 from datetime import datetime
 
 
@@ -68,12 +69,9 @@ class AutoPilotScheduler:
         """Return all jobs with their status."""
         return list(self.jobs.values())
 
-    def get_job(self, job_id: str) -> dict:
-        """Return a specific job by ID."""
-        job = self.jobs.get(job_id)
-        if not job:
-            return {"success": False, "error": f"Job {job_id} not found"}
-        return job
+    def get_job(self, job_id: str) -> Optional[dict]:
+        """Return a specific job by ID, or None if not found."""
+        return self.jobs.get(job_id)
 
     def stop_job(self, job_id: str) -> dict:
         """Stop an active job."""

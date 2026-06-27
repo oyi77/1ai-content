@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>1AI Content Dashboard</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#6366f1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg: #0f0f23; --card: #1a1a2e; --accent: #6366f1; --green: #22c55e; --red: #ef4444; --text: #e2e8f0; --muted: #94a3b8; --border: #334155; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+    .header h1 { font-size: 24px; font-weight: 800; }
+    .header h1 span { color: var(--accent); }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 30px; }
+    .stat-card { background: var(--card); border-radius: 12px; padding: 20px; border: 1px solid var(--border); }
+    .stat-card .label { font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+    .stat-card .value { font-size: 28px; font-weight: 800; }
+    .stat-card .change { font-size: 12px; margin-top: 4px; }
+    .stat-card .change.up { color: var(--green); }
+    .stat-card .change.down { color: var(--red); }
+    .section { background: var(--card); border-radius: 12px; padding: 24px; border: 1px solid var(--border); margin-bottom: 20px; }
+    .section h2 { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+    .tab { padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; font-size: 13px; }
+    .tab.active { background: var(--accent); color: white; border-color: var(--accent); }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 14px; }
+    th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+    .badge-green { background: #22c55e22; color: var(--green); }
+    .badge-yellow { background: #eab30822; color: #eab308; }
+    .badge-red { background: #ef444422; color: var(--red); }
+    .badge-blue { background: #3b82f622; color: #3b82f6; }
+    .chart-placeholder { height: 200px; background: var(--bg); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--muted); }
+    .actions { display: flex; gap: 8px; margin-bottom: 20px; }
+    .btn { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; font-size: 14px; }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    @media (max-width: 768px) { .stats-grid { grid-template-columns: 1fr 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📊 <span>1AI</span> Content Dashboard</h1>
+      <div>
+        <button class="btn btn-secondary" onclick="refreshData()">🔄 Refresh</button>
+        <button class="btn btn-primary" onclick="window.open('https://t.me/your_bot','_blank')">🤖 Open Bot</button>
+      </div>
+    </div>
+
+    <div class="stats-grid" id="statsGrid">
+      <div class="stat-card"><div class="label">Total Videos</div><div class="value" id="totalVideos">—</div><div class="change up" id="videoChange"></div></div>
+      <div class="stat-card"><div class="label">Carousels</div><div class="value" id="totalCarousels">—</div><div class="change up" id="carouselChange"></div></div>
+      <div class="stat-card"><div class="label">Active Users</div><div class="value" id="activeUsers">—</div><div class="change up" id="userChange"></div></div>
+      <div class="stat-card"><div class="label">Credits Used</div><div class="value" id="creditsUsed">—</div><div class="change" id="creditChange"></div></div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" onclick="location.href='#videos'">🎬 Videos</button>
+      <button class="btn btn-secondary" onclick="location.href='#carousels'">🖼️ Carousels</button>
+      <button class="btn btn-secondary" onclick="location.href='#calendar'">📅 Calendar</button>
+      <button class="btn btn-secondary" onclick="location.href='#abtest'">🧪 A/B Tests</button>
+    </div>
+
+    <div class="section" id="videos">
+      <h2>🎬 Recent Videos</h2>
+      <table>
+        <thead><tr><th>Title</th><th>Platform</th><th>Status</th><th>Credits</th><th>Date</th></tr></thead>
+        <tbody id="videoTable"><tr><td colspan="5" style="color:var(--muted)">Loading...</td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="section" id="carousels">
+      <h2>🖼️ Carousels</h2>
+      <table>
+        <thead><tr><th>Topic</th><th>Slides</th><th>Style</th><th>Status</th><th>Date</th></tr></thead>
+        <tbody id="carouselTable"><tr><td colspan="5" style="color:var(--muted)">Loading...</td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="section" id="calendar">
+      <h2>📅 Content Calendar</h2>
+      <table>
+        <thead><tr><th>Topic</th><th>Platform</th><th>Type</th><th>Scheduled</th><th>Status</th></tr></thead>
+        <tbody id="calendarTable"><tr><td colspan="5" style="color:var(--muted)">Loading...</td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="section" id="abtest">
+      <h2>🧪 A/B Tests</h2>
+      <table>
+        <thead><tr><th>Name</th><th>Type</th><th>Status</th><th>Winner</th><th>Created</th></tr></thead>
+        <tbody id="abtestTable"><tr><td colspan="5" style="color:var(--muted)">Loading...</td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <h2>📈 Engagement Trend (30 days)</h2>
+      <div class="chart-placeholder" id="trendChart">Chart loads with data</div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = window.location.origin;
+
+    async function fetchJSON(path) {
+      try {
+        const r = await fetch(API_BASE + path);
+        if (!r.ok) return null;
+        return await r.json();
+      } catch { return null; }
+    }
+
+    async function refreshData() {
+      // Overview
+      const overview = await fetchJSON('/api/analytics/overview?days=30');
+      if (overview) {
+        document.getElementById('totalVideos').textContent = overview.totals?.videos ?? '—';
+        document.getElementById('activeUsers').textContent = '—';
+        document.getElementById('creditsUsed').textContent = overview.totals?.credits_used ?? '—';
+      }
+
+      // Users
+      const users = await fetchJSON('/api/analytics/users');
+      if (users) {
+        document.getElementById('activeUsers').textContent = users.active_7d ?? '—';
+      }
+
+      // Videos table
+      document.getElementById('videoTable').innerHTML = '<tr><td colspan="5" style="color:var(--muted)">Connect to API for live data</td></tr>';
+      document.getElementById('carouselTable').innerHTML = '<tr><td colspan="5" style="color:var(--muted)">Connect to API for live data</td></tr>';
+      document.getElementById('calendarTable').innerHTML = '<tr><td colspan="5" style="color:var(--muted)">Connect to API for live data</td></tr>';
+      document.getElementById('abtestTable').innerHTML = '<tr><td colspan="5" style="color:var(--muted)">Connect to API for live data</td></tr>';
+    }
+
+    refreshData();
+  </script>
+</body>
+</html>

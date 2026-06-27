@@ -146,6 +146,9 @@ model User {
   videoReworks   VideoRework[]
   whiteLabelBots WhiteLabelBot[]
   viralScans     ViralScan[]
+  carousels      Carousel[]
+  contentCalendar ContentCalendar[]
+  abTests        ABTest[]
 
   @@index([telegramId])
   @@index([referralCode])
@@ -962,4 +965,136 @@ model YtAgentTaskLog {
   @@index([status])
   @@index([startedAt])
   @@map("yt_agent_task_logs")
+}
+
+// =============================================================================
+// CAROUSEL MODEL (TikTok Image Carousel)
+// =============================================================================
+model Carousel {
+  id     BigInt @id @default(autoincrement())
+  userId BigInt @map("user_id")
+  jobId  String @unique @map("job_id") @db.VarChar(64)
+
+  // Content
+  topic      String   @db.VarChar(255)
+  caption    String?  @db.Text
+  hashtags   String[]
+  slideCount Int      @default(0) @map("slide_count")
+  style      String   @default("outline") @db.VarChar(32)
+  language   String   @default("id") @db.VarChar(5)
+  platform   String   @default("tiktok") @db.VarChar(32)
+
+  // Output
+  slideUrls  String[] @map("slide_urls")
+  coverUrl   String?  @map("cover_url")
+
+  // Status
+  status     String  @default("processing") @db.VarChar(16)
+  progress   Int     @default(0)
+  errorMsg   String? @map("error_message")
+
+  // Credits
+  creditsUsed Decimal @map("credits_used") @db.Decimal(10, 2)
+
+  // Timestamps
+  createdAt   DateTime  @default(now()) @map("created_at")
+  completedAt DateTime? @map("completed_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [telegramId])
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("carousels")
+}
+
+// =============================================================================
+// CONTENT CALENDAR MODEL
+// =============================================================================
+model ContentCalendar {
+  id     BigInt @id @default(autoincrement())
+  userId BigInt @map("user_id")
+
+  // Schedule
+  scheduledAt DateTime @map("scheduled_at")
+  platform    String   @db.VarChar(32)
+  contentType String   @map("content_type") @db.VarChar(32) // video, carousel, image
+
+  // Content reference
+  topic      String?  @db.VarChar(255)
+  caption    String?  @db.Text
+  hashtags   String[]
+  mediaUrl   String?  @map("media_url") @db.VarChar(512)
+  mediaType  String?  @map("media_type") @db.VarChar(16)
+
+  // Status
+  status String @default("scheduled") @db.VarChar(16) // scheduled, generating, ready, published, failed, skipped
+
+  // Metadata
+  niche     String? @db.VarChar(64)
+  style     String? @db.VarChar(32)
+  language  String  @default("id") @db.VarChar(5)
+  autoPost  Boolean @default(false) @map("auto_post")
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [telegramId])
+
+  @@index([userId])
+  @@index([scheduledAt])
+  @@index([status])
+  @@map("content_calendar")
+}
+
+// =============================================================================
+// A/B TEST MODEL
+// =============================================================================
+model ABTest {
+  id     BigInt @id @default(autoincrement())
+  userId BigInt @map("user_id")
+
+  // Test config
+  name        String @db.VarChar(128)
+  description String? @db.Text
+  platform    String  @db.VarChar(32)
+  contentType String  @map("content_type") @db.VarChar(32) // video, carousel, caption
+
+  // Variants (A and B)
+  variantACaption String?  @map("variant_a_caption") @db.Text
+  variantBCaption String?  @map("variant_b_caption") @db.Text
+  variantAUrl     String?  @map("variant_a_url") @db.VarChar(512)
+  variantBUrl     String?  @map("variant_b_url") @db.VarChar(512)
+  variantAThumb   String?  @map("variant_a_thumb") @db.VarChar(512)
+  variantBThumb   String?  @map("variant_b_thumb") @db.VarChar(512)
+
+  // Results
+  variantAViews    Int @default(0) @map("variant_a_views")
+  variantALikes    Int @default(0) @map("variant_a_likes")
+  variantAShares   Int @default(0) @map("variant_a_shares")
+  variantAComments Int @default(0) @map("variant_a_comments")
+  variantBViews    Int @default(0) @map("variant_b_views")
+  variantBLikes    Int @default(0) @map("variant_b_likes")
+  variantBShares   Int @default(0) @map("variant_b_shares")
+  variantBComments Int @default(0) @map("variant_b_comments")
+
+  // Status
+  status     String   @default("draft") @db.VarChar(16) // draft, running, completed, archived
+  winner     String?  @db.VarChar(8) // A, B, null
+  startedAt  DateTime? @map("started_at")
+  endedAt    DateTime? @map("ended_at")
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [telegramId])
+
+  @@index([userId])
+  @@index([status])
+  @@map("ab_tests")
 }

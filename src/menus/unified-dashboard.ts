@@ -27,7 +27,7 @@ export async function showMainDashboard(ctx: BotContext): Promise<void> {
   const text = [
     `👋 ${user.first_name}`,
     "",
-    `${creditEmoji} Credits: ${credits} | Tier: ${tier}`,
+    `🤖 Vilona Content Automation`,
     "",
     "Pilih menu:",
   ].join("\n");
@@ -38,30 +38,27 @@ export async function showMainDashboard(ctx: BotContext): Promise<void> {
       { text: "🖼️ Buat Foto", callback_data: "menu_image" },
     ],
     [
-      { text: "💬 AI Chat", callback_data: "menu_chat" },
-      { text: "📚 Prompt Library", callback_data: "menu_prompts" },
+      { text: "🖼️ Carousel", callback_data: "carousel_regenerate" },
+      { text: "🤖 AutoPilot", callback_data: "autopilot_run" },
     ],
     [
-      { text: "📁 Video Saya", callback_data: "menu_videos" },
+      { text: "📅 Calendar", callback_data: "menu_calendar" },
+      { text: "🧪 A/B Test", callback_data: "menu_abtest" },
+    ],
+    [
       { text: "🔥 Trending", callback_data: "menu_trending" },
+      { text: "📁 Video Saya", callback_data: "menu_videos" },
     ],
     [
-      { text: "📺 YouTube", callback_data: "yt_menu_refresh" },
-      { text: "📖 Ebook", callback_data: "menu_ebook" },
-    ],
-    [
-      { text: "💰 Topup", callback_data: "menu_topup" },
-      { text: "⭐ Subscription", callback_data: "menu_subscription" },
+      { text: "💬 AI Chat", callback_data: "menu_chat" },
+      { text: "📚 Prompts", callback_data: "menu_prompts" },
     ],
     [
       { text: "👤 Profil", callback_data: "menu_profile" },
-      { text: "👥 Referral", callback_data: "menu_referral" },
-    ],
-    [
       { text: "⚙️ Settings", callback_data: "menu_settings" },
-      { text: "🆘 Support", callback_data: "menu_support" },
     ],
     [
+      { text: "🆘 Support", callback_data: "menu_support" },
       { text: "📖 Help", callback_data: "menu_help" },
     ],
   ];
@@ -237,16 +234,28 @@ export async function showSupportMenu(ctx: BotContext): Promise<void> {
 
 export async function showHelpMenu(ctx: BotContext): Promise<void> {
   await ctx.answerCbQuery?.();
-  await ctx.editMessageText("📖 *Help*\n\nPanduan penggunaan bot:", {
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: "🎬 Cara Buat Video", callback_data: "help_video" }],
-        [{ text: "🖼️ Cara Buat Foto", callback_data: "help_image" }],
-        [{ text: "💰 Cara Topup", callback_data: "help_topup" }],
-        [{ text: "🔙 Kembali", callback_data: "menu_main" }],
-      ],
+  await ctx.editMessageText(
+    "📖 *Panduan Vilona Content*\n\n" +
+    "🎬 `/create` — Buat video dari ide/link/file\n" +
+    "🖼️ `/image` — Buat foto produk AI\n" +
+    "🖼️ `/carousel` — Buat TikTok carousel\n" +
+    "🤖 `/autopilot` — Auto-generate & publish\n" +
+    "📅 `/calendar` — Content calendar\n" +
+    "🧪 `/abtest` — A/B testing konten\n" +
+    "💬 `/chat` — Chat dengan AI\n" +
+    "🔥 `/trending` — Lihat trending\n" +
+    "🔥 `/viral` — Cari konten viral\n" +
+    "✂️ `/clip` — Download & clip video\n" +
+    "🕵️ `/scrape` — Scrape kompetitor",
+    {
+      parse_mode: "Markdown",
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: "🔙 Kembali", callback_data: "menu_main" }],
+        ],
+      },
     },
-  });
+  );
 }
 
 export async function showEbookMenu(ctx: BotContext): Promise<void> {
@@ -269,6 +278,7 @@ export async function showTrendingMenu(ctx: BotContext): Promise<void> {
       inline_keyboard: [
         [{ text: "🔥 Viral Videos", callback_data: "viral_scan" }],
         [{ text: "📊 Trending Prompts", callback_data: "prompts_trending" }],
+        [{ text: "🔥 Scan & Generate Konten", callback_data: "trending_scan_generate" }],
         [{ text: "🔙 Kembali", callback_data: "menu_main" }],
       ],
     },
@@ -277,9 +287,89 @@ export async function showTrendingMenu(ctx: BotContext): Promise<void> {
 
 export async function showChatMenu(ctx: BotContext): Promise<void> {
   await ctx.answerCbQuery?.();
-  await ctx.editMessageText("💬 *AI Chat*\n\nChat dengan AI assistant. Ketik pesan kamu langsung.", {
+  await ctx.editMessageText(
+    "💬 *AI Chat Assistant*\n\n" +
+    "Chat langsung dengan AI untuk:\n" +
+    "• Brainstorm ide konten\n" +
+    "• Tulis caption viral\n" +
+    "• Riset topik\n" +
+    "• Tanya apapun\n\n" +
+    "Ketik pesan kamu langsung di chat ini!",
+    {
+      parse_mode: "Markdown",
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: "🔙 Kembali", callback_data: "menu_main" }],
+        ],
+      },
+    },
+  );
+}
+
+export async function showCalendarMenu(ctx: BotContext): Promise<void> {
+  const user = ctx.from;
+  if (!user) return;
+  await ctx.answerCbQuery?.();
+
+  const text = [
+    "📅 *Content Calendar*",
+    "",
+    "Jadwalkan konten kamu untuk auto-publish.",
+    "",
+    "📌 *Fitur:*",
+    "• Schedule video & carousel",
+    "• Auto-publish ke TikTok",
+    "• Bulk schedule 1 minggu",
+    "• Stats & tracking",
+    "",
+ "Ketik `/calendar` untuk lihat jadwal",
+    "Ketik `/calendar schedule <topic> | <tanggal>` untuk schedule",
+  ].join("\n");
+
+  await ctx.editMessageText(text, {
+    parse_mode: "Markdown",
     reply_markup: {
       inline_keyboard: [
+        [
+          { text: "📅 Lihat Jadwal", callback_data: "cal_list_all" },
+          { text: "📊 Stats", callback_data: "cal_stats" },
+        ],
+        [{ text: "➕ Schedule Sekarang", callback_data: "cal_schedule" }],
+        [{ text: "🔙 Kembali", callback_data: "menu_main" }],
+      ],
+    },
+  });
+}
+
+export async function showABTestMenu(ctx: BotContext): Promise<void> {
+  await ctx.answerCbQuery?.();
+
+  const text = [
+    "🧪 *A/B Testing*",
+    "",
+    "Test 2 versi konten untuk lihat mana yang lebih viral.",
+    "",
+    "📌 *Fitur:*",
+    "• AI generate 2 variant (A & B)",
+    "• Track views, likes, shares, comments",
+    "• Auto-determine winner",
+    "",
+    "Ketik `/abtest` untuk lihat test",
+    "Ketik `/abtest create <topic>` untuk bikin test baru",
+  ].join("\n");
+
+  await ctx.editMessageText(text, {
+    parse_mode: "Markdown",
+    reply_markup: {
+      inline_keyboard: [
+        [
+          { text: "➕ New Test", callback_data: "ab_new" },
+          { text: "▶️ Running", callback_data: "ab_list_running" },
+        ],
+        [
+          { text: "✅ Results", callback_data: "ab_list_completed" },
+          { text: "📊 Stats", callback_data: "ab_stats" },
+        ],
         [{ text: "🔙 Kembali", callback_data: "menu_main" }],
       ],
     },

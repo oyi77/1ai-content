@@ -367,6 +367,34 @@ export async function messageHandler(ctx: BotContext): Promise<void> {
       handleImageGenerationWaiting,
       handleCloneEditDescWaiting,
       handleCloneVideoWaiting,
+      // Carousel topic waiting
+      async (c) => {
+        if (!c.session?.stateData?.waitingForCarouselTopic || !("text" in (c.message ?? {}))) return false;
+        const msg = c.message as { text: string };
+        const topic = msg.text?.trim();
+        if (!topic) return false;
+        c.session.stateData = { ...c.session.stateData, waitingForCarouselTopic: false, carouselTopic: topic };
+        const { tiktokAutomation } = await import("@/services/tiktok-automation.service.js");
+        await c.reply("🖼️ Generating carousel...\n⏳ Mohon tunggu 30-60 detik.");
+        try {
+          const result = await tiktokAutomation.createCarousel({ topic });
+          if (result.success && result.slides) {
+            const fs = await import("fs");
+            for (const slidePath of result.slides) {
+              if (fs.existsSync(slidePath)) {
+                await c.replyWithPhoto({ source: slidePath });
+              }
+            }
+            await c.reply(`✅ Carousel *${result.content?.title ?? topic}* selesai!`, { parse_mode: "Markdown" });
+          } else {
+            await c.reply(`❌ Gagal: ${result.error ?? "Unknown error"}`);
+          }
+        } catch (err: unknown) {
+          const msg2 = err instanceof Error ? err.message : String(err);
+          await c.reply(`❌ Error: ${msg2}`);
+        }
+        return true;
+      },
     ];
 
     for (const handler of handlers) {

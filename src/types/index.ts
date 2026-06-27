@@ -108,6 +108,13 @@ export interface SessionData {
   ebookLanguage?: string;
   ebookMode?: string;
   ebookProjectId?: number;
+
+  // TikTok automation state
+  waitingForCarouselTopic?: boolean;
+  carouselTopic?: string;
+  carouselStyle?: string;
+  abTopic?: string;
+  trendingTopics?: string[];
 }
 
 export type BotState =
