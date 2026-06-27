@@ -497,6 +497,197 @@ export async function handleTikTokAutomationCallbacks(ctx: BotContext, data: str
       return true;
     }
 
+    // ── Create Menu Callbacks ────────────────────────────────
+    if (data === 'create_voice') {
+      await ctx.answerCbQuery();
+      await ctx.reply(
+        '🎤 *Voiceover AI*\n\nPilih bahasa & gender:',
+        {
+          parse_mode: 'Markdown',
+          reply_markup: {
+            inline_keyboard: [
+              [
+                { text: '🇮🇩 Male', callback_data: 'voice_select_id_male' },
+                { text: '🇮🇩 Female', callback_data: 'voice_select_id_female' },
+              ],
+              [
+                { text: '🇺🇸 Male', callback_data: 'voice_select_en_male' },
+                { text: '🇺🇸 Female', callback_data: 'voice_select_en_female' },
+              ],
+              [{ text: '🔙 Kembali', callback_data: 'menu_create' }],
+            ],
+          },
+        },
+      );
+      return true;
+    }
+
+    if (data === 'create_music') {
+      await ctx.answerCbQuery();
+      await ctx.reply(
+        '🎵 *Musik AI (Suno)*\n\nPilih genre atau ketik prompt sendiri:',
+        {
+          parse_mode: 'Markdown',
+          reply_markup: {
+            inline_keyboard: [
+              [
+                { text: '🎵 Lo-Fi', callback_data: 'suno_preset_lofi' },
+                { text: '🎹 Piano', callback_data: 'suno_preset_piano' },
+              ],
+              [
+                { text: '🎸 Corporate', callback_data: 'suno_preset_corporate' },
+                { text: '🎬 Cinematic', callback_data: 'suno_preset_cinematic' },
+              ],
+              [
+                { text: '🧘 Meditation', callback_data: 'suno_preset_meditation' },
+                { text: '🎮 Retro', callback_data: 'suno_preset_retro' },
+              ],
+              [{ text: '🔙 Kembali', callback_data: 'menu_create' }],
+            ],
+          },
+        },
+      );
+      return true;
+    }
+
+    if (data === 'create_loop') {
+      await ctx.answerCbQuery();
+      await ctx.reply(
+        '🔁 *Video Loop*\n\nBuat video looping dari audio.\n\n' +
+ 'Ketik: `/loop <audio_file>`\n\n' +
+        'Atau kirim file audio langsung ke bot.',
+        { parse_mode: 'Markdown' },
+      );
+      return true;
+    }
+
+    if (data === 'create_storyboard') {
+      await ctx.answerCbQuery();
+      await ctx.reply(
+        '📋 *Storyboard AI*\n\nBuat storyboard dari prompt.\n\n' +
+ 'Ketik: `/storyboard <deskripsi>`\n\n' +
+        'Contoh: `/storyboard Produk skincare dengan model di pantai`',
+        { parse_mode: 'Markdown' },
+      );
+      return true;
+    }
+
+    if (data === 'create_from_link') {
+      await ctx.answerCbQuery();
+      await ctx.reply(
+        '🔗 *Video dari Link*\n\nDownload & rework video dari URL.\n\n' +
+ 'Ketik: `/clip <url>`\n\n' +
+        'Contoh: `/clip https://tiktok.com/...`',
+        { parse_mode: 'Markdown' },
+      );
+      return true;
+    }
+
+    if (data === 'create_from_file') {
+      await ctx.answerCbQuery();
+      await ctx.reply(
+        '📄 *Video dari File*\n\nKirim video langsung ke bot, lalu ketik `/edit` untuk edit.',
+        { parse_mode: 'Markdown' },
+      );
+      return true;
+    }
+
+    // ── Prompts Menu Callbacks ───────────────────────────────
+    if (data === 'prompts_trending') {
+      await ctx.answerCbQuery();
+      const { trendingCommand } = await import('@/commands/prompts.js');
+      await trendingCommand(ctx);
+      return true;
+    }
+
+    if (data === 'prompts_daily') {
+      await ctx.answerCbQuery();
+      const { dailyCommand } = await import('@/commands/prompts.js');
+      await dailyCommand(ctx);
+      return true;
+    }
+
+    if (data === 'prompts_fingerprint') {
+      await ctx.answerCbQuery();
+      const { fingerprintCommand } = await import('@/commands/prompts.js');
+      await fingerprintCommand(ctx);
+      return true;
+    }
+
+    // ── Videos Menu Callbacks ────────────────────────────────
+    if (data === 'videos_list' || data === 'videos_favorites') {
+      await ctx.answerCbQuery();
+      const { videosCommand } = await import('@/commands/videos.js');
+      await videosCommand(ctx);
+      return true;
+    }
+
+    // ── Settings Menu Callbacks ──────────────────────────────
+    if (data === 'settings_language') {
+      await ctx.answerCbQuery();
+      await ctx.reply(
+        '🌐 *Bahasa*\n\nPilih bahasa:',
+        {
+          parse_mode: 'Markdown',
+          reply_markup: {
+            inline_keyboard: [
+              [
+                { text: '🇮🇩 Indonesia', callback_data: 'set_lang_id' },
+                { text: '🇺🇸 English', callback_data: 'set_lang_en' },
+              ],
+              [{ text: '🔙 Kembali', callback_data: 'menu_settings' }],
+            ],
+          },
+        },
+      );
+      return true;
+    }
+
+    if (data === 'settings_notifications') {
+      await ctx.answerCbQuery();
+      await ctx.reply('🔔 Notifikasi sudah aktif secara default.\n\nUntuk menonaktifkan: ketik `/settings`', { parse_mode: 'Markdown' });
+      return true;
+    }
+
+    if (data === 'settings_delete_account') {
+      await ctx.answerCbQuery();
+      await ctx.reply('🗑️ Ketik `/delete_account` untuk menghapus akun.\n\n⚠️ Tindakan ini tidak dapat dibatalkan.', { parse_mode: 'Markdown' });
+      return true;
+    }
+
+    // ── Support Menu Callbacks ───────────────────────────────
+    if (data === 'support_chat') {
+      await ctx.answerCbQuery();
+      await ctx.reply('💬 Ketik `/support` untuk menghubungi admin.');
+      return true;
+    }
+
+    if (data === 'support_faq') {
+      await ctx.answerCbQuery();
+      await ctx.reply(
+        '📖 *FAQ*\n\n' +
+        '❓ *Cara buat video?*\nKetik `/create` atau klik 🎬 Buat Video\n\n' +
+ '❓ *Cara buat carousel?*\nKetik `/carousel <topik>`\n\n' +
+ '❓ *Cara schedule konten?*\nKetik `/calendar schedule <topik> | <tanggal>`\n\n' +
+ '❓ *Cara A/B test?*\nKetik `/abtest create <topik>`\n\n' +
+ '❓ *Cara dapat bantuan?*\nKetik `/support` untuk chat admin',
+        { parse_mode: 'Markdown' },
+      );
+      return true;
+    }
+
+    // ── Viral Scan Callback ──────────────────────────────────
+    if (data === 'viral_scan') {
+      await ctx.answerCbQuery();
+      await ctx.reply(
+        '🔥 *Viral Scanner*\n\nCari konten viral di YouTube/TikTok.\n\n' +
+ 'Ketik: `/viral <niche>`\n\n' +
+        'Contoh: `/viral fitness`\n`/viral food review`',
+        { parse_mode: 'Markdown' },
+      );
+      return true;
+    }
+
     // ── Calendar Menu Callbacks ────────────────────────────────
     if (data === 'cal_list_all') {
       await ctx.answerCbQuery();
