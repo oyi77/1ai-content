@@ -332,29 +332,62 @@ export class TikTokAutomationService {
     }
   }
 
-  // ── Content Regeneration ─────────────────────────────────
+  // ── Content Repurpose (anti-copyright remix) ─────────────
 
+  async repurposeContent(options: {
+    sources: string[];
+    targetDuration?: number;
+    platform?: string;
+    niche?: string;
+    style?: string;
+    language?: string;
+    colorPreset?: string;
+    transitionStyle?: string;
+    overlayText?: string;
+    overlayPosition?: string;
+    watermarkText?: string;
+    watermarkImage?: string;
+    bgmPath?: string;
+    bgmVolume?: number;
+    voiceoverPath?: string;
+    speedMin?: number;
+    speedMax?: number;
+    addSubtitles?: boolean;
+    subtitleStyle?: string;
+  }): Promise<Record<string, unknown>> {
+    const { data } = await this.client.post('/repurpose', {
+      sources: options.sources,
+      target_duration: options.targetDuration ?? 180,
+      platform: options.platform ?? 'tiktok',
+      niche: options.niche ?? 'general',
+      style: options.style ?? 'educational',
+      language: options.language ?? 'id',
+      color_preset: options.colorPreset ?? 'cinematic',
+      transition_style: options.transitionStyle ?? 'crossfade',
+      overlay_text: options.overlayText ?? '',
+      overlay_position: options.overlayPosition ?? 'lower_third',
+      watermark_text: options.watermarkText ?? '',
+      watermark_image: options.watermarkImage ?? '',
+      bgm_path: options.bgmPath ?? '',
+      bgm_volume: options.bgmVolume ?? 0.15,
+      voiceover_path: options.voiceoverPath ?? '',
+      speed_min: options.speedMin ?? 0.8,
+      speed_max: options.speedMax ?? 1.5,
+      add_subtitles: options.addSubtitles ?? true,
+      subtitle_style: options.subtitleStyle ?? 'karaoke',
+    });
+    return data as Record<string, unknown>;
+  }
+
+  /** Backward compat alias */
   async regenerateContent(options: {
     sources: string[];
     targetDuration?: number;
     niche?: string;
     style?: string;
     language?: string;
-    overlayPreset?: string;
-    addSubtitles?: boolean;
-    addTransitions?: boolean;
   }): Promise<Record<string, unknown>> {
-    const { data } = await this.client.post('/regenerate', {
-      sources: options.sources,
-      target_duration: options.targetDuration ?? 180,
-      niche: options.niche ?? 'general',
-      style: options.style ?? 'educational',
-      language: options.language ?? 'id',
-      overlay_preset: options.overlayPreset ?? 'educational',
-      add_subtitles: options.addSubtitles ?? true,
-      add_transitions: options.addTransitions ?? true,
-    });
-    return data as Record<string, unknown>;
+    return this.repurposeContent(options);
   }
 }
 

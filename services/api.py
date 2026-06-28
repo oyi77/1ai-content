@@ -916,47 +916,75 @@ async def engagement_stats(profile_id: str = ""):
 
 
 # ══════════════════════════════════════════════════════════════
-# CONTENT REGENERATION
+# CONTENT REPURPOSE (formerly regeneration)
 # ══════════════════════════════════════════════════════════════
-_regenerator = None
+_repurpose_engine = None
 
-def get_regenerator():
-    global _regenerator
-    if _regenerator is None:
-        from services.regenerator.engine import ContentRegenerator
-        _regenerator = ContentRegenerator()
-    return _regenerator
+def get_repurpose_engine():
+    global _repurpose_engine
+    if _repurpose_engine is None:
+        from services.repurpose.engine import RepurposeEngine
+        _repurpose_engine = RepurposeEngine()
+    return _repurpose_engine
 
 
-class RegenerateRequest(BaseModel):
+class RepurposeRequest(BaseModel):
     sources: list[str]
     target_duration: int = 180
+    platform: str = "tiktok"
     niche: str = "general"
     style: str = "educational"
     language: str = "id"
-    overlay_preset: str = "educational"
+    color_preset: str = "cinematic"
+    transition_style: str = "crossfade"
+    overlay_text: str = ""
+    overlay_position: str = "lower_third"
+    watermark_text: str = ""
+    watermark_image: str = ""
+    bgm_path: str = ""
+    bgm_volume: float = 0.15
+    voiceover_path: str = ""
+    speed_min: float = 0.8
+    speed_max: float = 1.5
     add_subtitles: bool = True
-    add_transitions: bool = True
+    subtitle_style: str = "karaoke"
 
 
-@app.post("/regenerate")
-async def regenerate_content(req: RegenerateRequest):
-    """Regenerate content from multiple sources — anti-copyright remix."""
+@app.post("/repurpose")
+async def repurpose_content(req: RepurposeRequest):
+    """Repurpose content from multiple sources — anti-copyright remix with full options."""
     try:
-        engine = get_regenerator()
-        result = engine.regenerate(
+        engine = get_repurpose_engine()
+        result = engine.repurpose(
             sources=req.sources,
             target_duration=req.target_duration,
+            platform=req.platform,
             niche=req.niche,
             style=req.style,
             language=req.language,
-            overlay_preset=req.overlay_preset,
+            color_preset=req.color_preset,
+            transition_style=req.transition_style,
+            overlay_text=req.overlay_text or None,
+            overlay_position=req.overlay_position,
+            watermark_text=req.watermark_text or None,
+            watermark_image=req.watermark_image or None,
+            bgm_path=req.bgm_path or None,
+            bgm_volume=req.bgm_volume,
+            voiceover_path=req.voiceover_path or None,
+            speed_range=(req.speed_min, req.speed_max),
             add_subtitles=req.add_subtitles,
-            add_transitions=req.add_transitions,
+            subtitle_style=req.subtitle_style,
         )
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# Backward compat alias
+@app.post("/regenerate")
+async def regenerate_content(req: RepurposeRequest):
+    """Alias for /repurpose (backward compatibility)."""
+    return await repurpose_content(req)
 
 
 # ══════════════════════════════════════════════════════════════

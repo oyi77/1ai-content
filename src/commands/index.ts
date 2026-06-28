@@ -40,7 +40,7 @@ import {
 
 // Content commands (video clipper, editor, rework)
 import { ContentCommands } from "./content.commands";
-import { carouselCommand, autopilotCommand, calendarCommand, abtestCommand, regenCommand } from "./tiktok-automation.commands";
+import { carouselCommand, autopilotCommand, calendarCommand, abtestCommand, repurposeCommand, regenCommand } from "./tiktok-automation.commands";
 
 // Feature-based flows
 export * from "@/flows/generate";
@@ -125,6 +125,7 @@ export function setupCommands(bot: Telegraf<BotContext>): void {
   bot.command("calendar", calendarCommand);
   bot.command("abtest", abtestCommand);
   bot.command("regen", regenCommand);
+  bot.command("repurpose", repurposeCommand);
 
   // YouTube workflow — button-based menu
   bot.command("yt", (ctx) => showYouTubeMenu(ctx));
@@ -180,8 +181,8 @@ export function setupCommands(bot: Telegraf<BotContext>): void {
     { command: "trending", description: "🔥 Trending content" },
     { command: "viral", description: "🔥 Find viral videos" },
     { command: "clip", description: "✂️ Download & clip videos" },
-    { command: "scrape", description: "🕵️ Scrape competitor content" },
-    { command: "regen", description: "🔄 Regenerate content (anti-copyright)" },
+    { command: "repurpose", description: "🔄 Repurpose content (anti-copyright remix)" },
+    { command: "regen", description: "🔄 Alias for repurpose" },
     { command: "videos", description: "📁 Video saya" },
     { command: "profile", description: "👤 Profil saya" },
     { command: "settings", description: "⚙️ Pengaturan" },
