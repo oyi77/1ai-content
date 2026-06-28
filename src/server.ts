@@ -164,6 +164,9 @@ export async function registerRoutes(
   // Analytics API
   await app.register(analyticsRoutes);
 
+  // Debug: test if routes register
+  app.get("/api/test-analytics", async () => ({ status: "ok", message: "analytics route works" }));
+
   // HERMES content API
   await app.register(hermesContentRoutes, { prefix: "/api/hermes/content" });
 
