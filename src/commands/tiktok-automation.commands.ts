@@ -369,6 +369,118 @@ export async function abtestCommand(ctx: BotContext): Promise<void> {
 }
 
 // ══════════════════════════════════════════════════════════════
+// /regen — Content Regeneration (Anti-Copyright Remix)
+// ══════════════════════════════════════════════════════════════
+
+export async function regenCommand(ctx: BotContext): Promise<void> {
+  const text = 'text' in (ctx.message ?? {}) ? (ctx.message as { text: string }).text : '';
+  const args = text.replace(/^\/regen(?:@\S+)?\s*/, '').trim();
+
+  if (!args) {
+    await ctx.reply(
+      '🔄 *Content Regenerator*\n\n' +
+      'Download beberapa konten dari niche yang sama, ' +
+      'split jadi segments, lalu gabung jadi video baru 1-5 menit ' +
+      'dengan metadata baru (anti-copyright).\n\n' +
+      '*Cara pakai:*\n' +
+      '`/regen <url1> <url2> [url3] ...`\n\n' +
+      '*Contoh:*\n' +
+      '`/regen https://tiktok.com/... https://tiktok.com/...`\n\n' +
+      '*Opsi:*\n' +
+      '• Tambah `--duration 180` untuk durasi target (detik)\n' +
+      '• Tambah `--niche tech tips` untuk SEO metadata\n' +
+      '• Tambah `--style viral` untuk style overlay',
+      { parse_mode: 'Markdown' },
+    );
+    return;
+  }
+
+  // Parse args
+  const urls: string[] = [];
+  let duration = 180;
+  let niche = 'general';
+  let style = 'educational';
+
+  const parts = args.split(/\s+/);
+  for (let i = 0; i < parts.length; i++) {
+    if (parts[i] === '--duration' && parts[i + 1]) {
+      duration = parseInt(parts[i + 1], 10) || 180;
+      i++;
+    } else if (parts[i] === '--niche' && parts[i + 1]) {
+      niche = parts[i + 1];
+      i++;
+    } else if (parts[i] === '--style' && parts[i + 1]) {
+      style = parts[i + 1];
+      i++;
+    } else if (parts[i].startsWith('http')) {
+      urls.push(parts[i]);
+    }
+  }
+
+  if (urls.length < 2) {
+    await ctx.reply('❌ Minimal 2 URL diperlukan.\n\nContoh: `/regen <url1> <url2>`', { parse_mode: 'Markdown' });
+    return;
+  }
+
+  await ctx.reply(
+    `🔄 *Content Regeneration Started*\n\n` +
+    `📥 Sources: ${urls.length} video\n` +
+    `⏱️ Target: ${Math.floor(duration / 60)}m ${duration % 60}s\n` +
+    `🎯 Niche: ${niche}\n` +
+    `🎨 Style: ${style}\n\n` +
+    `⏳ Proses ini butuh 2-5 menit...`,
+    { parse_mode: 'Markdown' },
+  );
+
+  try {
+    const result = await tiktokAutomation.regenerateContent({
+      sources: urls,
+      targetDuration: duration,
+      niche,
+      style,
+    });
+
+    if (result.success) {
+      const videoPath = result.video_path as string;
+      const metadata = result.metadata as Record<string, unknown> | undefined;
+      const segmentsUsed = result.segments_used as unknown[] | undefined;
+
+      // Send video
+      if (videoPath && require('fs').existsSync(videoPath)) {
+        await ctx.replyWithVideo(
+          { source: videoPath },
+          {
+            caption: `✅ *Content Regenerated!*\n\n` +
+              `🎬 ${segmentsUsed?.length ?? 0} segments dipakai\n` +
+              `⏱️ Durasi: ${Math.floor(duration / 60)}m ${duration % 60}s\n\n` +
+              `*Metadata Baru:*\n` +
+              `📝 ${String(metadata?.title ?? '').slice(0, 100)}\n\n` +
+              `#️⃣ ${Array.isArray(metadata?.hashtags) ? (metadata.hashtags as string[]).slice(0, 5).join(' ') : ''}`,
+            parse_mode: 'Markdown',
+          },
+        );
+      }
+
+      // Show action buttons
+      await ctx.reply('Mau publish video ini?', {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: '📤 Publish ke TikTok', callback_data: 'regen_publish' }],
+            [{ text: '🔄 Regenerate Lagi', callback_data: 'regen_again' }],
+            [{ text: '🏠 Menu', callback_data: 'menu_main' }],
+          ],
+        },
+      });
+    } else {
+      await ctx.reply(`❌ Gagal regenerate: ${String(result.error ?? 'Unknown error')}`);
+    }
+  } catch (err: unknown) {
+    logger.error(`[Regen] Error: ${err instanceof Error ? err.message : String(err)}`);
+    await ctx.reply('❌ Terjadi kesalahan saat regenerate content.');
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
 // Callback Handlers
 // ══════════════════════════════════════════════════════════════
 
@@ -591,6 +703,23 @@ export async function handleTikTokAutomationCallbacks(ctx: BotContext, data: str
       );
       return true;
     }
+
+    if (data === 'create_regen') {
+      await ctx.answerCbQuery();
+      await ctx.reply(
+        '🔄 *Content Regenerator*\n\n' +
+        'Download beberapa konten dari niche yang sama, ' +
+        'split jadi segments, gabung jadi video baru dengan metadata baru.\n\n' +
+        'Ketik: `/regen <url1> <url2> [url3] ...`\n\n' +
+        'Opsi:\n' +
+        '• `--duration 180` (detik)\n' +
+        '• `--niche tech tips`\n' +
+        '• `--style viral`',
+        { parse_mode: 'Markdown' },
+      );
+      return true;
+    }
+
 
     // ── Prompts Menu Callbacks ───────────────────────────────
     if (data === 'prompts_trending') {

@@ -84,7 +84,7 @@ export async function showCreateMenu(ctx: BotContext): Promise<void> {
         [{ text: "🎤 Voiceover AI", callback_data: "create_voice" }],
         [{ text: "🎵 Musik AI", callback_data: "create_music" }],
         [{ text: "🔁 Video Loop", callback_data: "create_loop" }],
-        [{ text: "📋 Storyboard", callback_data: "create_storyboard" }],
+        [{ text: "🔄 Regenerate (Anti-Copyright)", callback_data: "create_regen" }],
         [{ text: "🔙 Kembali", callback_data: "menu_main" }],
       ],
     },

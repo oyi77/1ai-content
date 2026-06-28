@@ -331,6 +331,31 @@ export class TikTokAutomationService {
       return null;
     }
   }
+
+  // ── Content Regeneration ─────────────────────────────────
+
+  async regenerateContent(options: {
+    sources: string[];
+    targetDuration?: number;
+    niche?: string;
+    style?: string;
+    language?: string;
+    overlayPreset?: string;
+    addSubtitles?: boolean;
+    addTransitions?: boolean;
+  }): Promise<Record<string, unknown>> {
+    const { data } = await this.client.post('/regenerate', {
+      sources: options.sources,
+      target_duration: options.targetDuration ?? 180,
+      niche: options.niche ?? 'general',
+      style: options.style ?? 'educational',
+      language: options.language ?? 'id',
+      overlay_preset: options.overlayPreset ?? 'educational',
+      add_subtitles: options.addSubtitles ?? true,
+      add_transitions: options.addTransitions ?? true,
+    });
+    return data as Record<string, unknown>;
+  }
 }
 
 // Singleton

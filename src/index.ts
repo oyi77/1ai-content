@@ -304,7 +304,7 @@ async function main() {
     await app.register(youtubeDashboardRoutes);
     await app.register(ecosystemRoutes);
     await app.register(hermesContentRoutes, { prefix: "/api/hermes/content" });
-    await app.register((await import('./routes/analytics-api')).analyticsRoutes);
+    await app.register((await import('./routes/analytics-api.js')).analyticsRoutes);
 
     // Static files (dashboard, sw.js, images)
     await app.register((await import('@fastify/static')).default, {

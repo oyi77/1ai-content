@@ -916,6 +916,51 @@ async def engagement_stats(profile_id: str = ""):
 
 
 # ══════════════════════════════════════════════════════════════
+# CONTENT REGENERATION
+# ══════════════════════════════════════════════════════════════
+_regenerator = None
+
+def get_regenerator():
+    global _regenerator
+    if _regenerator is None:
+        from services.regenerator.engine import ContentRegenerator
+        _regenerator = ContentRegenerator()
+    return _regenerator
+
+
+class RegenerateRequest(BaseModel):
+    sources: list[str]
+    target_duration: int = 180
+    niche: str = "general"
+    style: str = "educational"
+    language: str = "id"
+    overlay_preset: str = "educational"
+    add_subtitles: bool = True
+    add_transitions: bool = True
+
+
+@app.post("/regenerate")
+async def regenerate_content(req: RegenerateRequest):
+    """Regenerate content from multiple sources — anti-copyright remix."""
+    try:
+        engine = get_regenerator()
+        result = engine.regenerate(
+            sources=req.sources,
+            target_duration=req.target_duration,
+            niche=req.niche,
+            style=req.style,
+            language=req.language,
+            overlay_preset=req.overlay_preset,
+            add_subtitles=req.add_subtitles,
+            add_transitions=req.add_transitions,
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ══════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════
 # ══════════════════════════════════════════════════════════════
 # MAIN
 # ══════════════════════════════════════════════════════════════
