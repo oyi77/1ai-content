@@ -27,6 +27,7 @@ import { agencyRoutes } from "@/routes/agency";
 import { contentApiRoutes } from "@/routes/content-api";
 import { youtubeDashboardRoutes } from "@/routes/youtube/dashboard.route";
 import { ecosystemRoutes } from "@/routes/ecosystem";
+import { hermesContentRoutes } from "@/routes/hermes";
 import { PaymentService } from "@/services/payment.service";
 import { initializeDatabase, prisma } from "@/config/database";
 import { initializeRedis } from "@/config/redis";
@@ -302,6 +303,7 @@ async function main() {
     await app.register(contentApiRoutes);
     await app.register(youtubeDashboardRoutes);
     await app.register(ecosystemRoutes);
+    await app.register(hermesContentRoutes, { prefix: "/api/hermes/content" });
 
     if (appConfig.NODE_ENV === 'test') {
       const testRoutes = require('./routes/test').default;

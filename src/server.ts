@@ -11,6 +11,7 @@
 
 import Fastify from "fastify";
 import path from "path";
+import fastifyStatic from "@fastify/static";
 import fastifyView from "@fastify/view";
 import ejs from "ejs";
 import { logger } from "@/utils/logger";
@@ -38,6 +39,16 @@ export function createServer(bot: Telegraf) {
   app.register(require("@fastify/multipart"), {
     limits: { fileSize: 200 * 1024 * 1024 }, // 200 MB max
   });
+
+  // Static files (dashboard, manifest, service worker, images)
+  app.register(fastifyStatic, {
+    root: path.join(process.cwd(), "public"),
+    prefix: "/",
+    decorateReply: false,
+    cacheControl: true,
+    maxAge: "1h",
+  });
+
 
   // View engine
   app.register(fastifyView, {
