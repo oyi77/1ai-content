@@ -24,15 +24,21 @@ export async function showMainDashboard(ctx: BotContext): Promise<void> {
   const tier = dbUser?.tier || "free";
   const creditEmoji = credits === 0 ? "⚠️" : credits < 3 ? "🟡" : "🟢";
 
+  const miniAppUrl = 'https://content.aitradepulse.com/app/mini';
+
   const text = [
     `👋 ${user.first_name}`,
     "",
     `🤖 Vilona Content Automation`,
     "",
+    `💎 Credits: ${credits} | Tier: ${tier}`,
+    "",
     "Pilih menu:",
   ].join("\n");
-
   const buttons: InlineRow[] = [
+    [
+      { text: "📱 Open App", url: miniAppUrl },
+    ],
     [
       { text: "🎬 Buat Video", callback_data: "menu_create" },
       { text: "🖼️ Buat Foto", callback_data: "menu_image" },

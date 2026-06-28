@@ -455,6 +455,17 @@ export async function webRoutes(server: FastifyInstance): Promise<void> {
     return reply.status(404).send({ error: "Service worker not found" });
   });
 
+  // ── TELEGRAM MINI APP ──
+  server.get("/app/mini", async (_request, reply) => {
+    const fs = require("fs");
+    const miniPath = path.join(process.cwd(), "public", "miniapp.html");
+    if (fs.existsSync(miniPath)) {
+      return reply.type("text/html").send(fs.readFileSync(miniPath, "utf-8"));
+    }
+    return reply.status(404).send({ error: "Mini app not found" });
+  });
+
+
 
   // ── STORYBOARD PREVIEW ──
   server.post("/api/storyboard", async (request, reply) => {
