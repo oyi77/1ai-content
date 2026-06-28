@@ -15,7 +15,7 @@ import { logger } from '@/utils/logger';
 export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
 
   // ── GET /api/analytics/overview ────────────────────────────
-  app.get('/analytics/overview', async (req: FastifyRequest, reply: FastifyReply) => {
+  app.get('/api/analytics/overview', async (req: FastifyRequest, reply: FastifyReply) => {
     try {
       const { userId, days = '30' } = req.query as { userId?: string; days?: string };
       const daysNum = parseInt(days, 10) || 30;
@@ -82,7 +82,7 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
   });
 
   // ── GET /api/analytics/carousels ───────────────────────────
-  app.get('/analytics/carousels', async (req: FastifyRequest, reply: FastifyReply) => {
+  app.get('/api/analytics/carousels', async (req: FastifyRequest, reply: FastifyReply) => {
     try {
       const { userId } = req.query as { userId?: string };
       const where = userId ? { userId: BigInt(userId) } : {};
@@ -101,7 +101,7 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
   });
 
   // ── GET /api/analytics/users ───────────────────────────────
-  app.get('/analytics/users', async (req: FastifyRequest, reply: FastifyReply) => {
+  app.get('/api/analytics/users', async (req: FastifyRequest, reply: FastifyReply) => {
     try {
       const totalUsers = await prisma.user.count();
       const activeUsers = await prisma.user.count({
@@ -124,7 +124,7 @@ export async function analyticsRoutes(app: FastifyInstance): Promise<void> {
   });
 
   // ── GET /api/analytics/revenue ─────────────────────────────
-  app.get('/analytics/revenue', async (req: FastifyRequest, reply: FastifyReply) => {
+  app.get('/api/analytics/revenue', async (req: FastifyRequest, reply: FastifyReply) => {
     try {
       const { days = '30' } = req.query as { days?: string };
       const since = new Date();

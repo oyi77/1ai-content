@@ -162,7 +162,7 @@ export async function registerRoutes(
   await app.register(youtubeDashboardRoutes);
 
   // Analytics API
-  await app.register(analyticsRoutes, { prefix: "/api" });
+  await app.register(analyticsRoutes);
 
   // HERMES content API
   await app.register(hermesContentRoutes, { prefix: "/api/hermes/content" });
