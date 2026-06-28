@@ -988,6 +988,54 @@ async def regenerate_content(req: RepurposeRequest):
 
 
 # ══════════════════════════════════════════════════════════════
+# CONTENT RE-METADATA (simple re-render)
+# ══════════════════════════════════════════════════════════════
+_remetadata_engine = None
+
+def get_remetadata_engine():
+    global _remetadata_engine
+    if _remetadata_engine is None:
+        from services.remetadata.engine import ReMetadataEngine
+        _remetadata_engine = ReMetadataEngine()
+    return _remetadata_engine
+
+
+class ReMetadataRequest(BaseModel):
+    source: str
+    overlay: str = ""
+    watermark: str = ""
+    position: str = "bottom_right"
+    speed: float = 0
+    color_shift: bool = True
+    niche: str = "general"
+    platform: str = "tiktok"
+    language: str = "id"
+
+
+@app.post("/remeta")
+async def remeta_content(req: ReMetadataRequest):
+    """Re-render video with new metadata (text overlay + re-encode)."""
+    try:
+        engine = get_remetadata_engine()
+        result = engine.remetadata(
+            source=req.source,
+            overlay=req.overlay or None,
+            watermark=req.watermark or None,
+            position=req.position,
+            speed=req.speed if req.speed > 0 else None,
+            color_shift=req.color_shift,
+            niche=req.niche,
+            platform=req.platform,
+            language=req.language,
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ══════════════════════════════════════════════════════════════
+
+# ══════════════════════════════════════════════════════════════
 # ══════════════════════════════════════════════════════════════
 # ══════════════════════════════════════════════════════════════
 # MAIN

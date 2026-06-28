@@ -389,6 +389,33 @@ export class TikTokAutomationService {
   }): Promise<Record<string, unknown>> {
     return this.repurposeContent(options);
   }
+
+  // ── Content Re-Metadata (simple re-render) ──────────────
+
+  async remetaContent(options: {
+    source: string;
+    overlay?: string;
+    watermark?: string;
+    position?: string;
+    speed?: number;
+    colorShift?: boolean;
+    niche?: string;
+    platform?: string;
+    language?: string;
+  }): Promise<Record<string, unknown>> {
+    const { data } = await this.client.post('/remeta', {
+      source: options.source,
+      overlay: options.overlay ?? '',
+      watermark: options.watermark ?? '',
+      position: options.position ?? 'bottom_right',
+      speed: options.speed ?? 0,
+      color_shift: options.colorShift ?? true,
+      niche: options.niche ?? 'general',
+      platform: options.platform ?? 'tiktok',
+      language: options.language ?? 'id',
+    });
+    return data as Record<string, unknown>;
+  }
 }
 
 // Singleton

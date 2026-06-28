@@ -395,6 +395,77 @@ export async function messageHandler(ctx: BotContext): Promise<void> {
         }
         return true;
       },
+      // Re-metadata video waiting
+      async (c) => {
+        if (!c.session?.stateData?.waitingForRemetaVideo) return false;
+        if (!("video" in (c.message ?? {})) && !("document" in (c.message ?? {}))) return false;
+
+        const message = c.message as { video?: { file_id: string }; document?: { file_id: string; mime_type?: string } };
+        const fileId = message.video?.file_id ?? (message.document?.mime_type?.startsWith("video/") ? message.document?.file_id : undefined);
+        if (!fileId) return false;
+
+        const overlay = String(c.session.stateData?.remetaOverlay ?? "");
+        const args = String(c.session.stateData?.remetaArgs ?? overlay);
+        c.session.stateData = { ...c.session.stateData, waitingForRemetaVideo: false };
+
+        // Download video
+        const fs = await import("fs");
+        const path = await import("path");
+        const fileLink = await c.telegram.getFileLink(fileId);
+        const ext = fileLink.pathname.endsWith(".mp4") ? ".mp4" : ".mov";
+        const downloadPath = path.join("/tmp", `remeta_input_${Date.now()}${ext}`);
+
+        const response = await fetch(fileLink.href);
+        const buffer = Buffer.from(await response.arrayBuffer());
+        fs.writeFileSync(downloadPath, buffer);
+
+        c.session.stateData = { ...c.session.stateData, lastVideoPath: downloadPath };
+
+        // Process
+        // Parse args inline
+        const parts = args.split(/\s+/);
+        const overlayText = parts[0] || "@brand";
+        let watermark = "";
+        let niche = "general";
+        for (let i = 1; i < parts.length; i++) {
+          if (parts[i] === "--watermark" && parts[i + 1]) { watermark = parts[i + 1]; i++; }
+          else if (parts[i] === "--niche" && parts[i + 1]) { niche = parts[i + 1]; i++; }
+        }
+
+        await c.reply(`🔄 Re-rendering video with overlay "${overlayText}"...\n⏳ 30-60 detik...`);
+
+        try {
+          const { tiktokAutomation } = await import("@/services/tiktok-automation.service.js");
+          const result = await tiktokAutomation.remetaContent({
+            source: downloadPath,
+            overlay: overlayText,
+            watermark: watermark || undefined,
+            niche,
+          });
+
+          if (result.success) {
+            const newVideoPath = result.video_path as string;
+            const metadata = result.metadata as Record<string, unknown> | undefined;
+            const changes = result.changes_applied as string[] | undefined;
+            const hashtags = Array.isArray(metadata?.hashtags) ? (metadata.hashtags as string[]).slice(0, 5).join(" ") : "";
+
+            if (newVideoPath && fs.existsSync(newVideoPath)) {
+              await c.replyWithVideo(
+                { source: newVideoPath },
+                {
+                  caption: `✅ *Re-Metadata Done!*\n\n🔄 ${changes?.join(",") ?? "none"}\n📝 ${String(metadata?.title ?? "").slice(0, 80)}\n#️⃣ ${hashtags}`,
+                  parse_mode: "Markdown",
+                },
+              );
+            }
+          } else {
+            await c.reply(`❌ ${String(result.error ?? "Failed")}`);
+          }
+        } catch (err: unknown) {
+          const errMsg = err instanceof Error ? err.message : String(err);
+          await c.reply(`❌ Error: ${errMsg}`);
+        }
+      },
     ];
 
     for (const handler of handlers) {

@@ -1,7 +1,7 @@
 module.exports = {
   apps: [{
     name: "vilonacontentbot",
-    script: "node_modules/.bin/tsx",
+    script: "/home/linuxbrew/.linuxbrew/bin/tsx",
     args: "src/index.ts",
     cwd: "/home/openclaw/projects/1ai-content",
     interpreter: "none",
