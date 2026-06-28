@@ -435,6 +435,27 @@ export async function webRoutes(server: FastifyInstance): Promise<void> {
     });
   });
 
+  // ── DASHBOARD ──
+  server.get("/dashboard.html", async (_request, reply) => {
+    const fs = require("fs");
+    const dashboardPath = path.join(process.cwd(), "public", "dashboard.html");
+    if (fs.existsSync(dashboardPath)) {
+      return reply.type("text/html").send(fs.readFileSync(dashboardPath, "utf-8"));
+    }
+    return reply.status(404).send({ error: "Dashboard not found" });
+  });
+
+  // ── SERVICE WORKER ──
+  server.get("/sw.js", async (_request, reply) => {
+    const fs = require("fs");
+    const swPath = path.join(process.cwd(), "public", "sw.js");
+    if (fs.existsSync(swPath)) {
+      return reply.type("application/javascript").send(fs.readFileSync(swPath, "utf-8"));
+    }
+    return reply.status(404).send({ error: "Service worker not found" });
+  });
+
+
   // ── STORYBOARD PREVIEW ──
   server.post("/api/storyboard", async (request, reply) => {
     try {

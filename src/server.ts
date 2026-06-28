@@ -40,11 +40,10 @@ export function createServer(bot: Telegraf) {
     limits: { fileSize: 200 * 1024 * 1024 }, // 200 MB max
   });
 
-  // Static files (dashboard, manifest, service worker, images)
+  // Static files (dashboard, service worker, images)
   app.register(fastifyStatic, {
     root: path.join(process.cwd(), "public"),
-    prefix: "/",
-    decorateReply: false,
+    prefix: "/public/",
     cacheControl: true,
     maxAge: "1h",
   });
