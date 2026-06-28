@@ -15,6 +15,7 @@ import { handleReferralCallbacks } from "./callbacks/referral";
 import { handleAdminCallbacks } from "./callbacks/admin";
 import { handleImageCallbacks } from "./callbacks/image";
 import { handleCloneCallbacks } from "./callbacks/clone";
+import { handleSocialCallbacks } from "@/commands/social-media.commands";
 import { handlePaymentCallbacks } from "./callbacks/payment";
 import { handleOnboardingCallbacks } from "./callbacks/onboarding";
 import { handlePromptLibraryCallbacks } from "./callbacks/promptLibrary";
@@ -84,7 +85,8 @@ export async function callbackHandler(ctx: BotContext): Promise<void> {
     if (await handleVideoCallbacks(ctx, data)) return;
 
 
-
+    // Social media (social_connect_*, publish_to_*)
+    if (await handleSocialCallbacks(ctx, data)) return;
     // Clone, storyboard, repurpose, disassemble, copy_prompt
     if (await handleCloneCallbacks(ctx, data)) return;
 
