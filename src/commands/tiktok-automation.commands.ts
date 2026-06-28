@@ -949,18 +949,8 @@ export async function handleTikTokAutomationCallbacks(ctx: BotContext, data: str
       return true;
     }
 
-    // ── Carousel Publish/Edit (stub) ───────────────────────────
-    if (data.startsWith('carousel_publish_')) {
-      await ctx.answerCbQuery('📤 Publishing...');
-      await ctx.reply('📤 Fitur auto-publish ke TikTok sedang dalam pengembangan.\n\nUntuk sekarang, download carousel dan post manual ke TikTok.');
-      return true;
-    }
 
-    if (data.startsWith('carousel_edit_caption_')) {
-      await ctx.answerCbQuery();
-      await ctx.reply('✏️ Kirim caption baru untuk carousel ini:');
-      return true;
-    }
+
 
 
     // ── Trending Scan & Generate ─────────────────────────────

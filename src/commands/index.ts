@@ -20,7 +20,6 @@ import { subscriptionCommand } from "./subscription";
 import { supportCommand } from "./support";
 
 import { chatCommand } from "./grok";
-import { socialCommand } from "./social";
 import {
   promptsCommand,
   dailyCommand,
@@ -107,7 +106,6 @@ export function setupCommands(bot: Telegraf<BotContext>): void {
   // AI chat (OmniRoute — cheapest/free model)
   bot.command("chat", chatCommand);
   bot.command("ask", chatCommand); // Alias
-  bot.command("social", socialCommand); // Social media accounts & publish
   // Prompt library commands
   bot.command("prompts", promptsCommand);
   bot.command("prompt", promptsCommand); // Alias

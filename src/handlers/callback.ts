@@ -11,7 +11,6 @@ import { handleNavigationCallbacks } from "./callbacks/navigation";
 import { handleSettingsCallbacks } from "./callbacks/settings";
 import { handleGenerationCallbacks } from "./callbacks/generation";
 import { handleVideoCallbacks } from "./callbacks/video";
-import { handleSocialCallbacks } from "./callbacks/social";
 import { handleReferralCallbacks } from "./callbacks/referral";
 import { handleAdminCallbacks } from "./callbacks/admin";
 import { handleImageCallbacks } from "./callbacks/image";
@@ -84,8 +83,7 @@ export async function callbackHandler(ctx: BotContext): Promise<void> {
     // Video management (video_*, videos_*, copy_caption_*, create_similar_*, feedback_*)
     if (await handleVideoCallbacks(ctx, data)) return;
 
-    // Social / post automation (auto_post_*, publish_video_*, manage_accounts, connect_account_*, etc.)
-    if (await handleSocialCallbacks(ctx, data)) return;
+
 
     // Clone, storyboard, repurpose, disassemble, copy_prompt
     if (await handleCloneCallbacks(ctx, data)) return;

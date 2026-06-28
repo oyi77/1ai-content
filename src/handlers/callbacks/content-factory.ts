@@ -186,53 +186,8 @@ export async function handleContentFactoryCallbacks(ctx: BotContext, data: strin
       return true;
     }
 
-    // ── Publish Platform Selection ────────────────────────────
-    if (data.startsWith('publish_select_')) {
-      const platform = data.replace('publish_select_', '');
-      await ctx.answerCbQuery(`📤 ${platform}`);
-
-      // List available profiles
-      try {
-        const platformMap: Record<string, string> = {
-          fb: 'facebook',
-          x: 'twitter',
-          ig: 'instagram',
-          tiktok: 'tiktok',
-          yt: 'youtube',
-          linkedin: 'linkedin',
-          all: '',
-        };
-
-        const platformName = platformMap[platform];
-        const profiles = await contentFactoryService.listProfiles(platformName || undefined);
-
-        if (profiles.profiles.length === 0) {
-          await ctx.reply(
-            `❌ Belum ada profile CloakBrowser untuk platform ini.\n\n` +
-            `Setup CloakBrowser dulu di ${getConfig().CLOAKBROWSER_URL}`,
-          );
-          return true;
-        }
-
-        let profileList = `📤 *Available Profiles (${platform})*\n\n`;
-        const buttons = [];
-        for (const p of profiles.profiles.slice(0, 10)) {
-          profileList += `• ${p.name || p.id} (${p.platform || platform})\n`;
-          buttons.push([{ text: `${p.name || p.id}`, callback_data: `publish_profile_${p.id}` }]);
-        }
-
-        await ctx.reply(profileList, {
-          parse_mode: 'Markdown',
-          reply_markup: { inline_keyboard: buttons },
-        });
-      } catch (err: unknown) {
-        logger.error(`[Publish Callback] Error: ${err instanceof Error ? err.message : String(err)}`);
-        await ctx.reply('❌ CloakBrowser tidak tersedia. Pastikan berjalan di port 8090.');
-      }
-      return true;
-    }
-
     return false;
+
   } catch (err: unknown) {
     logger.error(`[ContentFactory Callback] Error: ${err instanceof Error ? err.message : String(err)}`);
     return false;
