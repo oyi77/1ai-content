@@ -16,6 +16,16 @@ import fs from 'fs';
 import path from 'path';
 import { getConfig } from '@/config/env';
 import { logger } from '@/utils/logger';
+import {
+  canPostToPlatform,
+  getIncludedPlatforms,
+  canSchedule,
+  canUseAutoPilot,
+  getMaxPostsPerDay,
+  SOCIAL_ADDONS,
+} from '@/config/pricing';
+import { UserService } from '@/services/user.service';
+
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -77,6 +87,63 @@ export class SocialBridgeService {
       'Content-Type': 'application/json',
     };
   }
+
+  // ── Tier Access Control ─────────────────────────────────
+
+  /**
+   * Check if user can post to a specific platform based on their tier.
+   * Returns { allowed: boolean, reason?: string, upgradeTo?: string }
+   */
+  async checkPlatformAccess(userId: number, platform: string): Promise<{
+    allowed: boolean;
+    reason?: string;
+    upgradeTo?: string;
+    includedPlatforms?: readonly string[];
+  }> {
+    const user = await UserService.findByTelegramId(BigInt(userId));
+    if (!user) return { allowed: false, reason: 'User not found' };
+
+    const tier = user.tier || 'free';
+
+    // Check if platform is included in tier
+    if (canPostToPlatform(tier, platform)) {
+      return { allowed: true, includedPlatforms: getIncludedPlatforms(tier) };
+    }
+
+    // Check if user has purchased add-on (would be stored in user metadata)
+    // For now, return upgrade suggestion
+    return {
+      allowed: false,
+      reason: `${platform} posting not included in your ${tier} plan`,
+      upgradeTo: tier === 'free' ? 'pro' : 'agency',
+      includedPlatforms: getIncludedPlatforms(tier),
+    };
+  }
+
+  /**
+   * Get user's social media capabilities based on tier.
+   */
+  async getUserSocialCapabilities(userId: number): Promise<{
+    tier: string;
+    includedPlatforms: readonly string[];
+    canSchedule: boolean;
+    canAutoPilot: boolean;
+    maxPostsPerDay: number;
+    addons: Record<string, { name: string; description: string; monthlyPriceIdr: number }>;
+  }> {
+    const user = await UserService.findByTelegramId(BigInt(userId));
+    const tier = user?.tier || 'free';
+
+    return {
+      tier,
+      includedPlatforms: getIncludedPlatforms(tier),
+      canSchedule: canSchedule(tier),
+      canAutoPilot: canUseAutoPilot(tier),
+      maxPostsPerDay: getMaxPostsPerDay(tier),
+      addons: SOCIAL_ADDONS,
+    };
+  }
+
 
   // ── Account Management ────────────────────────────────────
 
@@ -160,6 +227,7 @@ export class SocialBridgeService {
 
   /**
    * Publish content to social media via 1ai-social.
+   * Checks tier access before publishing.
    */
   async publish(userId: number, options: {
     platform: string;
@@ -168,6 +236,15 @@ export class SocialBridgeService {
     hashtags?: string[];
     mediaType?: 'video' | 'image' | 'carousel';
   }): Promise<PublishResult> {
+    // Check tier access
+    const access = await this.checkPlatformAccess(userId, options.platform);
+    if (!access.allowed) {
+      return {
+        success: false,
+        error: access.reason || `Not allowed to post to ${options.platform}`,
+      };
+    }
+
     try {
       const { data } = await this.client.post('/posts', {
         platform: options.platform,

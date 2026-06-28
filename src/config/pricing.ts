@@ -35,6 +35,64 @@ export const CREDIT_TO_UNIT = 10;
 
 // ── Subscription Tiers & Credits ──────────────────────────────────────────────
 
+// Social media platform access by tier
+export const SOCIAL_TIERS = {
+  lite: {
+    platforms: [],           // No social posting included
+    maxPlatforms: 0,
+    postsPerDay: 0,
+    canSchedule: false,
+    canAutoPilot: false,
+  },
+  pro: {
+    platforms: ['tiktok'],   // TikTok included
+    maxPlatforms: 1,
+    postsPerDay: 5,
+    canSchedule: true,
+    canAutoPilot: false,
+  },
+  agency: {
+    platforms: ['tiktok', 'instagram', 'facebook', 'youtube', 'x', 'linkedin'],
+    maxPlatforms: 6,         // All platforms
+    postsPerDay: 30,
+    canSchedule: true,
+    canAutoPilot: true,
+  },
+} as const;
+
+// Social media add-on packages (purchased separately)
+export const SOCIAL_ADDONS = {
+  single_platform: {
+    name: 'Single Platform',
+    description: 'Connect 1 additional social media platform',
+    monthlyPriceIdr: 49000,
+    platforms: 1,
+    postsPerDay: 3,
+  },
+  multi_platform: {
+    name: 'Multi Platform',
+    description: 'Connect up to 3 additional platforms',
+    monthlyPriceIdr: 99000,
+    platforms: 3,
+    postsPerDay: 10,
+  },
+  all_platforms: {
+    name: 'All Platforms',
+    description: 'Unlimited platforms + scheduling + autopilot',
+    monthlyPriceIdr: 199000,
+    platforms: 999,
+    postsPerDay: 30,
+  },
+  autopilot_addon: {
+    name: 'AutoPilot Add-on',
+    description: 'Auto-generate & publish content on schedule',
+    monthlyPriceIdr: 149000,
+    platforms: 0,
+    postsPerDay: 0,
+    autopilot: true,
+  },
+} as const;
+
 export const SUBSCRIPTION_PLANS = {
   lite: {
     name: 'Lite',
@@ -43,7 +101,14 @@ export const SUBSCRIPTION_PLANS = {
     dailyGenerationLimit: 3,
     monthlyPriceIdr: 99000,
     annualPriceIdr: 990000,
-    features: ['20 Credits/month', '3 Daily limit', 'Standard support'],
+    features: [
+      '20 Credits/month',
+      '3 Daily limit',
+      'Standard support',
+      '❌ No social media posting',
+      '💡 Add-on: Social media (+Rp 49K/platform)',
+    ],
+    social: SOCIAL_TIERS.lite,
   },
   pro: {
     name: 'Pro',
@@ -52,7 +117,16 @@ export const SUBSCRIPTION_PLANS = {
     dailyGenerationLimit: 10,
     monthlyPriceIdr: 199000,
     annualPriceIdr: 1990000,
-    features: ['50 Credits/month', '10 Daily limit', 'Priority support', 'Viral research'],
+    features: [
+      '50 Credits/month',
+      '10 Daily limit',
+      'Priority support',
+      'Viral research',
+      '✅ TikTok posting included',
+      '✅ Content scheduling',
+      '💡 Add-on: More platforms (+Rp 49K/platform)',
+    ],
+    social: SOCIAL_TIERS.pro,
   },
   agency: {
     name: 'Agency',
@@ -61,9 +135,20 @@ export const SUBSCRIPTION_PLANS = {
     dailyGenerationLimit: 30,
     monthlyPriceIdr: 499000,
     annualPriceIdr: 4990000,
-    features: ['150 Credits/month', '30 Daily limit', 'White-labeling', 'API Access'],
+    features: [
+      '150 Credits/month',
+      '30 Daily limit',
+      'White-labeling',
+      'API Access',
+      '✅ ALL platforms (TikTok, IG, FB, YouTube, X, LinkedIn)',
+      '✅ Content scheduling',
+      '✅ AutoPilot (auto-generate & publish)',
+      '✅ 30 posts/day',
+    ],
+    social: SOCIAL_TIERS.agency,
   },
 };
+
 
 // Legacy alias
 export const SUBSCRIPTION_PLANS_V3 = SUBSCRIPTION_PLANS;
@@ -88,6 +173,60 @@ export const CREDIT_PACKAGES_V3 = PACKAGES;
 
 export const creditsToUnits = (credits: number) => Math.round(credits * 10);
 export const unitsToCredits = (units: number) => units / 10;
+
+// ── Social Media Access Helpers ───────────────────────────────────────────────
+
+export type SocialPlatform = 'tiktok' | 'instagram' | 'facebook' | 'youtube' | 'x' | 'linkedin';
+
+/**
+ * Check if a user's tier allows posting to a specific platform.
+ */
+export function canPostToPlatform(tier: string, platform: string): boolean {
+  const planKey = tier as keyof typeof SOCIAL_TIERS;
+  const socialConfig = SOCIAL_TIERS[planKey] || SOCIAL_TIERS.lite;
+  if (socialConfig.platforms.length === 0) return false;
+  return (socialConfig.platforms as readonly string[]).includes(platform);
+}
+
+/**
+ * Get the list of platforms a tier can post to by default.
+ */
+export function getIncludedPlatforms(tier: string): readonly string[] {
+  const planKey = tier as keyof typeof SOCIAL_TIERS;
+  return SOCIAL_TIERS[planKey]?.platforms || SOCIAL_TIERS.lite.platforms;
+}
+
+/**
+ * Check if a tier can use scheduling.
+ */
+export function canSchedule(tier: string): boolean {
+  const planKey = tier as keyof typeof SOCIAL_TIERS;
+  return SOCIAL_TIERS[planKey]?.canSchedule ?? false;
+}
+
+/**
+ * Check if a tier can use AutoPilot.
+ */
+export function canUseAutoPilot(tier: string): boolean {
+  const planKey = tier as keyof typeof SOCIAL_TIERS;
+  return SOCIAL_TIERS[planKey]?.canAutoPilot ?? false;
+}
+
+/**
+ * Get max posts per day for a tier.
+ */
+export function getMaxPostsPerDay(tier: string): number {
+  const planKey = tier as keyof typeof SOCIAL_TIERS;
+  return SOCIAL_TIERS[planKey]?.postsPerDay ?? 0;
+}
+
+/**
+ * Get all available social add-ons.
+ */
+export function getSocialAddons(): Record<string, { name: string; description: string; monthlyPriceIdr: number }> {
+  return SOCIAL_ADDONS;
+}
+
 
 export function getPlanPrice(plan: PlanKey, cycle: BillingCycle): number {
   const planConfig = SUBSCRIPTION_PLANS[plan];

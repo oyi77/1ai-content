@@ -24,46 +24,65 @@ const PLATFORMS = [
 ];
 
 // ══════════════════════════════════════════════════════════════
-// /connect — Connect social media accounts
+// /connect — Connect social media accounts (tier-aware)
 // ══════════════════════════════════════════════════════════════
+
+type InlineButton = { text: string; callback_data: string };
 
 export async function connectCommand(ctx: BotContext): Promise<void> {
   const user = ctx.from;
   if (!user) { await ctx.reply('❌ User not found.'); return; }
 
-  // Check 1ai-social availability
   const available = await socialBridge.isAvailable();
   if (!available) {
     await ctx.reply('❌ Social media service sedang tidak tersedia. Coba lagi nanti.');
     return;
   }
 
-  // Get connected accounts
+  // Get tier capabilities
+  const caps = await socialBridge.getUserSocialCapabilities(user.id);
   const accounts = await socialBridge.getConnectedAccounts(user.id);
 
   const lines = [
     '🔗 *Connect Social Media*\n',
-    accounts.length > 0
-      ? '*Connected Accounts:*\n' + accounts.map(a => {
-          const p = PLATFORMS.find(p => p.id === a.platform);
-          return `${p?.emoji ?? '📱'} ${p?.name ?? a.platform} — @${a.account_name} (${a.status})`;
-        }).join('\n')
-      : 'Belum ada akun yang terhubung.',
+    `📦 *Plan: ${caps.tier.toUpperCase()}*`,
+    `📱 Included: ${caps.includedPlatforms.length > 0 ? caps.includedPlatforms.join(', ') : 'None (add-on required)'}`,
+    `📊 Posts/day: ${caps.maxPostsPerDay} | 📅 Schedule: ${caps.canSchedule ? '✅' : '❌'} | 🤖 AutoPilot: ${caps.canAutoPilot ? '✅' : '❌'}`,
     '',
-    'Pilih platform untuk connect:',
   ];
 
-  const buttons = PLATFORMS.map(p => {
+  if (accounts.length > 0) {
+    lines.push('*Connected:*');
+    for (const a of accounts) {
+      const p = PLATFORMS.find(p => p.id === a.platform);
+      lines.push(`${p?.emoji ?? '📱'} ${p?.name ?? a.platform} — @${a.account_name}`);
+    }
+    lines.push('');
+  }
+
+  // Build buttons: included = connect, locked = upgrade
+  const rows: InlineButton[][] = [];
+  for (const p of PLATFORMS) {
     const connected = accounts.some(a => a.platform === p.id);
-    return [{
-      text: connected ? `✅ ${p.emoji} ${p.name}` : `${p.emoji} Connect ${p.name}`,
-      callback_data: connected ? `social_connected_${p.id}` : `social_connect_${p.id}`,
-    }];
-  });
+    const included = (caps.includedPlatforms as readonly string[]).includes(p.id);
+
+    if (connected) {
+      rows.push([{ text: `✅ ${p.emoji} ${p.name}`, callback_data: `social_connected_${p.id}` }]);
+    } else if (included) {
+      rows.push([{ text: `${p.emoji} Connect ${p.name}`, callback_data: `social_connect_${p.id}` }]);
+    } else {
+      rows.push([{ text: `🔒 ${p.name} (Upgrade)`, callback_data: `social_upgrade_${p.id}` }]);
+    }
+  }
+
+  if (caps.tier !== 'agency') {
+    rows.push([{ text: '⬆️ Upgrade / Add-ons', callback_data: 'social_upgrade_menu' }]);
+  }
+  rows.push([{ text: '🔙 Menu', callback_data: 'menu_main' }]);
 
   await ctx.reply(lines.join('\n'), {
     parse_mode: 'Markdown',
-    reply_markup: { inline_keyboard: [...buttons, [{ text: '🔙 Menu', callback_data: 'menu_main' }]] },
+    reply_markup: { inline_keyboard: rows },
   });
 }
 
@@ -161,6 +180,89 @@ export async function handleSocialCallbacks(ctx: BotContext, data: string): Prom
       await publishCommand(ctx);
       return true;
     }
+
+    // ── Upgrade Menu ──────────────────────────────────────
+    if (data === 'social_upgrade_menu') {
+      await ctx.answerCbQuery();
+      const caps = await socialBridge.getUserSocialCapabilities(user.id);
+
+      const lines = [
+        '⬆️ *Upgrade Your Plan*\n',
+        `Current: *${caps.tier.toUpperCase()}*\n`,
+        '*Plans:*',
+        '• Lite Rp 99K — Content only, no social posting',
+        '• Pro Rp 199K — +TikTok posting + scheduling',
+        '• Agency Rp 499K — ALL platforms + AutoPilot',
+        '',
+        '*Add-ons:*',
+        '• Single Platform Rp 49K/mo — +1 platform',
+        '• Multi Platform Rp 99K/mo — +3 platforms',
+        '• All Platforms Rp 199K/mo — unlimited',
+        '• AutoPilot Rp 149K/mo — auto-generate & publish',
+      ];
+
+      await ctx.reply(lines.join('\n'), {
+        parse_mode: 'Markdown',
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: '⬆️ Upgrade to Pro', callback_data: 'subscribe_pro' }],
+            [{ text: '⬆️ Upgrade to Agency', callback_data: 'subscribe_agency' }],
+            [{ text: '🛒 Buy Add-on', callback_data: 'social_addon_menu' }],
+            [{ text: '🔙 Menu', callback_data: 'menu_main' }],
+          ],
+        },
+      });
+      return true;
+    }
+
+    // ── Add-on Menu ───────────────────────────────────────
+    if (data === 'social_addon_menu') {
+      await ctx.answerCbQuery();
+      await ctx.reply(
+        '🛒 *Social Media Add-ons*\n\n' +
+ 'Pilih add-on yang sesuai kebutuhan kamu:\n\n' +
+ '• 📱 Single Platform — Rp 49K/mo (+1 platform)\n' +
+ '• 📱 Multi Platform — Rp 99K/mo (+3 platforms)\n' +
+ '• 📱 All Platforms — Rp 199K/mo (unlimited)\n' +
+ '• 🤖 AutoPilot — Rp 149K/mo (auto-generate & publish)',
+        {
+          parse_mode: 'Markdown',
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: '📱 Single Platform Rp49K', callback_data: 'buy_addon_single_platform' }],
+              [{ text: '📱 Multi Platform Rp99K', callback_data: 'buy_addon_multi_platform' }],
+              [{ text: '📱 All Platforms Rp199K', callback_data: 'buy_addon_all_platforms' }],
+              [{ text: '🤖 AutoPilot Rp149K', callback_data: 'buy_addon_autopilot_addon' }],
+              [{ text: '🔙 Menu', callback_data: 'menu_main' }],
+            ],
+          },
+        },
+      );
+      return true;
+    }
+
+    // ── Upgrade platform (locked) ─────────────────────────
+    if (data.startsWith('social_upgrade_')) {
+      const platform = data.replace('social_upgrade_', '');
+      await ctx.answerCbQuery();
+      const p = PLATFORMS.find(p => p.id === platform);
+      await ctx.reply(
+ `🔒 *${p?.emoji ?? '📱'} ${p?.name ?? platform}*\n\n` +
+ `Platform ini belum termasuk di plan kamu.\n\n` +
+ 'Upgrade ke Pro/Agency atau beli add-on untuk connect.',
+        {
+          parse_mode: 'Markdown',
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: '⬆️ Upgrade Plan', callback_data: 'social_upgrade_menu' }],
+              [{ text: '🔙 Kembali', callback_data: 'social_connect_menu' }],
+            ],
+          },
+        },
+      );
+      return true;
+    }
+
 
     // ── Connect platform ───────────────────────────────────
     if (data.startsWith('social_connect_')) {
