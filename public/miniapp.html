@@ -354,6 +354,27 @@
     let currentPage = 'home';
     let calendarView = 'today';
     let userData = null;
+    let authToken = null; // JWT from /auth/telegram
+
+    // ═══════════════════════════════════════════════════════════
+    // AUTH — Get JWT via Telegram initData
+    // ═══════════════════════════════════════════════════════════
+    async function authenticate() {
+      if (!initData) return; // No auth in non-Telegram context
+      try {
+        const r = await fetch(`${API_BASE}/auth/telegram`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ initData }),
+        });
+        if (r.ok) {
+          const data = await r.json();
+          authToken = data.token;
+          userData = data.user;
+        }
+      } catch {}
+    }
+
 
     // ═══════════════════════════════════════════════════════════
     // NAVIGATION
@@ -364,7 +385,6 @@
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
       document.querySelector(`.nav-item[data-page="${page}"]`)?.classList.add('active');
       currentPage = page;
-
       // Load page data
       if (page === 'home') loadHome();
       if (page === 'videos') loadVideos();
@@ -372,13 +392,11 @@
       if (page === 'abtest') loadABTests();
     }
 
-    // ═══════════════════════════════════════════════════════════
-    // API HELPERS
-    // ═══════════════════════════════════════════════════════════
     async function api(path, opts = {}) {
       try {
         const url = API_BASE + path;
-        const headers = { 'Content-Type': 'application/json', 'X-Telegram-Init-Data': initData };
+        const headers = { 'Content-Type': 'application/json' };
+        if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
         const r = await fetch(url, { ...opts, headers: { ...headers, ...opts.headers } });
         if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.error || e.detail || `HTTP ${r.status}`); }
         return await r.json();
@@ -418,14 +436,28 @@
       document.getElementById('greeting').textContent = `Halo ${firstName}`;
       document.getElementById('userAvatar').textContent = firstName.charAt(0).toUpperCase();
 
-      try {
-        // Analytics from bot API (has Prisma data)
-        const data = await api(`/api/analytics/overview?userId=${userId}&days=30`);
-        if (data.totals) {
-          document.getElementById('statVideos').textContent = data.totals.videos || 0;
-          document.getElementById('statCredits').textContent = data.totals.credits_used || 0;
-        }
-      } catch {}
+      // Fetch all stats in parallel
+      const [analytics, calendar, abtests] = await Promise.allSettled([
+        api(`/api/analytics/overview?userId=${userId}&days=30`),
+        pyApi(`/calendar/list/${userId}`),
+        pyApi(`/ab-test/list/${userId}`),
+      ]);
+
+      // Videos + credits from analytics
+      if (analytics.status === 'fulfilled' && analytics.value.totals) {
+        document.getElementById('statVideos').textContent = analytics.value.totals.videos ?? 0;
+        document.getElementById('statCredits').textContent = analytics.value.totals.credits_used ?? 0;
+      }
+
+      // Scheduled from calendar
+      if (calendar.status === 'fulfilled') {
+        const entries = calendar.value.entries || [];
+        const scheduled = entries.filter(e => e.status === 'scheduled').length;
+        document.getElementById('statScheduled').textContent = scheduled;
+      }
+
+      // Carousels from A/B test count (proxy — no direct carousel count API yet)
+      document.getElementById('statCarousels').textContent = '—';
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -732,7 +764,7 @@
     // INIT
     // ═══════════════════════════════════════════════════════════
     ['genNicheChips', 'genDurationChips', 'carStyleChips', 'carSlideChips', 'repColorChips'].forEach(initChips);
-    loadHome();
+    authenticate().then(() => loadHome());
   </script>
 </body>
 </html>
