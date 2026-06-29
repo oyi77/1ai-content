@@ -41,6 +41,7 @@ import {
 // Content commands (video clipper, editor, rework)
 import { ContentCommands } from "./content.commands";
 import { carouselCommand, autopilotCommand, calendarCommand, abtestCommand, repurposeCommand, regenCommand, remetaCommand } from "./tiktok-automation.commands";
+import { connectCommand, publishCommand, scheduleCommand } from "./social-vilona.commands";
 
 // Feature-based flows
 export * from "@/flows/generate";
@@ -127,6 +128,11 @@ export function setupCommands(bot: Telegraf<BotContext>): void {
   bot.command("regen", regenCommand);
   bot.command("repurpose", repurposeCommand);
   bot.command("remeta", remetaCommand);
+
+  // Social media commands (via 1ai-social bridge)
+  bot.command("connect", connectCommand);
+  bot.command("publish", publishCommand);
+  bot.command("schedule", scheduleCommand);
 
   // YouTube workflow — button-based menu
   bot.command("yt", (ctx) => showYouTubeMenu(ctx));

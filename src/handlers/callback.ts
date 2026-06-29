@@ -15,6 +15,7 @@ import { handleReferralCallbacks } from "./callbacks/referral";
 import { handleAdminCallbacks } from "./callbacks/admin";
 import { handleImageCallbacks } from "./callbacks/image";
 import { handleCloneCallbacks } from "./callbacks/clone";
+import { handleSocialCallbacks } from "@/commands/social-vilona.commands";
 import { handlePaymentCallbacks } from "./callbacks/payment";
 import { handleOnboardingCallbacks } from "./callbacks/onboarding";
 import { handlePromptLibraryCallbacks } from "./callbacks/promptLibrary";
@@ -89,8 +90,10 @@ export async function callbackHandler(ctx: BotContext): Promise<void> {
     // Ebook generation (ebook_*)
     if (await handleEbookCallbacks(ctx, data)) return;
 
+    // Social media (social_connect_*, publish_to_*)
+    if (await handleSocialCallbacks(ctx, data)) return;
+
     // TikTok automation (carousel_*, autopilot_*, ap_create_*, cal_*, ab_*)
-    if (await handleTikTokAutomationCallbacks(ctx, data)) return;
 
     // Unknown callback
     logger.warn("Unknown callback:", data);
