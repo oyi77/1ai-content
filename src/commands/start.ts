@@ -134,41 +134,8 @@ export async function startCommand(ctx: BotContext): Promise<void> {
         );
       }
 
-      // Also send unified dashboard (button-based navigation)
+      // Send unified dashboard (button-based navigation)
       await showMainDashboard(ctx);
-
-      // Legacy inline menu (kept for backward compat)
-      await ctx.reply(t("cb.main_menu_quick_actions", lang), {
-        parse_mode: "Markdown",
-        reply_markup: {
-          inline_keyboard: [
-            [
-              {
-                text: t("btn.create_video", lang),
-                callback_data: "create_video_new",
-              },
-              {
-                text: t("btn.create_image", lang),
-                callback_data: "image_from_prompt",
-              },
-            ],
-            [
-              {
-                text: t("btn.browse_prompts", lang),
-                callback_data: "back_prompts",
-              },
-              {
-                text: t("btn.trending", lang),
-                callback_data: "prompts_trending",
-              },
-            ],
-            [
-              { text: t("btn.topup", lang), callback_data: "topup" },
-              { text: t("btn.my_videos", lang), callback_data: "videos_list" },
-            ],
-          ],
-        },
-      });
       return;
     }
 
