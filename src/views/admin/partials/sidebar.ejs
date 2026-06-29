@@ -10,8 +10,8 @@
     <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">Admin Dashboard v3</div>
   </div>
   <nav style="flex: 1; padding: 12px 0; overflow-y: auto;">
-
-    <!-- 📊 Business Intelligence -->
+    <div style="font-size: 16px; font-weight: 700; color: var(--gold);">⚡ Vilona Content</div>
+    <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">Admin Dashboard</div>
     <div class="nav-category" onclick="toggleCategory(this)">
       <span class="nav-category-icon">📊</span>
       <span class="nav-category-label">Business</span>
@@ -52,16 +52,19 @@
       <div class="<%= _nav('playground') %>" onclick="window.location='/admin/playground'">🧪 Playground</div>
     </div>
 
-    <!-- 📱 Social Media -->
+    <!-- 🤖 Content Automation -->
     <div class="nav-category" onclick="toggleCategory(this)">
-      <span class="nav-category-icon">📱</span>
-      <span class="nav-category-label">Social Media</span>
+      <span class="nav-category-icon">🤖</span>
+      <span class="nav-category-label">Automation</span>
       <span class="nav-category-arrow">▶</span>
     </div>
-    <div class="nav-category-items" id="cat-social">
-      <div class="<%= _nav('meta-pages') %>" onclick="window.location='/admin/meta-pages'">📄 FB Pages</div>
-      <div class="<%= _nav('content-calendar') %>" onclick="window.location='/admin/content-calendar'">📅 Calendar</div>
-      <div class="<%= _nav('bulk-scheduler') %>" onclick="window.location='/admin/bulk-scheduler'">⏰ Bulk Scheduler</div>
+    <div class="nav-category-items" id="cat-automation">
+      <div class="nav-item" id="nav-content-calendar" onclick="window.location='/admin/dashboard#content-calendar'">📅 Content Calendar</div>
+      <div class="nav-item" id="nav-carousel" onclick="window.location='/admin/dashboard#carousel'">🖼️ Carousels</div>
+      <div class="nav-item" id="nav-remeta" onclick="window.location='/admin/dashboard#remeta'">🔄 Re-Metadata</div>
+      <div class="nav-item" id="nav-repurpose" onclick="window.location='/admin/dashboard#repurpose'">🔀 Repurpose</div>
+      <div class="nav-item" id="nav-trending" onclick="window.location='/admin/dashboard#trending'">🔥 Trending</div>
+      <div class="nav-item" id="nav-ab-tests" onclick="window.location='/admin/dashboard#ab-tests'">🧪 A/B Tests</div>
     </div>
 
     <!-- 🔌 Technical -->
@@ -203,7 +206,7 @@ function updateDashboardNav() {
   }
 
   // Remove active class from all dashboard subsections
-  const subsections = ['users', 'transactions', 'analytics', 'pricing', 'tokens', 'profit', 'niches', 'landing-page', 'meta-pages', 'content-calendar', 'bulk-scheduler'];
+  const subsections = ['users', 'transactions', 'analytics', 'pricing', 'tokens', 'profit', 'niches', 'landing-page', 'content-calendar', 'carousel', 'remeta', 'repurpose', 'trending', 'ab-tests'];
   subsections.forEach(section => {
     const el = document.getElementById(`nav-${section}`);
     if (el) el.classList.remove('active');
