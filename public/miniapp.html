@@ -385,8 +385,8 @@
       } catch (e) { throw e; }
     }
 
-    // Call Python API directly (for calendar, abtest, trending, carousel, remeta, repurpose)
-    const PY_API = 'http://localhost:8767';
+    // Call Python API via nginx proxy (for calendar, abtest, trending, carousel, remeta, repurpose)
+    const PY_API = API_BASE + '/api/py';
     async function pyApi(path, opts = {}) {
       try {
         const url = PY_API + path;
@@ -516,7 +516,7 @@
         // Step 1: Upload video
         const formData = new FormData();
         formData.append('file', file);
-        const uploadRes = await fetch(`${API_BASE}/api/content/upload/video`, {
+        const uploadRes = await fetch(`${PY_API}/upload/video`, {
           method: 'POST',
           headers: { 'X-Telegram-Init-Data': initData },
           body: formData,
