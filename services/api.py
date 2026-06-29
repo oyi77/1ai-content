@@ -656,42 +656,62 @@ async def autopilot_run():
 
 
 # ══════════════════════════════════════════════════════════════
-# TRENDING (Scan + Auto-Generate)
+# TRENDING (Background scan + cache-first serving)
 # ══════════════════════════════════════════════════════════════
-_scanner = None
 
-def get_scanner():
-    global _scanner
-    if _scanner is None:
-        from services.trends.scanner import TrendScanner
-        _scanner = TrendScanner()
-    return _scanner
+def _get_scanner():
+    from services.trends.scanner import get_scanner
+    return get_scanner()
+
+
+@app.on_event("startup")
+async def start_trending_scanner():
+    """Start background trending scanner on API startup."""
+    try:
+        from services.trends.scanner import start_background_scanner
+        start_background_scanner()
+    except Exception as e:
+        print(f"[API] Failed to start trend scanner: {e}")
+
+
+@app.get("/trending/cached")
+async def trending_cached():
+    """Return cached trending data instantly (no scan)."""
+    scanner = _get_scanner()
+    return scanner.get_cached()
 
 
 @app.get("/trending/scan")
 async def trending_scan(niche: str = "", region: str = "ID"):
-    """Scan trending content across platforms."""
+    """Force a fresh scan (admin use — updates cache for everyone)."""
     try:
-        scanner = get_scanner()
-        results = scanner.scan_all(niche=niche, region=region)
+        scanner = _get_scanner()
+        results = scanner.scan_now(niche=niche, region=region)
         return results
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/trending/generate")
-async def trending_generate(topic: str, content_type: str = "video", platform: str = "tiktok", language: str = "id"):
-    """Generate content from a trending topic."""
-    try:
-        if content_type == "carousel":
-            assembler = get_carousel()
-            result = assembler.create(topic=topic, platform=platform, language=language)
-        else:
-            orch = AutoPilotOrchestrator()
-            result = orch.faceless_engine.generate_video(topic=topic, platform=platform, language=language)
-        return result
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+@app.get("/trending/status")
+async def trending_status():
+    """Get scanner status and cache info."""
+    scanner = _get_scanner()
+    return scanner.get_status()
+
+
+ @app.post("/trending/generate")
+ async def trending_generate(topic: str, content_type: str = "video", platform: str = "tiktok", language: str = "id"):
+     """Generate content from a trending topic."""
+     try:
+         if content_type == "carousel":
+             assembler = get_carousel()
+             result = assembler.create(topic=topic, platform=platform, language=language)
+         else:
+             orch = AutoPilotOrchestrator()
+             result = orch.faceless_engine.generate_video(topic=topic, platform=platform, language=language)
+         return result
+     except Exception as e:
+         raise HTTPException(status_code=500, detail=str(e))
 
 
 # ══════════════════════════════════════════════════════════════

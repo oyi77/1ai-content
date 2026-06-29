@@ -721,22 +721,24 @@
     // TRENDING
     // ═══════════════════════════════════════════════════════════
     async function scanTrending() {
-      showLoading('Scanning trends...');
+      showLoading('Loading trending data...');
       try {
-        const data = await pyApi('/trending/scan');
+        const data = await pyApi('/trending/cached');
         hideLoading();
         const el = document.getElementById('trendingList');
         const items = [];
-        if (data.youtube) items.push(...data.youtube.slice(0, 10));
-        if (data.google_trends) items.push(...data.google_trends.slice(0, 5));
+        if (data.youtube) items.push(...data.youtube.slice(0, 5).map(v => ({...v, source: 'YouTube'})));
+        if (data.google) items.push(...data.google.slice(0, 5).map(t => ({...t, source: 'Google Trends'})));
+        if (data.reddit) items.push(...data.reddit.slice(0, 3).map(p => ({...p, source: 'Reddit'})));
+        if (data.tiktok) items.push(...data.tiktok.slice(0, 3).map(t => ({...t, source: 'TikTok'})));
         if (!items.length) {
-          el.innerHTML = '<div class="empty"><div class="icon">📊</div><div class="title">Tidak ada trending</div></div>';
+          el.innerHTML = '<div class="empty"><div class="icon">📊</div><div class="title">Trending data loading...</div><div class="desc">Background scan runs every 10 min</div></div>';
           return;
         }
         el.innerHTML = items.map((t, i) => `
-          <div class="card" onclick="useTrending(${i})">
-            <div style="font-weight:600">${t.title || t.query || 'Trending #' + (i+1)}</div>
-            <div style="font-size:11px;color:var(--muted);margin-top:4px">${t.source || 'YouTube'}</div>
+          <div class="card" onclick="useTrending(${i})" style="margin-bottom:8px;">
+            <div style="font-weight:600">${t.title || 'Trending #' + (i+1)}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px">${t.source}${t.views ? ' · ' + (t.views/1000).toFixed(0) + 'K views' : ''}${t.traffic ? ' · ' + t.traffic + ' searches' : ''}</div>
           </div>
         `).join('');
       } catch (e) {

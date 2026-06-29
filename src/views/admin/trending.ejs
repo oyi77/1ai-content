@@ -2,11 +2,20 @@
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
   <div>
     <h1 class="section-title">🔥 Trending Scanner</h1>
-    <p class="section-sub">Scan YouTube, Google Trends, Reddit, TikTok for trending topics</p>
+    <p class="section-sub">Auto-scanned every 10 min · Cached data served instantly</p>
   </div>
   <div style="display:flex;gap:8px;">
-    <button class="btn btn-gold" onclick="scanTrending()">🔥 Scan Now</button>
-    <button class="btn btn-ghost" onclick="loadCached()">📂 Load Cached</button>
+    <button class="btn btn-gold" onclick="forceScan()">🔥 Scan Now (Admin)</button>
+    <button class="btn btn-ghost" onclick="loadCached()">🔄 Refresh Cache</button>
+  </div>
+</div>
+
+<!-- Status -->
+<div id="scanner-status" class="card" style="margin-bottom:20px;padding:12px 20px;">
+  <div style="display:flex;gap:24px;font-size:13px;">
+    <span>📡 Background: <span id="bg-status">—</span></span>
+    <span>🕐 Last scan: <span id="last-scan">—</span></span>
+    <span>📊 Interval: <span id="scan-interval">—</span></span>
   </div>
 </div>
 
@@ -20,24 +29,61 @@
 
 <!-- Results -->
 <div class="card" id="results-card">
-  <div id="results" class="empty-state">Click 🔥 Scan Now to fetch trending topics</div>
+  <div id="results" class="loading">Loading cached data...</div>
 </div>
 
 <script>
 const PY_API = window.location.origin + '/api/py';
 
-async function scanTrending() {
-  document.getElementById('results').innerHTML = '<div class="loading">⏳ Scanning YouTube, Google Trends, Reddit, TikTok...</div>';
+function showToast(msg, type='success') {
+  const t = document.createElement('div');
+  t.className = `toast toast-${type === 'success' ? 'success' : 'error'}`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+async function loadStatus() {
   try {
-    const r = await fetch(`${PY_API}/trending/scan`);
+    const r = await fetch(`${PY_API}/trending/status`);
+    const data = await r.json();
+    document.getElementById('bg-status').textContent = data.background_active ? '✅ Running' : '❌ Stopped';
+    document.getElementById('last-scan').textContent = data.last_scan || 'Never';
+    document.getElementById('scan-interval').textContent = `${data.scan_interval_seconds / 60} min`;
+  } catch {}
+}
+
+async function loadCached() {
+  try {
+    const r = await fetch(`${PY_API}/trending/cached`);
     const data = await r.json();
     renderResults(data);
+    await loadStatus();
   } catch (e) {
     document.getElementById('results').innerHTML = `<div class="empty-state" style="color:var(--red);">❌ ${e.message}</div>`;
   }
 }
 
-async function loadCached() { await scanTrending(); }
+async function forceScan() {
+  const btn = document.querySelector('.btn-gold');
+  btn.textContent = '⏳ Scanning...';
+  btn.disabled = true;
+  document.getElementById('results').innerHTML = '<div class="loading">⏳ Scanning YouTube, Google Trends, Reddit, TikTok...</div>';
+
+  try {
+    const r = await fetch(`${PY_API}/trending/scan`);
+    const data = await r.json();
+    renderResults(data);
+    showToast(`✅ ${data.total_topics || 0} topics found`);
+    await loadStatus();
+  } catch (e) {
+    document.getElementById('results').innerHTML = `<div class="empty-state" style="color:var(--red);">❌ ${e.message}</div>`;
+    showToast('❌ Scan failed', 'error');
+  }
+
+  btn.textContent = '🔥 Scan Now (Admin)';
+  btn.disabled = false;
+}
 
 function renderResults(data) {
   const yt = data.youtube || [];
@@ -50,46 +96,84 @@ function renderResults(data) {
   document.getElementById('s-reddit').textContent = reddit.length;
   document.getElementById('s-tiktok').textContent = tiktok.length;
 
-  let html = '';
+  let sections = [];
+
   if (yt.length) {
-    html += '<h3 style="margin:16px 0 12px;font-size:16px;font-weight:700;">📺 YouTube Trending</h3>';
-    yt.slice(0, 10).forEach((v, i) => {
-      html += `<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);">
-        <span style="font-size:20px;font-weight:700;color:var(--muted);width:30px;">${i+1}</span>
-        <div><div style="font-weight:600;">${v.title || 'Untitled'}</div>
-        <div style="font-size:12px;color:var(--muted);">${v.channel || ''} · ${v.views ? (v.views/1000).toFixed(0)+'K views' : ''}</div></div></div>`;
+    let html = '<h3 style="margin:20px 0 12px;font-size:16px;font-weight:700;">📺 YouTube Trending</h3>';
+    html += '<table style="width:100%;border-collapse:collapse;">';
+    html += '<tr><th style="text-align:left;padding:8px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--border);">#</th><th style="text-align:left;padding:8px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--border);">TITLE</th><th style="text-align:left;padding:8px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--border);">CHANNEL</th><th style="text-align:right;padding:8px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--border);">VIEWS</th></tr>';
+    yt.slice(0, 15).forEach((v, i) => {
+      html += `<tr>
+        <td style="padding:10px 8px;border-bottom:1px solid var(--border);font-weight:700;color:var(--muted);">${i+1}</td>
+        <td style="padding:10px 8px;border-bottom:1px solid var(--border);font-weight:600;">${v.title || 'Untitled'}</td>
+        <td style="padding:10px 8px;border-bottom:1px solid var(--border);color:var(--muted);font-size:12px;">${v.channel || '—'}</td>
+        <td style="padding:10px 8px;border-bottom:1px solid var(--border);text-align:right;font-family:monospace;">${v.views ? (v.views/1000).toFixed(0)+'K' : '—'}</td>
+      </tr>`;
     });
+    html += '</table>';
+    sections.push(html);
   }
+
   if (google.length) {
-    html += '<h3 style="margin:24px 0 12px;font-size:16px;font-weight:700;">🔍 Google Trends</h3>';
-    google.slice(0, 10).forEach((t, i) => {
-      html += `<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);">
-        <span style="font-size:20px;font-weight:700;color:var(--muted);width:30px;">${i+1}</span>
-        <div><div style="font-weight:600;">${t.title || ''}</div>
-        <div style="font-size:12px;color:var(--muted);">${t.traffic || 'N/A'} searches</div></div></div>`;
+    let html = '<h3 style="margin:20px 0 12px;font-size:16px;font-weight:700;">🔍 Google Trends</h3>';
+    html += '<table style="width:100%;border-collapse:collapse;">';
+    html += '<tr><th style="text-align:left;padding:8px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--border);">#</th><th style="text-align:left;padding:8px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--border);">TOPIC</th><th style="text-align:right;padding:8px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--border);">TRAFFIC</th></tr>';
+    google.slice(0, 15).forEach((t, i) => {
+      html += `<tr>
+        <td style="padding:10px 8px;border-bottom:1px solid var(--border);font-weight:700;color:var(--muted);">${i+1}</td>
+        <td style="padding:10px 8px;border-bottom:1px solid var(--border);font-weight:600;">${t.title || ''}</td>
+        <td style="padding:10px 8px;border-bottom:1px solid var(--border);text-align:right;font-family:monospace;">${t.traffic || '—'}</td>
+      </tr>`;
     });
+    html += '</table>';
+    sections.push(html);
   }
+
   if (reddit.length) {
-    html += '<h3 style="margin:24px 0 12px;font-size:16px;font-weight:700;">👽 Reddit Hot</h3>';
-    reddit.slice(0, 10).forEach((p, i) => {
-      html += `<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);">
-        <span style="font-size:20px;font-weight:700;color:var(--muted);width:30px;">${i+1}</span>
-        <div><div style="font-weight:600;">${p.title || ''}</div>
-        <div style="font-size:12px;color:var(--muted);">r/${p.subreddit || ''} · ${p.score || 0}↑ · ${p.comments || 0}💬</div></div></div>`;
+    let html = '<h3 style="margin:20px 0 12px;font-size:16px;font-weight:700;">👽 Reddit Hot</h3>';
+    html += '<table style="width:100%;border-collapse:collapse;">';
+    html += '<tr><th style="text-align:left;padding:8px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--border);">#</th><th style="text-align:left;padding:8px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--border);">TITLE</th><th style="text-align:left;padding:8px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--border);">SUB</th><th style="text-align:right;padding:8px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--border);">SCORE</th></tr>';
+    reddit.slice(0, 15).forEach((p, i) => {
+      html += `<tr>
+        <td style="padding:10px 8px;border-bottom:1px solid var(--border);font-weight:700;color:var(--muted);">${i+1}</td>
+        <td style="padding:10px 8px;border-bottom:1px solid var(--border);font-weight:600;">${p.title || ''}</td>
+        <td style="padding:10px 8px;border-bottom:1px solid var(--border);color:var(--muted);font-size:12px;">r/${p.subreddit || ''}</td>
+        <td style="padding:10px 8px;border-bottom:1px solid var(--border);text-align:right;font-family:monospace;">${p.score || 0}↑ ${p.comments || 0}💬</td>
+      </tr>`;
     });
+    html += '</table>';
+    sections.push(html);
   }
+
   if (tiktok.length) {
-    html += '<h3 style="margin:24px 0 12px;font-size:16px;font-weight:700;">🎵 TikTok Trending</h3>';
-    tiktok.slice(0, 10).forEach((t, i) => {
-      html += `<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);">
-        <span style="font-size:20px;font-weight:700;color:var(--muted);width:30px;">${i+1}</span>
-        <div><div style="font-weight:600;">${t.title || ''}</div>
-        <div style="font-size:12px;color:var(--muted);">${t.views ? (t.views/1000).toFixed(0)+'K views' : ''}</div></div></div>`;
+    let html = '<h3 style="margin:20px 0 12px;font-size:16px;font-weight:700;">🎵 TikTok Trending</h3>';
+    html += '<table style="width:100%;border-collapse:collapse;">';
+    html += '<tr><th style="text-align:left;padding:8px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--border);">#</th><th style="text-align:left;padding:8px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--border);">HASHTAG</th><th style="text-align:right;padding:8px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--border);">VIEWS</th></tr>';
+    tiktok.slice(0, 15).forEach((t, i) => {
+      html += `<tr>
+        <td style="padding:10px 8px;border-bottom:1px solid var(--border);font-weight:700;color:var(--muted);">${i+1}</td>
+        <td style="padding:10px 8px;border-bottom:1px solid var(--border);font-weight:600;">${t.title || ''}</td>
+        <td style="padding:10px 8px;border-bottom:1px solid var(--border);text-align:right;font-family:monospace;">${t.views ? (t.views/1000).toFixed(0)+'K' : '—'}</td>
+      </tr>`;
     });
+    html += '</table>';
+    sections.push(html);
   }
-  if (!html) html = '<div class="empty-state">No trending data found. Try again later.</div>';
-  document.getElementById('results').innerHTML = html;
+
+  if (!sections.length) {
+    document.getElementById('results').innerHTML = '<div class="empty-state">No cached data. Background scan runs every 10 min, or click 🔥 Scan Now.</div>';
+    return;
+  }
+
+  // Cached info
+  let meta = '';
+  if (data.cached_at) {
+    meta = `<div style="font-size:11px;color:var(--muted);margin-bottom:16px;">📅 Cached: ${data.cached_at}${data.scanned_at ? ' · Scanned: ' + data.scanned_at : ''}</div>`;
+  }
+
+  document.getElementById('results').innerHTML = meta + sections.join('');
 }
 
+// Load cached data immediately on page load
 loadCached();
 </script>
