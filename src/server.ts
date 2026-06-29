@@ -25,7 +25,6 @@ import { contentApiRoutes } from "@/routes/content-api";
 import { youtubeDashboardRoutes } from "@/routes/youtube/dashboard.route";
 import { ecosystemRoutes } from "@/routes/ecosystem";
 import { analyticsRoutes } from "@/routes/analytics-api";
-import { hermesContentRoutes } from "@/routes/hermes";
 import type { Telegraf } from "telegraf";
 
 /**
@@ -163,9 +162,6 @@ export async function registerRoutes(
 
   // Analytics API
   await app.register(analyticsRoutes);
-
-  // HERMES content API
-  await app.register(hermesContentRoutes, { prefix: "/api/hermes/content" });
 
   if (config.NODE_ENV === "test") {
     const testRoutes = require("./routes/test").default;

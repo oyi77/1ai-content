@@ -114,8 +114,6 @@ class CloakBrowserAdapter:
         platform: str, link: Optional[str], tags: Optional[list]
     ) -> dict:
         """Post via Playwright CDP WebSocket."""
-        # Use the Python integration we built earlier
-        sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / "hermes" / "scripts"))
 
         try:
             from cloakbrowser_cdp_integration import CloakBrowserCDP
