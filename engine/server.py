@@ -39,9 +39,6 @@ class RemakeRequest(BaseModel):
     caption: str = ""
 
 
-class LoadSheetRequest(BaseModel):
-    sheet_url: str
-
 
 # ── Endpoints ───────────────────────────────────────────────────────
 
@@ -90,24 +87,7 @@ async def remake(req: RemakeRequest):
     }
 
 
-@app.post("/api/content/load-sheet")
-async def load_sheet(req: LoadSheetRequest):
-    """Load product database from Google Sheet — multi-tab with fuzzy matching.
-
-    TODO: Implement actual sheet loading logic.
-    For now, returns empty result.
-    """
-    return {
-        "data": {
-            "sheet_url": req.sheet_url,
-            "pages": [],
-            "categories": [],
-            "category_content": {},
-            "total_pages": 0,
-        }
-    }
-
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=9002, log_level="info")
+    uvicorn.run(app, host="0.0.0.0", port=9012, log_level="info")
