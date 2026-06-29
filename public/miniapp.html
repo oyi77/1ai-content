@@ -385,6 +385,18 @@
       } catch (e) { throw e; }
     }
 
+    // Call Python API directly (for calendar, abtest, trending, carousel, remeta, repurpose)
+    const PY_API = 'http://localhost:8767';
+    async function pyApi(path, opts = {}) {
+      try {
+        const url = PY_API + path;
+        const headers = { 'Content-Type': 'application/json' };
+        const r = await fetch(url, { ...opts, headers: { ...headers, ...opts.headers } });
+        if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.error || e.detail || `HTTP ${r.status}`); }
+        return await r.json();
+      } catch (e) { throw e; }
+    }
+
     function showLoading(text = 'Processing...') {
       document.getElementById('loadingText').textContent = text;
       document.getElementById('loadingOverlay').classList.remove('hidden');
@@ -407,6 +419,7 @@
       document.getElementById('userAvatar').textContent = firstName.charAt(0).toUpperCase();
 
       try {
+        // Analytics from bot API (has Prisma data)
         const data = await api(`/api/analytics/overview?userId=${userId}&days=30`);
         if (data.totals) {
           document.getElementById('statVideos').textContent = data.totals.videos || 0;
@@ -463,7 +476,7 @@
       if (!topic) return showToast('Masukkan topik carousel', 'error');
       showLoading('Generating carousel... 30-60 detik');
       try {
-        const result = await api('/carousel/create', {
+        const result = await pyApi('/carousel/create', {
           method: 'POST',
           body: JSON.stringify({
             topic,
@@ -513,7 +526,7 @@
 
         // Step 2: Process remeta
         showLoading('Re-rendering video... 1-3 min');
-        const result = await api('/api/content/remeta', {
+        const result = await pyApi('/remeta', {
           method: 'POST',
           body: JSON.stringify({
             source: uploadData.path,
@@ -565,7 +578,7 @@
           </div>
         `).join('');
       } catch {
-        el.innerHTML = '<div class="empty"><div class="icon">❌</div><div class="title">Gagal load</div></div>';
+        el.innerHTML = '<div class="empty"><div class="icon">🎬</div><div class="title">Belum ada video</div><div class="desc">Buat video pertama lewat bot Telegram!</div></div>';
       }
     }
 
@@ -575,10 +588,10 @@
     async function loadCalendar() {
       const el = document.getElementById('calendarList');
       try {
-        const data = await api(`/api/v1/calendar/list/${userId}`);
+        const data = await pyApi(`/calendar/list/${userId}`);
         const entries = data.entries || [];
         if (!entries.length) {
-          el.innerHTML = '<div class="empty"><div class="icon">📅</div><div class="title">Belum ada jadwal</div><div class="desc">Schedule konten pertama kamu!</div></div>';
+          el.innerHTML = '<div class="empty"><div class="icon">📅</div><div class="title">Belum ada jadwal</div><div class="desc">Schedule konten lewat bot: /calendar</div></div>';
           return;
         }
         el.innerHTML = entries.map(e => {
@@ -587,7 +600,7 @@
           return `<div class="list-item"><div class="thumb">${emoji}</div><div class="info"><div class="title">${e.topic}</div><div class="meta">${status} ${e.scheduled_at} · ${e.platform}</div></div></div>`;
         }).join('');
       } catch {
-        el.innerHTML = '<div class="empty"><div class="icon">📅</div><div class="title">Gagal load</div></div>';
+        el.innerHTML = '<div class="empty"><div class="icon">📅</div><div class="title">Belum ada jadwal</div><div class="desc">Schedule konten lewat bot: /calendar</div></div>';
       }
     }
 
@@ -602,10 +615,10 @@
     async function loadABTests() {
       const el = document.getElementById('abtestList');
       try {
-        const data = await api(`/api/v1/ab-test/list/${userId}`);
+        const data = await pyApi(`/ab-test/list/${userId}`);
         const tests = data.tests || [];
         if (!tests.length) {
-          el.innerHTML = '<div class="empty"><div class="icon">🧪</div><div class="title">Belum ada test</div><div class="desc">Buat A/B test pertama!</div></div>';
+          el.innerHTML = '<div class="empty"><div class="icon">🧪</div><div class="title">Belum ada test</div><div class="desc">Buat A/B test lewat bot: /abtest</div></div>';
           return;
         }
         el.innerHTML = tests.map(t => {
@@ -613,7 +626,7 @@
           return `<div class="list-item"><div class="thumb">🧪</div><div class="info"><div class="title">${t.name}</div><div class="meta">${t.status} · ${t.content_type} · ${winner}</div></div></div>`;
         }).join('');
       } catch {
-        el.innerHTML = '<div class="empty"><div class="icon">❌</div><div class="title">Gagal load</div></div>';
+        el.innerHTML = '<div class="empty"><div class="icon">🧪</div><div class="title">Belum ada test</div><div class="desc">Buat A/B test lewat bot: /abtest</div></div>';
       }
     }
 
@@ -634,7 +647,7 @@
 
       showLoading('Repurpose starting... 2-5 min');
       try {
-        const result = await api('/api/content/repurpose', {
+        const result = await pyApi('/repurpose', {
           method: 'POST',
           body: JSON.stringify({
             sources: urls,
@@ -678,7 +691,7 @@
     async function scanTrending() {
       showLoading('Scanning trends...');
       try {
-        const data = await api('/trending/scan');
+        const data = await pyApi('/trending/scan');
         hideLoading();
         const el = document.getElementById('trendingList');
         const items = [];
