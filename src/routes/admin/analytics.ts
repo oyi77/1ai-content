@@ -26,6 +26,22 @@ export async function registerAnalyticsRoutes(server: FastifyInstance) {
     return reply.view("admin/ab-tests.ejs", { ...trackingVars(), activePage: 'ab-tests', title: 'A/B Tests' }, { layout: 'admin/layout.ejs' });
   });
 
+  // Carousel page
+  server.get("/admin/carousel", async (_request, reply) => {
+    return reply.view("admin/carousel.ejs", { ...trackingVars(), activePage: 'carousel', title: 'Carousel Generator' }, { layout: 'admin/layout.ejs' });
+  });
+
+  // Re-Metadata page
+  server.get("/admin/remeta", async (_request, reply) => {
+    return reply.view("admin/remeta.ejs", { ...trackingVars(), activePage: 'remeta', title: 'Re-Metadata Engine' }, { layout: 'admin/layout.ejs' });
+  });
+
+  // Repurpose page
+  server.get("/admin/repurpose", async (_request, reply) => {
+    return reply.view("admin/repurpose.ejs", { ...trackingVars(), activePage: 'repurpose', title: 'Content Repurpose' }, { layout: 'admin/layout.ejs' });
+  });
+
+
 
   // API: Analytics data (today's metrics, active users, provider health, top niches, recent errors)
   server.get("/api/analytics", async () => {

@@ -1,0 +1,138 @@
+<!-- Re-Metadata Admin Page -->
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+  <div>
+    <h1 class="section-title">🔄 Re-Metadata Engine</h1>
+    <p class="section-sub">Re-render video with new metadata — anti-copyright. Adds overlay, changes hash.</p>
+  </div>
+</div>
+
+<!-- How it works -->
+<div class="card" style="margin-bottom:20px;background:var(--bg);">
+  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;text-align:center;">
+    <div><div style="font-size:24px;margin-bottom:4px;">📹</div><div style="font-size:11px;color:var(--muted);">Upload Video</div></div>
+    <div><div style="font-size:24px;margin-bottom:4px;">🏷️</div><div style="font-size:11px;color:var(--muted);">Add Overlay</div></div>
+    <div><div style="font-size:24px;margin-bottom:4px;">🎨</div><div style="font-size:11px;color:var(--muted);">Color Shift</div></div>
+    <div><div style="font-size:24px;margin-bottom:4px;">⚡</div><div style="font-size:11px;color:var(--muted);">Speed Tweak</div></div>
+    <div><div style="font-size:24px;margin-bottom:4px;">🔄</div><div style="font-size:11px;color:var(--muted);">New Hash</div></div>
+  </div>
+</div>
+
+<!-- Form -->
+<div class="card" style="margin-bottom:20px;">
+  <h3 style="margin-bottom:16px;font-size:16px;font-weight:700;">Re-Render Video</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+    <div class="form-group">
+      <label>Overlay Text</label>
+      <input class="input" id="rm-overlay" placeholder="@brandname" style="width:100%;">
+    </div>
+    <div class="form-group">
+      <label>Watermark (optional)</label>
+      <input class="input" id="rm-watermark" placeholder="@username" style="width:100%;">
+    </div>
+    <div class="form-group">
+      <label>Niche (for SEO metadata)</label>
+      <input class="input" id="rm-niche" placeholder="tech tips" value="general" style="width:100%;">
+    </div>
+    <div class="form-group">
+      <label>Platform</label>
+      <select class="input" id="rm-platform" style="width:100%;">
+        <option value="tiktok">🎵 TikTok</option>
+        <option value="instagram">📸 Instagram</option>
+        <option value="youtube">▶️ YouTube</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Video File Path (server-side)</label>
+      <input class="input" id="rm-source" placeholder="/path/to/video.mp4" style="width:100%;">
+    </div>
+    <div class="form-group">
+      <label>Color Shift</label>
+      <select class="input" id="rm-colorshift" style="width:100%;">
+        <option value="true">✅ Yes (recommended)</option>
+        <option value="false">❌ No</option>
+      </select>
+    </div>
+  </div>
+  <button class="btn btn-gold" style="margin-top:20px;" onclick="processRemeta()">🔄 Re-Render Video</button>
+</div>
+
+<!-- Result -->
+<div id="remeta-result" class="card" style="display:none;margin-bottom:20px;">
+  <h3 style="margin-bottom:16px;font-size:16px;font-weight:700;">Result</h3>
+  <div id="remeta-content"></div>
+</div>
+
+<script>
+const PY_API = window.location.origin + '/api/py';
+
+function showToast(msg, type='success') {
+  const t = document.createElement('div');
+  t.className = `toast toast-${type === 'success' ? 'success' : 'error'}`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+async function processRemeta() {
+  const source = document.getElementById('rm-source').value.trim();
+  const overlay = document.getElementById('rm-overlay').value.trim();
+  if (!source) return showToast('Enter video file path', 'error');
+  if (!overlay) return showToast('Enter overlay text', 'error');
+
+  const btn = document.querySelector('.btn-gold');
+  btn.textContent = '⏳ Processing...';
+  btn.disabled = true;
+
+  try {
+    const r = await fetch(`${PY_API}/remeta`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        source,
+        overlay,
+        watermark: document.getElementById('rm-watermark').value.trim() || undefined,
+        position: 'bottom_right',
+        color_shift: document.getElementById('rm-colorshift').value === 'true',
+        niche: document.getElementById('rm-niche').value.trim() || 'general',
+        platform: document.getElementById('rm-platform').value,
+      }),
+    });
+    const data = await r.json();
+
+    const section = document.getElementById('remeta-result');
+    section.style.display = 'block';
+
+    if (data.success) {
+      const meta = data.metadata || {};
+      const changes = data.changes_applied || [];
+      document.getElementById('remeta-content').innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+          <div class="kpi-card"><div class="label">Original Hash</div><div style="font-family:monospace;font-size:12px;margin-top:4px;">${(data.original_hash||'').slice(0,24)}...</div></div>
+          <div class="kpi-card"><div class="label">New Hash</div><div style="font-family:monospace;font-size:12px;margin-top:4px;color:var(--green);">${(data.new_hash||'').slice(0,24)}...</div></div>
+          <div class="kpi-card"><div class="label">Duration</div><div class="value">${data.new_duration || '—'}s</div></div>
+          <div class="kpi-card"><div class="label">Encoding</div><div style="font-family:monospace;font-size:12px;margin-top:4px;">${data.encoding || '—'}</div></div>
+        </div>
+        <div style="padding:16px;background:var(--bg);border-radius:10px;margin-bottom:12px;">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Changes Applied</div>
+          <div style="font-size:14px;">${changes.join(' · ') || 'none'}</div>
+        </div>
+        <div style="padding:16px;background:var(--bg);border-radius:10px;">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">New Metadata</div>
+          <div style="font-size:14px;font-weight:600;">${meta.title || '—'}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px;">${(meta.hashtags||[]).join(' ')}</div>
+        </div>
+        <div style="margin-top:12px;font-size:12px;color:var(--muted);">📁 Output: ${data.video_path || '—'}</div>
+      `;
+      showToast('✅ Video re-rendered with new metadata!');
+    } else {
+      document.getElementById('remeta-content').innerHTML = `<div style="color:var(--red);">❌ ${data.error || 'Failed'}</div>`;
+      showToast('❌ ' + (data.error || 'Failed'), 'error');
+    }
+  } catch (e) {
+    showToast('❌ ' + e.message, 'error');
+  }
+
+  btn.textContent = '🔄 Re-Render Video';
+  btn.disabled = false;
+}
+</script>
