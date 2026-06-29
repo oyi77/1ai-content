@@ -1,56 +1,29 @@
-#!/usr/bin/env python3
 """
-Content Calendar Service — Schedule and manage content across platforms.
+Content Calendar Service — PostgreSQL-backed via SQLAlchemy.
 
-Provides CRUD operations for content calendar entries with
-auto-integration to AutoPilot scheduler for automated publishing.
-
-Usage:
-    from services.calendar.content_calendar import ContentCalendarService
-    cal = ContentCalendarService()
-    entry = cal.schedule_content(user_id=123, topic="Tips coding", ...)
+Schedules content for auto-publishing across platforms.
 """
 
-import json
 import os
 from datetime import datetime, timedelta
 from typing import Optional
 
+from sqlalchemy import select, update, delete, func
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from services.db.models import ContentCalendar, async_session
+
 
 class ContentCalendarService:
-    """
-    Content calendar for scheduling posts.
+    """Content calendar backed by PostgreSQL."""
 
-    Uses file-based storage with JSON for simplicity.
-    In production, this would use Prisma/PostgreSQL.
-    """
-
-    def __init__(self, storage_dir: str = None):
-        self.storage_dir = storage_dir or os.path.expanduser("~/.openclaw/workspace/data/calendar")
-        os.makedirs(self.storage_dir, exist_ok=True)
-
-    def _user_file(self, user_id: int) -> str:
-        return os.path.join(self.storage_dir, f"user_{user_id}.json")
-
-    def _load_entries(self, user_id: int) -> list[dict]:
-        path = self._user_file(user_id)
-        if os.path.exists(path):
-            with open(path) as f:
-                return json.load(f)
-        return []
-
-    def _save_entries(self, user_id: int, entries: list[dict]) -> None:
-        path = self._user_file(user_id)
-        with open(path, "w") as f:
-            json.dump(entries, f, indent=2, ensure_ascii=False, default=str)
-
-    def schedule_content(
+    async def schedule_content(
         self,
         user_id: int,
         topic: str,
-        scheduled_at: str,  # ISO format or "YYYY-MM-DD HH:MM"
+        scheduled_at: str,
         platform: str = "tiktok",
-        content_type: str = "video",  # video, carousel, image
+        content_type: str = "video",
         caption: str = "",
         hashtags: list[str] = None,
         niche: str = "",
@@ -58,163 +31,155 @@ class ContentCalendarService:
         language: str = "id",
         auto_post: bool = False,
     ) -> dict:
-        """
-        Schedule a content piece for future publishing.
+        """Schedule a content piece."""
+        async with async_session() as session:
+            entry = ContentCalendar(
+                user_id=user_id,
+                topic=topic,
+                scheduled_at=datetime.fromisoformat(scheduled_at) if isinstance(scheduled_at, str) else scheduled_at,
+                platform=platform,
+                content_type=content_type,
+                caption=caption,
+                hashtags=hashtags or [],
+                niche=niche,
+                style=style,
+                language=language,
+                auto_post=auto_post,
+                status="scheduled",
+            )
+            session.add(entry)
+            await session.commit()
+            await session.refresh(entry)
+            return self._to_dict(entry)
 
-        Returns:
-            Created calendar entry dict
-        """
-        entries = self._load_entries(user_id)
-
-        entry = {
-            "id": f"cal_{user_id}_{int(datetime.now().timestamp())}",
-            "user_id": user_id,
-            "topic": topic,
-            "scheduled_at": scheduled_at,
-            "platform": platform,
-            "content_type": content_type,
-            "caption": caption,
-            "hashtags": hashtags or [],
-            "niche": niche,
-            "style": style,
-            "language": language,
-            "auto_post": auto_post,
-            "status": "scheduled",
-            "media_url": None,
-            "created_at": datetime.now().isoformat(),
-            "updated_at": datetime.now().isoformat(),
-        }
-
-        entries.append(entry)
-        self._save_entries(user_id, entries)
-        return entry
-
-    def get_entries(
+    async def get_entries(
         self,
         user_id: int,
         status: Optional[str] = None,
         platform: Optional[str] = None,
-        from_date: Optional[str] = None,
-        to_date: Optional[str] = None,
         limit: int = 50,
     ) -> list[dict]:
         """Get calendar entries with optional filters."""
-        entries = self._load_entries(user_id)
+        async with async_session() as session:
+            query = select(ContentCalendar).where(ContentCalendar.user_id == user_id)
+            if status:
+                query = query.where(ContentCalendar.status == status)
+            if platform:
+                query = query.where(ContentCalendar.platform == platform)
+            query = query.order_by(ContentCalendar.scheduled_at.asc()).limit(limit)
+            result = await session.execute(query)
+            return [self._to_dict(row) for row in result.scalars().all()]
 
-        if status:
-            entries = [e for e in entries if e.get("status") == status]
-        if platform:
-            entries = [e for e in entries if e.get("platform") == platform]
-        if from_date:
-            entries = [e for e in entries if e.get("scheduled_at", "") >= from_date]
-        if to_date:
-            entries = [e for e in entries if e.get("scheduled_at", "") <= to_date]
-
-        # Sort by scheduled_at
-        entries.sort(key=lambda e: e.get("scheduled_at", ""))
-        return entries[:limit]
-
-    def get_today_entries(self, user_id: int) -> list[dict]:
+    async def get_today_entries(self, user_id: int) -> list[dict]:
         """Get entries scheduled for today."""
-        today = datetime.now().strftime("%Y-%m-%d")
-        tomorrow = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
-        return self.get_entries(user_id, from_date=today, to_date=tomorrow)
+        today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        tomorrow = today + timedelta(days=1)
+        async with async_session() as session:
+            query = (
+                select(ContentCalendar)
+                .where(ContentCalendar.user_id == user_id)
+                .where(ContentCalendar.scheduled_at >= today)
+                .where(ContentCalendar.scheduled_at < tomorrow)
+                .order_by(ContentCalendar.scheduled_at.asc())
+            )
+            result = await session.execute(query)
+            return [self._to_dict(row) for row in result.scalars().all()]
 
-    def get_upcoming(self, user_id: int, days: int = 7) -> list[dict]:
-        """Get entries for the next N days."""
-        now = datetime.now().strftime("%Y-%m-%d")
-        end = (datetime.now() + timedelta(days=days)).strftime("%Y-%m-%d 23:59")
-        return self.get_entries(user_id, from_date=now, to_date=end)
-
-    def update_entry(self, user_id: int, entry_id: str, updates: dict) -> Optional[dict]:
+    async def update_entry(self, user_id: int, entry_id: int, updates: dict) -> Optional[dict]:
         """Update a calendar entry."""
-        entries = self._load_entries(user_id)
-        for entry in entries:
-            if entry["id"] == entry_id:
-                entry.update(updates)
-                entry["updated_at"] = datetime.now().isoformat()
-                self._save_entries(user_id, entries)
-                return entry
-        return None
+        async with async_session() as session:
+            query = (
+                update(ContentCalendar)
+                .where(ContentCalendar.id == entry_id)
+                .where(ContentCalendar.user_id == user_id)
+                .values(**updates)
+            )
+            await session.execute(query)
+            await session.commit()
+            # Return updated entry
+            result = await session.execute(
+                select(ContentCalendar).where(ContentCalendar.id == entry_id)
+            )
+            entry = result.scalar_one_or_none()
+            return self._to_dict(entry) if entry else None
 
-    def delete_entry(self, user_id: int, entry_id: str) -> bool:
+    async def delete_entry(self, user_id: int, entry_id: int) -> bool:
         """Delete a calendar entry."""
-        entries = self._load_entries(user_id)
-        original_len = len(entries)
-        entries = [e for e in entries if e["id"] != entry_id]
-        if len(entries) < original_len:
-            self._save_entries(user_id, entries)
-            return True
-        return False
+        async with async_session() as session:
+            query = delete(ContentCalendar).where(
+                ContentCalendar.id == entry_id,
+                ContentCalendar.user_id == user_id,
+            )
+            result = await session.execute(query)
+            await session.commit()
+            return result.rowcount > 0
 
-    def mark_published(self, user_id: int, entry_id: str, media_url: str = "") -> Optional[dict]:
+    async def mark_published(self, user_id: int, entry_id: int, media_url: str = "") -> Optional[dict]:
         """Mark an entry as published."""
-        return self.update_entry(user_id, entry_id, {
+        return await self.update_entry(user_id, entry_id, {
             "status": "published",
             "media_url": media_url,
         })
 
-    def get_stats(self, user_id: int) -> dict:
+    async def get_stats(self, user_id: int) -> dict:
         """Get calendar statistics."""
-        entries = self._load_entries(user_id)
-        total = len(entries)
-        by_status = {}
-        by_platform = {}
-        by_type = {}
-
-        for e in entries:
-            s = e.get("status", "unknown")
-            p = e.get("platform", "unknown")
-            t = e.get("content_type", "unknown")
-            by_status[s] = by_status.get(s, 0) + 1
-            by_platform[p] = by_platform.get(p, 0) + 1
-            by_type[t] = by_type.get(t, 0) + 1
-
-        return {
-            "total": total,
-            "by_status": by_status,
-            "by_platform": by_platform,
-            "by_type": by_type,
-            "today_count": len(self.get_today_entries(user_id)),
-            "upcoming_count": len(self.get_upcoming(user_id, days=7)),
-        }
-
-    def bulk_schedule_week(
-        self,
-        user_id: int,
-        topics: list[str],
-        platform: str = "tiktok",
-        content_type: str = "video",
-        posts_per_day: int = 3,
-        posting_hours: list[int] = None,
-        **kwargs,
-    ) -> list[dict]:
-        """
-        Bulk schedule content for a week.
-
-        Distributes topics across the next 7 days at specified posting hours.
-        """
-        if posting_hours is None:
-            posting_hours = [11, 15, 19]
-
-        entries = []
-        topic_idx = 0
-
-        for day_offset in range(7):
-            date = datetime.now() + timedelta(days=day_offset)
-            for hour in posting_hours[:posts_per_day]:
-                if topic_idx >= len(topics):
-                    break
-                scheduled_at = date.replace(hour=hour, minute=0, second=0).strftime("%Y-%m-%d %H:%M")
-                entry = self.schedule_content(
-                    user_id=user_id,
-                    topic=topics[topic_idx],
-                    scheduled_at=scheduled_at,
-                    platform=platform,
-                    content_type=content_type,
-                    **kwargs,
+        async with async_session() as session:
+            total = await session.scalar(
+                select(func.count()).select_from(ContentCalendar).where(ContentCalendar.user_id == user_id)
+            )
+            scheduled = await session.scalar(
+                select(func.count()).select_from(ContentCalendar).where(
+                    ContentCalendar.user_id == user_id, ContentCalendar.status == "scheduled"
                 )
-                entries.append(entry)
-                topic_idx += 1
+            )
+            published = await session.scalar(
+                select(func.count()).select_from(ContentCalendar).where(
+                    ContentCalendar.user_id == user_id, ContentCalendar.status == "published"
+                )
+            )
+            failed = await session.scalar(
+                select(func.count()).select_from(ContentCalendar).where(
+                    ContentCalendar.user_id == user_id, ContentCalendar.status == "failed"
+                )
+            )
+            return {
+                "total": total or 0,
+                "scheduled": scheduled or 0,
+                "published": published or 0,
+                "failed": failed or 0,
+            }
 
-        return entries
+    async def get_pending_for_auto_publish(self) -> list[dict]:
+        """Get entries that are due for auto-publishing."""
+        now = datetime.now()
+        async with async_session() as session:
+            query = (
+                select(ContentCalendar)
+                .where(ContentCalendar.status == "scheduled")
+                .where(ContentCalendar.auto_post == True)  # noqa: E712
+                .where(ContentCalendar.scheduled_at <= now)
+                .order_by(ContentCalendar.scheduled_at.asc())
+                .limit(10)
+            )
+            result = await session.execute(query)
+            return [self._to_dict(row) for row in result.scalars().all()]
+
+    def _to_dict(self, entry: ContentCalendar) -> dict:
+        """Convert model to dict."""
+        return {
+            "id": str(entry.id),
+            "user_id": entry.user_id,
+            "topic": entry.topic,
+            "scheduled_at": entry.scheduled_at.isoformat() if entry.scheduled_at else None,
+            "platform": entry.platform,
+            "content_type": entry.content_type,
+            "caption": entry.caption,
+            "hashtags": entry.hashtags or [],
+            "media_url": entry.media_url,
+            "status": entry.status,
+            "niche": entry.niche,
+            "style": entry.style,
+            "language": entry.language,
+            "auto_post": entry.auto_post,
+            "created_at": entry.created_at.isoformat() if entry.created_at else None,
+        }

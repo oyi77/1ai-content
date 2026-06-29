@@ -44,8 +44,19 @@ from services.cloakbrowser import CloakBrowserAdapter
 app = FastAPI(
     title="1AI-Content Factory API",
     description="Content creation services for Telegram bot",
-    version="1.0.0",
+    version="2.0.0",
 )
+
+# ── Database init on startup ───────────────────────────────────
+@app.on_event("startup")
+async def startup_db():
+    """Initialize database connection on startup."""
+    try:
+        from services.db.models import init_db
+        await init_db()
+    except Exception as e:
+        print(f"[API] DB init warning: {e}")
+
 
 # ── Service instances (lazy init) ──────────────────────────────
 _storyboard: Optional[StoryboardEngine] = None
@@ -746,7 +757,7 @@ async def calendar_schedule(req: CalendarEntryRequest):
     """Schedule a content piece."""
     try:
         cal = get_calendar()
-        entry = cal.schedule_content(
+        entry = await cal.schedule_content(
             user_id=req.user_id,
             topic=req.topic,
             scheduled_at=req.scheduled_at,
@@ -769,7 +780,7 @@ async def calendar_list(user_id: int, status: Optional[str] = None, platform: Op
     """List calendar entries for a user."""
     try:
         cal = get_calendar()
-        entries = cal.get_entries(user_id, status=status, platform=platform)
+        entries = await cal.get_entries(user_id, status=status, platform=platform)
         return {"entries": entries, "count": len(entries)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -780,7 +791,7 @@ async def calendar_delete(entry_id: str, user_id: int = 0):
     """Delete a calendar entry."""
     try:
         cal = get_calendar()
-        result = cal.delete_entry(user_id, entry_id)
+        result = await cal.delete_entry(user_id, int(entry_id))
         return {"success": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -814,7 +825,7 @@ async def ab_test_create(req: ABTestRequest):
     """Create an A/B test."""
     try:
         ab = get_ab_testing()
-        test = ab.create_test(
+        test = await ab.create_test(
             user_id=req.user_id,
             name=req.name,
             topic=req.topic,
@@ -832,8 +843,30 @@ async def ab_test_list(user_id: int, status: Optional[str] = None):
     """List A/B tests for a user."""
     try:
         ab = get_ab_testing()
-        tests = ab.get_tests(user_id, status=status)
+        tests = await ab.get_tests(user_id, status=status)
         return {"tests": tests, "count": len(tests)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/ab-test/{test_id}/start")
+async def ab_test_start(user_id: int, test_id: str):
+    """Start an A/B test."""
+    try:
+        ab = get_ab_testing()
+        test = await ab.start_test(user_id, int(test_id))
+        return test if test else {"error": "Test not found"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/ab-test/{test_id}/end")
+async def ab_test_end(user_id: int, test_id: str):
+    """End test and determine winner."""
+    try:
+        ab = get_ab_testing()
+        test = await ab.end_test(user_id, int(test_id))
+        return test if test else {"error": "Test not found"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
