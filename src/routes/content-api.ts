@@ -351,4 +351,95 @@ export async function contentApiRoutes(server: FastifyInstance): Promise<void> {
 
     return { balance: fullUser.creditBalance, tier: fullUser.tier };
   });
+
+  // ── Re-Metadata (video re-render) ──────────────────────────
+  server.post("/api/content/remeta", async (request, reply) => {
+    const user = await getUser(request, reply);
+    if (!user) return;
+
+    const body = request.body as Record<string, unknown>;
+    const { contentFactoryService } = await import("@/services/content-factory.service");
+
+    try {
+      const result = await contentFactoryService.remetaVideo({
+        source: String(body.source ?? ''),
+        overlay: body.overlay ? String(body.overlay) : undefined,
+        watermark: body.watermark ? String(body.watermark) : undefined,
+        position: body.position ? String(body.position) : undefined,
+        niche: body.niche ? String(body.niche) : undefined,
+        platform: body.platform ? String(body.platform) : undefined,
+        language: body.language ? String(body.language) : undefined,
+      });
+      return result;
+    } catch (err: unknown) {
+      logger.error(`[ContentAPI] Remeta error: ${err instanceof Error ? err.message : String(err)}`);
+      return reply.status(500).send({ error: "Re-metadata failed" });
+    }
+  });
+
+  // ── Repurpose (multi-source remix) ──────────────────────────
+  server.post("/api/content/repurpose", async (request, reply) => {
+    const user = await getUser(request, reply);
+    if (!user) return;
+
+    const body = request.body as Record<string, unknown>;
+    const { contentFactoryService } = await import("@/services/content-factory.service");
+
+    try {
+      const sources = body.sources as string[];
+      if (!Array.isArray(sources) || sources.length < 2) {
+        return reply.status(400).send({ error: "Minimum 2 source URLs required" });
+      }
+
+      const result = await contentFactoryService.repurposeVideo({
+        sources,
+        targetDuration: body.targetDuration ? Number(body.targetDuration) : undefined,
+        platform: body.platform ? String(body.platform) : undefined,
+        niche: body.niche ? String(body.niche) : undefined,
+        style: body.style ? String(body.style) : undefined,
+        language: body.language ? String(body.language) : undefined,
+        colorPreset: body.colorPreset ? String(body.colorPreset) : undefined,
+        transitionStyle: body.transitionStyle ? String(body.transitionStyle) : undefined,
+        overlayText: body.overlayText ? String(body.overlayText) : undefined,
+        watermarkText: body.watermarkText ? String(body.watermarkText) : undefined,
+        addSubtitles: body.addSubtitles !== false,
+        subtitleStyle: body.subtitleStyle ? String(body.subtitleStyle) : undefined,
+      });
+      return result;
+    } catch (err: unknown) {
+      logger.error(`[ContentAPI] Repurpose error: ${err instanceof Error ? err.message : String(err)}`);
+      return reply.status(500).send({ error: "Repurpose failed" });
+    }
+  });
+
+  // ── Upload Video ────────────────────────────────────────────
+  server.post("/api/content/upload/video", async (request, reply) => {
+    const user = await getUser(request, reply);
+    if (!user) return;
+
+    try {
+      const data = await (request as unknown as { file: () => Promise<{ filename: string; mimetype: string; file: NodeJS.ReadableStream }> }).file();
+      if (!data) return reply.status(400).send({ error: "No file uploaded" });
+
+      const uploadDir = "/tmp/content_uploads";
+      const fs = await import("fs");
+      const path = await import("path");
+      fs.mkdirSync(uploadDir, { recursive: true });
+
+      const ext = path.extname(data.filename || ".mp4");
+      const filename = `${Date.now()}_${data.filename || "video" + ext}`;
+      const filePath = path.join(uploadDir, filename);
+
+      const chunks: Buffer[] = [];
+      for await (const chunk of data.file) {
+        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+      }
+      fs.writeFileSync(filePath, Buffer.concat(chunks));
+
+      return { success: true, path: filePath, filename };
+    } catch (err: unknown) {
+      logger.error(`[ContentAPI] Upload error: ${err instanceof Error ? err.message : String(err)}`);
+      return reply.status(500).send({ error: "Upload failed" });
+    }
+  });
 }

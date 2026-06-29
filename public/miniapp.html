@@ -491,8 +491,57 @@
     async function processRemeta() {
       const overlay = document.getElementById('remetaOverlay').value.trim();
       if (!overlay) return showToast('Masukkan overlay text', 'error');
-      showToast('📹 Kirim video via bot, lalu ketik /remeta ' + overlay);
-      tg.close();
+      const watermark = document.getElementById('remetaWatermark').value.trim();
+      const niche = document.getElementById('remetaNiche').value.trim() || 'general';
+      const fileInput = document.getElementById('remetaFile');
+      const file = fileInput?.files?.[0];
+
+      if (!file) return showToast('Upload video dulu', 'error');
+
+      showLoading('Uploading video...');
+      try {
+        // Step 1: Upload video
+        const formData = new FormData();
+        formData.append('file', file);
+        const uploadRes = await fetch(`${API_BASE}/api/content/upload/video`, {
+          method: 'POST',
+          headers: { 'X-Telegram-Init-Data': initData },
+          body: formData,
+        });
+        const uploadData = await uploadRes.json();
+        if (!uploadData.success) throw new Error(uploadData.error || 'Upload failed');
+
+        // Step 2: Process remeta
+        showLoading('Re-rendering video... 1-3 min');
+        const result = await api('/api/content/remeta', {
+          method: 'POST',
+          body: JSON.stringify({
+            source: uploadData.path,
+            overlay,
+            watermark: watermark || undefined,
+            niche,
+            platform: 'tiktok',
+          }),
+        });
+
+        hideLoading();
+        if (result.success) {
+          const meta = result.metadata || {};
+          const changes = (result.changes_applied || []).join(', ');
+          showToast(`✅ Done! Hash: ${(result.new_hash || '').slice(0, 12)}...`);
+          tg.showAlert(
+ `✅ Video re-rendered!\n\n` +
+ `Changes: ${changes}\n` +
+ `New hash: ${(result.new_hash || '').slice(0, 16)}...\n\n` +
+ `Title: ${(meta.title || '').slice(0, 80)}`
+          );
+        } else {
+          showToast(`❌ ${result.error}`, 'error');
+        }
+      } catch (e) {
+        hideLoading();
+        showToast(`❌ ${e.message}`, 'error');
+      }
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -574,6 +623,56 @@
     }
 
     // ═══════════════════════════════════════════════════════════
+    // REPURPOSE
+    // ═══════════════════════════════════════════════════════════
+    async function startRepurpose() {
+      const urls = document.getElementById('repUrls').value.trim().split('\n').filter(u => u.trim());
+      if (urls.length < 2) return showToast('Minimal 2 URL', 'error');
+      const duration = parseInt(document.getElementById('repDuration').value) || 120;
+      const color = getChipValue('repColorChips') || 'cinematic';
+      const watermark = document.getElementById('repWatermark').value.trim();
+
+      showLoading('Repurpose starting... 2-5 min');
+      try {
+        const result = await api('/api/content/repurpose', {
+          method: 'POST',
+          body: JSON.stringify({
+            sources: urls,
+            targetDuration: duration,
+            platform: 'tiktok',
+            colorPreset: color,
+            watermarkText: watermark || undefined,
+            addSubtitles: true,
+          }),
+        });
+
+        hideLoading();
+        if (result.success) {
+          const meta = result.metadata || {};
+          const segs = result.segments_used || [];
+          showToast(`✅ ${segs.length} segments remixed!`);
+          tg.showAlert(
+ `✅ Content repurposed!\n\n` +
+ `Segments: ${segs.length}\n` +
+ `Duration: ${result.duration || duration}s\n` +
+ `Platform: ${result.platform || 'tiktok'}\n\n` +
+ `Title: ${(meta.title || '').slice(0, 80)}`
+          );
+        } else {
+          showToast(`❌ ${result.error}`, 'error');
+        }
+      } catch (e) {
+        hideLoading();
+        showToast(`❌ ${e.message}`, 'error');
+      }
+    }
+
+    function showNewABTestModal() {
+      showToast('Ketik /abtest create <topic> di bot');
+      tg.close();
+    }
+
+    // ═══════════════════════════════════════════════════════════
     // TRENDING
     // ═══════════════════════════════════════════════════════════
     async function scanTrending() {
@@ -604,16 +703,17 @@
     function useTrending(idx) {
       showToast('Ketik /repurpose <url> di bot untuk generate dari trending');
     }
-
-    // ═══════════════════════════════════════════════════════════
-    // REPURPOSE
-    // ═══════════════════════════════════════════════════════════
-    async function startRepurpose() {
-      const urls = document.getElementById('repUrls').value.trim().split('\n').filter(u => u.trim());
-      if (urls.length < 2) return showToast('Minimal 2 URL', 'error');
-      showToast('Ketik /repurpose di bot dengan URL-URL ini');
-      tg.close();
-    }
+    // ── File input handler for remeta ──
+    document.getElementById('remetaFile')?.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        const info = document.getElementById('remetaFileInfo');
+        if (info) {
+          info.textContent = `✅ ${file.name} (${(file.size / 1024 / 1024).toFixed(1)} MB)`;
+          info.classList.remove('hidden');
+        }
+      }
+    });
 
     // ═══════════════════════════════════════════════════════════
     // INIT

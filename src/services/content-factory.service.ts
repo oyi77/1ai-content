@@ -377,6 +377,82 @@ class ContentFactoryService {
     });
     return resp.data;
   }
+
+  // ── Re-Metadata ─────────────────────────────────────────
+
+  async remetaVideo(params: {
+    source: string;
+    overlay?: string;
+    watermark?: string;
+    position?: string;
+    speed?: number;
+    colorShift?: boolean;
+    niche?: string;
+    platform?: string;
+    language?: string;
+  }): Promise<{ success: boolean; video_path?: string; metadata?: Record<string, unknown>; changes_applied?: string[]; original_hash?: string; new_hash?: string; error?: string }> {
+    const resp = await this.client.post('/remeta', {
+      source: params.source,
+      overlay: params.overlay ?? '',
+      watermark: params.watermark ?? '',
+      position: params.position ?? 'bottom_right',
+      speed: params.speed ?? 0,
+      color_shift: params.colorShift ?? true,
+      niche: params.niche ?? 'general',
+      platform: params.platform ?? 'tiktok',
+      language: params.language ?? 'id',
+    });
+    return resp.data;
+  }
+
+  // ── Repurpose (multi-source remix) ───────────────────────
+
+  async repurposeVideo(params: {
+    sources: string[];
+    targetDuration?: number;
+    platform?: string;
+    niche?: string;
+    style?: string;
+    language?: string;
+    colorPreset?: string;
+    transitionStyle?: string;
+    overlayText?: string;
+    watermarkText?: string;
+    bgmPath?: string;
+    bgmVolume?: number;
+    addSubtitles?: boolean;
+    subtitleStyle?: string;
+  }): Promise<{ success: boolean; video_path?: string; metadata?: Record<string, unknown>; segments_used?: unknown[]; duration?: number; platform?: string; error?: string }> {
+    const resp = await this.client.post('/repurpose', {
+      sources: params.sources,
+      target_duration: params.targetDuration ?? 180,
+      platform: params.platform ?? 'tiktok',
+      niche: params.niche ?? 'general',
+      style: params.style ?? 'educational',
+      language: params.language ?? 'id',
+      color_preset: params.colorPreset ?? 'cinematic',
+      transition_style: params.transitionStyle ?? 'crossfade',
+      overlay_text: params.overlayText ?? '',
+      watermark_text: params.watermarkText ?? '',
+      bgm_path: params.bgmPath ?? '',
+      bgm_volume: params.bgmVolume ?? 0.15,
+      add_subtitles: params.addSubtitles ?? true,
+      subtitle_style: params.subtitleStyle ?? 'karaoke',
+    });
+    return resp.data;
+  }
+
+  // ── Video Upload ─────────────────────────────────────────
+
+  async uploadVideo(filePath: string): Promise<{ success: boolean; path: string; filename: string }> {
+    const fileBuffer = fs.readFileSync(filePath);
+    const filename = path.basename(filePath);
+    const resp = await this.client.post('/upload/video', fileBuffer, {
+      headers: { 'Content-Type': 'application/octet-stream' },
+      params: { filename },
+    });
+    return resp.data;
+  }
 }
 
 export const contentFactoryService = new ContentFactoryService();
