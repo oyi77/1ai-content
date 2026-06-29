@@ -60,10 +60,6 @@ export async function showMainDashboard(ctx: BotContext): Promise<void> {
       { text: "📚 Prompts", callback_data: "menu_prompts" },
     ],
     [
-      { text: "🔗 Connect Social", callback_data: "social_connect_menu" },
-      { text: "📤 Publish", callback_data: "publish_menu" },
-    ],
-    [
       { text: "👤 Profil", callback_data: "menu_profile" },
       { text: "⚙️ Settings", callback_data: "menu_settings" },
     ],
