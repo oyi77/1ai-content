@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A/B Tests — Vilona Admin</title>
+  <style>
+    :root { --bg:#0d0d14; --card:#1a1a24; --border:#2a2a3a; --gold:#c4a35a; --text:#e0e0f0; --muted:#888899; --green:#4ade80; --red:#f87171; --blue:#60a5fa; }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Inter',system-ui,sans-serif; background:var(--bg); color:var(--text); padding:24px; }
+    h1 { font-size:22px; font-weight:700; margin-bottom:20px; }
+    .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:16px; }
+    .btn { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:8px; font-size:13px; font-weight:500; cursor:pointer; border:none; }
+    .btn-gold { background:var(--gold); color:#0d0d14; }
+    .btn-ghost { background:transparent; color:var(--muted); border:1px solid var(--border); }
+    .badge { display:inline-block; padding:2px 8px; border-radius:9999px; font-size:11px; font-weight:600; }
+    .badge-draft { background:#2a2a3a; color:var(--muted); }
+    .badge-running { background:#0f2040; color:var(--blue); }
+    .badge-completed { background:#0f3020; color:var(--green); }
+    .variant { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:12px; margin:8px 0; }
+    .variant-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; }
+    .variant-a .variant-label { color:#60a5fa; }
+    .variant-b .variant-label { color:#f87171; }
+    .winner { border-color:var(--green); background:#0f3020; }
+    .metrics { display:flex; gap:16px; margin-top:8px; }
+    .metric { font-size:12px; color:var(--muted); }
+    .metric span { font-weight:700; color:var(--text); }
+    .empty { text-align:center; padding:40px; color:var(--muted); }
+  </style>
+</head>
+<body>
+  <h1>🧪 A/B Testing</h1>
+
+  <div style="display:flex;gap:8px;margin-bottom:16px;">
+    <button class="btn btn-gold" onclick="showCreateForm()">➕ New Test</button>
+    <button class="btn btn-ghost" onclick="loadTests()">🔄 Refresh</button>
+  </div>
+
+  <!-- Create Form -->
+  <div id="create-form" class="card" style="display:none;">
+    <h3 style="margin-bottom:16px;">Create A/B Test</h3>
+    <div style="display:flex;gap:12px;margin-bottom:12px;">
+      <div style="flex:1;"><span style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">TEST NAME</span><input class="input" id="ab-name" placeholder="Caption test #1" style="background:#0d0d14;border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:8px;font-size:13px;width:100%;"></div>
+      <div style="flex:1;"><span style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">TOPIC</span><input class="input" id="ab-topic" placeholder="Tips hemat belanja" style="background:#0d0d14;border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:8px;font-size:13px;width:100%;"></div>
+    </div>
+    <div style="display:flex;gap:12px;margin-bottom:12px;">
+      <div style="flex:1;"><span style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">CONTENT TYPE</span>
+        <select class="input" id="ab-type" style="background:#0d0d14;border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:8px;font-size:13px;width:100%;"><option value="caption">Caption</option><option value="video">Video</option><option value="carousel">Carousel</option></select>
+      </div>
+      <div style="flex:1;"><span style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">PLATFORM</span>
+        <select class="input" id="ab-platform" style="background:#0d0d14;border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:8px;font-size:13px;width:100%;"><option value="tiktok">TikTok</option><option value="instagram">Instagram</option></select>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button class="btn btn-gold" onclick="createTest()">🧪 Create Test</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('create-form').style.display='none'">Cancel</button>
+    </div>
+  </div>
+
+  <div id="tests-list"><div class="empty">Loading...</div></div>
+
+  <div id="toast"></div>
+
+  <script>
+    const API = '/api/py';
+
+    function showToast(msg, type='ok') {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.style.cssText = `position:fixed;bottom:24px;right:24px;padding:12px 18px;border-radius:10px;font-size:13px;z-index:100;display:block;background:${type==='ok'?'#0f3020':'#3a0f0f'};color:${type==='ok'?'#4ade80':'#f87171'};border:1px solid ${type==='ok'?'#1a5030':'#5a1f1f'}`;
+      setTimeout(() => t.style.display = 'none', 3000);
+    }
+
+    function showCreateForm() { document.getElementById('create-form').style.display = 'block'; }
+
+    async function loadTests() {
+      try {
+        const r = await fetch(`${API}/ab-test/list/0`);
+        const data = await r.json();
+        const tests = data.tests || [];
+
+        if (!tests.length) {
+          document.getElementById('tests-list').innerHTML = '<div class="card empty">No A/B tests yet. Click ➕ to create one.</div>';
+          return;
+        }
+
+        document.getElementById('tests-list').innerHTML = tests.map(t => {
+          const statusBadge = { draft:'badge-draft', running:'badge-running', completed:'badge-completed' }[t.status] || 'badge-draft';
+          const varA = t.variant_a || {};
+          const varB = t.variant_b || {};
+          const winnerA = t.winner === 'A' ? ' winner' : '';
+          const winnerB = t.winner === 'B' ? ' winner' : '';
+
+          return `<div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+              <div>
+                <div style="font-size:16px;font-weight:700;">${t.name}</div>
+                <div style="font-size:12px;color:var(--muted);">${t.topic} · ${t.content_type} · ${t.platform}</div>
+              </div>
+              <span class="badge ${statusBadge}">${t.status}</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+              <div class="variant variant-a${winnerA}">
+                <div class="variant-label">Variant A ${t.winner==='A'?'🏆':''}</div>
+                <div style="font-size:13px;">${varA.caption || varA.title || JSON.stringify(varA).slice(0,100)}</div>
+                <div class="metrics">
+                  <div class="metric">👁 <span>${t.metrics_a?.views||0}</span></div>
+                  <div class="metric">❤️ <span>${t.metrics_a?.likes||0}</span></div>
+                  <div class="metric">🔄 <span>${t.metrics_a?.shares||0}</span></div>
+                  <div class="metric">💬 <span>${t.metrics_a?.comments||0}</span></div>
+                </div>
+              </div>
+              <div class="variant variant-b${winnerB}">
+                <div class="variant-label">Variant B ${t.winner==='B'?'🏆':''}</div>
+                <div style="font-size:13px;">${varB.caption || varB.title || JSON.stringify(varB).slice(0,100)}</div>
+                <div class="metrics">
+                  <div class="metric">👁 <span>${t.metrics_b?.views||0}</span></div>
+                  <div class="metric">❤️ <span>${t.metrics_b?.likes||0}</span></div>
+                  <div class="metric">🔄 <span>${t.metrics_b?.shares||0}</span></div>
+                  <div class="metric">💬 <span>${t.metrics_b?.comments||0}</span></div>
+                </div>
+              </div>
+            </div>
+            ${t.status === 'draft' ? `<div style="margin-top:12px;"><button class="btn btn-gold" style="font-size:12px;padding:6px 12px;" onclick="startTest('${t.id}')">▶️ Start Test</button></div>` : ''}
+            ${t.status === 'running' ? `<div style="margin-top:12px;"><button class="btn btn-ghost" style="font-size:12px;padding:6px 12px;" onclick="endTest('${t.id}')">⏹ End Test & Pick Winner</button></div>` : ''}
+            ${t.winner ? `<div style="margin-top:12px;font-size:13px;color:var(--green);">🏆 Winner: Variant ${t.winner}</div>` : ''}
+          </div>`;
+        }).join('');
+      } catch (e) {
+        document.getElementById('tests-list').innerHTML = `<div class="card empty">❌ ${e.message}</div>`;
+      }
+    }
+
+    async function createTest() {
+      const name = document.getElementById('ab-name').value.trim();
+      const topic = document.getElementById('ab-topic').value.trim();
+      const contentType = document.getElementById('ab-type').value;
+      const platform = document.getElementById('ab-platform').value;
+
+      if (!name || !topic) return showToast('Fill in name and topic', 'err');
+
+      try {
+        const r = await fetch(`${API}/ab-test/create`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: 0, name, topic, content_type: contentType, platform }),
+        });
+        const data = await r.json();
+        if (data.id) {
+          showToast('✅ A/B test created!');
+          document.getElementById('create-form').style.display = 'none';
+          loadTests();
+        } else {
+          showToast('❌ ' + (data.error || 'Failed'), 'err');
+        }
+      } catch (e) { showToast('❌ ' + e.message, 'err'); }
+    }
+
+    async function startTest(id) {
+      try {
+        await fetch(`${API}/ab-test/${id}/start?user_id=0`, { method: 'POST' });
+        showToast('▶️ Test started!');
+        loadTests();
+      } catch (e) { showToast('❌ ' + e.message, 'err'); }
+    }
+
+    async function endTest(id) {
+      try {
+        const r = await fetch(`${API}/ab-test/${id}/end?user_id=0`, { method: 'POST' });
+        const data = await r.json();
+        showToast(`⏹ Test ended! Winner: ${data.winner || 'TBD'}`);
+        loadTests();
+      } catch (e) { showToast('❌ ' + e.message, 'err'); }
+    }
+
+    loadTests();
+  </script>
+</body>
+</html>

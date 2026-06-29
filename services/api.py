@@ -755,6 +755,18 @@ async def calendar_list(user_id: int, status: Optional[str] = None, platform: Op
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.delete("/calendar/delete/{entry_id}")
+async def calendar_delete(entry_id: str, user_id: int = 0):
+    """Delete a calendar entry."""
+    try:
+        cal = get_calendar()
+        result = cal.delete_entry(user_id, entry_id)
+        return {"success": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
 # ══════════════════════════════════════════════════════════════
 # A/B TESTING
 # ══════════════════════════════════════════════════════════════
