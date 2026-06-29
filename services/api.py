@@ -871,6 +871,18 @@ async def ab_test_end(user_id: int, test_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.delete("/ab-test/{test_id}/delete")
+async def ab_test_delete(test_id: str, user_id: int = 0):
+    """Delete an A/B test."""
+    try:
+        ab = get_ab_testing()
+        result = await ab.delete_test(user_id, int(test_id))
+        return {"success": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
 @app.post("/ab-test/{test_id}/start")
 async def ab_test_start(user_id: int, test_id: str):
     """Start an A/B test."""
