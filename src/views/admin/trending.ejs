@@ -1,0 +1,95 @@
+<!-- Trending Scanner Admin Page -->
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+  <div>
+    <h1 class="section-title">🔥 Trending Scanner</h1>
+    <p class="section-sub">Scan YouTube, Google Trends, Reddit, TikTok for trending topics</p>
+  </div>
+  <div style="display:flex;gap:8px;">
+    <button class="btn btn-gold" onclick="scanTrending()">🔥 Scan Now</button>
+    <button class="btn btn-ghost" onclick="loadCached()">📂 Load Cached</button>
+  </div>
+</div>
+
+<!-- Stats -->
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;">
+  <div class="kpi-card"><div class="label">YOUTUBE</div><div class="value" style="color:#f87171;" id="s-yt">—</div></div>
+  <div class="kpi-card"><div class="label">GOOGLE</div><div class="value" style="color:#60a5fa;" id="s-google">—</div></div>
+  <div class="kpi-card"><div class="label">REDDIT</div><div class="value" style="color:#fbbf24;" id="s-reddit">—</div></div>
+  <div class="kpi-card"><div class="label">TIKTOK</div><div class="value" style="color:#4ade80;" id="s-tiktok">—</div></div>
+</div>
+
+<!-- Results -->
+<div class="card" id="results-card">
+  <div id="results" class="empty-state">Click 🔥 Scan Now to fetch trending topics</div>
+</div>
+
+<script>
+const PY_API = window.location.origin + '/api/py';
+
+async function scanTrending() {
+  document.getElementById('results').innerHTML = '<div class="loading">⏳ Scanning YouTube, Google Trends, Reddit, TikTok...</div>';
+  try {
+    const r = await fetch(`${PY_API}/trending/scan`);
+    const data = await r.json();
+    renderResults(data);
+  } catch (e) {
+    document.getElementById('results').innerHTML = `<div class="empty-state" style="color:var(--red);">❌ ${e.message}</div>`;
+  }
+}
+
+async function loadCached() { await scanTrending(); }
+
+function renderResults(data) {
+  const yt = data.youtube || [];
+  const google = data.google || [];
+  const reddit = data.reddit || [];
+  const tiktok = data.tiktok || [];
+
+  document.getElementById('s-yt').textContent = yt.length;
+  document.getElementById('s-google').textContent = google.length;
+  document.getElementById('s-reddit').textContent = reddit.length;
+  document.getElementById('s-tiktok').textContent = tiktok.length;
+
+  let html = '';
+  if (yt.length) {
+    html += '<h3 style="margin:16px 0 12px;font-size:16px;font-weight:700;">📺 YouTube Trending</h3>';
+    yt.slice(0, 10).forEach((v, i) => {
+      html += `<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);">
+        <span style="font-size:20px;font-weight:700;color:var(--muted);width:30px;">${i+1}</span>
+        <div><div style="font-weight:600;">${v.title || 'Untitled'}</div>
+        <div style="font-size:12px;color:var(--muted);">${v.channel || ''} · ${v.views ? (v.views/1000).toFixed(0)+'K views' : ''}</div></div></div>`;
+    });
+  }
+  if (google.length) {
+    html += '<h3 style="margin:24px 0 12px;font-size:16px;font-weight:700;">🔍 Google Trends</h3>';
+    google.slice(0, 10).forEach((t, i) => {
+      html += `<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);">
+        <span style="font-size:20px;font-weight:700;color:var(--muted);width:30px;">${i+1}</span>
+        <div><div style="font-weight:600;">${t.title || ''}</div>
+        <div style="font-size:12px;color:var(--muted);">${t.traffic || 'N/A'} searches</div></div></div>`;
+    });
+  }
+  if (reddit.length) {
+    html += '<h3 style="margin:24px 0 12px;font-size:16px;font-weight:700;">👽 Reddit Hot</h3>';
+    reddit.slice(0, 10).forEach((p, i) => {
+      html += `<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);">
+        <span style="font-size:20px;font-weight:700;color:var(--muted);width:30px;">${i+1}</span>
+        <div><div style="font-weight:600;">${p.title || ''}</div>
+        <div style="font-size:12px;color:var(--muted);">r/${p.subreddit || ''} · ${p.score || 0}↑ · ${p.comments || 0}💬</div></div></div>`;
+    });
+  }
+  if (tiktok.length) {
+    html += '<h3 style="margin:24px 0 12px;font-size:16px;font-weight:700;">🎵 TikTok Trending</h3>';
+    tiktok.slice(0, 10).forEach((t, i) => {
+      html += `<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);">
+        <span style="font-size:20px;font-weight:700;color:var(--muted);width:30px;">${i+1}</span>
+        <div><div style="font-weight:600;">${t.title || ''}</div>
+        <div style="font-size:12px;color:var(--muted);">${t.views ? (t.views/1000).toFixed(0)+'K views' : ''}</div></div></div>`;
+    });
+  }
+  if (!html) html = '<div class="empty-state">No trending data found. Try again later.</div>';
+  document.getElementById('results').innerHTML = html;
+}
+
+loadCached();
+</script>

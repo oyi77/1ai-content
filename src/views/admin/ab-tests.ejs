@@ -1,0 +1,175 @@
+<!-- A/B Testing Admin Page -->
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+  <div>
+    <h1 class="section-title">🧪 A/B Testing</h1>
+    <p class="section-sub">Test two content variants to find what performs better</p>
+  </div>
+  <div style="display:flex;gap:8px;">
+    <button class="btn btn-gold" onclick="showCreateForm()">➕ New Test</button>
+    <button class="btn btn-ghost" onclick="loadTests()">🔄 Refresh</button>
+  </div>
+</div>
+
+<!-- Create Form -->
+<div id="create-form" class="card" style="display:none;margin-bottom:20px;">
+  <h3 style="margin-bottom:16px;font-size:16px;font-weight:700;">Create A/B Test</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+    <div class="form-group">
+      <label>Test Name</label>
+      <input class="input" id="ab-name" placeholder="Caption test #1" style="width:100%;">
+    </div>
+    <div class="form-group">
+      <label>Topic</label>
+      <input class="input" id="ab-topic" placeholder="Tips hemat belanja" style="width:100%;">
+    </div>
+    <div class="form-group">
+      <label>Content Type</label>
+      <select class="input" id="ab-type" style="width:100%;">
+        <option value="caption">📝 Caption</option>
+        <option value="video">🎬 Video</option>
+        <option value="carousel">🖼️ Carousel</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Platform</label>
+      <select class="input" id="ab-platform" style="width:100%;">
+        <option value="tiktok">🎵 TikTok</option>
+        <option value="instagram">📸 Instagram</option>
+      </select>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:20px;">
+    <button class="btn btn-gold" onclick="createTest()">🧪 Create Test</button>
+    <button class="btn btn-ghost" onclick="document.getElementById('create-form').style.display='none'">Cancel</button>
+  </div>
+</div>
+
+<!-- Tests List -->
+<div id="tests-list"><div class="loading">Loading...</div></div>
+
+<script>
+const PY_API = window.location.origin + '/api/py';
+
+function showToast(msg, type='success') {
+  const container = document.getElementById('toast-container') || document.body;
+  const t = document.createElement('div');
+  t.className = `toast toast-${type === 'success' ? 'success' : 'error'}`;
+  t.textContent = msg;
+  container.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+function showCreateForm() {
+  document.getElementById('create-form').style.display = 'block';
+  document.getElementById('create-form').scrollIntoView({ behavior: 'smooth' });
+}
+
+async function loadTests() {
+  try {
+    const r = await fetch(`${PY_API}/ab-test/list/0`);
+    const data = await r.json();
+    const tests = data.tests || [];
+
+    if (!tests.length) {
+      document.getElementById('tests-list').innerHTML = '<div class="card empty-state">No A/B tests yet. Click ➕ to create one.</div>';
+      return;
+    }
+
+    document.getElementById('tests-list').innerHTML = tests.map(t => {
+      const statusClass = { draft:'badge-yellow', running:'badge-blue', completed:'badge-green' }[t.status] || 'badge-yellow';
+      const varA = t.variant_a || {};
+      const varB = t.variant_b || {};
+
+      return `<div class="card" style="margin-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <div>
+            <div style="font-size:16px;font-weight:700;">${t.name}</div>
+            <div style="font-size:12px;color:var(--muted);">${t.topic} · ${t.content_type} · ${t.platform}</div>
+          </div>
+          <span class="badge ${statusClass}">${t.status}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div style="background:var(--bg);border:1px solid ${t.winner==='A'?'var(--green)':'var(--border)'};border-radius:10px;padding:16px;">
+            <div style="font-size:11px;font-weight:700;color:#60a5fa;text-transform:uppercase;margin-bottom:8px;">Variant A ${t.winner==='A'?'🏆':''}</div>
+            <div style="font-size:13px;margin-bottom:12px;">${varA.caption || varA.title || JSON.stringify(varA).slice(0,120)}</div>
+            <div style="display:flex;gap:16px;font-size:12px;color:var(--muted);">
+              <span>👁 ${t.metrics_a?.views||0}</span><span>❤️ ${t.metrics_a?.likes||0}</span>
+              <span>🔄 ${t.metrics_a?.shares||0}</span><span>💬 ${t.metrics_a?.comments||0}</span>
+            </div>
+          </div>
+          <div style="background:var(--bg);border:1px solid ${t.winner==='B'?'var(--green)':'var(--border)'};border-radius:10px;padding:16px;">
+            <div style="font-size:11px;font-weight:700;color:#f87171;text-transform:uppercase;margin-bottom:8px;">Variant B ${t.winner==='B'?'🏆':''}</div>
+            <div style="font-size:13px;margin-bottom:12px;">${varB.caption || varB.title || JSON.stringify(varB).slice(0,120)}</div>
+            <div style="display:flex;gap:16px;font-size:12px;color:var(--muted);">
+              <span>👁 ${t.metrics_b?.views||0}</span><span>❤️ ${t.metrics_b?.likes||0}</span>
+              <span>🔄 ${t.metrics_b?.shares||0}</span><span>💬 ${t.metrics_b?.comments||0}</span>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:16px;display:flex;gap:8px;">
+          ${t.status === 'draft' ? `<button class="btn btn-gold btn-sm" onclick="startTest('${t.id}')">▶️ Start Test</button>` : ''}
+          ${t.status === 'running' ? `<button class="btn btn-ghost btn-sm" onclick="endTest('${t.id}')">⏹ End & Pick Winner</button>` : ''}
+          ${t.winner ? `<span style="font-size:14px;color:var(--green);font-weight:600;">🏆 Winner: Variant ${t.winner}</span>` : ''}
+          <button class="btn btn-danger btn-sm" onclick="deleteTest('${t.id}')">🗑️</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    document.getElementById('tests-list').innerHTML = `<div class="card empty-state">❌ ${e.message}</div>`;
+  }
+}
+
+async function createTest() {
+  const name = document.getElementById('ab-name').value.trim();
+  const topic = document.getElementById('ab-topic').value.trim();
+  if (!name || !topic) return showToast('Fill in name and topic', 'error');
+
+  try {
+    const r = await fetch(`${PY_API}/ab-test/create`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: 0, name, topic,
+        content_type: document.getElementById('ab-type').value,
+        platform: document.getElementById('ab-platform').value,
+      }),
+    });
+    const data = await r.json();
+    if (data.id) {
+      showToast('✅ A/B test created!');
+      document.getElementById('create-form').style.display = 'none';
+      loadTests();
+    } else {
+      showToast('❌ ' + (data.error || 'Failed'), 'error');
+    }
+  } catch (e) { showToast('❌ ' + e.message, 'error'); }
+}
+
+async function startTest(id) {
+  try {
+    await fetch(`${PY_API}/ab-test/${id}/start?user_id=0`, { method: 'POST' });
+    showToast('▶️ Test started!');
+    loadTests();
+  } catch (e) { showToast('❌ ' + e.message, 'error'); }
+}
+
+async function endTest(id) {
+  try {
+    const r = await fetch(`${PY_API}/ab-test/${id}/end?user_id=0`, { method: 'POST' });
+    const data = await r.json();
+    showToast(`⏹ Test ended! Winner: ${data.winner || 'TBD'}`);
+    loadTests();
+  } catch (e) { showToast('❌ ' + e.message, 'error'); }
+}
+
+async function deleteTest(id) {
+  if (!confirm('Delete this test?')) return;
+  try {
+    await fetch(`${PY_API}/ab-test/${id}/delete?user_id=0`, { method: 'DELETE' });
+    showToast('🗑️ Deleted');
+    loadTests();
+  } catch (e) { showToast('❌ ' + e.message, 'error'); }
+}
+
+loadTests();
+</script>

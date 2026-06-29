@@ -11,6 +11,22 @@ export async function registerAnalyticsRoutes(server: FastifyInstance) {
     return reply.view("admin/analytics.ejs", { ...trackingVars(), activePage: 'dashboard', title: 'Dashboard' }, { layout: 'admin/layout.ejs' });
   });
 
+  // Calendar page
+  server.get("/admin/calendar", async (_request, reply) => {
+    return reply.view("admin/calendar.ejs", { ...trackingVars(), activePage: 'calendar', title: 'Content Calendar' }, { layout: 'admin/layout.ejs' });
+  });
+
+  // Trending scanner page
+  server.get("/admin/trending", async (_request, reply) => {
+    return reply.view("admin/trending.ejs", { ...trackingVars(), activePage: 'trending', title: 'Trending Scanner' }, { layout: 'admin/layout.ejs' });
+  });
+
+  // A/B Tests page
+  server.get("/admin/ab-tests", async (_request, reply) => {
+    return reply.view("admin/ab-tests.ejs", { ...trackingVars(), activePage: 'ab-tests', title: 'A/B Tests' }, { layout: 'admin/layout.ejs' });
+  });
+
+
   // API: Analytics data (today's metrics, active users, provider health, top niches, recent errors)
   server.get("/api/analytics", async () => {
     const today = new Date();

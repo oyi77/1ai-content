@@ -465,26 +465,6 @@ export async function webRoutes(server: FastifyInstance): Promise<void> {
     return reply.status(404).send({ error: "Mini app not found" });
   });
 
-  // ── ADMIN PAGES ──
-  server.get("/admin/calendar", async (_request, reply) => {
-    const fs = require("fs");
-    const p = path.join(process.cwd(), "public", "admin", "calendar.html");
-    if (fs.existsSync(p)) return reply.type("text/html").send(fs.readFileSync(p, "utf-8"));
-    return reply.status(404).send({ error: "Page not found" });
-  });
-  server.get("/admin/trending", async (_request, reply) => {
-    const fs = require("fs");
-    const p = path.join(process.cwd(), "public", "admin", "trending.html");
-    if (fs.existsSync(p)) return reply.type("text/html").send(fs.readFileSync(p, "utf-8"));
-    return reply.status(404).send({ error: "Page not found" });
-  });
-  server.get("/admin/ab-tests", async (_request, reply) => {
-    const fs = require("fs");
-    const p = path.join(process.cwd(), "public", "admin", "ab-tests.html");
-    if (fs.existsSync(p)) return reply.type("text/html").send(fs.readFileSync(p, "utf-8"));
-    return reply.status(404).send({ error: "Page not found" });
-  });
-
 
 
 

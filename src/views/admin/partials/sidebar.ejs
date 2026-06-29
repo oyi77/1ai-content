@@ -57,14 +57,13 @@
       <span class="nav-category-arrow">▶</span>
     </div>
     <div class="nav-category-items" id="cat-automation">
-      <div class="nav-item" id="nav-content-calendar" onclick="window.location='/admin/calendar'">📅 Content Calendar</div>
-      <div class="nav-item" id="nav-trending" onclick="window.location='/admin/trending'">🔥 Trending Scanner</div>
-      <div class="nav-item" id="nav-ab-tests" onclick="window.location='/admin/ab-tests'">🧪 A/B Tests</div>
+      <div class="<%= _nav('calendar') %>" id="nav-content-calendar" onclick="window.location='/admin/calendar'">📅 Content Calendar</div>
+      <div class="<%= _nav('trending') %>" id="nav-trending" onclick="window.location='/admin/trending'">🔥 Trending Scanner</div>
+      <div class="<%= _nav('ab-tests') %>" id="nav-ab-tests" onclick="window.location='/admin/ab-tests'">🧪 A/B Tests</div>
       <div class="nav-item" id="nav-carousel" onclick="window.location='https://content.aitradepulse.com/app/mini'">🖼️ Carousels (MiniApp)</div>
       <div class="nav-item" id="nav-remeta" onclick="window.location='https://content.aitradepulse.com/app/mini'">🔄 Re-Metadata (MiniApp)</div>
       <div class="nav-item" id="nav-repurpose" onclick="window.location='https://content.aitradepulse.com/app/mini'">🔀 Repurpose (MiniApp)</div>
     </div>
-
     <!-- 🔌 Technical -->
     <div class="nav-category" onclick="toggleCategory(this)">
       <span class="nav-category-icon">🔌</span>
