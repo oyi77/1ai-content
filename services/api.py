@@ -699,19 +699,19 @@ async def trending_status():
     return scanner.get_status()
 
 
- @app.post("/trending/generate")
- async def trending_generate(topic: str, content_type: str = "video", platform: str = "tiktok", language: str = "id"):
-     """Generate content from a trending topic."""
-     try:
-         if content_type == "carousel":
-             assembler = get_carousel()
-             result = assembler.create(topic=topic, platform=platform, language=language)
-         else:
-             orch = AutoPilotOrchestrator()
-             result = orch.faceless_engine.generate_video(topic=topic, platform=platform, language=language)
-         return result
-     except Exception as e:
-         raise HTTPException(status_code=500, detail=str(e))
+@app.post("/trending/generate")
+async def trending_generate(topic: str, content_type: str = "video", platform: str = "tiktok", language: str = "id"):
+    """Generate content from a trending topic."""
+    try:
+        if content_type == "carousel":
+            assembler = get_carousel()
+            result = assembler.create(topic=topic, platform=platform, language=language)
+        else:
+            orch = AutoPilotOrchestrator()
+            result = orch.faceless_engine.generate_video(topic=topic, platform=platform, language=language)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ══════════════════════════════════════════════════════════════
