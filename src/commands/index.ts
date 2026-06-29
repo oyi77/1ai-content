@@ -128,11 +128,6 @@ export function setupCommands(bot: Telegraf<BotContext>): void {
   bot.command("repurpose", repurposeCommand);
   bot.command("remeta", remetaCommand);
 
-  // Social media commands (via 1ai-social bridge)
-  bot.command("connect", connectCommand);
-  bot.command("publish", publishCommand);
-  bot.command("schedule", scheduleCommand);
-
   // YouTube workflow — button-based menu
   bot.command("yt", (ctx) => showYouTubeMenu(ctx));
   bot.command("youtube", (ctx) => showYouTubeMenu(ctx));
