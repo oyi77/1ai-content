@@ -702,7 +702,7 @@ _calendar = None
 def get_calendar():
     global _calendar
     if _calendar is None:
-        from services.calendar.content_calendar import ContentCalendarService
+        from services.content_calendar.content_calendar import ContentCalendarService
         _calendar = ContentCalendarService()
     return _calendar
 
