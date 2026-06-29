@@ -41,7 +41,6 @@ import {
 // Content commands (video clipper, editor, rework)
 import { ContentCommands } from "./content.commands";
 import { carouselCommand, autopilotCommand, calendarCommand, abtestCommand, repurposeCommand, regenCommand, remetaCommand } from "./tiktok-automation.commands";
-import { connectCommand, publishCommand, scheduleCommand } from "./social-media.commands";
 
 // Feature-based flows
 export * from "@/flows/generate";
