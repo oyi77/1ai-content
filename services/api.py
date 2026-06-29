@@ -1088,6 +1088,34 @@ async def remeta_content(req: ReMetadataRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+
+# ══════════════════════════════════════════════════════════════
+# DOWNLOAD — Video download from TikTok/YouTube/IG
+# ══════════════════════════════════════════════════════════════
+
+class DownloadRequest(BaseModel):
+    video_url: str
+    category: str = "general"
+
+
+@app.post("/download/video")
+async def download_video_endpoint(req: DownloadRequest):
+    """Download a single video using full cascade.
+
+    Cascade: tikwm → yt-dlp → Vidbee → Cobalt → CloakBrowser → scrape → cover → placeholder
+    Returns {file_path, file_type, status, reason, file_size}.
+    """
+    from services.download.engine import download_video
+
+    result = await download_video(req.video_url, req.category)
+
+    # Add file_size if file exists
+    if result.get("file_path") and os.path.exists(result["file_path"]):
+        result["file_size"] = os.path.getsize(result["file_path"])
+
+    return {"data": result}
+
+
 # ══════════════════════════════════════════════════════════════
 
 # ══════════════════════════════════════════════════════════════
