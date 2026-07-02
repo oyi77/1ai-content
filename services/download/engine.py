@@ -17,7 +17,7 @@ import httpx
 
 # ── External API URLs (configurable via env) ────────────────────────
 
-TIKWM_API_URL = os.getenv("TIKWM_API_URL", "https://www.tikwm/api/")
+TIKWM_API_URL = os.getenv("TIKWM_API_URL", "https://www.tikwm.com/api/")
 VIDBEE_URL = os.getenv("VIDBEE_URL", "http://localhost:3101")
 COBALT_URL = os.getenv("COBALT_URL", "http://localhost:9000")
 PICSUM_URL = os.getenv("PICSUM_URL", "https://picsum.photos")
