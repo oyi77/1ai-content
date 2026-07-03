@@ -22,6 +22,10 @@ from loguru import logger
 TIKWM_API_URL = os.getenv("TIKWM_API_URL", "https://www.tikwm.com/api/")
 VIDBEE_URL = os.getenv("VIDBEE_URL", "http://localhost:3101")
 COBALT_URL = os.getenv("COBALT_URL", "http://localhost:9000")
+COBALT_PUBLIC_INSTANCES = [
+    "https://co.eepy.today",
+    "https://cobalt-api.hyper.lol",
+]
 PICSUM_URL = os.getenv("PICSUM_URL", "https://picsum.photos")
 TIKTOK_OEMBED = os.getenv("TIKTOK_OEMBED", "https://www.tiktok.com/oembed")
 
@@ -77,27 +81,31 @@ async def dl_ytdlp(url: str, vid_id: str, tmpdir: str, cookies_path: str = None)
 
 
 async def dl_cobalt(client: httpx.AsyncClient, url: str, vid_id: str, tmpdir: str) -> dict:
-    """Download video via Cobalt API."""
-    try:
-        r = await client.post(
-            f"{COBALT_URL}/",
-            json={"url": url, "videoQuality": "720"},
-            headers={"Accept": "application/json", "Content-Type": "application/json"},
-            timeout=30,
-        )
-        if r.status_code != 200:
-            return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir}
-        data = r.json()
-        status = data.get("status", "")
-        if status in ("tunnel", "redirect"):
-            dl_url = data.get("url", "")
-            if dl_url:
-                result = await _dl_url(client, dl_url, vid_id, tmpdir, "mp4")
-                if result["status"] == "downloaded":
-                    result["file_type"] = "video"
-                    return result
-    except Exception:
-        pass
+    """Download video via Cobalt API — tries local, then public instances."""
+    instances = [COBALT_URL] + COBALT_PUBLIC_INSTANCES
+    for instance in instances:
+        try:
+            logger.info(f"[cobalt] Trying {instance}...")
+            r = await client.post(
+                f"{instance}/",
+                json={"url": url, "videoQuality": "720"},
+                headers={"Accept": "application/json", "Content-Type": "application/json"},
+                timeout=30,
+            )
+            if r.status_code != 200:
+                continue
+            data = r.json()
+            status = data.get("status", "")
+            if status in ("tunnel", "redirect"):
+                dl_url = data.get("url", "")
+                if dl_url:
+                    result = await _dl_url(client, dl_url, vid_id, tmpdir, "mp4")
+                    if result["status"] == "downloaded":
+                        result["file_type"] = "video"
+                        return result
+        except Exception as e:
+            logger.debug(f"[cobalt] {instance} failed: {e}")
+            continue
     return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir}
 
 
@@ -195,7 +203,11 @@ async def dl_cloakbrowser(url: str, vid_id: str, tmpdir: str) -> dict:
 
 
 async def dl_ssstik(url: str, vid_id: str, tmpdir: str) -> dict:
-    """Download video via ssstik.io — no watermark, original quality, no cookies needed."""
+    """Download video via ssstik.io — no watermark, original quality, no cookies needed.
+
+    Uses DOM-based link extraction instead of response interception.
+    ssstik.io renders the download link (tikcdn.io) in the page after form submit.
+    """
     try:
         import cloakbrowser
     except ImportError:
@@ -205,71 +217,59 @@ async def dl_ssstik(url: str, vid_id: str, tmpdir: str) -> dict:
         browser = await cloakbrowser.launch_async(headless=True, stealth_args=True, humanize=True)
         context = await browser.new_context(viewport={"width": 1280, "height": 720})
         page = await context.new_page()
-        download_url = ""
 
-        def _on_resp(resp):
-            nonlocal download_url
-            u = resp.url
-            ct = resp.headers.get("content-type", "")
-            if "video/mp4" in ct and resp.status == 200 and "tikcdn" in u:
-                download_url = u
-
-        page.on("response", _on_resp)
         fp = os.path.join(tmpdir, f"ssstik_{vid_id}.mp4")
-        try:
-            # 1. Navigate to ssstik.io
-            await page.goto("https://ssstik.io/id", wait_until="networkidle", timeout=20000)
 
-            # 2. Fill in TikTok URL
-            input_el = await page.query_selector('#main_page_text')
-            if input_el:
-                await input_el.fill(url)
+        # 1. Navigate to ssstik.io (domcontentloaded — networkidle times out)
+        await page.goto("https://ssstik.io/id", wait_until="domcontentloaded", timeout=15000)
+        await page.wait_for_timeout(2000)
 
-            # 3. Submit the form
-            submit = await page.query_selector('#_gcaptcha_pt button, #_gcaptcha_pt [type="submit"]')
-            if submit:
-                await submit.click()
-            else:
-                # Fallback: find any submit-like button
-                btns = await page.query_selector_all('button')
-                for btn in btns:
-                    txt = await btn.evaluate('el => el.textContent.trim()')
-                    if 'unduh' in txt.lower() or 'download' in txt.lower() or 'cari' in txt.lower():
-                        await btn.click()
-                        break
-
-            # 4. Wait for download link to appear
-            await page.wait_for_timeout(5000)
-
-            # 5. Extract download link from DOM
-            if not download_url:
-                links = await page.query_selector_all('a[href*="tikcdn"]')
-                for link in links:
-                    href = await link.get_attribute('href')
-                    if href and 'tikcdn' in href:
-                        download_url = href
-                        break
-
-            if not download_url:
-                return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": "ssstik_no_download_url"}
-
-            # 6. Download the video
-            resp = await page.request.get(download_url)
-            if resp.ok:
-                body = await resp.body()
-                if len(body) > 10000:
-                    with open(fp, "wb") as f:
-                        f.write(body)
-                else:
-                    return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": "ssstik_empty_download"}
-            else:
-                return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": f"ssstik_http_{resp.status}"}
-        finally:
+        # 2. Fill in TikTok URL
+        input_el = await page.query_selector('#main_page_text')
+        if not input_el or not await input_el.is_visible():
             await browser.close()
-        if os.path.exists(fp) and os.path.getsize(fp) > 10000:
-            return {"file_path": fp, "file_type": "video", "status": "downloaded", "tmpdir": tmpdir}
-        return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": "ssstik_download_failed"}
+            return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": "ssstik_no_input"}
+        await input_el.fill(url)
+
+        # 3. Click submit button
+        submit = await page.query_selector('#submit')
+        if submit:
+            await submit.click()
+        else:
+            await browser.close()
+            return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": "ssstik_no_submit"}
+
+        # 4. Wait for download link to appear in DOM (up to 15s)
+        download_url = ""
+        for _ in range(15):
+            await page.wait_for_timeout(1000)
+            links = await page.query_selector_all('a[href*="tikcdn"]')
+            for link in links:
+                href = await link.get_attribute('href') or ""
+                if href and "tikcdn" in href and "/ssstik/" in href:
+                    download_url = href
+                    break
+            if download_url:
+                break
+
+        if not download_url:
+            await browser.close()
+            return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": "ssstik_no_download_url"}
+
+        # 5. Download the video via browser request (tikcdn blocks raw httpx)
+        resp = await page.request.get(download_url)
+        if resp.ok:
+            body = await resp.body()
+            if len(body) > 10000:
+                with open(fp, "wb") as f:
+                    f.write(body)
+                await browser.close()
+                return {"file_path": fp, "file_type": "video", "status": "downloaded", "tmpdir": tmpdir}
+        await browser.close()
+        return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": f"ssstik_http_{resp.status if resp else 'no_resp'}"}
+
     except Exception as e:
+        logger.warning(f"[ssstik] Error: {type(e).__name__}: {e}")
         return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": f"ssstik_{type(e).__name__}"}
 async def scrape_tiktok_page(client: httpx.AsyncClient, url: str) -> dict | None:
     """Scrape TikTok page for video metadata (supports both videos and slideshows)."""
@@ -476,7 +476,15 @@ async def download_video(video_url: str, category: str = "general") -> dict:
             return r
         errors.append(f"ssstik={r.get('error', 'failed')}")
 
-    # 2. yt-dlp with cookies (720x1280 H.264)
+    # 2. Cobalt (public instances — free, no auth needed)
+    async with httpx.AsyncClient(timeout=120.0, follow_redirects=True, verify=False) as client:
+        r = await dl_cobalt(client, video_url, vid_id, tmpdir)
+        if r["status"] == "downloaded":
+            r["reason"] = "cobalt_video"
+            return r
+        errors.append(f"cobalt={r.get('error', 'failed')}")
+
+    # 3. yt-dlp with cookies (720x1280 H.264) — needs non-blocked IP
     _cookies_path = os.getenv("TIKTOK_COOKIES_PATH", "")
     if not _cookies_path:
         for _p in [
@@ -493,7 +501,7 @@ async def download_video(video_url: str, category: str = "general") -> dict:
     errors.append(f"ytdlp={r.get('error', 'failed')}")
 
     async with httpx.AsyncClient(timeout=120.0, follow_redirects=True, verify=False) as client:
-        # 3. tikwm fallback (TikTok only — 576x1024, lower quality)
+        # 4. tikwm fallback (TikTok only — 576x1024, lower quality)
         if is_tiktok:
             r = await dl_tikwm(client, video_url, vid_id, tmpdir)
             if r["status"] == "downloaded":
@@ -501,19 +509,12 @@ async def download_video(video_url: str, category: str = "general") -> dict:
                 return r
             errors.append(f"tikwm={r.get('error', 'failed')}")
 
-        # 3. Vidbee
+        # 5. Vidbee
         r = await dl_vidbee(client, video_url, vid_id, tmpdir)
         if r["status"] == "downloaded":
             r["reason"] = "vidbee_video"
             return r
         errors.append(f"vidbee={r.get('error', 'failed')}")
-
-        # 4. Cobalt
-        r = await dl_cobalt(client, video_url, vid_id, tmpdir)
-        if r["status"] == "downloaded":
-            r["reason"] = "cobalt_video"
-            return r
-        errors.append(f"cobalt={r.get('error', 'failed')}")
 
         # 5. CloakBrowser (TikTok only)
         if is_tiktok:
