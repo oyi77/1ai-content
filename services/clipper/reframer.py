@@ -16,6 +16,7 @@ Technical notes:
 import os
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 
 import pysubs2
@@ -233,38 +234,27 @@ class Reframer:
 
         subs.save(output_path, encoding="utf-8-sig")
         return output_path
-
     def burn_subtitles(
         self, video_path: str, subtitle_path: str, output_path: str
     ) -> str:
-        """Burn ASS subtitles onto video using FFmpeg subtitles filter.
-
-        Args:
-            video_path: Source video file.
-            subtitle_path: .ass subtitle file.
-            output_path: Destination file path.
-
-        Returns:
-            output_path
-        """
-        # Escape special characters for FFmpeg subtitles filter
-        # The filter parser needs backslash-escaped colons and backslashes
-        escaped_sub = subtitle_path.replace("\\", "\\\\").replace(":", "\\:")
-        vf = f"subtitles={escaped_sub}"
-
-        self._run_ffmpeg([
-            self.ffmpeg,
-            "-y",
-            "-i", video_path,
-            "-vf", vf,
-            "-c:v", "libx264",
-            "-crf", "18",
-            "-preset", "medium",
-            "-c:a", "copy",
-            "-pix_fmt", "yuv420p",
-            "-movflags", "+faststart",
-            output_path,
-        ])
+        """Burn ASS subtitles onto video using FFmpeg subtitles filter (requires libass)."""
+        # Copy subtitle to /tmp with simple name to avoid path escaping issues
+        import shutil
+        simple_sub = os.path.join(tempfile.gettempdir(), f"subs_{os.getpid()}.ass")
+        shutil.copy2(subtitle_path, simple_sub)
+        try:
+            vf = f"subtitles={simple_sub}"
+            self._run_ffmpeg([
+                self.ffmpeg, "-y",
+                "-i", video_path,
+                "-vf", vf,
+                "-c:v", "libx264", "-crf", "18", "-preset", "medium",
+                "-c:a", "copy", "-pix_fmt", "yuv420p", "-movflags", "+faststart",
+                output_path,
+            ])
+        finally:
+            if os.path.exists(simple_sub):
+                os.unlink(simple_sub)
         return output_path
 
     def generate_thumbnail(

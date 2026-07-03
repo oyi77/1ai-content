@@ -21,6 +21,7 @@ Run:
 
 import os
 import json
+import httpx
 import asyncio
 import tempfile
 from pathlib import Path
@@ -186,6 +187,22 @@ class CloakBatchPostRequest(BaseModel):
     platform: str
     link: Optional[str] = None
 
+
+class VideoRegenerateOptions(BaseModel):
+    remove_watermark: bool = True
+    add_captions: bool = True
+    caption_style: str = "karaoke"  # karaoke, simple, none
+    color_grade: str = "vibrant"     # none, cinematic, warm, cool, vibrant, vintage
+    text_overlay: str = ""           # e.g. "Check this out!"
+    overlay_position: str = "bottom_center"
+    generate_metadata: bool = True
+    language: str = "id"
+
+
+class VideoRegenerateRequest(BaseModel):
+    source_url: str
+    platform: str = "facebook"
+    options: VideoRegenerateOptions = VideoRegenerateOptions()
 
 # ══════════════════════════════════════════════════════════════
 # HEALTH
@@ -1159,6 +1176,375 @@ async def download_video_endpoint(req: DownloadRequest):
         result["file_size"] = os.path.getsize(result["file_path"])
 
     return {"data": result}
+
+# ══════════════════════════════════════════════════════════════
+# VIDEO PROCESS — Download + Convert for distribution
+# ══════════════════════════════════════════════════════════════
+
+class VideoProcessRequest(BaseModel):
+    source_url: str
+    target_format: str = "9:16"  # 9:16, 16:9, 1:1
+    platform: str = "facebook"   # facebook, tiktok, instagram
+    category: str = "general"
+
+
+@app.post("/video/process")
+async def process_video(req: VideoProcessRequest):
+    """Download video and convert to target format.
+
+    Pipeline: download → detect format → reframe if needed → return file_path.
+    Returns {file_path, file_type, duration, width, height, format, status}.
+    """
+    from services.download.engine import download_video
+    import subprocess
+    import uuid
+
+    # 1. Download
+    result = await download_video(req.source_url, req.category)
+    if result.get("status") != "downloaded" or not result.get("file_path"):
+        return {"data": {
+            "status": "failed",
+            "error": f"Download failed: {result.get('reason', 'unknown')}",
+            "file_path": None,
+        }}
+
+    file_path = result["file_path"]
+    file_type = result.get("file_type", "video")
+
+    # 2. Get video metadata
+    duration = None
+    width = None
+    height = None
+    try:
+        probe = subprocess.run(
+            ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_streams", "-show_format", file_path],
+            capture_output=True, text=True, timeout=10,
+        )
+        if probe.returncode == 0:
+            import json as _json
+            meta = _json.loads(probe.stdout)
+            for stream in meta.get("streams", []):
+                if stream.get("codec_type") == "video":
+                    width = int(stream.get("width", 0))
+                    height = int(stream.get("height", 0))
+                    duration = float(meta.get("format", {}).get("duration", 0))
+                    break
+    except Exception:
+        pass
+
+    # 3. Convert to target format if video and dimensions don't match
+    target_w, target_h = {"9:16": (1080, 1920), "16:9": (1920, 1080), "1:1": (1080, 1080)}.get(req.target_format, (1080, 1920))
+
+    if file_type == "video" and width and height:
+        current_aspect = width / height if height > 0 else 0
+        target_aspect = target_w / target_h if target_h > 0 else 0
+
+        # Only reframe if aspect ratio differs significantly
+        if abs(current_aspect - target_aspect) > 0.1:
+            output_path = os.path.join(os.path.dirname(file_path), f"{uuid.uuid4().hex}.mp4")
+            try:
+                from services.clipper.reframer import Reframer
+                reframer = Reframer()
+                output_path = reframer.reframe_to_vertical(file_path, output_path, req.target_format)
+                if os.path.exists(output_path):
+                    file_path = output_path
+                    width = target_w
+                    height = target_h
+                    # Update duration from new file
+                    try:
+                        probe2 = subprocess.run(
+                            ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_format", file_path],
+                            capture_output=True, text=True, timeout=10,
+                        )
+                        if probe2.returncode == 0:
+                            import json as _json2
+                            meta2 = _json2.loads(probe2.stdout)
+                            duration = float(meta2.get("format", {}).get("duration", 0))
+                    except Exception:
+                        pass
+            except Exception as e:
+                # Reframe failed — return original
+                pass
+
+    return {"data": {
+        "status": "processed",
+        "file_path": file_path,
+        "file_type": file_type,
+        "duration": round(duration, 2) if duration else None,
+        "width": width,
+        "height": height,
+        "format": req.target_format,
+        "reason": result.get("reason", ""),
+        "file_size": os.path.getsize(file_path) if os.path.exists(file_path) else 0,
+    }}
+
+# ══════════════════════════════════════════════════════════════
+# VIDEO REGENERATE — Full content regeneration pipeline
+# ══════════════════════════════════════════════════════════════
+
+@app.post("/video/regenerate")
+async def video_regenerate(req: VideoRegenerateRequest):
+    """Full content regeneration: download → strip watermark → reframe → color grade → overlay → captions → metadata.
+
+    Pipeline runs best-effort — if any step fails, continue with the rest.
+    Returns {file_path, metadata: {title, hashtags, description}, duration, width, height, format, file_size}.
+    """
+    import subprocess
+    import uuid
+    import json as _json
+    from pathlib import Path
+
+    errors: list[str] = []
+    run_id = uuid.uuid4().hex[:12]
+    out_dir = Path(f"/tmp/1ai-content/{run_id}")
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    # ── 1. Download ──────────────────────────────────────────
+    try:
+        from services.download.engine import download_video as _dl
+        dl = await _dl(req.source_url)
+        if dl.get("status") != "downloaded" or not dl.get("file_path"):
+            raise RuntimeError(f"Download failed: {dl.get('reason', 'unknown')}")
+        file_path: str = dl["file_path"]
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=f"Download failed: {e}")
+
+    # Helper: get video metadata via ffprobe
+    def _probe(path: str) -> dict:
+        try:
+            r = subprocess.run(
+                ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_streams", "-show_format", path],
+                capture_output=True, text=True, timeout=10,
+            )
+            if r.returncode == 0:
+                return _json.loads(r.stdout)
+        except Exception:
+            pass
+        return {}
+
+    # ── 2. Strip watermark (crop bottom-right corner) ────────
+    if req.options.remove_watermark:
+        try:
+            cropped = str(out_dir / f"crop_{run_id}.mp4")
+            # TikTok watermark is in bottom-right — crop 20px from right and bottom
+            subprocess.run(
+                ["ffmpeg", "-y", "-i", file_path, "-vf", "crop=iw-20:ih-20:0:0", "-c:a", "copy", cropped],
+                capture_output=True, text=True, timeout=120,
+            )
+            if os.path.exists(cropped) and os.path.getsize(cropped) > 0:
+                file_path = cropped
+        except Exception as e:
+            errors.append(f"watermark_strip: {e}")
+
+    # ── 3. Reframe to target platform dimensions ─────────────
+    try:
+        from services.repurpose.engine import PLATFORM_PRESETS
+        preset = PLATFORM_PRESETS.get(req.platform, PLATFORM_PRESETS.get("tiktok"))
+        target_w, target_h = preset["width"], preset["height"]
+
+        meta = _probe(file_path)
+        cur_w, cur_h = 0, 0
+        for s in meta.get("streams", []):
+            if s.get("codec_type") == "video":
+                cur_w, cur_h = int(s.get("width", 0)), int(s.get("height", 0))
+                break
+
+        if cur_w and cur_h:
+            cur_aspect = cur_w / cur_h
+            tgt_aspect = target_w / target_h
+            if abs(cur_aspect - tgt_aspect) > 0.1:
+                reframed = str(out_dir / f"reframe_{run_id}.mp4")
+                from services.clipper.reframer import Reframer
+                reframer = Reframer()
+                aspect_str = preset.get("aspect", "9:16")
+                reframer.reframe_to_vertical(file_path, reframed, aspect_str)
+                if os.path.exists(reframed) and os.path.getsize(reframed) > 0:
+                    file_path = reframed
+    except Exception as e:
+        errors.append(f"reframe: {e}")
+
+    # ── 3b. Upscale if resolution is too low ──────────────
+    # Facebook Reels require minimum 720p. Upscale to target if smaller.
+    try:
+        meta2 = _probe(file_path)
+        cur_w2, cur_h2 = 0, 0
+        for s in meta2.get("streams", []):
+            if s.get("codec_type") == "video":
+                cur_w2, cur_h2 = int(s.get("width", 0)), int(s.get("height", 0))
+                break
+        if cur_w2 and cur_h2 and (cur_w2 < target_w or cur_h2 < target_h):
+            upscaled = str(out_dir / f"upscale_{run_id}.mp4")
+            subprocess.run(
+                ["ffmpeg", "-y", "-i", file_path,
+                 "-vf", f"scale={target_w}:{target_h}:flags=lanczos",
+                 "-c:v", "libx264", "-crf", "18", "-preset", "medium",
+                 "-c:a", "copy", "-pix_fmt", "yuv420p", upscaled],
+                capture_output=True, text=True, timeout=180,
+            )
+            if os.path.exists(upscaled) and os.path.getsize(upscaled) > 0:
+                file_path = upscaled
+    except Exception as e:
+        errors.append(f"upscale: {e}")
+    # ── 4. Color grade ───────────────────────────────────────
+    if req.options.color_grade and req.options.color_grade != "none":
+        try:
+            from services.repurpose.engine import COLOR_PRESETS
+            vf = COLOR_PRESETS.get(req.options.color_grade, "")
+            if vf:
+                graded = str(out_dir / f"grade_{run_id}.mp4")
+                subprocess.run(
+                    ["ffmpeg", "-y", "-i", file_path, "-vf", vf, "-c:a", "copy", graded],
+                    capture_output=True, text=True, timeout=120,
+                )
+                if os.path.exists(graded) and os.path.getsize(graded) > 0:
+                    file_path = graded
+        except Exception as e:
+            errors.append(f"color_grade: {e}")
+
+    # ── 5. Text overlay ──────────────────────────────────────
+    if req.options.text_overlay:
+        try:
+            from services.repurpose.engine import OVERLAY_POSITIONS
+            pos = OVERLAY_POSITIONS.get(req.options.overlay_position, OVERLAY_POSITIONS["bottom_center"])
+            # Escape special chars for FFmpeg drawtext
+            safe_text = req.options.text_overlay.replace("'", "'\\''").replace(":", "\\:")
+            drawtext = (
+                f"drawtext=text='{safe_text}'"
+                f":fontsize=48:fontcolor=white:borderw=3:bordercolor=black"
+                f":x={pos['x']}:y={pos['y']}"
+            )
+            overlaid = str(out_dir / f"overlay_{run_id}.mp4")
+            subprocess.run(
+                ["ffmpeg", "-y", "-i", file_path, "-vf", drawtext, "-c:a", "copy", overlaid],
+                capture_output=True, text=True, timeout=120,
+            )
+            if os.path.exists(overlaid) and os.path.getsize(overlaid) > 0:
+                file_path = overlaid
+        except Exception as e:
+            errors.append(f"text_overlay: {e}")
+
+    # ── 6. Add captions ──────────────────────────────────────
+    if req.options.add_captions and req.options.caption_style != "none":
+        try:
+            from services.clipper.reframer import Reframer
+            reframer = Reframer()
+            # Generate karaoke subtitles from audio
+            sub_path = str(out_dir / f"subs_{run_id}.ass")
+            try:
+                reframer.generate_karaoke_subtitles(file_path, sub_path, style=req.options.caption_style)
+            except Exception:
+                # If transcription fails, create simple placeholder subtitles
+                meta = _probe(file_path)
+                dur = float(meta.get("format", {}).get("duration", 10))
+                import pysubs2
+                subs = pysubs2.SSAFile()
+                subs.events.append(pysubs2.SSAEvent(
+                    start=0, end=int(dur * 1000),
+                    text=req.options.text_overlay or "Regenerated by 1AI",
+                ))
+                subs.save(sub_path)
+
+            if os.path.exists(sub_path):
+                captioned = str(out_dir / f"caption_{run_id}.mp4")
+                reframer.burn_subtitles(file_path, sub_path, captioned)
+                if os.path.exists(captioned) and os.path.getsize(captioned) > 0:
+                    file_path = captioned
+        except Exception as e:
+            errors.append(f"captions: {e}")
+
+    # ── 7. Generate metadata ─────────────────────────────────
+    # Platform-specific metadata templates with Indonesian hashtags
+    _PLATFORM_METADATA = {
+        "facebook": {
+            "titles": [
+                "Coba lihat ini! 🔥", "Wajib coba! 💪", "Tips yang jarang orang tahu",
+                "Ini dia yang kamu cari! ✨", "Jangan sampai ketinggalan! 🚀",
+            ],
+            "hashtags": ["#facebookreels", "#viral", "#trending", "#fyp", "#indonesia", "#tips"],
+        },
+        "tiktok": {
+            "titles": [
+                "POV: kamu nemuin ini 🔥", "Ini gila sih! 😱", "Coba tebak...",
+            ],
+            "hashtags": ["#fyp", "#foryou", "#viral", "#trending", "#tiktokindonesia"],
+        },
+        "instagram": {
+            "titles": [
+                "Save this for later! ✨", "Your feed needed this 💫",
+            ],
+            "hashtags": ["#reels", "#explore", "#viral", "#trending", "#instagram"],
+        },
+    }
+
+    metadata: dict = {"title": "", "hashtags": [], "description": ""}
+    if req.options.generate_metadata:
+        try:
+            # Try LLM via OmniRoute first
+            omni_url = os.getenv("OMNIRoute_URL", "http://127.0.0.1:20128/v1")
+            async with httpx.AsyncClient(timeout=15.0) as llm_client:
+                llm_resp = await llm_client.post(
+                    f"{omni_url}/chat/completions",
+                    json={
+                        "model": "gemini-2.0-flash",
+                        "messages": [{
+                            "role": "user",
+                            "content": (
+                                f"Generate a short catchy social media title (max 60 chars), "
+                                f"5 relevant hashtags, and a 1-sentence description for a "
+                                f"{req.platform} post. Language: {req.options.language}. "
+                                f"Return JSON: {{\"title\":\"...\",\"hashtags\":[\"#...\"],\"description\":\"...\"}}"
+                            ),
+                        }],
+                        "max_tokens": 200,
+                    },
+                )
+                if llm_resp.status_code == 200:
+                    content = llm_resp.json().get("choices", [{}])[0].get("message", {}).get("content", "")
+                    # Extract JSON from response
+                    import re as _re
+                    json_match = _re.search(r'\{[^}]+\}', content)
+                    if json_match:
+                        metadata = json.loads(json_match.group())
+                        if metadata.get("title"):
+                            raise RuntimeError("")  # Skip fallback
+        except RuntimeError:
+            pass  # LLM succeeded
+        except Exception as e:
+            errors.append(f"metadata_llm: {e}")
+
+        # Fallback: platform-aware template
+        if not metadata.get("title"):
+            import random
+            preset = _PLATFORM_METADATA.get(req.platform, _PLATFORM_METADATA["facebook"])
+            metadata = {
+                "title": random.choice(preset["titles"]),
+                "hashtags": preset["hashtags"],
+                "description": f"Check out this content on {req.platform}!",
+            }
+
+    # ── 8. Collect final output metadata ─────────────────────
+    final_meta = _probe(file_path)
+    duration = None
+    width = None
+    height = None
+    for s in final_meta.get("streams", []):
+        if s.get("codec_type") == "video":
+            width = int(s.get("width", 0))
+            height = int(s.get("height", 0))
+            break
+    duration = float(final_meta.get("format", {}).get("duration", 0)) if final_meta.get("format") else None
+
+    return {"data": {
+        "status": "regenerated",
+        "file_path": file_path,
+        "metadata": metadata,
+        "duration": round(duration, 2) if duration else None,
+        "width": width,
+        "height": height,
+        "format": "mp4",
+        "file_size": os.path.getsize(file_path) if os.path.exists(file_path) else 0,
+        "errors": errors,
+    }}
 
 
 # ══════════════════════════════════════════════════════════════
