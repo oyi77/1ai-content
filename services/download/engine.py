@@ -355,6 +355,70 @@ async def convert_slideshow_to_video(image_urls: list[str], vid_id: str, tmpdir:
         return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": f"slideshow_convert_{type(e).__name__}"}
 
 
+
+
+async def convert_slideshow_to_video_remotion(
+    image_urls: list[str],
+    vid_id: str,
+    tmpdir: str,
+    client: httpx.AsyncClient,
+    *,
+    title: str = "",
+    category: str = "beauty",
+    brand_name: str = "Shopee Affiliate",
+    affiliate_link: str = "",
+    cta_text: str = "Link di Bio! 🔗",
+) -> dict:
+    """Convert slideshow images to a professional product ad video using Remotion.
+
+    Falls back to ffmpeg slideshow if Remotion is unavailable or fails.
+    """
+    try:
+        import services.remotion as remotion
+    except ImportError:
+        # Remotion not available — fall back to ffmpeg
+        return await convert_slideshow_to_video(image_urls, vid_id, tmpdir, client)
+
+    try:
+        # Download first image for Remotion
+        img_paths = []
+        for i, url in enumerate(image_urls[:5]):  # Download up to 5 images
+            r = await _dl_url(client, url, f"{vid_id}_remotion_{i:03d}", tmpdir, "jpg", referer="https://www.tiktok.com/")
+            if r["status"] == "downloaded" and r.get("file_path"):
+                img_paths.append(r["file_path"])
+
+        if not img_paths:
+            return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": "no_images_for_remotion"}
+
+        # Use first image as the main product image
+        result = await remotion.render_product_ad(
+            image_url=img_paths[0],
+            title=title or f"Produk Terbaru — {vid_id}",
+            category=category,
+            affiliate_link=affiliate_link,
+            brand_name=brand_name,
+            cta_text=cta_text,
+            output_path=os.path.join(tmpdir, f"{vid_id}_remotion_ad.mp4"),
+        )
+
+        return {
+            "file_path": result["file_path"],
+            "file_type": "video",
+            "status": "downloaded",
+            "tmpdir": tmpdir,
+            "file_size": result["file_size"],
+            "reason": "remotion_product_ad",
+            "duration": result.get("duration"),
+            "width": result.get("width"),
+            "height": result.get("height"),
+        }
+
+    except Exception as e:
+        # Remotion failed — fall back to ffmpeg slideshow
+        print(f"[Download] Remotion render failed ({e}), falling back to ffmpeg")
+        return await convert_slideshow_to_video(image_urls, vid_id, tmpdir, client)
+
+
 async def dl_oembed(client: httpx.AsyncClient, url: str, vid_id: str, tmpdir: str) -> dict:
     """Get thumbnail via TikTok oembed API."""
     try:

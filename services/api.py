@@ -1211,10 +1211,11 @@ async def process_video(req: VideoProcessRequest):
     file_path = result["file_path"]
     file_type = result.get("file_type", "video")
 
-    # 2. Get video metadata
+    # 2. Get video metadata + codec check
     duration = None
     width = None
     height = None
+    video_codec = None
     try:
         probe = subprocess.run(
             ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_streams", "-show_format", file_path],
@@ -1227,12 +1228,54 @@ async def process_video(req: VideoProcessRequest):
                 if stream.get("codec_type") == "video":
                     width = int(stream.get("width", 0))
                     height = int(stream.get("height", 0))
+                    video_codec = stream.get("codec_name", "").lower()
                     duration = float(meta.get("format", {}).get("duration", 0))
                     break
     except Exception:
         pass
 
-    # 3. Convert to target format if video and dimensions don't match
+    # 3. Force H.264 re-encode if codec is not avc1/h264
+    #    Facebook requires H.264 — HEVC/H.265 videos upload as "ready" but can't play (resolution 0x0)
+    H264_CODECS = {"h264", "avc1", "avc"}
+    if file_type == "video" and video_codec and video_codec not in H264_CODECS:
+        h264_path = os.path.join(os.path.dirname(file_path), f"{uuid.uuid4().hex}_h264.mp4")
+        try:
+            reenc = subprocess.run(
+                ["ffmpeg", "-y", "-i", file_path,
+                 "-c:v", "libx264", "-crf", "18", "-preset", "fast",
+                 "-c:a", "aac", "-b:a", "128k",
+                 "-movflags", "+faststart",
+                 h264_path],
+                capture_output=True, text=True, timeout=180,
+            )
+            if reenc.returncode == 0 and os.path.exists(h264_path) and os.path.getsize(h264_path) > 10000:
+                file_path = h264_path
+                video_codec = "h264"
+                # Re-probe to get updated dimensions
+                try:
+                    probe2 = subprocess.run(
+                        ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_streams", "-show_format", file_path],
+                        capture_output=True, text=True, timeout=10,
+                    )
+                    if probe2.returncode == 0:
+                        import json as _json2
+                        meta2 = _json2.loads(probe2.stdout)
+                        for stream in meta2.get("streams", []):
+                            if stream.get("codec_type") == "video":
+                                width = int(stream.get("width", 0))
+                                height = int(stream.get("height", 0))
+                                duration = float(meta2.get("format", {}).get("duration", 0))
+                                break
+                except Exception:
+                    pass
+            else:
+                # Re-encode failed — log but continue with original
+                if os.path.exists(h264_path):
+                    os.remove(h264_path)
+        except Exception:
+            pass
+
+    # 4. Convert to target format if video and dimensions don't match
     target_w, target_h = {"9:16": (1080, 1920), "16:9": (1920, 1080), "1:1": (1080, 1080)}.get(req.target_format, (1080, 1920))
 
     if file_type == "video" and width and height:
@@ -1522,8 +1565,9 @@ async def video_regenerate(req: VideoRegenerateRequest):
                 "description": f"Check out this content on {req.platform}!",
             }
 
-    # ── 8. Collect final output metadata ─────────────────────
+    # ── 8. Final H.264 guarantee + metadata ───────────────────
     final_meta = _probe(file_path)
+    final_codec = None
     duration = None
     width = None
     height = None
@@ -1531,8 +1575,25 @@ async def video_regenerate(req: VideoRegenerateRequest):
         if s.get("codec_type") == "video":
             width = int(s.get("width", 0))
             height = int(s.get("height", 0))
+            final_codec = s.get("codec_name", "").lower()
             break
     duration = float(final_meta.get("format", {}).get("duration", 0)) if final_meta.get("format") else None
+
+    # Final safety net — if somehow not H.264, force re-encode
+    if final_codec and final_codec not in {"h264", "avc1", "avc"}:
+        h264_final = str(out_dir / f"h264_final_{run_id}.mp4")
+        try:
+            subprocess.run(
+                ["ffmpeg", "-y", "-i", file_path,
+                 "-c:v", "libx264", "-crf", "18", "-preset", "fast",
+                 "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart",
+                 h264_final],
+                capture_output=True, text=True, timeout=180,
+            )
+            if os.path.exists(h264_final) and os.path.getsize(h264_final) > 10000:
+                file_path = h264_final
+        except Exception:
+            errors.append(f"h264_final: re-encode failed")
 
     return {"data": {
         "status": "regenerated",
@@ -1545,6 +1606,61 @@ async def video_regenerate(req: VideoRegenerateRequest):
         "file_size": os.path.getsize(file_path) if os.path.exists(file_path) else 0,
         "errors": errors,
     }}
+
+
+
+# ══════════════════════════════════════════════════════════════
+# REMOTION PRODUCT AD RENDERER
+# ══════════════════════════════════════════════════════════════
+
+
+class RenderAdRequest(BaseModel):
+    image_url: str = Field(..., description="Product image URL")
+    title: str = Field(..., description="Product title/name")
+    category: str = Field(
+        default="beauty",
+        description="Product category: beauty, fashion, hobi, kesehatan, homeliving",
+    )
+    affiliate_link: str = Field(default="", description="Shopee affiliate link")
+    brand_name: str = Field(default="Shopee Affiliate", description="Brand/page name")
+    ad_copy: Optional[str] = Field(default=None, description="Custom ad copy text")
+    hook_text: Optional[str] = Field(default=None, description="Custom hook text")
+    cta_text: str = Field(
+        default="Link di Bio! 🔗", description="Call-to-action text"
+    )
+
+
+@app.post("/content/render-ad")
+async def render_ad(req: RenderAdRequest):
+    """Render a product ad video using Remotion (9:16, 1080x1920, 15s).
+
+    Generates category-specific ad copy and renders a professional product
+    showcase video with animations, text overlays, and branding.
+    """
+    import services.remotion as remotion
+
+    try:
+        result = await remotion.render_product_ad(
+            image_url=req.image_url,
+            title=req.title,
+            category=req.category,
+            affiliate_link=req.affiliate_link,
+            brand_name=req.brand_name,
+            ad_copy=req.ad_copy,
+            hook_text=req.hook_text,
+            cta_text=req.cta_text,
+        )
+        return {
+            "status": "ok",
+            "data": result,
+        }
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Remotion render error: {type(e).__name__}: {e}",
+        )
 
 
 # ══════════════════════════════════════════════════════════════
