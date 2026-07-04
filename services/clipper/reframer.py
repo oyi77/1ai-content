@@ -310,6 +310,58 @@ class Reframer:
             ])
         return output_path
 
+    def apply_mirror(self, input_path: str, output_path: str) -> str:
+        """Horizontally flip video (hflip). Audio unchanged."""
+        self._run_ffmpeg([
+            self.ffmpeg, "-y", "-i", input_path,
+            "-vf", "hflip",
+            "-c:v", "libx264", "-crf", "18", "-preset", "fast",
+            "-c:a", "copy", "-movflags", "+faststart",
+            output_path,
+        ])
+        return output_path
+
+    def apply_speed(self, input_path: str, output_path: str, factor: float = 1.05) -> str:
+        """Change playback speed. factor > 1 = faster; factor < 1 = slower.
+
+        atempo supports 0.5–2.0; chain two filters for factors outside that range.
+        """
+        if not 0.5 <= factor <= 2.0:
+            raise ValueError(f"speed factor {factor} out of supported range 0.5–2.0")
+        vf = f"setpts={1.0/factor:.6f}*PTS"
+        af = f"atempo={factor:.6f}"
+        self._run_ffmpeg([
+            self.ffmpeg, "-y", "-i", input_path,
+            "-filter_complex", f"[0:v]{vf}[v];[0:a]{af}[a]",
+            "-map", "[v]", "-map", "[a]",
+            "-c:v", "libx264", "-crf", "18", "-preset", "fast",
+            "-c:a", "aac", "-movflags", "+faststart",
+            output_path,
+        ])
+        return output_path
+
+    def apply_crop_zoom(self, input_path: str, output_path: str, zoom: float = 1.05) -> str:
+        """Crop-and-zoom: crops centre region then scales back to original size.
+
+        zoom = 1.05 crops 5 % from each edge then upscales back — effectively
+        a slight zoom that also removes black bars.
+        """
+        if zoom < 1.0:
+            raise ValueError(f"zoom {zoom} must be >= 1.0")
+        # iw/zoom : ih/zoom centred crop, then scale back to iw x ih
+        vf = (
+            f"crop=iw/{zoom:.6f}:ih/{zoom:.6f}:(iw-iw/{zoom:.6f})/2:(ih-ih/{zoom:.6f})/2,"
+            f"scale=iw*{zoom:.6f}:ih*{zoom:.6f}"
+        )
+        self._run_ffmpeg([
+            self.ffmpeg, "-y", "-i", input_path,
+            "-vf", vf,
+            "-c:v", "libx264", "-crf", "18", "-preset", "fast",
+            "-c:a", "copy", "-movflags", "+faststart",
+            output_path,
+        ])
+        return output_path
+
     # ── Private helpers ─────────────────────────────────────
 
     @staticmethod

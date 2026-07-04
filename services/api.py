@@ -1186,6 +1186,7 @@ class VideoProcessRequest(BaseModel):
     target_format: str = "9:16"  # 9:16, 16:9, 1:1
     platform: str = "facebook"   # facebook, tiktok, instagram
     category: str = "general"
+    transforms: list[str] = []   # mirror | speed_<factor> | crop_zoom_<zoom>
 
 
 @app.post("/video/process")
@@ -1308,6 +1309,26 @@ async def process_video(req: VideoProcessRequest):
             except Exception as e:
                 # Reframe failed — return original
                 pass
+
+    # 5. Apply uniqueness transforms (mirror / speed / crop_zoom)
+    if file_type == "video" and req.transforms:
+        from services.clipper.reframer import Reframer as _Reframer
+        _reframer = _Reframer()
+        for _transform in req.transforms:
+            _out = os.path.join(os.path.dirname(file_path), f"{uuid.uuid4().hex}_t.mp4")
+            try:
+                if _transform == "mirror":
+                    file_path = _reframer.apply_mirror(file_path, _out)
+                elif _transform.startswith("speed_"):
+                    _factor = float(_transform.split("_", 1)[1])
+                    file_path = _reframer.apply_speed(file_path, _out, _factor)
+                elif _transform.startswith("crop_zoom_"):
+                    _zoom = float(_transform.split("_", 2)[2])
+                    file_path = _reframer.apply_crop_zoom(file_path, _out, _zoom)
+            except Exception:
+                # Transform failed — continue with current file_path unchanged
+                if os.path.exists(_out):
+                    os.remove(_out)
 
     return {"data": {
         "status": "processed",
