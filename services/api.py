@@ -59,6 +59,28 @@ async def startup_db():
         print(f"[API] DB init warning: {e}")
 
 
+@app.on_event("startup")
+async def _startup_processed_videos_db():
+    """Create processed_videos table for URL-based duplicate detection."""
+    import sqlite3 as _sqlite3
+    _db_path = os.path.join(os.environ.get("DATA_DIR", "/tmp"), "processed_videos.db")
+    try:
+        conn = _sqlite3.connect(_db_path)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS processed_videos (
+                url_hash    TEXT PRIMARY KEY,
+                source_url  TEXT NOT NULL,
+                processed_at TEXT NOT NULL,
+                file_path   TEXT
+            )
+        """)
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"[API] processed_videos DB init warning: {e}")
+
+_PROCESSED_VIDEOS_DB = os.path.join(os.environ.get("DATA_DIR", "/tmp"), "processed_videos.db")
+
 # ── Service instances (lazy init) ──────────────────────────────
 _storyboard: Optional[StoryboardEngine] = None
 _tts: Optional[TTSEngine] = None
@@ -1330,6 +1352,21 @@ async def process_video(req: VideoProcessRequest):
                 if os.path.exists(_out):
                     os.remove(_out)
 
+    # Log to processed_videos for duplicate detection
+    if file_type == "video" and file_path:
+        import sqlite3 as _sqlite3, hashlib as _hashlib
+        _url_hash = _hashlib.sha256(req.source_url.encode()).hexdigest()
+        try:
+            _conn = _sqlite3.connect(_PROCESSED_VIDEOS_DB)
+            _conn.execute(
+                "INSERT OR REPLACE INTO processed_videos (url_hash, source_url, processed_at, file_path) VALUES (?,?,?,?)",
+                (_url_hash, req.source_url, datetime.utcnow().isoformat(), file_path),
+            )
+            _conn.commit()
+            _conn.close()
+        except Exception:
+            pass
+
     return {"data": {
         "status": "processed",
         "file_path": file_path,
@@ -1341,6 +1378,32 @@ async def process_video(req: VideoProcessRequest):
         "reason": result.get("reason", ""),
         "file_size": os.path.getsize(file_path) if os.path.exists(file_path) else 0,
     }}
+
+
+class VideoSearchRequest(BaseModel):
+    video_url: str
+
+
+@app.post("/video/search")
+async def video_search(req: VideoSearchRequest):
+    """Check if a source URL has been processed before.
+
+    Returns {found, url_hash, processed_at, file_path}.
+    """
+    import sqlite3 as _sqlite3, hashlib as _hashlib
+    _url_hash = _hashlib.sha256(req.video_url.encode()).hexdigest()
+    try:
+        _conn = _sqlite3.connect(_PROCESSED_VIDEOS_DB)
+        row = _conn.execute(
+            "SELECT source_url, processed_at, file_path FROM processed_videos WHERE url_hash = ?",
+            (_url_hash,),
+        ).fetchone()
+        _conn.close()
+    except Exception:
+        row = None
+    if row:
+        return {"data": {"found": True, "url_hash": _url_hash, "processed_at": row[1], "file_path": row[2]}}
+    return {"data": {"found": False, "url_hash": _url_hash, "processed_at": None, "file_path": None}}
 
 # ══════════════════════════════════════════════════════════════
 # VIDEO REGENERATE — Full content regeneration pipeline
