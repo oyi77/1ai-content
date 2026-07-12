@@ -66,7 +66,7 @@ async def dl_ytdlp(url: str, vid_id: str, tmpdir: str, cookies_path: str = None)
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
-        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=45)
+        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=20)
         if proc.returncode == 0 and os.path.exists(out_path) and os.path.getsize(out_path) > 10000:
             return {"file_path": out_path, "file_type": "video", "status": "downloaded", "tmpdir": tmpdir}
         if os.path.exists(out_path):
@@ -125,25 +125,30 @@ async def dl_vidbee(client: httpx.AsyncClient, url: str, vid_id: str, tmpdir: st
         task_id = task.get("id", "")
         if not task_id:
             return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir}
-        # Poll for completion
-        for _ in range(30):
-            await asyncio.sleep(2)
+        # Poll for completion (max ~10s)
+        for _ in range(10):
+            await asyncio.sleep(1)
             try:
                 hist = await client.post(f"{VIDBEE_URL}/rpc/history/list", json={"json": {}}, timeout=5)
                 if hist.status_code == 200:
-                    items = hist.json().get("json", {}).get("items", [])
+                    items = hist.json().get("json", {}).get("history", [])
                     for item in items:
-                        if item.get("status") == "completed" and item.get("savedFileName"):
-                            import subprocess
-                            saved = item.get("savedFileName", "")
-                            host_path = os.path.join(tmpdir, f"{vid_id}.mp4")
-                            container_path = f"/data/downloads/{saved}"
-                            try:
-                                subprocess.run(["docker", "cp", f"vidbee-api-1:{container_path}", host_path], capture_output=True, timeout=10)
-                                if os.path.exists(host_path) and os.path.getsize(host_path) > 10000:
-                                    return {"file_path": host_path, "file_type": "video", "status": "downloaded", "tmpdir": tmpdir}
-                            except Exception:
-                                pass
+                        if item.get("id") == task_id:
+                            st = item.get("status", "")
+                            if st == "completed" and item.get("savedFileName"):
+                                import subprocess
+                                saved = item.get("savedFileName", "")
+                                host_path = os.path.join(tmpdir, f"{vid_id}.mp4")
+                                container_path = f"/data/downloads/{saved}"
+                                try:
+                                    subprocess.run(["docker", "cp", f"vidbee-api-1:{container_path}", host_path], capture_output=True, timeout=10)
+                                    if os.path.exists(host_path) and os.path.getsize(host_path) > 10000:
+                                        return {"file_path": host_path, "file_type": "video", "status": "downloaded", "tmpdir": tmpdir}
+                                except Exception:
+                                    pass
+                            if st in ("error", "failed"):
+                                # Vidbee exhausted retries — move on
+                                return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir}
             except Exception:
                 continue
     except Exception:
@@ -152,53 +157,150 @@ async def dl_vidbee(client: httpx.AsyncClient, url: str, vid_id: str, tmpdir: st
 
 
 async def dl_cloakbrowser(url: str, vid_id: str, tmpdir: str) -> dict:
-    """Download video via CloakBrowser — anti-detect Chromium for TikTok."""
+    """Download video via CloakBrowser — anti-detect Chromium with proxy support."""
     try:
         import cloakbrowser
     except ImportError:
         return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": "cloakbrowser_not_installed"}
     os.makedirs(tmpdir, exist_ok=True)
+    proxy = TIKTOK_PROXY or None
+    if proxy:
+        logger.info(f"[cloakbrowser] Using proxy {proxy}")
+    fp = os.path.join(tmpdir, f"tiktok_{vid_id}.mp4")
     try:
-        browser = await cloakbrowser.launch_async(headless=True, stealth_args=True, humanize=True)
+        browser = await cloakbrowser.launch_async(
+            headless=True, stealth_args=True, humanize=True, proxy=proxy,
+        )
         context = await browser.new_context(viewport={"width": 1280, "height": 720})
         page = await context.new_page()
-        video_urls: list[str] = []
 
+        # ── Response interception ────────────────────────────────────────
+        video_urls: list[str] = []
         def _on_resp(resp):
             u = resp.url
-            ct = resp.headers.get("content-type", "")
-            if "video/mp4" in ct and resp.status == 200 and "ttwstatic" not in u:
+            ct = (resp.headers.get("content-type") or "").lower()
+            status = resp.status
+            if status != 200:
+                return
+            # Direct video/audio MIME
+            if any(m in ct for m in ("video/mp4", "video/webm", "video/quicktime", "audio/mp4")):
+                if "ttwstatic" not in u and "p16-va" not in u:
+                    video_urls.append(u)
+            # XHR JSON — may contain CDN URLs
+            if "json" in ct and ("tiktok" in u.lower() or "api" in u.lower()):
                 video_urls.append(u)
-
         page.on("response", _on_resp)
-        video_url = ""
-        fp = os.path.join(tmpdir, f"tiktok_{vid_id}.mp4")
+
+        # ── Navigation ──────────────────────────────────────────────────
         try:
-            await page.goto(url, wait_until="networkidle", timeout=25000)
+            await page.goto(url, wait_until="domcontentloaded", timeout=25000)
+        except Exception as e:
+            await browser.close()
+            return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": f"cloakbrowser_goto_{type(e).__name__}"}
+
+        # ── Wait & poll for video element (SPA needs render time) ────────
+        await page.wait_for_timeout(3000)
+        video_url = ""
+        for _ in range(8):
             video_url = await page.evaluate(
-                "() => { try { const s = document.querySelector('script[id=\"__UNIVERSAL_DATA_FOR_REHYDRATION__\"]');"
-                "if(s){const d=JSON.parse(s.textContent);const v=d?.__DEFAULT_SCOPE__?.['webapp.video-detail']?.itemInfo?.itemStruct?.video;"
-                "if(v?.playAddr)return v.playAddr;}}catch(e){} "
-                "try{const v=document.querySelector('video');if(v)return v.src||v.currentSrc||'';}catch(e){} return '';}"
+                "() => {"
+                "  var s = document.querySelector('script[id=\"__UNIVERSAL_DATA_FOR_REHYDRATION__\"]');"
+                "  if (s) {"
+                "    try {"
+                "      var d = JSON.parse(s.textContent);"
+                "      var vd = d?.__DEFAULT_SCOPE__?.['webapp.video-detail']?.itemInfo?.itemStruct?.video;"
+                "      if (vd?.playAddr) return vd.playAddr;"
+                "      if (vd?.downloadAddr) return vd.downloadAddr;"
+                "    } catch(e){}"
+                "  }"
+                "  var s2 = document.querySelector('script[id=\"__NEXT_DATA__\"]');"
+                "  if (s2) {"
+                "    try {"
+                "      var d2 = JSON.parse(s2.textContent);"
+                "      var vu = d2?.props?.pageProps?.videoData?.video?.urls?.[0];"
+                "      if (vu) return vu;"
+                "    } catch(e){}"
+                "  }"
+                "  var v = document.querySelector('video');"
+                "  if (v) {"
+                "    var vsrc = v.src || v.currentSrc || '';"
+                "    if (vsrc && !vsrc.includes('ttwstatic') && !vsrc.startsWith('blob:')) return vsrc;"
+                "  }"
+                "  return '';"
+                "}"
             )
+            if video_url and not video_url.startswith("blob:") and "ttwstatic" not in video_url:
+                break
+            await page.wait_for_timeout(1500)
+            video_url = ""
+
+        # ── Fallback: check intercepted responses ──────────────────────
+        if not video_url or video_url.startswith("blob:"):
+            # Prefer URLs from CDN domains
+            for u in video_urls:
+                if any(d in u for d in ("tiktokcdn", "tikcdn", "bytecd")):
+                    video_url = u
+                    break
             if not video_url or video_url.startswith("blob:"):
-                video_url = next((u for u in video_urls if "tiktok" in u), "")
-            if not video_url or video_url.startswith("blob:"):
-                return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": "cloakbrowser_no_video_url"}
-            resp = await page.request.get(video_url, headers={"Referer": "https://www.tiktok.com/"})
+                # Pick first non-blob non-empty
+                video_url = next((u for u in video_urls if u.startswith("http")), "")
+
+        if not video_url or video_url.startswith("blob:"):
+            # ── Mobile fallback ──────────────────────────────────────────
+            mobile_url = url.replace("www.tiktok.com", "m.tiktok.com")
+            try:
+                logger.info(f"[cloakbrowser] Trying mobile version: {mobile_url}")
+                page2 = await context.new_page()
+                await page2.goto(mobile_url, wait_until="domcontentloaded", timeout=15000)
+                await page2.wait_for_timeout(3000)
+                video_url = await page2.evaluate(
+                    "() => {"
+                    "  var v = document.querySelector('video');"
+                    "  if (v) {"
+                    "    var vsrc = v.src || v.currentSrc || '';"
+                    "    if (vsrc && !vsrc.includes('ttwstatic') && !vsrc.startsWith('blob:')) return vsrc;"
+                    "  }"
+                    "  var l = document.querySelector('link[rel=\"preload\"][as=\"video\"]');"
+                    "  if (l) { "
+                    "    var lsrc = l.href || '';"
+                    "    if (lsrc && !lsrc.includes('ttwstatic')) return lsrc;"
+                    "  }"
+                    "  return '';"
+                    "}"
+                )
+                if not video_url or video_url.startswith("blob:"):
+                    for u in video_urls:
+                        if any(d in u for d in ("tiktokcdn", "tikcdn", "bytecd")):
+                            video_url = u
+                            break
+                await page2.close()
+            except Exception as e:
+                logger.info(f"[cloakbrowser] Mobile fallback failed: {type(e).__name__}")
+
+        if not video_url or video_url.startswith("blob:"):
+            await browser.close()
+            return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": "cloakbrowser_no_video_url"}
+
+        # ── Download the video ──────────────────────────────────────────
+        try:
+            logger.info(f"[cloakbrowser] Downloading from: {video_url[:80]}")
+            resp = await page.request.get(video_url, timeout=30000)
             if resp.ok:
+                ct = (resp.headers.get("content-type") or "").lower()
                 body = await resp.body()
-                if len(body) > 10000:
+                if "video" in ct and len(body) > 10000:
                     with open(fp, "wb") as f:
                         f.write(body)
-                else:
-                    return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": "cloakbrowser_empty_download"}
+                    await browser.close()
+                    if os.path.exists(fp) and os.path.getsize(fp) > 10000:
+                        logger.info(f"[cloakbrowser] Download OK: {os.path.getsize(fp)} bytes")
+                        return {"file_path": fp, "file_type": "video", "status": "downloaded", "tmpdir": tmpdir}
+                logger.warning(f"[cloakbrowser] Bad response: {resp.status} ct={ct} size={len(body)}")
             else:
-                return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": f"cloakbrowser_http_{resp.status}"}
-        finally:
-            await browser.close()
-        if os.path.exists(fp) and os.path.getsize(fp) > 10000:
-            return {"file_path": fp, "file_type": "video", "status": "downloaded", "tmpdir": tmpdir}
+                logger.warning(f"[cloakbrowser] HTTP {resp.status}")
+        except Exception as e:
+            logger.warning(f"[cloakbrowser] Download error: {e}")
+        await browser.close()
         return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": "cloakbrowser_download_failed"}
     except Exception as e:
         return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": f"cloakbrowser_{type(e).__name__}"}
@@ -240,11 +342,16 @@ async def dl_ssstik(url: str, vid_id: str, tmpdir: str) -> dict:
         else:
             await browser.close()
             return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": "ssstik_no_submit"}
-
-        # 4. Wait for download link to appear in DOM (up to 15s)
+        # 4. Wait for download link in DOM (up to 5s), short-circuit on error message
         download_url = ""
-        for _ in range(15):
+        for _ in range(5):
             await page.wait_for_timeout(1000)
+
+            # Early exit: ssstik error message "Video currently unavailable"
+            has_err = await page.evaluate("() => document.body.textContent.includes('Video currently unavailable')")
+            if has_err:
+                break
+
             links = await page.query_selector_all('a[href*="tikcdn"]')
             for link in links:
                 href = await link.get_attribute('href') or ""
@@ -253,7 +360,6 @@ async def dl_ssstik(url: str, vid_id: str, tmpdir: str) -> dict:
                     break
             if download_url:
                 break
-
         if not download_url:
             await browser.close()
             return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": "ssstik_no_download_url"}
