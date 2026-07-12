@@ -452,19 +452,34 @@ async def dl_placeholder(client: httpx.AsyncClient, category: str, tmpdir: str) 
 
 # ── Cascade ─────────────────────────────────────────────────────────
 
-
 async def download_video(video_url: str, category: str = "general") -> dict:
     """Download a single video with full cascade fallback.
 
     Cascade: yt-dlp (with cookies) → tikwm → Vidbee → Cobalt → CloakBrowser → scrape → cover → placeholder
+    Overall timeout: 120s across all fallbacks.
     Returns {file_path, file_type, status, reason, tmpdir}.
     """
+    logger.info(f"[download] Starting download for {video_url} (category={category})")
     tmpdir = tempfile.mkdtemp(prefix="1ai_content_")
     vid_id = video_url.rstrip("/").split("/")[-1] if video_url else "unknown"
 
     if not video_url:
         return {**await dl_placeholder(None, category, tmpdir), "reason": "no_video_url"}
 
+    try:
+        return await asyncio.wait_for(
+            _download_cascade(video_url, category, tmpdir, vid_id),
+            timeout=120.0,
+        )
+    except asyncio.TimeoutError:
+        logger.error(f"[download] Global timeout (120s) downloading {video_url}")
+        import shutil
+        shutil.rmtree(tmpdir, ignore_errors=True)
+        return {"file_path": None, "file_type": "none", "status": "failed", "reason": "timeout_120s", "tmpdir": tmpdir}
+
+
+async def _download_cascade(video_url: str, category: str, tmpdir: str, vid_id: str) -> dict:
+    """Inner cascade — all fallback methods. Called by download_video with 120s overall timeout."""
     is_tiktok = "tiktok.com" in video_url
     errors: list[str] = []
 
