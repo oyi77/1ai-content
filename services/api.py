@@ -1199,6 +1199,67 @@ async def download_video_endpoint(req: DownloadRequest):
 
     return {"data": result}
 
+
+# ══════════════════════════════════════════════════════════════
+# TIKTOK COOKIE REFRESH
+# ══════════════════════════════════════════════════════════════
+
+
+@app.post("/video/refresh-cookies")
+async def refresh_tiktok_cookies():
+    """Extract fresh TikTok cookies from Chromium to config/tiktok_cookies.txt.
+
+    Runs yt-dlp --cookies-from-browser chromium to export browser cookies
+    into the Netscape cookie file that the download cascade uses.
+    """
+    cookies_path = os.path.join(os.path.dirname(__file__), "..", "config", "tiktok_cookies.txt")
+    cookies_path = os.path.abspath(os.path.normpath(cookies_path))
+    os.makedirs(os.path.dirname(cookies_path), exist_ok=True)
+
+    cmd = [
+        "yt-dlp",
+        "--cookies-from-browser", "chromium",
+        "--cookies", cookies_path,
+        "--flat-playlist",
+        "--dump-json",
+        "https://www.tiktok.com/@_",  # dummy — fails but cookies written before error
+    ]
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=30)
+    except asyncio.TimeoutError:
+        return {"data": {"status": "error", "message": "Cookie extraction timed out (30s)"}}
+    except FileNotFoundError:
+        return {"data": {"status": "error", "message": "yt-dlp not installed"}}
+    except Exception as e:
+        return {"data": {"status": "error", "message": f"Cookie extraction failed: {type(e).__name__}: {e}"}}
+
+    # Verify file was written with TikTok cookies
+    if os.path.exists(cookies_path) and os.path.getsize(cookies_path) > 100:
+        # Check there's at least one .tiktok.com cookie
+        has_tiktok = False
+        try:
+            with open(cookies_path) as f:
+                for line in f:
+                    if line.strip().endswith("tiktok.com\tTRUE\t/"):
+                        has_tiktok = True
+                        break
+        except Exception:
+            has_tiktok = False
+        return {"data": {
+            "status": "ok" if has_tiktok else "partial",
+            "message": "TikTok cookies refreshed from Chromium" if has_tiktok else "Cookies extracted but no .tiktok.com entries found (login required)",
+            "cookies_file": cookies_path,
+            "size_bytes": os.path.getsize(cookies_path),
+            "has_tiktok_cookies": has_tiktok,
+        }}
+
+    return {"data": {"status": "error", "message": "Cookie file empty after extraction"}}
+
 # ══════════════════════════════════════════════════════════════
 # VIDEO PROCESS — Download + Convert for distribution
 # ══════════════════════════════════════════════════════════════
