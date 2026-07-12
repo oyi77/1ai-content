@@ -1233,9 +1233,10 @@ async def _extract_browser_cookies(browser: str, cookies_path: str) -> dict:
     except Exception as e:
         return {"browser": browser, "status": "error", "message": f"{type(e).__name__}: {e}"}
 
-    if proc.returncode != 0:
-        return {"browser": browser, "status": "fail", "returncode": proc.returncode}
-    return {"browser": browser, "status": "ok"}
+    # yt-dlp exits 0 even on extractor errors ("Unable to extract secondary user ID")
+    # — cookies are written before that error.  Treat any successful invocation as okay
+    # and let the caller verify file content.
+    return {"browser": browser, "status": "ok", "returncode": proc.returncode}
 
 
 def _has_tiktok_cookies(path: str) -> bool:
@@ -1243,7 +1244,7 @@ def _has_tiktok_cookies(path: str) -> bool:
     try:
         with open(path) as f:
             for line in f:
-                if line.strip().endswith("tiktok.com\tTRUE\t/"):
+                if line.startswith(".tiktok.com\t"):
                     return True
     except Exception:
         pass
