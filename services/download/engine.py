@@ -26,7 +26,7 @@ COBALT_PUBLIC_INSTANCES = [
     "https://co.eepy.today",
     "https://cobalt-api.hyper.lol",
 ]
-PICSUM_URL = os.getenv("PICSUM_URL", "https://picsum.photos")
+TIKTOK_PROXY = os.getenv("TIKTOK_PROXY", "")
 TIKTOK_OEMBED = os.getenv("TIKTOK_OEMBED", "https://www.tiktok.com/oembed")
 
 
@@ -50,14 +50,16 @@ async def dl_tikwm(client: httpx.AsyncClient, url: str, vid_id: str, tmpdir: str
         pass
     return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir}
 
-
 async def dl_ytdlp(url: str, vid_id: str, tmpdir: str, cookies_path: str = None) -> dict:
     """Download video via yt-dlp subprocess."""
+    global TIKTOK_PROXY
     try:
         out_path = os.path.join(tmpdir, f"{vid_id}.mp4")
         cmd = ["yt-dlp", "--no-check-certificates", "--no-warnings"]
         if cookies_path and os.path.exists(cookies_path):
             cmd += ["--cookies", cookies_path]
+        if TIKTOK_PROXY:
+            cmd += ["--proxy", TIKTOK_PROXY]
         cmd += ["-f", "bestvideo[vcodec^=avc1][ext=mp4]+bestaudio[ext=m4a]/bestvideo[vcodec^=avc]+bestaudio/best[ext=mp4]/best", "-o", out_path, url]
         proc = await asyncio.create_subprocess_exec(
             *cmd,
@@ -435,16 +437,45 @@ async def dl_oembed(client: httpx.AsyncClient, url: str, vid_id: str, tmpdir: st
     return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir}
 
 
-async def dl_placeholder(client: httpx.AsyncClient, category: str, tmpdir: str) -> dict:
-    """Download generic placeholder image from picsum."""
+async def dl_placeholder(client: httpx.AsyncClient | None, category: str, tmpdir: str) -> dict:
+    """Download generic placeholder image from picsum or generate local fallback."""
+    # Try picsum first if client is available
+    if client is not None:
+        try:
+            seed = abs(hash(category)) % 100000
+            r = await client.get(f"{PICSUM_URL}/seed/{seed}/1080/1080", timeout=15)
+            if r.status_code == 200 and len(r.content) > 1024:
+                fp = os.path.join(tmpdir, f"{category.replace(' ', '_')}_{seed}.jpg")
+                with open(fp, "wb") as f:
+                    f.write(r.content)
+                return {"file_path": fp, "file_type": "image", "status": "downloaded", "tmpdir": tmpdir}
+        except Exception:
+            pass
+
+    # Fallback: generate 1x1 red PNG using stdlib (no external deps)
+    import struct, zlib
+    fp = os.path.join(tmpdir, "placeholder.png")
     try:
-        seed = abs(hash(category)) % 100000
-        r = await client.get(f"{PICSUM_URL}/seed/{seed}/1080/1080", timeout=15)
-        if r.status_code == 200 and len(r.content) > 1024:
-            fp = os.path.join(tmpdir, f"{category.replace(' ', '_')}_{seed}.jpg")
-            with open(fp, "wb") as f:
-                f.write(r.content)
-            return {"file_path": fp, "file_type": "image", "status": "downloaded", "tmpdir": tmpdir}
+        width, height = 1, 1
+        # IHDR: 8-bit RGBA
+        ihdr_data = struct.pack('>IIBBBBB', width, height, 8, 6, 0, 0, 0)
+        ihdr_crc = zlib.crc32(b'IHDR' + ihdr_data) & 0xffffffff
+        # IDAT: filter byte + RGBA pixel (red)
+        raw = b'\x00\xff\x00\x00\xff'
+        compressed = zlib.compress(raw)
+        idat_crc = zlib.crc32(b'IDAT' + compressed) & 0xffffffff
+        # IEND
+        iend_crc = zlib.crc32(b'IEND') & 0xffffffff
+        sig = b'\x89PNG\r\n\x1a\n'
+        def _chunk(ctype: bytes, cdata: bytes, ccrc: int) -> bytes:
+            return struct.pack('>I', len(cdata)) + ctype + cdata + struct.pack('>I', ccrc)
+        png_data = sig
+        png_data += _chunk(b'IHDR', ihdr_data, ihdr_crc)
+        png_data += _chunk(b'IDAT', compressed, idat_crc)
+        png_data += _chunk(b'IEND', b'', iend_crc)
+        with open(fp, 'wb') as f:
+            f.write(png_data)
+        return {"file_path": fp, "file_type": "image", "status": "downloaded", "tmpdir": tmpdir}
     except Exception:
         pass
     return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir}
@@ -515,7 +546,7 @@ async def _download_cascade(video_url: str, category: str, tmpdir: str, vid_id: 
         return r
     errors.append(f"ytdlp={r.get('error', 'failed')}")
 
-    async with httpx.AsyncClient(timeout=120.0, follow_redirects=True, verify=False) as client:
+    async with httpx.AsyncClient(timeout=120.0, follow_redirects=True, verify=False, proxy=TIKTOK_PROXY or None) as client:
         # 4. tikwm fallback (TikTok only — 576x1024, lower quality)
         if is_tiktok:
             r = await dl_tikwm(client, video_url, vid_id, tmpdir)
