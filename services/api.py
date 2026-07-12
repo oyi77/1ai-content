@@ -1205,20 +1205,15 @@ async def download_video_endpoint(req: DownloadRequest):
 # ══════════════════════════════════════════════════════════════
 
 
-@app.post("/video/refresh-cookies")
-async def refresh_tiktok_cookies():
-    """Extract fresh TikTok cookies from Chromium to config/tiktok_cookies.txt.
+_TIKTOK_BROWSERS = ["chromium", "vivaldi", "firefox"]
+"""Browser names to try, in order, for cookie extraction."""
 
-    Runs yt-dlp --cookies-from-browser chromium to export browser cookies
-    into the Netscape cookie file that the download cascade uses.
-    """
-    cookies_path = os.path.join(os.path.dirname(__file__), "..", "config", "tiktok_cookies.txt")
-    cookies_path = os.path.abspath(os.path.normpath(cookies_path))
-    os.makedirs(os.path.dirname(cookies_path), exist_ok=True)
 
+async def _extract_browser_cookies(browser: str, cookies_path: str) -> dict:
+    """Try extracting cookies from one browser. Returns result dict."""
     cmd = [
         "yt-dlp",
-        "--cookies-from-browser", "chromium",
+        "--cookies-from-browser", browser,
         "--cookies", cookies_path,
         "--flat-playlist",
         "--dump-json",
@@ -1232,33 +1227,84 @@ async def refresh_tiktok_cookies():
         )
         stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=30)
     except asyncio.TimeoutError:
-        return {"data": {"status": "error", "message": "Cookie extraction timed out (30s)"}}
+        return {"browser": browser, "status": "timeout"}
     except FileNotFoundError:
-        return {"data": {"status": "error", "message": "yt-dlp not installed"}}
+        return {"browser": browser, "status": "not_found"}
     except Exception as e:
-        return {"data": {"status": "error", "message": f"Cookie extraction failed: {type(e).__name__}: {e}"}}
+        return {"browser": browser, "status": "error", "message": f"{type(e).__name__}: {e}"}
 
-    # Verify file was written with TikTok cookies
-    if os.path.exists(cookies_path) and os.path.getsize(cookies_path) > 100:
-        # Check there's at least one .tiktok.com cookie
-        has_tiktok = False
-        try:
-            with open(cookies_path) as f:
-                for line in f:
-                    if line.strip().endswith("tiktok.com\tTRUE\t/"):
-                        has_tiktok = True
-                        break
-        except Exception:
-            has_tiktok = False
+    if proc.returncode != 0:
+        return {"browser": browser, "status": "fail", "returncode": proc.returncode}
+    return {"browser": browser, "status": "ok"}
+
+
+def _has_tiktok_cookies(path: str) -> bool:
+    """Check if cookie file contains at least one .tiktok.com entry."""
+    try:
+        with open(path) as f:
+            for line in f:
+                if line.strip().endswith("tiktok.com\tTRUE\t/"):
+                    return True
+    except Exception:
+        pass
+    return False
+
+
+@app.post("/video/refresh-cookies")
+async def refresh_tiktok_cookies(browser: str | None = None):
+    """Extract fresh TikTok cookies from installed browsers into config/tiktok_cookies.txt.
+
+    Tries chromium, vivaldi, then firefox — stops at the first browser that
+    yields .tiktok.com cookies.  Override with ?browser=chromium|vivaldi|firefox.
+    """
+    cookies_dir = os.path.join(os.path.dirname(__file__), "..", "config")
+    cookies_path = os.path.join(cookies_dir, "tiktok_cookies.txt")
+    cookies_path = os.path.abspath(os.path.normpath(cookies_path))
+    os.makedirs(cookies_dir, exist_ok=True)
+
+    browsers = [browser] if browser else _TIKTOK_BROWSERS
+    results = []
+    used_browser = None
+
+    for name in browsers:
+        r = await _extract_browser_cookies(name, cookies_path)
+        results.append(r)
+        if r["status"] == "ok" and os.path.getsize(cookies_path) > 100:
+            if _has_tiktok_cookies(cookies_path):
+                used_browser = name
+                break
+            # file has cookies but no .tiktok.com entries — keep trying next browser
+
+    # Build response
+    summary = {r["browser"]: r.get("status", "unknown") for r in results}
+
+    if used_browser:
         return {"data": {
-            "status": "ok" if has_tiktok else "partial",
-            "message": "TikTok cookies refreshed from Chromium" if has_tiktok else "Cookies extracted but no .tiktok.com entries found (login required)",
+            "status": "ok",
+            "message": f"TikTok cookies refreshed via {used_browser}",
             "cookies_file": cookies_path,
             "size_bytes": os.path.getsize(cookies_path),
-            "has_tiktok_cookies": has_tiktok,
+            "browser": used_browser,
+            "tried": summary,
         }}
 
-    return {"data": {"status": "error", "message": "Cookie file empty after extraction"}}
+    # No browser had TikTok cookies
+    fsize = os.path.getsize(cookies_path) if os.path.exists(cookies_path) else 0
+    if fsize > 100:
+        return {"data": {
+            "status": "partial",
+            "message": "Cookies extracted but no .tiktok.com entries found (login required in any browser)",
+            "cookies_file": cookies_path,
+            "size_bytes": fsize,
+            "browser": None,
+            "tried": summary,
+        }}
+
+    return {"data": {
+        "status": "error",
+        "message": "No browser produced usable cookies",
+        "tried": summary,
+    }}
 
 # ══════════════════════════════════════════════════════════════
 # VIDEO PROCESS — Download + Convert for distribution

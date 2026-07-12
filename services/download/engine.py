@@ -96,19 +96,16 @@ async def dl_ytdlp(url: str, vid_id: str, tmpdir: str, cookies_path: str = None)
     if r["status"] == "downloaded":
         return r
 
-    # Try 2: if failed and looks like TikTok blocking → retry with browser cookies
+    # Try 2..N: if failed and looks like TikTok blocking → retry with browser cookies
     stderr = r.get("_stderr", b"") if isinstance(r.get("_stderr"), bytes) else b""
-    blocked_keywords = [b"Your IP address is blocked", b"impersonation", b"cookies", b"403", b"Forbidden"]
+    blocked_keywords = [b"Your IP address is blocked", b"impersonation", b"cookies", b"403", b"Forbidden", b"Sign in"]
     if any(kw.lower() in stderr.lower() for kw in blocked_keywords):
-        logger.info("[ytdlp] File cookies blocked, retrying with --cookies-from-browser chromium")
-        cmd2 = _build_cmd("--cookies-from-browser chromium")
-        r2 = await _run(cmd2)
-        if r2["status"] == "downloaded":
-            return r2
-
-    # Stripped internal fields before returning
-    r.pop("_stderr", None)
-    return r
+        for browser in ("chromium", "vivaldi", "firefox"):
+            logger.info("[ytdlp] File cookies blocked, retrying with --cookies-from-browser %s", browser)
+            cmd2 = _build_cmd(f"--cookies-from-browser {browser}")
+            r2 = await _run(cmd2)
+            if r2["status"] == "downloaded":
+                return r2
 
 
 async def dl_cobalt(client: httpx.AsyncClient, url: str, vid_id: str, tmpdir: str) -> dict:
