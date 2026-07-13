@@ -1181,6 +1181,15 @@ class ProfileDownloadRequest(BaseModel):
     profile_url: str
     category: str = "general"
     max_videos: int = Field(default=10, ge=1, le=50)
+class UserPostsRequest(BaseModel):
+    unique_id: str
+    count: int = Field(default=10, ge=1, le=100)
+class ChallengeSearchRequest(BaseModel):
+    keywords: str
+    count: int = Field(default=5, ge=1, le=50)
+class ChallengePostsRequest(BaseModel):
+    challenge_id: str
+    count: int = Field(default=10, ge=1, le=100)
 class DownloadRequest(BaseModel):
     video_url: str
     category: str = "general"
@@ -1254,6 +1263,48 @@ async def download_profile(req: ProfileDownloadRequest):
         results.append(result)
 
     return {"data": results, "total": len(results)}
+
+
+@app.post("/tikwm/user/posts")
+async def tikwm_user_posts(req: UserPostsRequest):
+    """Proxy for tikwm user/posts — fetch a creator's video list."""
+    from services.download.engine import TIKWM_API_URL
+    async with httpx.AsyncClient(timeout=15) as client:
+        resp = await client.get(
+            f"{TIKWM_API_URL}user/posts",
+            params={"unique_id": req.unique_id, "count": req.count},
+        )
+        if resp.status_code != 200:
+            raise HTTPException(status_code=502, detail=f"tikwm returned {resp.status_code}")
+        return resp.json()
+
+
+@app.post("/tikwm/challenge/search")
+async def tikwm_challenge_search(req: ChallengeSearchRequest):
+    """Proxy for tikwm challenge/search — find challenges by keyword."""
+    from services.download.engine import TIKWM_API_URL
+    async with httpx.AsyncClient(timeout=15) as client:
+        resp = await client.get(
+            f"{TIKWM_API_URL}challenge/search",
+            params={"keywords": req.keywords, "count": req.count},
+        )
+        if resp.status_code != 200:
+            raise HTTPException(status_code=502, detail=f"tikwm returned {resp.status_code}")
+        return resp.json()
+
+
+@app.post("/tikwm/challenge/posts")
+async def tikwm_challenge_posts(req: ChallengePostsRequest):
+    """Proxy for tikwm challenge/posts — fetch videos in a challenge."""
+    from services.download.engine import TIKWM_API_URL
+    async with httpx.AsyncClient(timeout=15) as client:
+        resp = await client.get(
+            f"{TIKWM_API_URL}challenge/posts",
+            params={"challenge_id": req.challenge_id, "count": req.count},
+        )
+        if resp.status_code != 200:
+            raise HTTPException(status_code=502, detail=f"tikwm returned {resp.status_code}")
+        return resp.json()
 
 
 # ══════════════════════════════════════════════════════════════
