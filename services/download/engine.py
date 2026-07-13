@@ -58,12 +58,19 @@ async def dl_tikwm(client: httpx.AsyncClient, url: str, vid_id: str, tmpdir: str
     return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir}
 
 async def dl_ytdlp(url: str, vid_id: str, tmpdir: str, cookies_path: str = None) -> dict:
-    """Download video via yt-dlp subprocess."""
+    """Download video via yt-dlp subprocess. Uses impersonation for TikTok."""
     global TIKTOK_PROXY
-
+    
+    # Resolve yt-dlp binary — prefer venv, fall back to system PATH
+    _ytdlp_bin = os.path.join(os.path.dirname(sys.executable), "yt-dlp") if hasattr(sys, "executable") else "yt-dlp"
+    if not os.path.exists(_ytdlp_bin):
+        _ytdlp_bin = "yt-dlp"
+    
     def _build_cmd(cookies_src: str | None = None) -> list[str]:
         """Build yt-dlp cmd with optional cookies source (file path or --cookies-from-browser)."""
-        cmd = ["yt-dlp", "--no-check-certificates", "--no-warnings"]
+        cmd = [_ytdlp_bin, "--no-check-certificates", "--no-warnings"]
+        # Impersonate Chrome to bypass TikTok's JS-restriction (yt-dlp >= 2026.07 + curl_cffi >= 0.15)
+        cmd += ["--impersonate", "Chrome-133"]
         if cookies_src and os.path.exists(cookies_src) and ".txt" in cookies_src:
             cmd += ["--cookies", cookies_src]
         elif cookies_src and cookies_src.startswith("--cookies-from-browser"):
@@ -72,7 +79,7 @@ async def dl_ytdlp(url: str, vid_id: str, tmpdir: str, cookies_path: str = None)
             cmd += ["--proxy", TIKTOK_PROXY]
         cmd += ["-f", "bestvideo[vcodec^=avc1][ext=mp4]+bestaudio[ext=m4a]/bestvideo[vcodec^=avc]+bestaudio/best[ext=mp4]/best", "-o", os.path.join(tmpdir, f"{vid_id}.mp4"), url]
         return cmd
-
+    
     async def _run(cmd: list[str]) -> dict:
         """Run yt-dlp subprocess with 20s timeout."""
         try:
@@ -96,25 +103,23 @@ async def dl_ytdlp(url: str, vid_id: str, tmpdir: str, cookies_path: str = None)
             return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": "ytdlp_not_installed"}
         except Exception as e:
             return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": f"ytdlp_{type(e).__name__}"}
-
+    
     # Try 1: with cookies file
     cmd = _build_cmd(cookies_path)
     r = await _run(cmd)
     if r["status"] == "downloaded":
         return r
-
+    
     # Try 2..N: if failed and looks like TikTok blocking → retry with browser cookies
     stderr = r.get("_stderr", b"") if isinstance(r.get("_stderr"), bytes) else b""
     blocked_keywords = [b"Your IP address is blocked", b"impersonation", b"cookies", b"403", b"Forbidden", b"Sign in"]
     if any(kw.lower() in stderr.lower() for kw in blocked_keywords):
         for browser in ("chromium", "vivaldi", "firefox"):
-            logger.info("[ytdlp] File cookies blocked, retrying with --cookies-from-browser %s", browser)
-            cmd2 = _build_cmd(f"--cookies-from-browser {browser}")
-            r2 = await _run(cmd2)
-            if r2["status"] == "downloaded":
-                return r2
-
-    # All download attempts failed
+            logger.info(f"[ytdlp] File cookies blocked, retrying with --cookies-from-browser {browser}")
+            r = await _run(_build_cmd(f"--cookies-from-browser {browser}"))
+            if r["status"] == "downloaded":
+                return r
+    
     return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": "ytdlp_all_methods_failed", "_stderr": stderr}
 
 async def dl_cobalt(client: httpx.AsyncClient, url: str, vid_id: str, tmpdir: str) -> dict:
@@ -341,12 +346,41 @@ async def dl_cloakbrowser(url: str, vid_id: str, tmpdir: str) -> dict:
         return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": f"cloakbrowser_{type(e).__name__}"}
 
 
+_SSSTIK_BROKEN_CHECKED: bool = False
+_SSSTIK_BROKEN: bool = False
+
+async def _ssstik_is_broken() -> bool:
+    """Check if ssstik.io is broken (TikTok changed page structure). Cached result."""
+    global _SSSTIK_BROKEN_CHECKED, _SSSTIK_BROKEN
+    if _SSSTIK_BROKEN_CHECKED:
+        return _SSSTIK_BROKEN
+    _SSSTIK_BROKEN_CHECKED = True
+    try:
+        async with httpx.AsyncClient(timeout=10.0, follow_redirects=True, verify=False) as c:
+            r = await c.get("https://ssstik.io/id", headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:153.0) Gecko/20100101 Firefox/153.0",
+            })
+            if "changed something" in r.text or "TikTok" not in r.text:
+                _SSSTIK_BROKEN = True
+    except Exception:
+        _SSSTIK_BROKEN = True
+    return _SSSTIK_BROKEN
+
+
 async def dl_ssstik(video_url: str, vid_id: str, tmpdir: str) -> dict:
     """Download video via ssstik.io API — no watermark, no browser needed.
 
     Uses direct POST to the HTMX endpoint and parses the response HTML
     for the tikcdn.io download link. Works without cookies or session token.
+
+    NOTE: Since ~July 2026, ssstik.io returns "TikTok changed something on
+    their website" — this method is short-circuited when the homepage check
+    confirms the service is broken.
     """
+    # Fast pre-check — skip if ssstik is known broken
+    if await _ssstik_is_broken():
+        return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": "ssstik_broken_skip"}
+    
     os.makedirs(tmpdir, exist_ok=True)
     fp = os.path.join(tmpdir, f"ssstik_{vid_id}.mp4")
     try:
@@ -371,48 +405,34 @@ async def dl_ssstik(video_url: str, vid_id: str, tmpdir: str) -> dict:
             )
             if r.status_code != 200:
                 return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": f"ssstik_http_{r.status_code}"}
-
+    
             # Step 2: Extract download link from HTML response
             html = r.text
             links = re.findall(r'href="(https://tikcdn\.io/ssstik/[^"]+)"', html)
-            video_links = [l for l in links if '/ssstik/m/' not in l]
+            video_links = [l for l in links if "/ssstik/" in l]
             if not video_links:
-                if "Video currently unavailable" in html or "not available" in html:
-                    return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": "ssstik_video_unavailable"}
-                return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": "ssstik_no_download_url"}
-
+                return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": "ssstik_no_link"}
+    
+            # Step 3: Download the video
             dl_url = video_links[0]
-
-            # Step 3: Download video from tikcdn.io
-            r2 = await client.get(
-                dl_url,
-                headers={
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:153.0) Gecko/20100101 Firefox/153.0",
-                    "Referer": "https://ssstik.io/",
-                    "Accept": "video/webm,video/mp4,video/*;q=0.9,*/*;q=0.8",
-                },
-                timeout=60.0,
-            )
-            if r2.status_code != 200:
-                return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": f"ssstik_dl_http_{r2.status_code}"}
-
-            content = r2.content
-            if len(content) < 10000:
-                return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": "ssstik_dl_too_small"}
-
-            with open(fp, "wb") as f:
-                f.write(content)
-
-            logger.info(f"[ssstik] Downloaded {len(content)} bytes to {fp}")
-            return {"file_path": fp, "file_type": "video", "status": "downloaded", "tmpdir": tmpdir}
-
+            async with httpx.AsyncClient(timeout=120.0, follow_redirects=True, verify=False) as dl_client:
+                vr = await dl_client.get(dl_url)
+                if vr.status_code == 200 and len(vr.content) > 10000:
+                    with open(fp, "wb") as f:
+                        f.write(vr.content)
+                    return {"file_path": fp, "file_type": "video", "status": "downloaded", "tmpdir": tmpdir}
+                return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": f"ssstik_dl_{vr.status_code}"}
     except Exception as e:
         logger.warning(f"[ssstik] Error: {type(e).__name__}: {e}")
         return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": f"ssstik_{type(e).__name__}"}
 async def scrape_tiktok_page(client: httpx.AsyncClient, url: str) -> dict | None:
-    """Scrape TikTok page for video metadata (supports both videos and slideshows)."""
+    """Scrape TikTok page for video metadata (supports both videos and slideshows).
+    
+    First tries the rehydration script (broken since ~July 2026 — TikTok removed `itemInfo`),
+    falls back to oEmbed API for at least cover/thumbnail data.
+    """
+    ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     try:
-        ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         r = await client.get(url, headers={"User-Agent": ua}, timeout=10)
         if r.status_code == 200:
             m = re.search(r'id="__UNIVERSAL_DATA_FOR_REHYDRATION__"[^>]*>([\s\S]*?)</script>', r.text)
@@ -428,6 +448,17 @@ async def scrape_tiktok_page(client: httpx.AsyncClient, url: str) -> dict | None
                 else:
                     video_data["_is_slideshow"] = False
                 return video_data
+    except Exception:
+        pass
+    
+    # Fallback: oEmbed API (still functional) — returns thumbnail_url, author metadata
+    try:
+        r2 = await client.get(f"{TIKTOK_OEMBED}?url={url}", timeout=5)
+        if r2.status_code == 200:
+            oembed = r2.json()
+            thumb = oembed.get("thumbnail_url", "")
+            if thumb:
+                return {"_is_slideshow": False, "_slideshow_images": [], "cover": thumb, "originCover": thumb}
     except Exception:
         pass
     return None
