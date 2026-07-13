@@ -55,8 +55,13 @@ describe("System-Wide Synchronization Integration", () => {
 
     // 3. Verify PaymentService creates transaction with the new price
     // Note: PaymentService.createTransaction calls getPackages internally
-    const mockMidtransToken = { data: { token: "t123", redirect_url: "u123" } };
-    jest.spyOn(require("axios"), "post").mockResolvedValue(mockMidtransToken);
+    const mockPaymentResponse = {
+      data: {
+        success: true,
+        data: { id: "ord1", payment_url: "https://pay.example.com/ord1", gateway: "midtrans" },
+      },
+    };
+    jest.spyOn(require("axios"), "post").mockResolvedValue(mockPaymentResponse);
     jest.spyOn(prisma.transaction, "create").mockResolvedValue({ orderId: "ord1" } as any);
 
     const tx = await PaymentService.createTransaction({

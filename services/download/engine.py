@@ -11,6 +11,7 @@ import json
 import os
 import re
 import tempfile
+from urllib.parse import quote as url_quote
 from typing import Any  # noqa: F401 — used by type hints in docstrings
 
 import httpx
@@ -26,7 +27,13 @@ COBALT_PUBLIC_INSTANCES = [
     "https://co.eepy.today",
     "https://cobalt-api.hyper.lol",
 ]
-TIKTOK_PROXY = os.getenv("TIKTOK_PROXY", "")
+_proxy_host = os.getenv("TIKTOK_PROXY", "")
+_proxy_user = os.getenv("TIKTOK_PROXY_USER", "")
+_proxy_pass = os.getenv("TIKTOK_PROXY_PASS", "")
+if _proxy_host and _proxy_user and _proxy_pass:
+    TIKTOK_PROXY = f"http://{_proxy_user}:{_proxy_pass}@{_proxy_host}"
+else:
+    TIKTOK_PROXY = _proxy_host  # fallback: bare host or empty
 TIKTOK_OEMBED = os.getenv("TIKTOK_OEMBED", "https://www.tiktok.com/oembed")
 
 
@@ -332,75 +339,70 @@ async def dl_cloakbrowser(url: str, vid_id: str, tmpdir: str) -> dict:
         return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": f"cloakbrowser_{type(e).__name__}"}
 
 
-async def dl_ssstik(url: str, vid_id: str, tmpdir: str) -> dict:
-    """Download video via ssstik.io — no watermark, original quality, no cookies needed.
+async def dl_ssstik(video_url: str, vid_id: str, tmpdir: str) -> dict:
+    """Download video via ssstik.io API — no watermark, no browser needed.
 
-    Uses DOM-based link extraction instead of response interception.
-    ssstik.io renders the download link (tikcdn.io) in the page after form submit.
+    Uses direct POST to the HTMX endpoint and parses the response HTML
+    for the tikcdn.io download link. Works without cookies or session token.
     """
-    try:
-        import cloakbrowser
-    except ImportError:
-        return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": "ssstik_no_browser"}
     os.makedirs(tmpdir, exist_ok=True)
+    fp = os.path.join(tmpdir, f"ssstik_{vid_id}.mp4")
     try:
-        browser = await cloakbrowser.launch_async(headless=True, stealth_args=True, humanize=True)
-        context = await browser.new_context(viewport={"width": 1280, "height": 720})
-        page = await context.new_page()
+        async with httpx.AsyncClient(timeout=60.0, follow_redirects=True, verify=False) as client:
+            # Step 1: POST TikTok URL to ssstik.io HTMX endpoint
+            body = f"id={url_quote(video_url)}&locale=id&tt=&debug=ab%3D1%26loc%3DID%26ip%3D192.88.101.14"
+            r = await client.post(
+                "https://ssstik.io/abc?url=dl",
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:153.0) Gecko/20100101 Firefox/153.0",
+                    "Accept": "*/*",
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "HX-Request": "true",
+                    "HX-Trigger": "_gcaptcha_pt",
+                    "HX-Target": "target",
+                    "HX-Current-URL": "https://ssstik.io/id",
+                    "Origin": "https://ssstik.io",
+                    "Referer": "https://ssstik.io/id",
+                },
+                content=body,
+                timeout=30.0,
+            )
+            if r.status_code != 200:
+                return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": f"ssstik_http_{r.status_code}"}
 
-        fp = os.path.join(tmpdir, f"ssstik_{vid_id}.mp4")
+            # Step 2: Extract download link from HTML response
+            html = r.text
+            links = re.findall(r'href="(https://tikcdn\.io/ssstik/[^"]+)"', html)
+            video_links = [l for l in links if '/ssstik/m/' not in l]
+            if not video_links:
+                if "Video currently unavailable" in html or "not available" in html:
+                    return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": "ssstik_video_unavailable"}
+                return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": "ssstik_no_download_url"}
 
-        # 1. Navigate to ssstik.io (domcontentloaded — networkidle times out)
-        await page.goto("https://ssstik.io/id", wait_until="domcontentloaded", timeout=15000)
-        await page.wait_for_timeout(2000)
+            dl_url = video_links[0]
 
-        # 2. Fill in TikTok URL
-        input_el = await page.query_selector('#main_page_text')
-        if not input_el or not await input_el.is_visible():
-            await browser.close()
-            return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": "ssstik_no_input"}
-        await input_el.fill(url)
+            # Step 3: Download video from tikcdn.io
+            r2 = await client.get(
+                dl_url,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:153.0) Gecko/20100101 Firefox/153.0",
+                    "Referer": "https://ssstik.io/",
+                    "Accept": "video/webm,video/mp4,video/*;q=0.9,*/*;q=0.8",
+                },
+                timeout=60.0,
+            )
+            if r2.status_code != 200:
+                return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": f"ssstik_dl_http_{r2.status_code}"}
 
-        # 3. Click submit button
-        submit = await page.query_selector('#submit')
-        if submit:
-            await submit.click()
-        else:
-            await browser.close()
-            return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": "ssstik_no_submit"}
-        # 4. Wait for download link in DOM (up to 5s), short-circuit on error message
-        download_url = ""
-        for _ in range(5):
-            await page.wait_for_timeout(1000)
+            content = r2.content
+            if len(content) < 10000:
+                return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": "ssstik_dl_too_small"}
 
-            # Early exit: ssstik error message "Video currently unavailable"
-            has_err = await page.evaluate("() => document.body.textContent.includes('Video currently unavailable')")
-            if has_err:
-                break
+            with open(fp, "wb") as f:
+                f.write(content)
 
-            links = await page.query_selector_all('a[href*="tikcdn"]')
-            for link in links:
-                href = await link.get_attribute('href') or ""
-                if href and "tikcdn" in href and "/ssstik/" in href:
-                    download_url = href
-                    break
-            if download_url:
-                break
-        if not download_url:
-            await browser.close()
-            return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": "ssstik_no_download_url"}
-
-        # 5. Download the video via browser request (tikcdn blocks raw httpx)
-        resp = await page.request.get(download_url)
-        if resp.ok:
-            body = await resp.body()
-            if len(body) > 10000:
-                with open(fp, "wb") as f:
-                    f.write(body)
-                await browser.close()
-                return {"file_path": fp, "file_type": "video", "status": "downloaded", "tmpdir": tmpdir}
-        await browser.close()
-        return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": f"ssstik_http_{resp.status if resp else 'no_resp'}"}
+            logger.info(f"[ssstik] Downloaded {len(content)} bytes to {fp}")
+            return {"file_path": fp, "file_type": "video", "status": "downloaded", "tmpdir": tmpdir}
 
     except Exception as e:
         logger.warning(f"[ssstik] Error: {type(e).__name__}: {e}")

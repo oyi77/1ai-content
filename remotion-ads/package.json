@@ -1,0 +1,20 @@
+{
+  "name": "remotion-product-ads",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "render": "node --experimental-specifier-resolution=node --import tsx src/render.ts",
+    "studio": "npx remotion studio src/index.tsx"
+  },
+  "dependencies": {
+    "remotion": "^4.0.484",
+    "@remotion/cli": "^4.0.484",
+    "@remotion/renderer": "^4.0.484",
+    "@remotion/bundler": "^4.0.484"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "@types/node": "^22.0.0"
+  }
+}

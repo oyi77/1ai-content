@@ -51,16 +51,24 @@ export async function webhookRoutes(server: FastifyInstance, options: WebhookOpt
   server.post('/webhook/midtrans', async (request, reply) => {
     try {
       const body = request.body as Record<string, unknown>;
-      // Delegating verification to PaymentService for single-source-of-truth
+      const rawBody = JSON.stringify(body);
+      const signature = String(body.signature_key || '');
+      
+      // Convert Midtrans webhook to normalized format
+      const normalizedEvent = {
+        order_id: String(body.order_id || ''),
+        status: body.transaction_status === 'settlement' ? 'success' : 
+                body.transaction_status === 'pending' ? 'pending' :
+                'failed',
+        gateway: 'midtrans',
+        payment_method: body.payment_type as string || null,
+        paid_at: null,
+        amount: Number(body.gross_amount || 0),
+      };
+
       logger.info('Midtrans webhook received:', { order_id: body.order_id, status: body.transaction_status });
-      await PaymentService.handleNotification({
-        order_id: String(body.order_id),
-        status_code: String(body.status_code),
-        gross_amount: String(body.gross_amount),
-        signature_key: String(body.signature_key),
-        transaction_status: String(body.transaction_status),
-        payment_type: String(body.payment_type),
-      });
+      
+      const result = await PaymentService.handleNotification(normalizedEvent, signature);
 
       // Notify user on payment failure/expiry
       const midtransFailStatuses = ['deny', 'cancel', 'expire'];
@@ -79,7 +87,7 @@ export async function webhookRoutes(server: FastifyInstance, options: WebhookOpt
         } catch { /* best-effort notification */ }
       }
 
-      return { ok: true };
+      return reply.send({ ok: result.success, message: result.message });
     } catch (error) {
       logger.error('Midtrans webhook error:', error);
       sendAdminAlert('critical', 'Midtrans Webhook Error', { error: String(error) });
@@ -256,6 +264,56 @@ export async function webhookRoutes(server: FastifyInstance, options: WebhookOpt
     } catch (error) {
       logger.error('Duitku webhook error:', error);
       sendAdminAlert('critical', 'Duitku Webhook Error', { error: String(error) });
+      return reply.status(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  server.post('/webhook/1ai-payment', async (request, reply) => {
+    try {
+      const signature = String(request.headers['x-payment-signature'] || '');
+      const body = request.body as unknown;
+      const bodyStr = typeof body === 'string' ? body : JSON.stringify(body);
+
+      logger.info('1ai-payment webhook received', { order_id: (body as Record<string, unknown>)?.order_id });
+
+      const result = await PaymentService.handleNotification(body, signature);
+
+      if (!result.success) {
+        return reply.status(400).send(result);
+      }
+
+      // Notify user on payment failure
+      const event = body as Record<string, unknown>;
+      if (event.status === 'failed' && event.order_id && bot) {
+        try {
+          const tx = await prisma.transaction.findUnique({ where: { orderId: String(event.order_id) } });
+          if (tx?.userId) {
+            const dbUser = await UserService.findByTelegramId(BigInt(tx.userId));
+            const lang = dbUser?.language || 'id';
+            await bot.telegram
+              .sendMessage(
+                tx.userId.toString(),
+                t('payment.failed', lang, { orderId: String(event.order_id) }),
+                {
+                  parse_mode: 'Markdown',
+                  reply_markup: {
+                    inline_keyboard: [[{ text: t('btn.topup', lang), callback_data: 'topup' }]],
+                  },
+                }
+              )
+              .catch(() => {
+                /* best-effort */
+              });
+          }
+        } catch {
+          /* best-effort notification */
+        }
+      }
+
+      return { ok: true };
+    } catch (error) {
+      logger.error('1ai-payment webhook error:', error);
+      sendAdminAlert('critical', '1ai-payment Webhook Error', { error: String(error) });
       return reply.status(500).send({ error: 'Internal server error' });
     }
   });

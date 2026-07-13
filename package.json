@@ -131,6 +131,10 @@
     "testMatch": [
       "**/*.test.ts"
     ],
+    "testPathIgnorePatterns": [
+      "<rootDir>/node_modules/",
+      "<rootDir>/src/tools/"
+    ],
     "moduleNameMapper": {
       "^@/(.*)\\.js$": "<rootDir>/src/$1",
       "^@/(.*)$": "<rootDir>/src/$1",
