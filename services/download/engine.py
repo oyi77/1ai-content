@@ -10,6 +10,7 @@ import asyncio
 import json
 import os
 import re
+import sys
 import tempfile
 from urllib.parse import quote as url_quote
 from typing import Any  # noqa: F401 — used by type hints in docstrings
