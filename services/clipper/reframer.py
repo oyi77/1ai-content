@@ -16,6 +16,7 @@ Technical notes:
 import os
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 
 import pysubs2
@@ -233,38 +234,27 @@ class Reframer:
 
         subs.save(output_path, encoding="utf-8-sig")
         return output_path
-
     def burn_subtitles(
         self, video_path: str, subtitle_path: str, output_path: str
     ) -> str:
-        """Burn ASS subtitles onto video using FFmpeg subtitles filter.
-
-        Args:
-            video_path: Source video file.
-            subtitle_path: .ass subtitle file.
-            output_path: Destination file path.
-
-        Returns:
-            output_path
-        """
-        # Escape special characters for FFmpeg subtitles filter
-        # The filter parser needs backslash-escaped colons and backslashes
-        escaped_sub = subtitle_path.replace("\\", "\\\\").replace(":", "\\:")
-        vf = f"subtitles={escaped_sub}"
-
-        self._run_ffmpeg([
-            self.ffmpeg,
-            "-y",
-            "-i", video_path,
-            "-vf", vf,
-            "-c:v", "libx264",
-            "-crf", "18",
-            "-preset", "medium",
-            "-c:a", "copy",
-            "-pix_fmt", "yuv420p",
-            "-movflags", "+faststart",
-            output_path,
-        ])
+        """Burn ASS subtitles onto video using FFmpeg subtitles filter (requires libass)."""
+        # Copy subtitle to /tmp with simple name to avoid path escaping issues
+        import shutil
+        simple_sub = os.path.join(tempfile.gettempdir(), f"subs_{os.getpid()}.ass")
+        shutil.copy2(subtitle_path, simple_sub)
+        try:
+            vf = f"subtitles={simple_sub}"
+            self._run_ffmpeg([
+                self.ffmpeg, "-y",
+                "-i", video_path,
+                "-vf", vf,
+                "-c:v", "libx264", "-crf", "18", "-preset", "medium",
+                "-c:a", "copy", "-pix_fmt", "yuv420p", "-movflags", "+faststart",
+                output_path,
+            ])
+        finally:
+            if os.path.exists(simple_sub):
+                os.unlink(simple_sub)
         return output_path
 
     def generate_thumbnail(
@@ -318,6 +308,58 @@ class Reframer:
                 "-frames:v", "1",
                 output_path,
             ])
+        return output_path
+
+    def apply_mirror(self, input_path: str, output_path: str) -> str:
+        """Horizontally flip video (hflip). Audio unchanged."""
+        self._run_ffmpeg([
+            self.ffmpeg, "-y", "-i", input_path,
+            "-vf", "hflip",
+            "-c:v", "libx264", "-crf", "18", "-preset", "fast",
+            "-c:a", "copy", "-movflags", "+faststart",
+            output_path,
+        ])
+        return output_path
+
+    def apply_speed(self, input_path: str, output_path: str, factor: float = 1.05) -> str:
+        """Change playback speed. factor > 1 = faster; factor < 1 = slower.
+
+        atempo supports 0.5–2.0; chain two filters for factors outside that range.
+        """
+        if not 0.5 <= factor <= 2.0:
+            raise ValueError(f"speed factor {factor} out of supported range 0.5–2.0")
+        vf = f"setpts={1.0/factor:.6f}*PTS"
+        af = f"atempo={factor:.6f}"
+        self._run_ffmpeg([
+            self.ffmpeg, "-y", "-i", input_path,
+            "-filter_complex", f"[0:v]{vf}[v];[0:a]{af}[a]",
+            "-map", "[v]", "-map", "[a]",
+            "-c:v", "libx264", "-crf", "18", "-preset", "fast",
+            "-c:a", "aac", "-movflags", "+faststart",
+            output_path,
+        ])
+        return output_path
+
+    def apply_crop_zoom(self, input_path: str, output_path: str, zoom: float = 1.05) -> str:
+        """Crop-and-zoom: crops centre region then scales back to original size.
+
+        zoom = 1.05 crops 5 % from each edge then upscales back — effectively
+        a slight zoom that also removes black bars.
+        """
+        if zoom < 1.0:
+            raise ValueError(f"zoom {zoom} must be >= 1.0")
+        # iw/zoom : ih/zoom centred crop, then scale back to iw x ih
+        vf = (
+            f"crop=iw/{zoom:.6f}:ih/{zoom:.6f}:(iw-iw/{zoom:.6f})/2:(ih-ih/{zoom:.6f})/2,"
+            f"scale=iw*{zoom:.6f}:ih*{zoom:.6f}"
+        )
+        self._run_ffmpeg([
+            self.ffmpeg, "-y", "-i", input_path,
+            "-vf", vf,
+            "-c:v", "libx264", "-crf", "18", "-preset", "fast",
+            "-c:a", "copy", "-movflags", "+faststart",
+            output_path,
+        ])
         return output_path
 
     # ── Private helpers ─────────────────────────────────────

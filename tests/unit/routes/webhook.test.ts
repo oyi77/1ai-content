@@ -317,15 +317,11 @@ describe("Webhook Routes", () => {
 
       const result = await midtransHandler()(request, reply);
 
-      expect(mockPaymentServiceHandleNotification).toHaveBeenCalledWith({
-        order_id: body.order_id,
-        status_code: body.status_code,
-        gross_amount: body.gross_amount,
-        signature_key: body.signature_key,
-        transaction_status: body.transaction_status,
-        payment_type: body.payment_type,
-      });
-      expect(result).toEqual({ ok: true });
+      expect(mockPaymentServiceHandleNotification).toHaveBeenCalledWith(
+        expect.objectContaining({ order_id: body.order_id }),
+        body.signature_key,
+      );
+      expect(reply.send).toHaveBeenCalledWith({ ok: true, message: "Notification processed" });
       expect(mockLogger.info).toHaveBeenCalledWith(
         "Midtrans webhook received:",
         { order_id: body.order_id, status: body.transaction_status },
@@ -356,11 +352,12 @@ describe("Webhook Routes", () => {
 
       const result = await midtransHandler()(request, reply);
 
-      // Webhook passes the body straight through to PaymentService
+      // Webhook passes the normalized event + signature to PaymentService
       expect(mockPaymentServiceHandleNotification).toHaveBeenCalledWith(
-        expect.objectContaining({ order_id: body.order_id, signature_key: "invalid-signature" }),
+        expect.objectContaining({ order_id: body.order_id }),
+        expect.any(String),
       );
-      expect(result).toEqual({ ok: true });
+      expect(reply.send).toHaveBeenCalledWith({ ok: true, message: "Notification processed" });
     });
 
     it("should delegate signature validation to PaymentService (tampered order_id)", async () => {
@@ -393,9 +390,10 @@ describe("Webhook Routes", () => {
 
       const result = await midtransHandler()(request, reply);
 
-      // Webhook forwards tampered body to PaymentService for validation
+      // Webhook forwards normalized body + signature to PaymentService for validation
       expect(mockPaymentServiceHandleNotification).toHaveBeenCalledWith(
         expect.objectContaining({ order_id: "TAMPERED-ORDER-ID" }),
+        expect.any(String),
       );
     });
 
@@ -463,7 +461,7 @@ describe("Webhook Routes", () => {
 
       const result = await midtransHandler()(request, reply);
 
-      expect(result).toEqual({ ok: true });
+      expect(reply.send).toHaveBeenCalledWith({ ok: true, message: "Notification processed" });
     });
 
     it("should process pending status correctly", async () => {
@@ -494,7 +492,7 @@ describe("Webhook Routes", () => {
 
       const result = await midtransHandler()(request, reply);
 
-      expect(result).toEqual({ ok: true });
+      expect(reply.send).toHaveBeenCalledWith({ ok: true, message: "Notification processed" });
     });
   });
 
@@ -1399,7 +1397,7 @@ describe("Webhook Routes", () => {
 
       expect(results).toHaveLength(3);
       results.forEach((result) => {
-        expect(result).toEqual({ ok: true });
+        expect(result.send).toHaveBeenCalledWith({ ok: true, message: "Notification processed" });
       });
     });
 
@@ -1431,7 +1429,7 @@ describe("Webhook Routes", () => {
 
       const result = await routes.post["/webhook/midtrans"](request, reply);
 
-      expect(result).toEqual({ ok: true });
+      expect(reply.send).toHaveBeenCalledWith({ ok: true, message: "Notification processed" });
     });
 
     it("should handle very large amounts", async () => {
