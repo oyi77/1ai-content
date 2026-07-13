@@ -1,6 +1,6 @@
 """1ai-content Download Engine — TikTok/YouTube/IG video download service.
 
-Cascade: tikwm → yt-dlp → Vidbee → Cobalt → CloakBrowser → scrape → cover → placeholder
+Cascade: ssstik → snaptik → Cobalt → yt-dlp → tikwm → Vidbee → CloakBrowser → scrape → cover → placeholder
 Each method returns {file_path, file_type, status, reason}.
 """
 
@@ -425,6 +425,118 @@ async def dl_ssstik(video_url: str, vid_id: str, tmpdir: str) -> dict:
     except Exception as e:
         logger.warning(f"[ssstik] Error: {type(e).__name__}: {e}")
         return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": f"ssstik_{type(e).__name__}"}
+# ── Snaptik.app ― no-watermark TikTok download ──────────────────────
+def _deobfuscate_snaptik(data: str) -> str | None:
+    """Deobfuscate snaptik.app eval-based obfuscation.
+
+    Extracts eval params from }("PAYLOAD",U,"CHARSET",T,E,R)) pattern,
+    decodes segments delimited by charset[T] → base-E → subtract t → chr().
+    """
+    fidx = data.find("function(h,u,n,t,e,r)")
+    if fidx < 0:
+        return None
+    brace_idx = data.find("}(", fidx)
+    if brace_idx < 0:
+        return None
+    args_text = data[brace_idx + 2:]
+    # Payload (first quoted string)
+    q1 = args_text.find('"')
+    q2 = args_text.find('"', q1 + 1)
+    payload = args_text[q1 + 1:q2]
+    rest = args_text[q2 + 1:].lstrip(",")
+    # U (first number)
+    parts = rest.split(",")
+    u_val = int(parts[0].strip())  # noqa: F841
+    rest2 = ",".join(parts[1:]).lstrip(",")
+    # Charset
+    q3 = rest2.find('"')
+    q4 = rest2.find('"', q3 + 1)
+    charset = rest2[q3 + 1:q4]
+    rest3 = rest2[q4 + 1:].lstrip(",")
+    # T, E, R (strip trailing parens)
+    rest3 = rest3.rstrip(")").strip()
+    nums = [int(x.strip()) for x in rest3.split(",")]
+    t_val, e_val, _ = nums[0], nums[1], nums[2]
+    # Decode
+    delim = charset[e_val]
+    result_chars: list[str] = []
+    i = 0
+    while i < len(payload):
+        s = ""
+        while i < len(payload) and payload[i] != delim:
+            s += payload[i]
+            i += 1
+        i += 1  # skip delimiter
+        if not s:
+            continue
+        digits = "".join(str(charset.find(ch)) if ch in charset else ch for ch in s)
+        val = int(digits, e_val)
+        result_chars.append(chr(val - t_val))
+    return "".join(result_chars)
+
+def _extract_snaptik_link(decoded: str) -> str | None:
+    """Extract RapidCDN download URL from decoded snaptik HTML."""
+    for m in re.finditer(r'href="(https://d\.rapidcdn\.app/[^"]+)"', decoded):
+        return m.group(1)
+    for m in re.finditer(r'href="(https://api\.snaptik\.app/[^"]+)"', decoded):
+        return m.group(1)
+    return None
+
+async def dl_snaptik(video_url: str, vid_id: str, tmpdir: str) -> dict:
+    """Download video via snaptik.app API — no watermark.
+    POST → abc2.php with extracted token → deobfuscate → extract RapidCDN URL.
+    Added 2026-07-13 as second fallback (after ssstik, before Cobalt).
+    """
+    os.makedirs(tmpdir, exist_ok=True)
+    fp = os.path.join(tmpdir, f"snaptik_{vid_id}.mp4")
+    try:
+        async with httpx.AsyncClient(timeout=60.0, follow_redirects=True, verify=False) as client:
+            # Step 1: GET landing page for CSRF token
+            r = await client.get(
+                "https://snaptik.app/en2",
+                headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:153.0) Gecko/20100101 Firefox/153.0"},
+                timeout=15,
+            )
+            if r.status_code != 200:
+                return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": "snaptik_landing_http"}
+            m = re.search(r'name="token"[^>]*value="([^"]+)"', r.text)
+            if not m:
+                return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": "snaptik_no_token"}
+            token = m.group(1)
+            # Step 2: POST to abc2.php
+            r2 = await client.post(
+                "https://snaptik.app/abc2.php",
+                data={"url": video_url, "lang": "en2", "token": token},
+                timeout=30,
+            )
+            if r2.status_code != 200:
+                return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": f"snaptik_abc2_http_{r2.status_code}"}
+            # Step 3: Deobfuscate eval'd JS
+            decoded = _deobfuscate_snaptik(r2.text)
+            if not decoded:
+                return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": "snaptik_deobfuscate_failed"}
+            # Step 4: Extract RapidCDN download link
+            dl_url = _extract_snaptik_link(decoded)
+            if not dl_url:
+                return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": "snaptik_no_dl_link"}
+            # Step 5: Download the video
+            async with httpx.AsyncClient(timeout=120.0, follow_redirects=True, verify=False) as dl_client:
+                vr = await dl_client.get(
+                    dl_url,
+                    headers={
+                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:153.0) Gecko/20100101 Firefox/153.0",
+                        "Referer": "https://snaptik.app/",
+                    },
+                )
+                if vr.status_code == 200 and len(vr.content) > 10000:
+                    with open(fp, "wb") as f:
+                        f.write(vr.content)
+                    return {"file_path": fp, "file_type": "video", "status": "downloaded", "tmpdir": tmpdir}
+                return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": f"snaptik_dl_{vr.status_code}"}
+    except Exception as e:
+        logger.warning(f"[snaptik] Error: {type(e).__name__}: {e}")
+        return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": f"snaptik_{type(e).__name__}"}
+
 async def scrape_tiktok_page(client: httpx.AsyncClient, url: str) -> dict | None:
     """Scrape TikTok page for video metadata (supports both videos and slideshows).
     
@@ -689,7 +801,16 @@ async def _download_cascade(video_url: str, category: str, tmpdir: str, vid_id: 
             return r
         errors.append(f"ssstik={r.get('error', 'failed')}")
 
-    # 2. Cobalt (public instances — free, no auth needed)
+    # 2. snaptik.app (TikTok only — no watermark, eval-deobfuscation)
+    if is_tiktok:
+        r = await dl_snaptik(video_url, vid_id, tmpdir)
+        if r["status"] == "downloaded":
+            r["reason"] = "snaptik_video"
+            return r
+        errors.append(f"snaptik={r.get('error', 'failed')}")
+
+    # 3. Cobalt (public instances — free, no auth needed)
+
     async with httpx.AsyncClient(timeout=120.0, follow_redirects=True, verify=False) as client:
         r = await dl_cobalt(client, video_url, vid_id, tmpdir)
         if r["status"] == "downloaded":
@@ -697,7 +818,7 @@ async def _download_cascade(video_url: str, category: str, tmpdir: str, vid_id: 
             return r
         errors.append(f"cobalt={r.get('error', 'failed')}")
 
-    # 3. yt-dlp with cookies (720x1280 H.264) — needs non-blocked IP
+    # 4. yt-dlp with cookies (720x1280 H.264) — needs non-blocked IP
     _cookies_path = os.getenv("TIKTOK_COOKIES_PATH", "")
     if not _cookies_path:
         for _p in [
@@ -714,7 +835,7 @@ async def _download_cascade(video_url: str, category: str, tmpdir: str, vid_id: 
     errors.append(f"ytdlp={r.get('error', 'failed')}")
 
     async with httpx.AsyncClient(timeout=120.0, follow_redirects=True, verify=False, proxy=TIKTOK_PROXY or None) as client:
-        # 4. tikwm fallback (TikTok only — 576x1024, lower quality)
+        # 5. tikwm fallback (TikTok only — 576x1024, lower quality)
         if is_tiktok:
             r = await dl_tikwm(client, video_url, vid_id, tmpdir)
             if r["status"] == "downloaded":
@@ -722,14 +843,14 @@ async def _download_cascade(video_url: str, category: str, tmpdir: str, vid_id: 
                 return r
             errors.append(f"tikwm={r.get('error', 'failed')}")
 
-        # 5. Vidbee
+        # 6. Vidbee
         r = await dl_vidbee(client, video_url, vid_id, tmpdir)
         if r["status"] == "downloaded":
             r["reason"] = "vidbee_video"
             return r
         errors.append(f"vidbee={r.get('error', 'failed')}")
 
-        # 5. CloakBrowser (TikTok only)
+        # 7. CloakBrowser (TikTok only)
         if is_tiktok:
             r = await dl_cloakbrowser(video_url, vid_id, tmpdir)
             if r["status"] == "downloaded":
@@ -737,11 +858,11 @@ async def _download_cascade(video_url: str, category: str, tmpdir: str, vid_id: 
                 return r
             errors.append(f"cloakbrowser={r.get('error', 'failed')}")
 
-        # 6. TikTok page scrape → video or slideshow
+        # 8. TikTok page scrape → video or slideshow
         if is_tiktok:
             page_data = await scrape_tiktok_page(client, video_url)
             if page_data:
-                # 6a. Slideshow detection — images[] in itemStruct
+                # 8a. Slideshow detection — images[] in itemStruct
                 if page_data.get("_is_slideshow") and page_data.get("_slideshow_images"):
                     logger.info(f"[download] Slideshow detected: {len(page_data['_slideshow_images'])} images")
                     r = await convert_slideshow_to_video(
@@ -752,7 +873,7 @@ async def _download_cascade(video_url: str, category: str, tmpdir: str, vid_id: 
                         return r
                     errors.append(f"slideshow_convert={r.get('error', 'failed')}")
 
-                # 6b. Regular video
+                # 8b. Regular video
                 play_url = page_data.get("playAddr", "")
                 if play_url:
                     r = await _dl_url(client, play_url, vid_id, tmpdir, "mp4", referer="https://www.tiktok.com/")
@@ -761,7 +882,7 @@ async def _download_cascade(video_url: str, category: str, tmpdir: str, vid_id: 
                         r["reason"] = "scraped_video"
                         return r
 
-                # 7. Cover image fallback (only for non-slideshows)
+                # 9. Cover image fallback (only for non-slideshows)
                 if not page_data.get("_is_slideshow"):
                     cover_url = page_data.get("originCover") or page_data.get("cover") or ""
                     if cover_url:
@@ -771,13 +892,13 @@ async def _download_cascade(video_url: str, category: str, tmpdir: str, vid_id: 
                             r["reason"] = "cover_fallback"
                             return r
 
-            # 8. oembed thumbnail
+            # 10. oembed thumbnail
             r = await dl_oembed(client, video_url, vid_id, tmpdir)
             if r["status"] == "downloaded":
                 r["reason"] = "oembed_thumbnail"
                 return r
 
-        # 9. placeholder
+        # 11. placeholder
         err_summary = "_".join(errors[-3:]) if errors else "unknown"
         return {**await dl_placeholder(client, category, tmpdir), "reason": f"all_failed_{err_summary}"}
 
