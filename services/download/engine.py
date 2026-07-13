@@ -114,6 +114,8 @@ async def dl_ytdlp(url: str, vid_id: str, tmpdir: str, cookies_path: str = None)
             if r2["status"] == "downloaded":
                 return r2
 
+    # All download attempts failed
+    return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": "ytdlp_all_methods_failed", "_stderr": stderr}
 
 async def dl_cobalt(client: httpx.AsyncClient, url: str, vid_id: str, tmpdir: str) -> dict:
     """Download video via Cobalt API — tries local, then public instances."""
