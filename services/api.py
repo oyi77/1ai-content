@@ -1431,6 +1431,21 @@ class VideoProcessRequest(BaseModel):
     transforms: list[str] = []   # mirror | speed_<factor> | crop_zoom_<zoom>
 
 
+class VideoInfoRequest(BaseModel):
+    file_path: str
+
+
+class VideoClipRequest(BaseModel):
+    file_path: str
+    start_time: float = 0
+    duration: float = 30
+
+
+class VideoTransformsRequest(BaseModel):
+    file_path: str
+    transforms: list[str]
+
+
 @app.post("/video/process")
 async def process_video(req: VideoProcessRequest):
     """Download video and convert to target format.
@@ -1912,6 +1927,143 @@ async def video_regenerate(req: VideoRegenerateRequest):
         "file_size": os.path.getsize(file_path) if os.path.exists(file_path) else 0,
         "errors": errors,
     }}
+
+
+# ══════════════════════════════════════════════════════════════
+# VIDEO INFO / CLIP / TRANSFORMS — Domain violation support
+# ══════════════════════════════════════════════════════════════
+
+
+@app.post("/video/info")
+async def video_info(req: VideoInfoRequest):
+    """Get video metadata via ffprobe."""
+    import uuid
+    try:
+        probe = await _run_subprocess(
+            ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_streams", "-show_format", req.file_path],
+            capture_output=True, text=True, timeout=10,
+        )
+        if probe.returncode != 0:
+            return {"file_path": req.file_path, "status": "failed", "error": probe.stderr.strip()[:200]}
+        import json as _json
+        meta = _json.loads(probe.stdout)
+        duration = 0.0
+        width = 0
+        height = 0
+        video_codec = ""
+        audio_codec = ""
+        for stream in meta.get("streams", []):
+            if stream.get("codec_type") == "video":
+                width = int(stream.get("width", 0))
+                height = int(stream.get("height", 0))
+                video_codec = stream.get("codec_name", "")
+                duration = float(meta.get("format", {}).get("duration", 0))
+            elif stream.get("codec_type") == "audio":
+                audio_codec = stream.get("codec_name", "")
+        return {
+            "file_path": req.file_path,
+            "duration": duration,
+            "width": width,
+            "height": height,
+            "video_codec": video_codec,
+            "audio_codec": audio_codec,
+            "status": "ok",
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"ffprobe error: {e}")
+
+
+@app.post("/video/clip")
+async def video_clip(req: VideoClipRequest):
+    """Clip video to specified duration."""
+    import uuid
+    import json as _json
+    try:
+        # Probe source
+        probe = await _run_subprocess(
+            ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_streams", "-show_format", req.file_path],
+            capture_output=True, text=True, timeout=10,
+        )
+        if probe.returncode != 0:
+            return {"file_path": req.file_path, "status": "failed", "error": probe.stderr.strip()[:200]}
+        meta = _json.loads(probe.stdout)
+        out_dir = os.path.dirname(req.file_path)
+        out_path = os.path.join(out_dir, f"{uuid.uuid4().hex}_clip.mp4")
+        result = await _run_subprocess(
+            ["ffmpeg", "-y", "-i", req.file_path,
+             "-ss", str(req.start_time), "-t", str(req.duration),
+             "-c:v", "libx264", "-preset", "fast", "-crf", "23",
+             "-c:a", "aac", "-b:a", "128k",
+             "-movflags", "+faststart",
+             out_path],
+            capture_output=True, text=True, timeout=60,
+        )
+        if result.returncode != 0 or not os.path.exists(out_path):
+            if os.path.exists(out_path):
+                os.remove(out_path)
+            return {"file_path": req.file_path, "status": "failed", "error": result.stderr.strip()[:200]}
+        # Re-probe
+        probe2 = await _run_subprocess(
+            ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_streams", "-show_format", out_path],
+            capture_output=True, text=True, timeout=10,
+        )
+        duration = 0
+        width = 0
+        height = 0
+        if probe2.returncode == 0:
+            meta2 = _json.loads(probe2.stdout)
+            for stream in meta2.get("streams", []):
+                if stream.get("codec_type") == "video":
+                    width = int(stream.get("width", 0))
+                    height = int(stream.get("height", 0))
+                    break
+            duration = float(meta2.get("format", {}).get("duration", 0))
+        return {
+            "file_path": out_path,
+            "duration": duration,
+            "width": width,
+            "height": height,
+            "status": "ok",
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"video clip error: {e}")
+
+
+@app.post("/video/transforms")
+async def video_transforms(req: VideoTransformsRequest):
+    """Generate video variants with mirror/speed/crop transforms."""
+    import uuid
+    TRANSFORM_MAP = {
+        "mirror": {"vf": "hflip", "audio": "copy"},
+        "speed_105": {"vf": "setpts=0.952381*PTS", "af": "atempo=1.05"},
+        "crop_zoom": {"vf": "crop=iw/1.05:ih/1.05:(iw-iw/1.05)/2:(ih-ih/1.05)/2,scale=iw*1.05:ih*1.05", "audio": "copy"},
+        "mirror_speed": {"vf": "hflip,setpts=0.952381*PTS", "af": "atempo=1.05"},
+        "mirror_crop": {"vf": "hflip,crop=iw/1.05:ih/1.05:(iw-iw/1.05)/2:(ih-ih/1.05)/2,scale=iw*1.05:ih*1.05", "audio": "copy"},
+    }
+    variants = []
+    dirpath = os.path.dirname(req.file_path)
+    for name in req.transforms:
+        spec = TRANSFORM_MAP.get(name)
+        if not spec:
+            continue
+        out_path = os.path.join(dirpath, f"{name}_{uuid.uuid4().hex[:8]}.mp4")
+        cmd = ["ffmpeg", "-y", "-i", req.file_path]
+        if spec.get("vf"):
+            cmd += ["-vf", spec["vf"]]
+        if spec.get("af"):
+            cmd += ["-af", spec["af"]]
+        cmd += ["-c:v", "libx264", "-crf", "18", "-preset", "fast"]
+        cmd += ["-c:a", spec.get("audio", "aac")]
+        if spec.get("audio") != "copy":
+            cmd += ["-b:a", "128k"]
+        cmd += ["-movflags", "+faststart", out_path]
+        try:
+            result = await _run_subprocess(cmd, capture_output=True, text=True, timeout=120)
+            if result.returncode == 0 and os.path.isfile(out_path) and os.path.getsize(out_path) > 0:
+                variants.append({"name": name, "file_path": out_path})
+        except Exception:
+            pass
+    return {"variants": variants, "status": "ok"}
 
 
 
