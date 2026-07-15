@@ -1476,10 +1476,11 @@ async def process_video(req: VideoProcessRequest):
     except Exception:
         pass
 
-    # 3. Force H.264 re-encode if codec is not avc1/h264
-    #    Facebook requires H.264 — HEVC/H.265 videos upload as "ready" but can't play (resolution 0x0)
-    H264_CODECS = {"h264", "avc1", "avc"}
-    if file_type == "video" and (not video_codec or video_codec not in H264_CODECS):
+    # Force H.264 re-encode for Facebook compatibility — always re-encode
+    # regardless of source codec to guarantee yuv420p pixel format and
+    # proper moov atom placement via faststart.
+    if file_type == "video":
+        print(f"[process_video] codec={video_codec}, file_type={file_type}, w={width}x{height}, re-encode=YES")
         h264_path = os.path.join(os.path.dirname(file_path), f"{uuid.uuid4().hex}_h264.mp4")
         try:
             reenc = await _run_subprocess(
@@ -1882,8 +1883,9 @@ async def video_regenerate(req: VideoRegenerateRequest):
             break
     duration = float(final_meta.get("format", {}).get("duration", 0)) if final_meta.get("format") else None
 
-    # Final safety net — if somehow not H.264, force re-encode
-    if not final_codec or final_codec not in {"h264", "avc1", "avc"}:
+    # Always force H.264 re-encode for Facebook compatibility
+    if True:
+        print(f"[video_regenerate] final_codec={final_codec}, w={width}x{height}, re-encode=YES")
         h264_final = str(out_dir / f"h264_final_{run_id}.mp4")
         try:
             await _run_subprocess(
