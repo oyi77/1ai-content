@@ -1485,6 +1485,7 @@ async def process_video(req: VideoProcessRequest):
             reenc = await _run_subprocess(
                 ["ffmpeg", "-y", "-i", file_path,
                  "-c:v", "libx264", "-crf", "18", "-preset", "fast",
+                 "-pix_fmt", "yuv420p",
                  "-c:a", "aac", "-b:a", "128k",
                  "-movflags", "+faststart",
                  h264_path],
@@ -1882,12 +1883,13 @@ async def video_regenerate(req: VideoRegenerateRequest):
     duration = float(final_meta.get("format", {}).get("duration", 0)) if final_meta.get("format") else None
 
     # Final safety net — if somehow not H.264, force re-encode
-    if final_codec and final_codec not in {"h264", "avc1", "avc"}:
+    if not final_codec or final_codec not in {"h264", "avc1", "avc"}:
         h264_final = str(out_dir / f"h264_final_{run_id}.mp4")
         try:
             await _run_subprocess(
                 ["ffmpeg", "-y", "-i", file_path,
                  "-c:v", "libx264", "-crf", "18", "-preset", "fast",
+                 "-pix_fmt", "yuv420p",
                  "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart",
                  h264_final],
                 capture_output=True, text=True, timeout=180,
