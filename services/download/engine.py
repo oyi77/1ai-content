@@ -26,7 +26,6 @@ VIDBEE_URL = os.getenv("VIDBEE_URL", "http://localhost:3101")
 COBALT_URL = os.getenv("COBALT_URL", "http://localhost:9000")
 COBALT_PUBLIC_INSTANCES = [
     "https://co.eepy.today",
-    "https://cobalt-api.hyper.lol",
 ]
 _proxy_host = os.getenv("TIKTOK_PROXY", "")
 _proxy_user = os.getenv("TIKTOK_PROXY_USER", "")
@@ -115,11 +114,20 @@ async def dl_ytdlp(url: str, vid_id: str, tmpdir: str, cookies_path: str = None)
     stderr = r.get("_stderr", b"") if isinstance(r.get("_stderr"), bytes) else b""
     blocked_keywords = [b"Your IP address is blocked", b"impersonation", b"cookies", b"403", b"Forbidden", b"Sign in"]
     if any(kw.lower() in stderr.lower() for kw in blocked_keywords):
-        for browser in ("chromium", "vivaldi", "firefox"):
+        # Only try browsers whose cookie databases actually exist
+        _browsers = []
+        for _b in ("chromium", "vivaldi", "firefox"):
+            _cookie_db = os.path.expanduser(f"~/.config/{_b}/Default/Cookies") if _b != "firefox" else None
+            if _cookie_db and os.path.exists(_cookie_db):
+                _browsers.append(_b)
+        if not _browsers:
+            logger.warning("[ytdlp] stderr suggests blocking but no browser cookie DB found — skipping retry")
+        for browser in _browsers:
             logger.info(f"[ytdlp] File cookies blocked, retrying with --cookies-from-browser {browser}")
             r = await _run(_build_cmd(f"--cookies-from-browser {browser}"))
             if r["status"] == "downloaded":
                 return r
+
     
     return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": "ytdlp_all_methods_failed", "_stderr": stderr}
 
@@ -133,7 +141,7 @@ async def dl_cobalt(client: httpx.AsyncClient, url: str, vid_id: str, tmpdir: st
                 f"{instance}/",
                 json={"url": url, "videoQuality": "720"},
                 headers={"Accept": "application/json", "Content-Type": "application/json"},
-                timeout=30,
+                timeout=8,
             )
             if r.status_code != 200:
                 continue
@@ -810,16 +818,7 @@ async def _download_cascade(video_url: str, category: str, tmpdir: str, vid_id: 
             return r
         errors.append(f"snaptik={r.get('error', 'failed')}")
 
-    # 3. Cobalt (public instances — free, no auth needed)
-
-    async with httpx.AsyncClient(timeout=120.0, follow_redirects=True, verify=False) as client:
-        r = await dl_cobalt(client, video_url, vid_id, tmpdir)
-        if r["status"] == "downloaded":
-            r["reason"] = "cobalt_video"
-            return r
-        errors.append(f"cobalt={r.get('error', 'failed')}")
-
-    # 4. yt-dlp with cookies (720x1280 H.264) — needs non-blocked IP
+    # 3. yt-dlp with cookies (720x1280 H.264) — tries first because it's the most reliable
     _cookies_path = os.getenv("TIKTOK_COOKIES_PATH", "")
     if not _cookies_path:
         for _p in [
@@ -834,6 +833,15 @@ async def _download_cascade(video_url: str, category: str, tmpdir: str, vid_id: 
         r["reason"] = "ytdlp_video"
         return r
     errors.append(f"ytdlp={r.get('error', 'failed')}")
+    
+    # 4. Cobalt (public instances — free, no auth needed)
+    async with httpx.AsyncClient(timeout=120.0, follow_redirects=True, verify=False) as client:
+        r = await dl_cobalt(client, video_url, vid_id, tmpdir)
+        if r["status"] == "downloaded":
+            r["reason"] = "cobalt_video"
+            return r
+        errors.append(f"cobalt={r.get('error', 'failed')}")
+
 
     async with httpx.AsyncClient(timeout=120.0, follow_redirects=True, verify=False, proxy=TIKTOK_PROXY or None) as client:
         # 5. tikwm fallback (TikTok only — 576x1024, lower quality)

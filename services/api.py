@@ -41,6 +41,11 @@ from services.looping.engine import LoopingEngine
 from services.analysis.channel_analyzer import ChannelAnalyzer
 from services.cloakbrowser import CloakBrowserAdapter
 
+
+async def _run_subprocess(cmd: list[str], **kwargs):
+    """Run subprocess in thread pool to avoid blocking the event loop."""
+    return await asyncio.to_thread(lambda: subprocess.run(cmd, **kwargs))
+
 # ── App ────────────────────────────────────────────────────────
 app = FastAPI(
     title="1AI-Content Factory API",
@@ -1434,7 +1439,6 @@ async def process_video(req: VideoProcessRequest):
     Returns {file_path, file_type, duration, width, height, format, status}.
     """
     from services.download.engine import download_video
-    import subprocess
     import uuid
 
     # 1. Download
@@ -1455,7 +1459,7 @@ async def process_video(req: VideoProcessRequest):
     height = None
     video_codec = None
     try:
-        probe = subprocess.run(
+        probe = await _run_subprocess(
             ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_streams", "-show_format", file_path],
             capture_output=True, text=True, timeout=10,
         )
@@ -1475,10 +1479,10 @@ async def process_video(req: VideoProcessRequest):
     # 3. Force H.264 re-encode if codec is not avc1/h264
     #    Facebook requires H.264 — HEVC/H.265 videos upload as "ready" but can't play (resolution 0x0)
     H264_CODECS = {"h264", "avc1", "avc"}
-    if file_type == "video" and video_codec and video_codec not in H264_CODECS:
+    if file_type == "video" and (not video_codec or video_codec not in H264_CODECS):
         h264_path = os.path.join(os.path.dirname(file_path), f"{uuid.uuid4().hex}_h264.mp4")
         try:
-            reenc = subprocess.run(
+            reenc = await _run_subprocess(
                 ["ffmpeg", "-y", "-i", file_path,
                  "-c:v", "libx264", "-crf", "18", "-preset", "fast",
                  "-c:a", "aac", "-b:a", "128k",
@@ -1491,7 +1495,7 @@ async def process_video(req: VideoProcessRequest):
                 video_codec = "h264"
                 # Re-probe to get updated dimensions
                 try:
-                    probe2 = subprocess.run(
+                    probe2 = await _run_subprocess(
                         ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_streams", "-show_format", file_path],
                         capture_output=True, text=True, timeout=10,
                     )
@@ -1533,7 +1537,7 @@ async def process_video(req: VideoProcessRequest):
                     height = target_h
                     # Update duration from new file
                     try:
-                        probe2 = subprocess.run(
+                        probe2 = await _run_subprocess(
                             ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_format", file_path],
                             capture_output=True, text=True, timeout=10,
                         )
@@ -1631,7 +1635,6 @@ async def video_regenerate(req: VideoRegenerateRequest):
     Pipeline runs best-effort — if any step fails, continue with the rest.
     Returns {file_path, metadata: {title, hashtags, description}, duration, width, height, format, file_size}.
     """
-    import subprocess
     import uuid
     import json as _json
     from pathlib import Path
@@ -1652,9 +1655,9 @@ async def video_regenerate(req: VideoRegenerateRequest):
         raise HTTPException(status_code=422, detail=f"Download failed: {e}")
 
     # Helper: get video metadata via ffprobe
-    def _probe(path: str) -> dict:
+    async def _probe(path: str) -> dict:
         try:
-            r = subprocess.run(
+            r = await _run_subprocess(
                 ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_streams", "-show_format", path],
                 capture_output=True, text=True, timeout=10,
             )
@@ -1669,7 +1672,7 @@ async def video_regenerate(req: VideoRegenerateRequest):
         try:
             cropped = str(out_dir / f"crop_{run_id}.mp4")
             # TikTok watermark is in bottom-right — crop 20px from right and bottom
-            subprocess.run(
+            await _run_subprocess(
                 ["ffmpeg", "-y", "-i", file_path, "-vf", "crop=iw-20:ih-20:0:0", "-c:a", "copy", cropped],
                 capture_output=True, text=True, timeout=120,
             )
@@ -1684,7 +1687,7 @@ async def video_regenerate(req: VideoRegenerateRequest):
         preset = PLATFORM_PRESETS.get(req.platform, PLATFORM_PRESETS.get("tiktok"))
         target_w, target_h = preset["width"], preset["height"]
 
-        meta = _probe(file_path)
+        meta = await _probe(file_path)
         cur_w, cur_h = 0, 0
         for s in meta.get("streams", []):
             if s.get("codec_type") == "video":
@@ -1708,7 +1711,7 @@ async def video_regenerate(req: VideoRegenerateRequest):
     # ── 3b. Upscale if resolution is too low ──────────────
     # Facebook Reels require minimum 720p. Upscale to target if smaller.
     try:
-        meta2 = _probe(file_path)
+        meta2 = await _probe(file_path)
         cur_w2, cur_h2 = 0, 0
         for s in meta2.get("streams", []):
             if s.get("codec_type") == "video":
@@ -1716,7 +1719,7 @@ async def video_regenerate(req: VideoRegenerateRequest):
                 break
         if cur_w2 and cur_h2 and (cur_w2 < target_w or cur_h2 < target_h):
             upscaled = str(out_dir / f"upscale_{run_id}.mp4")
-            subprocess.run(
+            await _run_subprocess(
                 ["ffmpeg", "-y", "-i", file_path,
                  "-vf", f"scale={target_w}:{target_h}:flags=lanczos",
                  "-c:v", "libx264", "-crf", "18", "-preset", "medium",
@@ -1734,7 +1737,7 @@ async def video_regenerate(req: VideoRegenerateRequest):
             vf = COLOR_PRESETS.get(req.options.color_grade, "")
             if vf:
                 graded = str(out_dir / f"grade_{run_id}.mp4")
-                subprocess.run(
+                await _run_subprocess(
                     ["ffmpeg", "-y", "-i", file_path, "-vf", vf, "-c:a", "copy", graded],
                     capture_output=True, text=True, timeout=120,
                 )
@@ -1756,7 +1759,7 @@ async def video_regenerate(req: VideoRegenerateRequest):
                 f":x={pos['x']}:y={pos['y']}"
             )
             overlaid = str(out_dir / f"overlay_{run_id}.mp4")
-            subprocess.run(
+            await _run_subprocess(
                 ["ffmpeg", "-y", "-i", file_path, "-vf", drawtext, "-c:a", "copy", overlaid],
                 capture_output=True, text=True, timeout=120,
             )
@@ -1776,7 +1779,7 @@ async def video_regenerate(req: VideoRegenerateRequest):
                 reframer.generate_karaoke_subtitles(file_path, sub_path, style=req.options.caption_style)
             except Exception:
                 # If transcription fails, create simple placeholder subtitles
-                meta = _probe(file_path)
+                meta = await _probe(file_path)
                 dur = float(meta.get("format", {}).get("duration", 10))
                 import pysubs2
                 subs = pysubs2.SSAFile()
@@ -1865,7 +1868,7 @@ async def video_regenerate(req: VideoRegenerateRequest):
             }
 
     # ── 8. Final H.264 guarantee + metadata ───────────────────
-    final_meta = _probe(file_path)
+    final_meta = await _probe(file_path)
     final_codec = None
     duration = None
     width = None
@@ -1882,7 +1885,7 @@ async def video_regenerate(req: VideoRegenerateRequest):
     if final_codec and final_codec not in {"h264", "avc1", "avc"}:
         h264_final = str(out_dir / f"h264_final_{run_id}.mp4")
         try:
-            subprocess.run(
+            await _run_subprocess(
                 ["ffmpeg", "-y", "-i", file_path,
                  "-c:v", "libx264", "-crf", "18", "-preset", "fast",
                  "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart",
