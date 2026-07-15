@@ -19,6 +19,7 @@ Run:
     # or: uvicorn services.api:app --host 0.0.0.0 --port 8766
 """
 
+import subprocess
 import os
 import json
 import httpx
