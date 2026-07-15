@@ -47,6 +47,40 @@ async def _run_subprocess(cmd: list[str], **kwargs):
     """Run subprocess in thread pool to avoid blocking the event loop."""
     return await asyncio.to_thread(lambda: subprocess.run(cmd, **kwargs))
 
+
+async def _probe_video(file_path: str) -> dict:
+    """Run ffprobe and return structured video metadata."""
+    try:
+        probe = await _run_subprocess(
+            ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_streams", "-show_format", file_path],
+            capture_output=True, text=True, timeout=10,
+        )
+        if probe.returncode != 0:
+            return {}
+        meta = json.loads(probe.stdout)
+        duration = 0.0
+        width = 0
+        height = 0
+        video_codec = ""
+        audio_codec = ""
+        for stream in meta.get("streams", []):
+            if stream.get("codec_type") == "video":
+                width = int(stream.get("width", 0))
+                height = int(stream.get("height", 0))
+                video_codec = stream.get("codec_name", "").lower()
+                duration = float(meta.get("format", {}).get("duration", 0))
+            elif stream.get("codec_type") == "audio":
+                audio_codec = stream.get("codec_name", "")
+        return {
+            "duration": duration,
+            "width": width,
+            "height": height,
+            "video_codec": video_codec,
+            "audio_codec": audio_codec,
+        }
+    except Exception:
+        return {}
+
 # ── App ────────────────────────────────────────────────────────
 app = FastAPI(
     title="1AI-Content Factory API",
@@ -1467,28 +1501,16 @@ async def process_video(req: VideoProcessRequest):
         }}
 
     file_path = result["file_path"]
-    file_type = result.get("file_type", "video")
-
-    # 2. Get video metadata + codec check
     duration = None
     width = None
     height = None
     video_codec = None
     try:
-        probe = await _run_subprocess(
-            ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_streams", "-show_format", file_path],
-            capture_output=True, text=True, timeout=10,
-        )
-        if probe.returncode == 0:
-            import json as _json
-            meta = _json.loads(probe.stdout)
-            for stream in meta.get("streams", []):
-                if stream.get("codec_type") == "video":
-                    width = int(stream.get("width", 0))
-                    height = int(stream.get("height", 0))
-                    video_codec = stream.get("codec_name", "").lower()
-                    duration = float(meta.get("format", {}).get("duration", 0))
-                    break
+        meta = await _probe_video(file_path)
+        width = meta.get("width")
+        height = meta.get("height")
+        video_codec = meta.get("video_codec")
+        duration = meta.get("duration")
     except Exception:
         pass
 
@@ -1513,19 +1535,10 @@ async def process_video(req: VideoProcessRequest):
                 video_codec = "h264"
                 # Re-probe to get updated dimensions
                 try:
-                    probe2 = await _run_subprocess(
-                        ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_streams", "-show_format", file_path],
-                        capture_output=True, text=True, timeout=10,
-                    )
-                    if probe2.returncode == 0:
-                        import json as _json2
-                        meta2 = _json2.loads(probe2.stdout)
-                        for stream in meta2.get("streams", []):
-                            if stream.get("codec_type") == "video":
-                                width = int(stream.get("width", 0))
-                                height = int(stream.get("height", 0))
-                                duration = float(meta2.get("format", {}).get("duration", 0))
-                                break
+                    meta2 = await _probe_video(file_path)
+                    width = meta2.get("width")
+                    height = meta2.get("height")
+                    duration = meta2.get("duration")
                 except Exception:
                     pass
             else:
@@ -1555,14 +1568,8 @@ async def process_video(req: VideoProcessRequest):
                     height = target_h
                     # Update duration from new file
                     try:
-                        probe2 = await _run_subprocess(
-                            ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_format", file_path],
-                            capture_output=True, text=True, timeout=10,
-                        )
-                        if probe2.returncode == 0:
-                            import json as _json2
-                            meta2 = _json2.loads(probe2.stdout)
-                            duration = float(meta2.get("format", {}).get("duration", 0))
+                        meta2 = await _probe_video(file_path)
+                        duration = meta2.get("duration")
                     except Exception:
                         pass
             except Exception as e:
@@ -1938,56 +1945,30 @@ async def video_regenerate(req: VideoRegenerateRequest):
 @app.post("/video/info")
 async def video_info(req: VideoInfoRequest):
     """Get video metadata via ffprobe."""
-    import uuid
     try:
-        probe = await _run_subprocess(
-            ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_streams", "-show_format", req.file_path],
-            capture_output=True, text=True, timeout=10,
-        )
-        if probe.returncode != 0:
-            return {"file_path": req.file_path, "status": "failed", "error": probe.stderr.strip()[:200]}
-        import json as _json
-        meta = _json.loads(probe.stdout)
-        duration = 0.0
-        width = 0
-        height = 0
-        video_codec = ""
-        audio_codec = ""
-        for stream in meta.get("streams", []):
-            if stream.get("codec_type") == "video":
-                width = int(stream.get("width", 0))
-                height = int(stream.get("height", 0))
-                video_codec = stream.get("codec_name", "")
-                duration = float(meta.get("format", {}).get("duration", 0))
-            elif stream.get("codec_type") == "audio":
-                audio_codec = stream.get("codec_name", "")
+        meta = await _probe_video(req.file_path)
+        if not meta:
+            return {"file_path": req.file_path, "status": "failed", "error": "ffprobe returned no data"}
         return {
             "file_path": req.file_path,
-            "duration": duration,
-            "width": width,
-            "height": height,
-            "video_codec": video_codec,
-            "audio_codec": audio_codec,
+            "duration": meta.get("duration", 0),
+            "width": meta.get("width", 0),
+            "height": meta.get("height", 0),
+            "video_codec": meta.get("video_codec", ""),
+            "audio_codec": meta.get("audio_codec", ""),
             "status": "ok",
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"ffprobe error: {e}")
 
 
-@app.post("/video/clip")
 async def video_clip(req: VideoClipRequest):
     """Clip video to specified duration."""
     import uuid
-    import json as _json
     try:
-        # Probe source
-        probe = await _run_subprocess(
-            ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_streams", "-show_format", req.file_path],
-            capture_output=True, text=True, timeout=10,
-        )
-        if probe.returncode != 0:
-            return {"file_path": req.file_path, "status": "failed", "error": probe.stderr.strip()[:200]}
-        meta = _json.loads(probe.stdout)
+        meta = await _probe_video(req.file_path)
+        if not meta:
+            return {"file_path": req.file_path, "status": "failed", "error": "ffprobe returned no data"}
         out_dir = os.path.dirname(req.file_path)
         out_path = os.path.join(out_dir, f"{uuid.uuid4().hex}_clip.mp4")
         result = await _run_subprocess(
@@ -2003,27 +1984,12 @@ async def video_clip(req: VideoClipRequest):
             if os.path.exists(out_path):
                 os.remove(out_path)
             return {"file_path": req.file_path, "status": "failed", "error": result.stderr.strip()[:200]}
-        # Re-probe
-        probe2 = await _run_subprocess(
-            ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_streams", "-show_format", out_path],
-            capture_output=True, text=True, timeout=10,
-        )
-        duration = 0
-        width = 0
-        height = 0
-        if probe2.returncode == 0:
-            meta2 = _json.loads(probe2.stdout)
-            for stream in meta2.get("streams", []):
-                if stream.get("codec_type") == "video":
-                    width = int(stream.get("width", 0))
-                    height = int(stream.get("height", 0))
-                    break
-            duration = float(meta2.get("format", {}).get("duration", 0))
+        meta2 = await _probe_video(out_path)
         return {
             "file_path": out_path,
-            "duration": duration,
-            "width": width,
-            "height": height,
+            "duration": meta2.get("duration", 0),
+            "width": meta2.get("width", 0),
+            "height": meta2.get("height", 0),
             "status": "ok",
         }
     except Exception as e:
