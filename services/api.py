@@ -1501,6 +1501,7 @@ async def process_video(req: VideoProcessRequest):
         }}
 
     file_path = result["file_path"]
+    file_type = "video" if os.path.splitext(file_path)[1].lower() in (".mp4", ".mov", ".avi", ".mkv", ".webm") else "image"
     duration = None
     width = None
     height = None
