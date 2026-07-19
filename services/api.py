@@ -571,15 +571,6 @@ async def cloak_batch_post(req: CloakBatchPostRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/cloak/profile/{profile_id}/status")
-async def cloak_profile_status(profile_id: str):
-    """Get profile status."""
-    try:
-        adapter = get_cloak()
-        result = adapter.get_profile_status(profile_id)
-        return result
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ══════════════════════════════════════════════════════════════
@@ -962,27 +953,6 @@ async def ab_test_delete(test_id: str, user_id: int = 0):
 
 
 
-@app.post("/ab-test/{test_id}/start")
-async def ab_test_start(user_id: int, test_id: str):
-    """Start an A/B test."""
-    try:
-        ab = get_ab_testing()
-        test = ab.start_test(user_id, test_id)
-        return test if test else {"error": "Test not found"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.post("/ab-test/{test_id}/end")
-async def ab_test_end(user_id: int, test_id: str):
-    """End test and determine winner."""
-    try:
-        ab = get_ab_testing()
-        test = ab.end_test(user_id, test_id)
-        return test if test else {"error": "Test not found"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
 
 
 # ══════════════════════════════════════════════════════════════
@@ -1010,18 +980,8 @@ async def carousel_template(template_id: str):
 # CAPTION STYLES
 # ══════════════════════════════════════════════════════════════
 
-@app.get("/captions/styles")
-async def caption_styles():
-    """List available caption styles."""
-    from services.carousel.caption_styles import list_styles
-    return {"styles": list_styles()}
 
 
-@app.get("/captions/presets")
-async def caption_presets():
-    """List available caption presets."""
-    from services.carousel.caption_presets import list_presets
-    return {"presets": list_presets()}
 
 
 class CaptionRequest(BaseModel):
@@ -1034,20 +994,6 @@ class CaptionRequest(BaseModel):
     hashtag_count: int = 10
 
 
-@app.post("/captions/generate")
-async def caption_generate(req: CaptionRequest):
-    """Generate a caption in a specific style."""
-    try:
-        from services.carousel.caption_styles import CaptionGenerator
-        gen = CaptionGenerator()
-        result = gen.generate(
-            topic=req.topic, style=req.style, platform=req.platform,
-            language=req.language, max_length=req.max_length,
-            include_hashtags=req.include_hashtags, hashtag_count=req.hashtag_count,
-        )
-        return result
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ══════════════════════════════════════════════════════════════
@@ -1070,28 +1016,8 @@ class ReplyRequest(BaseModel):
     post_context: str = ""
 
 
-@app.post("/engagement/reply")
-async def engagement_reply(req: ReplyRequest):
-    """Generate and post a reply to a comment."""
-    try:
-        engine = get_engagement()
-        result = engine.reply_to_comment(
-            profile_id=req.profile_id, comment_text=req.comment_text,
-            platform=req.platform, post_context=req.post_context,
-        )
-        return result
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/engagement/stats")
-async def engagement_stats(profile_id: str = ""):
-    """Get engagement reply statistics."""
-    try:
-        engine = get_engagement()
-        return engine.get_reply_stats(profile_id or None)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ══════════════════════════════════════════════════════════════
@@ -1160,10 +1086,6 @@ async def repurpose_content(req: RepurposeRequest):
 
 
 # Backward compat alias
-@app.post("/regenerate")
-async def regenerate_content(req: RepurposeRequest):
-    """Alias for /repurpose (backward compatibility)."""
-    return await repurpose_content(req)
 
 
 # ══════════════════════════════════════════════════════════════
@@ -1235,116 +1157,13 @@ class DownloadRequest(BaseModel):
     category: str = "general"
 
 
-@app.post("/download/video")
-async def download_video_endpoint(req: DownloadRequest):
-    """Download a single video using full cascade.
-
-    Cascade: tikwm → yt-dlp → Vidbee → Cobalt → CloakBrowser → scrape → cover → placeholder
-    Returns {file_path, file_type, status, reason, file_size}.
-    """
-    from services.download.engine import download_video
-
-    result = await download_video(req.video_url, req.category)
-
-    # Add file_size if file exists
-    if result.get("file_path") and os.path.exists(result["file_path"]):
-        result["file_size"] = os.path.getsize(result["file_path"])
-
-    return {"data": result}
-
-@app.post("/download/profile")
-async def download_profile(req: ProfileDownloadRequest):
-    """Download all videos from a TikTok profile.
-
-    Parses profile URL → fetches video list via tikwm → batch-downloads each via cascade.
-    Returns list of {file_path, file_type, status, reason, file_size} per video.
-    """
-    import re
-    from services.download.engine import download_video, TIKWM_API_URL
-
-    # 1. Extract username from profile URL
-    m = re.search(r"tiktok\.com/@([\w.]+)", req.profile_url)
-    if not m:
-        return {"data": [], "error": f"Invalid TikTok profile URL: {req.profile_url}"}
-    username = m.group(1)
-
-    # 2. Fetch video list via tikwm
-    try:
-        async with httpx.AsyncClient(timeout=15) as client:
-            resp = await client.get(
-                f"{TIKWM_API_URL}user/posts",
-                params={"unique_id": username, "count": min(req.max_videos, 50)},
-            )
-            if resp.status_code != 200:
-                return {"data": [], "error": f"tikwm user/posts returned {resp.status_code}"}
-            body = resp.json()
-            if body.get("code") != 0:
-                return {"data": [], "error": f"tikwm error: {body.get('msg', 'unknown')}"}
-            videos = (body.get("data") or {}).get("videos", [])
-    except Exception as e:
-        return {"data": [], "error": f"tikwm request failed: {e}"}
-
-    if not videos:
-        return {"data": [], "error": "No videos found in profile"}
-
-    # 3. Download each video
-    results = []
-    for v in videos:
-        vid_id = v.get("video_id", "")
-        if not vid_id:
-            continue
-        video_url = f"https://www.tiktok.com/@{username}/video/{vid_id}"
-        result = await download_video(video_url, req.category)
-        if result.get("file_path") and os.path.exists(result["file_path"]):
-            result["file_size"] = os.path.getsize(result["file_path"])
-        result["video_id"] = vid_id
-        result["video_url"] = video_url
-        result["title"] = (v.get("title") or "")[:200]
-        results.append(result)
-
-    return {"data": results, "total": len(results)}
 
 
-@app.post("/tikwm/user/posts")
-async def tikwm_user_posts(req: UserPostsRequest):
-    """Proxy for tikwm user/posts — fetch a creator's video list."""
-    from services.download.engine import TIKWM_API_URL
-    async with httpx.AsyncClient(timeout=15) as client:
-        resp = await client.get(
-            f"{TIKWM_API_URL}user/posts",
-            params={"unique_id": req.unique_id, "count": req.count},
-        )
-        if resp.status_code != 200:
-            raise HTTPException(status_code=502, detail=f"tikwm returned {resp.status_code}")
-        return resp.json()
 
 
-@app.post("/tikwm/challenge/search")
-async def tikwm_challenge_search(req: ChallengeSearchRequest):
-    """Proxy for tikwm challenge/search — find challenges by keyword."""
-    from services.download.engine import TIKWM_API_URL
-    async with httpx.AsyncClient(timeout=15) as client:
-        resp = await client.get(
-            f"{TIKWM_API_URL}challenge/search",
-            params={"keywords": req.keywords, "count": req.count},
-        )
-        if resp.status_code != 200:
-            raise HTTPException(status_code=502, detail=f"tikwm returned {resp.status_code}")
-        return resp.json()
 
 
-@app.post("/tikwm/challenge/posts")
-async def tikwm_challenge_posts(req: ChallengePostsRequest):
-    """Proxy for tikwm challenge/posts — fetch videos in a challenge."""
-    from services.download.engine import TIKWM_API_URL
-    async with httpx.AsyncClient(timeout=15) as client:
-        resp = await client.get(
-            f"{TIKWM_API_URL}challenge/posts",
-            params={"challenge_id": req.challenge_id, "count": req.count},
-        )
-        if resp.status_code != 200:
-            raise HTTPException(status_code=502, detail=f"tikwm returned {resp.status_code}")
-        return resp.json()
+
 
 
 # ══════════════════════════════════════════════════════════════
@@ -1398,61 +1217,6 @@ def _has_tiktok_cookies(path: str) -> bool:
     return False
 
 
-@app.post("/video/refresh-cookies")
-async def refresh_tiktok_cookies(browser: str | None = None):
-    """Extract fresh TikTok cookies from installed browsers into config/tiktok_cookies.txt.
-
-    Tries chromium, vivaldi, then firefox — stops at the first browser that
-    yields .tiktok.com cookies.  Override with ?browser=chromium|vivaldi|firefox.
-    """
-    cookies_dir = os.path.join(os.path.dirname(__file__), "..", "config")
-    cookies_path = os.path.join(cookies_dir, "tiktok_cookies.txt")
-    cookies_path = os.path.abspath(os.path.normpath(cookies_path))
-    os.makedirs(cookies_dir, exist_ok=True)
-
-    browsers = [browser] if browser else _TIKTOK_BROWSERS
-    results = []
-    used_browser = None
-
-    for name in browsers:
-        r = await _extract_browser_cookies(name, cookies_path)
-        results.append(r)
-        if r["status"] == "ok" and os.path.getsize(cookies_path) > 100:
-            if _has_tiktok_cookies(cookies_path):
-                used_browser = name
-                break
-            # file has cookies but no .tiktok.com entries — keep trying next browser
-
-    # Build response
-    summary = {r["browser"]: r.get("status", "unknown") for r in results}
-
-    if used_browser:
-        return {"data": {
-            "status": "ok",
-            "message": f"TikTok cookies refreshed via {used_browser}",
-            "cookies_file": cookies_path,
-            "size_bytes": os.path.getsize(cookies_path),
-            "browser": used_browser,
-            "tried": summary,
-        }}
-
-    # No browser had TikTok cookies
-    fsize = os.path.getsize(cookies_path) if os.path.exists(cookies_path) else 0
-    if fsize > 100:
-        return {"data": {
-            "status": "partial",
-            "message": "Cookies extracted but no .tiktok.com entries found (login required in any browser)",
-            "cookies_file": cookies_path,
-            "size_bytes": fsize,
-            "browser": None,
-            "tried": summary,
-        }}
-
-    return {"data": {
-        "status": "error",
-        "message": "No browser produced usable cookies",
-        "tried": summary,
-    }}
 
 # ══════════════════════════════════════════════════════════════
 # VIDEO PROCESS — Download + Convert for distribution
@@ -1481,461 +1245,17 @@ class VideoTransformsRequest(BaseModel):
     transforms: list[str]
 
 
-@app.post("/video/process")
-async def process_video(req: VideoProcessRequest):
-    """Download video and convert to target format.
-
-    Pipeline: download → detect format → reframe if needed → return file_path.
-    Returns {file_path, file_type, duration, width, height, format, status}.
-    """
-    from services.download.engine import download_video
-    import uuid
-
-    # 1. Download
-    result = await download_video(req.source_url, req.category)
-    if result.get("status") != "downloaded" or not result.get("file_path"):
-        return {"data": {
-            "status": "failed",
-            "error": f"Download failed: {result.get('reason', 'unknown')}",
-            "file_path": None,
-        }}
-
-    file_path = result["file_path"]
-    file_type = "video" if os.path.splitext(file_path)[1].lower() in (".mp4", ".mov", ".avi", ".mkv", ".webm") else "image"
-    duration = None
-    width = None
-    height = None
-    video_codec = None
-    try:
-        meta = await _probe_video(file_path)
-        width = meta.get("width")
-        height = meta.get("height")
-        video_codec = meta.get("video_codec")
-        duration = meta.get("duration")
-    except Exception:
-        pass
-
-    # Force H.264 re-encode for Facebook compatibility — always re-encode
-    # regardless of source codec to guarantee yuv420p pixel format and
-    # proper moov atom placement via faststart.
-    if file_type == "video":
-        print(f"[process_video] codec={video_codec}, file_type={file_type}, w={width}x{height}, re-encode=YES")
-        h264_path = os.path.join(os.path.dirname(file_path), f"{uuid.uuid4().hex}_h264.mp4")
-        try:
-            reenc = await _run_subprocess(
-                ["ffmpeg", "-y", "-i", file_path,
-                 "-c:v", "libx264", "-crf", "18", "-preset", "fast",
-                 "-pix_fmt", "yuv420p",
-                 "-c:a", "aac", "-b:a", "128k",
-                 "-movflags", "+faststart",
-                 h264_path],
-                capture_output=True, text=True, timeout=180,
-            )
-            if reenc.returncode == 0 and os.path.exists(h264_path) and os.path.getsize(h264_path) > 10000:
-                file_path = h264_path
-                video_codec = "h264"
-                # Re-probe to get updated dimensions
-                try:
-                    meta2 = await _probe_video(file_path)
-                    width = meta2.get("width")
-                    height = meta2.get("height")
-                    duration = meta2.get("duration")
-                except Exception:
-                    pass
-            else:
-                # Re-encode failed — log but continue with original
-                if os.path.exists(h264_path):
-                    os.remove(h264_path)
-        except Exception:
-            pass
-
-    # 4. Convert to target format if video and dimensions don't match
-    target_w, target_h = {"9:16": (1080, 1920), "16:9": (1920, 1080), "1:1": (1080, 1080)}.get(req.target_format, (1080, 1920))
-
-    if file_type == "video" and width and height:
-        current_aspect = width / height if height > 0 else 0
-        target_aspect = target_w / target_h if target_h > 0 else 0
-
-        # Only reframe if aspect ratio differs significantly
-        if abs(current_aspect - target_aspect) > 0.1:
-            output_path = os.path.join(os.path.dirname(file_path), f"{uuid.uuid4().hex}.mp4")
-            try:
-                from services.clipper.reframer import Reframer
-                reframer = Reframer()
-                output_path = reframer.reframe_to_vertical(file_path, output_path, req.target_format)
-                if os.path.exists(output_path):
-                    file_path = output_path
-                    width = target_w
-                    height = target_h
-                    # Update duration from new file
-                    try:
-                        meta2 = await _probe_video(file_path)
-                        duration = meta2.get("duration")
-                    except Exception:
-                        pass
-            except Exception as e:
-                # Reframe failed — return original
-                pass
-
-    # 5. Apply uniqueness transforms (mirror / speed / crop_zoom)
-    if file_type == "video" and req.transforms:
-        from services.clipper.reframer import Reframer as _Reframer
-        _reframer = _Reframer()
-        for _transform in req.transforms:
-            _out = os.path.join(os.path.dirname(file_path), f"{uuid.uuid4().hex}_t.mp4")
-            try:
-                if _transform == "mirror":
-                    file_path = _reframer.apply_mirror(file_path, _out)
-                elif _transform.startswith("speed_"):
-                    _factor = float(_transform.split("_", 1)[1])
-                    file_path = _reframer.apply_speed(file_path, _out, _factor)
-                elif _transform.startswith("crop_zoom_"):
-                    _zoom = float(_transform.split("_", 2)[2])
-                    file_path = _reframer.apply_crop_zoom(file_path, _out, _zoom)
-            except Exception:
-                # Transform failed — continue with current file_path unchanged
-                if os.path.exists(_out):
-                    os.remove(_out)
-
-    # Log to processed_videos for duplicate detection
-    if file_type == "video" and file_path:
-        import sqlite3 as _sqlite3, hashlib as _hashlib
-        _url_hash = _hashlib.sha256(req.source_url.encode()).hexdigest()
-        try:
-            _conn = _sqlite3.connect(_PROCESSED_VIDEOS_DB)
-            _conn.execute(
-                "INSERT OR REPLACE INTO processed_videos (url_hash, source_url, processed_at, file_path) VALUES (?,?,?,?)",
-                (_url_hash, req.source_url, datetime.utcnow().isoformat(), file_path),
-            )
-            _conn.commit()
-            _conn.close()
-        except Exception:
-            pass
-
-    return {"data": {
-        "status": "processed",
-        "file_path": file_path,
-        "file_type": file_type,
-        "duration": round(duration, 2) if duration else None,
-        "width": width,
-        "height": height,
-        "format": req.target_format,
-        "reason": result.get("reason", ""),
-        "file_size": os.path.getsize(file_path) if os.path.exists(file_path) else 0,
-    }}
 
 
 class VideoSearchRequest(BaseModel):
     video_url: str
 
 
-@app.post("/video/search")
-async def video_search(req: VideoSearchRequest):
-    """Check if a source URL has been processed before.
-
-    Returns {found, url_hash, processed_at, file_path}.
-    """
-    import sqlite3 as _sqlite3, hashlib as _hashlib
-    _url_hash = _hashlib.sha256(req.video_url.encode()).hexdigest()
-    try:
-        _conn = _sqlite3.connect(_PROCESSED_VIDEOS_DB)
-        row = _conn.execute(
-            "SELECT source_url, processed_at, file_path FROM processed_videos WHERE url_hash = ?",
-            (_url_hash,),
-        ).fetchone()
-        _conn.close()
-    except Exception:
-        row = None
-    if row:
-        return {"data": {"found": True, "url_hash": _url_hash, "processed_at": row[1], "file_path": row[2]}}
-    return {"data": {"found": False, "url_hash": _url_hash, "processed_at": None, "file_path": None}}
 
 # ══════════════════════════════════════════════════════════════
 # VIDEO REGENERATE — Full content regeneration pipeline
 # ══════════════════════════════════════════════════════════════
 
-@app.post("/video/regenerate")
-async def video_regenerate(req: VideoRegenerateRequest):
-    """Full content regeneration: download → strip watermark → reframe → color grade → overlay → captions → metadata.
-
-    Pipeline runs best-effort — if any step fails, continue with the rest.
-    Returns {file_path, metadata: {title, hashtags, description}, duration, width, height, format, file_size}.
-    """
-    import uuid
-    import json as _json
-    from pathlib import Path
-
-    errors: list[str] = []
-    run_id = uuid.uuid4().hex[:12]
-    out_dir = Path(f"/tmp/1ai-content/{run_id}")
-    out_dir.mkdir(parents=True, exist_ok=True)
-
-    # ── 1. Download ──────────────────────────────────────────
-    try:
-        from services.download.engine import download_video as _dl
-        dl = await _dl(req.source_url)
-        if dl.get("status") != "downloaded" or not dl.get("file_path"):
-            raise RuntimeError(f"Download failed: {dl.get('reason', 'unknown')}")
-        file_path: str = dl["file_path"]
-    except Exception as e:
-        raise HTTPException(status_code=422, detail=f"Download failed: {e}")
-
-    # Helper: get video metadata via ffprobe
-    async def _probe(path: str) -> dict:
-        try:
-            r = await _run_subprocess(
-                ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_streams", "-show_format", path],
-                capture_output=True, text=True, timeout=10,
-            )
-            if r.returncode == 0:
-                return _json.loads(r.stdout)
-        except Exception:
-            pass
-        return {}
-
-    # ── 2. Strip watermark (crop bottom-right corner) ────────
-    if req.options.remove_watermark:
-        try:
-            cropped = str(out_dir / f"crop_{run_id}.mp4")
-            # TikTok watermark is in bottom-right — crop 20px from right and bottom
-            await _run_subprocess(
-                ["ffmpeg", "-y", "-i", file_path, "-vf", "crop=iw-20:ih-20:0:0", "-c:a", "copy", cropped],
-                capture_output=True, text=True, timeout=120,
-            )
-            if os.path.exists(cropped) and os.path.getsize(cropped) > 0:
-                file_path = cropped
-        except Exception as e:
-            errors.append(f"watermark_strip: {e}")
-
-    # ── 3. Reframe to target platform dimensions ─────────────
-    try:
-        from services.repurpose.engine import PLATFORM_PRESETS
-        preset = PLATFORM_PRESETS.get(req.platform, PLATFORM_PRESETS.get("tiktok"))
-        target_w, target_h = preset["width"], preset["height"]
-
-        meta = await _probe(file_path)
-        cur_w, cur_h = 0, 0
-        for s in meta.get("streams", []):
-            if s.get("codec_type") == "video":
-                cur_w, cur_h = int(s.get("width", 0)), int(s.get("height", 0))
-                break
-
-        if cur_w and cur_h:
-            cur_aspect = cur_w / cur_h
-            tgt_aspect = target_w / target_h
-            if abs(cur_aspect - tgt_aspect) > 0.1:
-                reframed = str(out_dir / f"reframe_{run_id}.mp4")
-                from services.clipper.reframer import Reframer
-                reframer = Reframer()
-                aspect_str = preset.get("aspect", "9:16")
-                reframer.reframe_to_vertical(file_path, reframed, aspect_str)
-                if os.path.exists(reframed) and os.path.getsize(reframed) > 0:
-                    file_path = reframed
-    except Exception as e:
-        errors.append(f"reframe: {e}")
-
-    # ── 3b. Upscale if resolution is too low ──────────────
-    # Facebook Reels require minimum 720p. Upscale to target if smaller.
-    try:
-        meta2 = await _probe(file_path)
-        cur_w2, cur_h2 = 0, 0
-        for s in meta2.get("streams", []):
-            if s.get("codec_type") == "video":
-                cur_w2, cur_h2 = int(s.get("width", 0)), int(s.get("height", 0))
-                break
-        if cur_w2 and cur_h2 and (cur_w2 < target_w or cur_h2 < target_h):
-            upscaled = str(out_dir / f"upscale_{run_id}.mp4")
-            await _run_subprocess(
-                ["ffmpeg", "-y", "-i", file_path,
-                 "-vf", f"scale={target_w}:{target_h}:flags=lanczos",
-                 "-c:v", "libx264", "-crf", "18", "-preset", "medium",
-                 "-c:a", "copy", "-pix_fmt", "yuv420p", upscaled],
-                capture_output=True, text=True, timeout=180,
-            )
-            if os.path.exists(upscaled) and os.path.getsize(upscaled) > 0:
-                file_path = upscaled
-    except Exception as e:
-        errors.append(f"upscale: {e}")
-    # ── 4. Color grade ───────────────────────────────────────
-    if req.options.color_grade and req.options.color_grade != "none":
-        try:
-            from services.repurpose.engine import COLOR_PRESETS
-            vf = COLOR_PRESETS.get(req.options.color_grade, "")
-            if vf:
-                graded = str(out_dir / f"grade_{run_id}.mp4")
-                await _run_subprocess(
-                    ["ffmpeg", "-y", "-i", file_path, "-vf", vf, "-c:a", "copy", graded],
-                    capture_output=True, text=True, timeout=120,
-                )
-                if os.path.exists(graded) and os.path.getsize(graded) > 0:
-                    file_path = graded
-        except Exception as e:
-            errors.append(f"color_grade: {e}")
-
-    # ── 5. Text overlay ──────────────────────────────────────
-    if req.options.text_overlay:
-        try:
-            from services.repurpose.engine import OVERLAY_POSITIONS
-            pos = OVERLAY_POSITIONS.get(req.options.overlay_position, OVERLAY_POSITIONS["bottom_center"])
-            # Escape special chars for FFmpeg drawtext
-            safe_text = req.options.text_overlay.replace("'", "'\\''").replace(":", "\\:")
-            drawtext = (
-                f"drawtext=text='{safe_text}'"
-                f":fontsize=48:fontcolor=white:borderw=3:bordercolor=black"
-                f":x={pos['x']}:y={pos['y']}"
-            )
-            overlaid = str(out_dir / f"overlay_{run_id}.mp4")
-            await _run_subprocess(
-                ["ffmpeg", "-y", "-i", file_path, "-vf", drawtext, "-c:a", "copy", overlaid],
-                capture_output=True, text=True, timeout=120,
-            )
-            if os.path.exists(overlaid) and os.path.getsize(overlaid) > 0:
-                file_path = overlaid
-        except Exception as e:
-            errors.append(f"text_overlay: {e}")
-
-    # ── 6. Add captions ──────────────────────────────────────
-    if req.options.add_captions and req.options.caption_style != "none":
-        try:
-            from services.clipper.reframer import Reframer
-            reframer = Reframer()
-            # Generate karaoke subtitles from audio
-            sub_path = str(out_dir / f"subs_{run_id}.ass")
-            try:
-                reframer.generate_karaoke_subtitles(file_path, sub_path, style=req.options.caption_style)
-            except Exception:
-                # If transcription fails, create simple placeholder subtitles
-                meta = await _probe(file_path)
-                dur = float(meta.get("format", {}).get("duration", 10))
-                import pysubs2
-                subs = pysubs2.SSAFile()
-                subs.events.append(pysubs2.SSAEvent(
-                    start=0, end=int(dur * 1000),
-                    text=req.options.text_overlay or "Regenerated by 1AI",
-                ))
-                subs.save(sub_path)
-
-            if os.path.exists(sub_path):
-                captioned = str(out_dir / f"caption_{run_id}.mp4")
-                reframer.burn_subtitles(file_path, sub_path, captioned)
-                if os.path.exists(captioned) and os.path.getsize(captioned) > 0:
-                    file_path = captioned
-        except Exception as e:
-            errors.append(f"captions: {e}")
-
-    # ── 7. Generate metadata ─────────────────────────────────
-    # Platform-specific metadata templates with Indonesian hashtags
-    _PLATFORM_METADATA = {
-        "facebook": {
-            "titles": [
-                "Coba lihat ini! 🔥", "Wajib coba! 💪", "Tips yang jarang orang tahu",
-                "Ini dia yang kamu cari! ✨", "Jangan sampai ketinggalan! 🚀",
-            ],
-            "hashtags": ["#facebookreels", "#viral", "#trending", "#fyp", "#indonesia", "#tips"],
-        },
-        "tiktok": {
-            "titles": [
-                "POV: kamu nemuin ini 🔥", "Ini gila sih! 😱", "Coba tebak...",
-            ],
-            "hashtags": ["#fyp", "#foryou", "#viral", "#trending", "#tiktokindonesia"],
-        },
-        "instagram": {
-            "titles": [
-                "Save this for later! ✨", "Your feed needed this 💫",
-            ],
-            "hashtags": ["#reels", "#explore", "#viral", "#trending", "#instagram"],
-        },
-    }
-
-    metadata: dict = {"title": "", "hashtags": [], "description": ""}
-    if req.options.generate_metadata:
-        try:
-            # Try LLM via OmniRoute first
-            omni_url = os.getenv("OMNIRoute_URL", "http://127.0.0.1:20128/v1")
-            async with httpx.AsyncClient(timeout=15.0) as llm_client:
-                llm_resp = await llm_client.post(
-                    f"{omni_url}/chat/completions",
-                    json={
-                        "model": "gemini-2.0-flash",
-                        "messages": [{
-                            "role": "user",
-                            "content": (
-                                f"Generate a short catchy social media title (max 60 chars), "
-                                f"5 relevant hashtags, and a 1-sentence description for a "
-                                f"{req.platform} post. Language: {req.options.language}. "
-                                f"Return JSON: {{\"title\":\"...\",\"hashtags\":[\"#...\"],\"description\":\"...\"}}"
-                            ),
-                        }],
-                        "max_tokens": 200,
-                    },
-                )
-                if llm_resp.status_code == 200:
-                    content = llm_resp.json().get("choices", [{}])[0].get("message", {}).get("content", "")
-                    # Extract JSON from response
-                    import re as _re
-                    json_match = _re.search(r'\{[^}]+\}', content)
-                    if json_match:
-                        metadata = json.loads(json_match.group())
-                        if metadata.get("title"):
-                            raise RuntimeError("")  # Skip fallback
-        except RuntimeError:
-            pass  # LLM succeeded
-        except Exception as e:
-            errors.append(f"metadata_llm: {e}")
-
-        # Fallback: platform-aware template
-        if not metadata.get("title"):
-            import random
-            preset = _PLATFORM_METADATA.get(req.platform, _PLATFORM_METADATA["facebook"])
-            metadata = {
-                "title": random.choice(preset["titles"]),
-                "hashtags": preset["hashtags"],
-                "description": f"Check out this content on {req.platform}!",
-            }
-
-    # ── 8. Final H.264 guarantee + metadata ───────────────────
-    final_meta = await _probe(file_path)
-    final_codec = None
-    duration = None
-    width = None
-    height = None
-    for s in final_meta.get("streams", []):
-        if s.get("codec_type") == "video":
-            width = int(s.get("width", 0))
-            height = int(s.get("height", 0))
-            final_codec = s.get("codec_name", "").lower()
-            break
-    duration = float(final_meta.get("format", {}).get("duration", 0)) if final_meta.get("format") else None
-
-    # Always force H.264 re-encode for Facebook compatibility
-    if True:
-        print(f"[video_regenerate] final_codec={final_codec}, w={width}x{height}, re-encode=YES")
-        h264_final = str(out_dir / f"h264_final_{run_id}.mp4")
-        try:
-            await _run_subprocess(
-                ["ffmpeg", "-y", "-i", file_path,
-                 "-c:v", "libx264", "-crf", "18", "-preset", "fast",
-                 "-pix_fmt", "yuv420p",
-                 "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart",
-                 h264_final],
-                capture_output=True, text=True, timeout=180,
-            )
-            if os.path.exists(h264_final) and os.path.getsize(h264_final) > 10000:
-                file_path = h264_final
-        except Exception:
-            errors.append(f"h264_final: re-encode failed")
-
-    return {"data": {
-        "status": "regenerated",
-        "file_path": file_path,
-        "metadata": metadata,
-        "duration": round(duration, 2) if duration else None,
-        "width": width,
-        "height": height,
-        "format": "mp4",
-        "file_size": os.path.getsize(file_path) if os.path.exists(file_path) else 0,
-        "errors": errors,
-    }}
 
 
 # ══════════════════════════════════════════════════════════════
@@ -1943,24 +1263,6 @@ async def video_regenerate(req: VideoRegenerateRequest):
 # ══════════════════════════════════════════════════════════════
 
 
-@app.post("/video/info")
-async def video_info(req: VideoInfoRequest):
-    """Get video metadata via ffprobe."""
-    try:
-        meta = await _probe_video(req.file_path)
-        if not meta:
-            return {"file_path": req.file_path, "status": "failed", "error": "ffprobe returned no data"}
-        return {
-            "file_path": req.file_path,
-            "duration": meta.get("duration", 0),
-            "width": meta.get("width", 0),
-            "height": meta.get("height", 0),
-            "video_codec": meta.get("video_codec", ""),
-            "audio_codec": meta.get("audio_codec", ""),
-            "status": "ok",
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"ffprobe error: {e}")
 
 
 async def video_clip(req: VideoClipRequest):
@@ -1997,41 +1299,6 @@ async def video_clip(req: VideoClipRequest):
         raise HTTPException(status_code=500, detail=f"video clip error: {e}")
 
 
-@app.post("/video/transforms")
-async def video_transforms(req: VideoTransformsRequest):
-    """Generate video variants with mirror/speed/crop transforms."""
-    import uuid
-    TRANSFORM_MAP = {
-        "mirror": {"vf": "hflip", "audio": "copy"},
-        "speed_105": {"vf": "setpts=0.952381*PTS", "af": "atempo=1.05"},
-        "crop_zoom": {"vf": "crop=iw/1.05:ih/1.05:(iw-iw/1.05)/2:(ih-ih/1.05)/2,scale=iw*1.05:ih*1.05", "audio": "copy"},
-        "mirror_speed": {"vf": "hflip,setpts=0.952381*PTS", "af": "atempo=1.05"},
-        "mirror_crop": {"vf": "hflip,crop=iw/1.05:ih/1.05:(iw-iw/1.05)/2:(ih-ih/1.05)/2,scale=iw*1.05:ih*1.05", "audio": "copy"},
-    }
-    variants = []
-    dirpath = os.path.dirname(req.file_path)
-    for name in req.transforms:
-        spec = TRANSFORM_MAP.get(name)
-        if not spec:
-            continue
-        out_path = os.path.join(dirpath, f"{name}_{uuid.uuid4().hex[:8]}.mp4")
-        cmd = ["ffmpeg", "-y", "-i", req.file_path]
-        if spec.get("vf"):
-            cmd += ["-vf", spec["vf"]]
-        if spec.get("af"):
-            cmd += ["-af", spec["af"]]
-        cmd += ["-c:v", "libx264", "-crf", "18", "-preset", "fast"]
-        cmd += ["-c:a", spec.get("audio", "aac")]
-        if spec.get("audio") != "copy":
-            cmd += ["-b:a", "128k"]
-        cmd += ["-movflags", "+faststart", out_path]
-        try:
-            result = await _run_subprocess(cmd, capture_output=True, text=True, timeout=120)
-            if result.returncode == 0 and os.path.isfile(out_path) and os.path.getsize(out_path) > 0:
-                variants.append({"name": name, "file_path": out_path})
-        except Exception:
-            pass
-    return {"variants": variants, "status": "ok"}
 
 
 
@@ -2056,37 +1323,6 @@ class RenderAdRequest(BaseModel):
     )
 
 
-@app.post("/content/render-ad")
-async def render_ad(req: RenderAdRequest):
-    """Render a product ad video using Remotion (9:16, 1080x1920, 15s).
-
-    Generates category-specific ad copy and renders a professional product
-    showcase video with animations, text overlays, and branding.
-    """
-    import services.remotion as remotion
-
-    try:
-        result = await remotion.render_product_ad(
-            image_url=req.image_url,
-            title=req.title,
-            category=req.category,
-            affiliate_link=req.affiliate_link,
-            brand_name=req.brand_name,
-            ad_copy=req.ad_copy,
-            hook_text=req.hook_text,
-            cta_text=req.cta_text,
-        )
-        return {
-            "status": "ok",
-            "data": result,
-        }
-    except RuntimeError as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Remotion render error: {type(e).__name__}: {e}",
-        )
 
 
 # ══════════════════════════════════════════════════════════════
