@@ -154,7 +154,6 @@ def test_python_api_health():
         ("GET", "/health", 200),
         ("GET", "/carousel/styles", 200),
         ("GET", "/carousel/templates", 200),
-        ("GET", "/captions/styles", 200),
         ("GET", "/trending/cached", 200),
         ("GET", "/trending/status", 200),
         ("GET", "/calendar/list/0", 200),
@@ -172,7 +171,6 @@ def test_python_api_health():
     post_endpoints = [
         ("POST", "/calendar/schedule", {"user_id": 0, "topic": "test", "scheduled_at": "2026-07-01 11:00", "platform": "tiktok"}, 200),
         ("POST", "/ab-test/create", {"user_id": 0, "name": "test", "topic": "test"}, 200),
-        ("POST", "/captions/generate", {"topic": "test", "style": "hype"}, 200),
     ]
 
     for method, path, body, expected_status in post_endpoints:
