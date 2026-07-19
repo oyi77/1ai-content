@@ -162,6 +162,8 @@ def test_python_api():
         "/health",
         "/carousel/styles",
         "/carousel/templates",
+        "/captions/styles",
+        "/captions/presets",
         "/trending/cached",
         "/trending/status",
         "/calendar/list/0",
