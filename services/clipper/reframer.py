@@ -316,6 +316,7 @@ class Reframer:
             self.ffmpeg, "-y", "-i", input_path,
             "-vf", "hflip",
             "-c:v", "libx264", "-crf", "18", "-preset", "fast",
+            "-pix_fmt", "yuv420p",
             "-c:a", "copy", "-movflags", "+faststart",
             output_path,
         ])
@@ -335,6 +336,7 @@ class Reframer:
             "-filter_complex", f"[0:v]{vf}[v];[0:a]{af}[a]",
             "-map", "[v]", "-map", "[a]",
             "-c:v", "libx264", "-crf", "18", "-preset", "fast",
+            "-pix_fmt", "yuv420p",
             "-c:a", "aac", "-movflags", "+faststart",
             output_path,
         ])
@@ -357,6 +359,7 @@ class Reframer:
             self.ffmpeg, "-y", "-i", input_path,
             "-vf", vf,
             "-c:v", "libx264", "-crf", "18", "-preset", "fast",
+            "-pix_fmt", "yuv420p",
             "-c:a", "copy", "-movflags", "+faststart",
             output_path,
         ])

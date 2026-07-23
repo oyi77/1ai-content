@@ -802,15 +802,7 @@ async def _download_cascade(video_url: str, category: str, tmpdir: str, vid_id: 
     is_tiktok = "tiktok.com" in video_url
     errors: list[str] = []
 
-    # 1. ssstik.io (TikTok only — no watermark, ORIGINAL quality, no cookies)
-    if is_tiktok:
-        r = await dl_ssstik(video_url, vid_id, tmpdir)
-        if r["status"] == "downloaded":
-            r["reason"] = "ssstik_video"
-            return r
-        errors.append(f"ssstik={r.get('error', 'failed')}")
-
-    # 2. snaptik.app (TikTok only — no watermark, eval-deobfuscation)
+# 1. snaptik.app (TikTok only — no watermark, most reliable)
     if is_tiktok:
         r = await dl_snaptik(video_url, vid_id, tmpdir)
         if r["status"] == "downloaded":
@@ -818,7 +810,16 @@ async def _download_cascade(video_url: str, category: str, tmpdir: str, vid_id: 
             return r
         errors.append(f"snaptik={r.get('error', 'failed')}")
 
-    # 3. yt-dlp with cookies (720x1280 H.264) — tries first because it's the most reliable
+    # 2. ssstik.io (TikTok only — no watermark, ORIGINAL quality, no cookies)
+    if is_tiktok:
+        r = await dl_ssstik(video_url, vid_id, tmpdir)
+        if r["status"] == "downloaded":
+            r["reason"] = "ssstik_video"
+            return r
+        errors.append(f"ssstik={r.get('error', 'failed')}")
+
+
+    # 3. yt-dlp with cookies (720x1280 H.264) — reliable fallback for non-TikTok and TikTok
     _cookies_path = os.getenv("TIKTOK_COOKIES_PATH", "")
     if not _cookies_path:
         for _p in [
