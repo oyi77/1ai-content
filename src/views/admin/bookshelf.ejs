@@ -1,0 +1,254 @@
+<!-- Bookshelf AI Book Generator Admin Page -->
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+  <div>
+    <h1 class="section-title">📚 AI Book Generator</h1>
+    <p class="section-sub">Generate complete books on any subject using multi-agent AI pipeline</p>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+  <!-- Generate Form -->
+  <div class="card" style="grid-column:1/3;">
+    <h3 style="margin-bottom:16px;font-size:16px;font-weight:700;">Generate Book</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div class="form-group" style="grid-column:1/3;">
+        <label>Subject / Topic</label>
+        <input class="input" id="bk-subject" placeholder="e.g. Panduan Lengkap Bisnis Online untuk Pemula" style="width:100%;">
+      </div>
+      <div class="form-group" style="grid-column:1/3;">
+        <label>Additional Instructions <span style="color:var(--muted);font-size:12px;">(optional)</span></label>
+        <textarea class="input" id="bk-instructions" rows="2" placeholder="e.g. Focus on practical examples, use Indonesian language" style="width:100%;"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Mode</label>
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 0;">
+          <input type="checkbox" id="bk-long-mode">
+          <span>Long mode (more chapters & sections)</span>
+        </label>
+      </div>
+      <div class="form-group">
+        <label>Output</label>
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 0;">
+          <button class="btn btn-ghost btn-sm" onclick="toggleMarkdown()" style="margin-top:0;">📝 Show/Hide MD</button>
+        </label>
+      </div>
+    </div>
+    <div id="bk-advanced-toggle" style="margin-top:12px;">
+      <button class="btn btn-ghost btn-sm" onclick="toggleAdvanced()">⚙️ Advanced Options</button>
+    </div>
+    <div id="bk-advanced" style="display:none;margin-top:12px;padding:16px;background:var(--bg);border-radius:10px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label>Title Model</label>
+          <input class="input" id="bk-title-model" placeholder="default" style="width:100%;">
+        </div>
+        <div class="form-group">
+          <label>Structure Model</label>
+          <input class="input" id="bk-structure-model" placeholder="default" style="width:100%;">
+        </div>
+        <div class="form-group">
+          <label>Section Model</label>
+          <input class="input" id="bk-section-model" placeholder="default" style="width:100%;">
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-gold" style="margin-top:20px;" onclick="generateBook()">📚 Generate Book</button>
+  </div>
+
+  <!-- Progress -->
+  <div id="bk-progress-section" class="card" style="display:none;grid-column:1/3;">
+    <h3 style="margin-bottom:12px;font-size:14px;font-weight:600;">⏳ Generating...</h3>
+    <div id="bk-progress-msg" style="font-size:13px;color:var(--muted);margin-bottom:8px;">Starting...</div>
+    <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;">
+      <div id="bk-progress-bar" style="height:100%;width:0%;background:var(--gold);border-radius:3px;transition:width 0.3s;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Result -->
+<div id="bk-result" class="card" style="display:none;margin-bottom:20px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+    <h3 id="bk-result-title" style="font-size:18px;font-weight:700;"></h3>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-ghost btn-sm" onclick="copyMarkdown()" style="margin-top:0;">📋 Copy MD</button>
+      <button class="btn btn-ghost btn-sm" onclick="downloadMarkdown()" style="margin-top:0;">⬇️ Download</button>
+    </div>
+  </div>
+  <div id="bk-stats" style="margin-bottom:16px;font-size:12px;color:var(--muted);"></div>
+  <div id="bk-sections"></div>
+  <div id="bk-markdown-section" style="display:none;margin-top:16px;">
+    <h4 style="font-size:14px;font-weight:600;margin-bottom:8px;">📝 Full Markdown</h4>
+    <pre id="bk-markdown" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px;font-size:12px;max-height:400px;overflow-y:auto;white-space:pre-wrap;"></pre>
+  </div>
+</div>
+
+<!-- Error -->
+<div id="bk-error" class="card" style="display:none;background:var(--red-bg);border:1px solid var(--red);margin-bottom:20px;">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <span style="font-size:24px;">❌</span>
+    <div>
+      <div style="font-weight:600;margin-bottom:4px;">Generation Failed</div>
+      <div id="bk-error-msg" style="font-size:13px;color:var(--muted);"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const PY_API = window.location.origin + '/api/py';
+
+function showToast(msg, type='success') {
+  const t = document.createElement('div');
+  t.className = `toast toast-${type === 'success' ? 'success' : 'error'}`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+let bkSectionHtml = '';
+
+function toggleAdvanced() {
+  const el = document.getElementById('bk-advanced');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function toggleMarkdown() {
+  const el = document.getElementById('bk-markdown-section');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+async function generateBook() {
+  const subject = document.getElementById('bk-subject').value.trim();
+  if (!subject) return showToast('Enter a book subject', 'error');
+
+  const btn = document.querySelector('.btn-gold');
+  btn.textContent = '⏳ Generating...';
+  btn.disabled = true;
+
+  const progSection = document.getElementById('bk-progress-section');
+  const progMsg = document.getElementById('bk-progress-msg');
+  const progBar = document.getElementById('bk-progress-bar');
+  progSection.style.display = 'block';
+  progMsg.textContent = 'Generating book...';
+  progBar.style.width = '0%';
+
+  document.getElementById('bk-result').style.display = 'none';
+  document.getElementById('bk-error').style.display = 'none';
+
+  try {
+    const body = {
+      subject,
+      additional_instructions: document.getElementById('bk-instructions').value.trim(),
+      long_mode: document.getElementById('bk-long-mode').checked,
+    };
+    const tModel = document.getElementById('bk-title-model').value.trim();
+    const sModel = document.getElementById('bk-structure-model').value.trim();
+    const cModel = document.getElementById('bk-section-model').value.trim();
+    if (tModel) body.title_model = tModel;
+    if (sModel) body.structure_model = sModel;
+    if (cModel) body.section_model = cModel;
+
+    // This is a blocking POST — can take 30-60s
+    const r = await fetch(`${PY_API}/bookshelf/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    progSection.style.display = 'none';
+    btn.textContent = '📚 Generate Book';
+    btn.disabled = false;
+
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({ detail: `HTTP ${r.status}` }));
+      document.getElementById('bk-error').style.display = 'block';
+      document.getElementById('bk-error-msg').textContent = err.detail || 'Unknown error';
+      return showToast('❌ Generation failed', 'error');
+    }
+
+    const data = await r.json();
+    renderBook(data);
+    showToast(`✅ "${data.title || 'Book'}" generated!`);
+  } catch (e) {
+    progSection.style.display = 'none';
+    btn.textContent = '📚 Generate Book';
+    btn.disabled = false;
+    document.getElementById('bk-error').style.display = 'block';
+    document.getElementById('bk-error-msg').textContent = e.message;
+    showToast('❌ ' + e.message, 'error');
+  }
+}
+
+function renderBook(data) {
+  const title = data.title || 'Untitled';
+  document.getElementById('bk-result-title').textContent = `📖 ${title}`;
+  document.getElementById('bk-result').style.display = 'block';
+
+  // Stats
+  const stats = data.stats || {};
+  const statsParts = [];
+  if (stats.total_tokens) statsParts.push(`Tokens: ${stats.total_tokens}`);
+  if (stats.total_cost) statsParts.push(`Cost: $${stats.total_cost.toFixed(4)}`);
+  if (stats.total_time) statsParts.push(`Time: ${stats.total_time.toFixed(1)}s`);
+  if (stats.total_prompts) statsParts.push(`API Calls: ${stats.total_prompts}`);
+  document.getElementById('bk-stats').textContent = statsParts.join(' · ') || '';
+
+  // Sections
+  const sections = data.sections || [];
+  let html = '';
+  sections.forEach((sec, i) => {
+    const sectionTitle = sec.title || sec.heading || `Section ${i + 1}`;
+    const content = sec.content || '';
+    html += `<div style="border:1px solid var(--border);border-radius:8px;margin-bottom:8px;overflow:hidden;">
+      <div onclick="toggleSection(this)" style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;cursor:pointer;background:var(--bg);">
+        <span style="font-weight:600;font-size:13px;">${sectionTitle}</span>
+        <span style="font-size:10px;color:var(--muted);">▶</span>
+      </div>
+      <div class="bk-section-body" style="display:none;padding:12px 16px;font-size:12px;line-height:1.6;border-top:1px solid var(--border);">
+        ${content.replace(/\n/g, '<br>')}
+      </div>
+    </div>`;
+  });
+
+  if (!sections.length && data.full_markdown) {
+    html = `<div style="font-size:13px;color:var(--muted);margin-bottom:8px;">No structured sections data, showing raw markdown below.</div>`;
+  }
+  document.getElementById('bk-sections').innerHTML = html;
+
+  // Full markdown
+  if (data.full_markdown) {
+    document.getElementById('bk-markdown').textContent = data.full_markdown;
+    document.getElementById('bk-markdown-section').style.display = 'block';
+  }
+}
+
+function toggleSection(el) {
+  const body = el.nextElementSibling;
+  const arrow = el.querySelector('span:last-child');
+  if (body.style.display === 'none') {
+    body.style.display = 'block';
+    arrow.textContent = '▼';
+  } else {
+    body.style.display = 'none';
+    arrow.textContent = '▶';
+  }
+}
+
+function copyMarkdown() {
+  const md = document.getElementById('bk-markdown');
+  if (!md || !md.textContent) return showToast('No markdown content', 'error');
+  navigator.clipboard.writeText(md.textContent).then(() => showToast('✅ Copied!'));
+}
+
+function downloadMarkdown() {
+  const md = document.getElementById('bk-markdown');
+  if (!md || !md.textContent) return showToast('No markdown content', 'error');
+  const title = document.getElementById('bk-result-title').textContent.replace(/[^a-zA-Z0-9_]/g, '_').substring(0, 50);
+  const blob = new Blob([md.textContent], { type: 'text/markdown' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${title}.md`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+</script>

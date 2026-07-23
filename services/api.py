@@ -42,6 +42,7 @@ from services.music.generator import MusicGenerator
 from services.looping.engine import LoopingEngine
 from services.analysis.channel_analyzer import ChannelAnalyzer
 from services.cloakbrowser import CloakBrowserAdapter
+from services.bookshelf import generate_book_pipeline, GenerationStatistics
 
 
 async def _run_subprocess(cmd: list[str], **kwargs):
@@ -286,6 +287,15 @@ class PinterestPostRequest(BaseModel):
     caption: str
     profile_name: str
     link: Optional[str] = None
+
+
+class BookshelfRequest(BaseModel):
+    subject: str = Field(..., description="Book topic/subject")
+    additional_instructions: str = ""
+    long_mode: bool = False
+    title_model: Optional[str] = None
+    structure_model: Optional[str] = None
+    section_model: Optional[str] = None
 
 # ══════════════════════════════════════════════════════════════
 # HEALTH
@@ -654,6 +664,47 @@ async def pinterest_post(req: PinterestPostRequest):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/bookshelf/generate")
+async def bookshelf_generate(req: BookshelfRequest):
+    """Generate a book on a given subject using multi-agent AI pipeline."""
+    try:
+        sections_content: list[dict] = []
+        full_markdown = ""
+        final_title = ""
+        final_stats = {}
+
+        async for event in generate_book_pipeline(
+            subject=req.subject,
+            additional_instructions=req.additional_instructions,
+            long_mode=req.long_mode,
+            title_model=req.title_model or None,
+            structure_model=req.structure_model or None,
+            section_model=req.section_model or None,
+        ):
+            if event["type"] == "error":
+                raise HTTPException(status_code=500, detail=event.get("message", "Book generation failed"))
+            elif event["type"] == "section_content":
+                sections_content.append(event.get("payload", {}))
+            elif event["type"] == "complete":
+                payload = event.get("payload", {})
+                full_markdown = payload.get("full_markdown", "")
+                final_title = payload.get("title", "")
+            if "stats" in event:
+                final_stats = event["stats"]
+
+        return {
+            "title": final_title,
+            "sections": sections_content,
+            "full_markdown": full_markdown,
+            "stats": final_stats,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ══════════════════════════════════════════════════════════════
 # AUDIO FILE UPLOAD (for /loop command)
 # ══════════════════════════════════════════════════════════════

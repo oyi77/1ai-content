@@ -183,6 +183,7 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
       url === "/admin/storyboard" ||
       url === "/admin/pinterest" ||
       url === "/admin/fanpage" ||
+      url === "/admin/bookshelf" ||
       url.startsWith("/api/fanpages") ||
       url.startsWith("/api/token-usage") ||
       url.startsWith("/api/profit-report") ||

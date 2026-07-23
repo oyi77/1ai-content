@@ -64,4 +64,13 @@ export async function registerContentToolsRoutes(server: FastifyInstance) {
       { layout: "admin/layout.ejs" },
     );
   });
+
+  // Bookshelf AI Book Generator
+  server.get("/admin/bookshelf", async (_request, reply) => {
+    return reply.view(
+      "admin/bookshelf.ejs",
+      { ...trackingVars(), activePage: "bookshelf", title: "AI Book Generator" },
+      { layout: "admin/layout.ejs" },
+    );
+  });
 }
