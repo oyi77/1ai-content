@@ -62,6 +62,8 @@ import { registerAIConfigRoutes } from "./admin/ai-config";
 import { registerSettingsRoutes } from "./admin/settings";
 import { registerAdminConfigRoutes } from "./admin/admin-config";
 import { registerPersonaRoutes } from "./admin/persona";
+import { registerContentToolsRoutes } from "./admin/content-tools";
+import { registerFanpageRoutes } from "./admin/fanpage";
 import { trackingVars } from "./admin/shared";
 import { ConfigError } from '@/utils/app-errors';
 
@@ -173,6 +175,15 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
       url.startsWith("/api/provider-costs") ||
       url.startsWith("/api/admin-prompts") ||
       url.startsWith("/api/token-stats") ||
+      url === "/admin/captions" ||
+      url === "/admin/cloak" ||
+      url === "/admin/engagement" ||
+      url === "/admin/video-tools" ||
+      url === "/admin/render-ad" ||
+      url === "/admin/storyboard" ||
+      url === "/admin/pinterest" ||
+      url === "/admin/fanpage" ||
+      url.startsWith("/api/fanpages") ||
       url.startsWith("/api/token-usage") ||
       url.startsWith("/api/profit-report") ||
       url.startsWith("/api/settings/") ||
@@ -195,6 +206,7 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
 
   await registerPricingRoutes(server);
   await registerPromptsRoutes(server);
+  await registerContentToolsRoutes(server);
   await registerAnalyticsRoutes(server);
   await registerInterceptRoutes(server, verifyAdmin);
   await registerNicheRoutes(server, verifyAdmin);
@@ -211,6 +223,7 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
   await registerProviderMgmtRoutes(server, verifyAdmin);
   await registerAIConfigRoutes(server, verifyAdmin);
   await registerSettingsRoutes(server);
+  await registerFanpageRoutes(server);
   await registerAdminConfigRoutes(server, verifyAdmin);
   await registerPersonaRoutes(server, verifyAdmin);
 

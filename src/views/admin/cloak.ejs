@@ -1,0 +1,118 @@
+<!-- CloakBrowser Manager Admin Page -->
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+  <div>
+    <h1 class="section-title">🗝️ CloakBrowser Manager</h1>
+    <p class="section-sub">Manage social media profiles, check profile health, post content</p>
+  </div>
+</div>
+
+<!-- Query profile status -->
+<div class="card" style="margin-bottom:20px;">
+  <h3 style="margin-bottom:16px;font-size:16px;font-weight:700;">Profile Status</h3>
+  <div style="display:flex;gap:12px;align-items:center;">
+    <div style="flex:1;">
+      <label>Profile ID</label>
+      <input class="input" id="cloak-profile-id" placeholder="profile_abc123" style="width:100%;">
+    </div>
+    <button class="btn btn-ghost" style="margin-top:20px;" onclick="checkProfile()">🔍 Check</button>
+  </div>
+</div>
+
+<div id="profile-result" style="display:none;margin-bottom:20px;"></div>
+
+<!-- Post via CloakBrowser -->
+<div class="card" style="margin-bottom:20px;">
+  <h3 style="margin-bottom:16px;font-size:16px;font-weight:700;">Post Content</h3>
+  <div class="form-group">
+    <label>Profile ID</label>
+    <input class="input" id="cloak-post-profile" placeholder="profile_abc123" style="width:100%;">
+  </div>
+  <div class="form-group">
+    <label>Platform</label>
+    <select class="input" id="cloak-post-platform" style="width:100%;">
+      <option value="tiktok">TikTok</option>
+      <option value="instagram">Instagram</option>
+      <option value="youtube">YouTube</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label>Content</label>
+    <textarea class="input" id="cloak-post-content" rows="5" placeholder="Post caption / description..." style="width:100%;resize:vertical;"></textarea>
+  </div>
+  <div class="form-group">
+    <label>Media URL (optional)</label>
+    <input class="input" id="cloak-post-media" placeholder="https://cdn.example.com/video.mp4" style="width:100%;">
+  </div>
+  <button class="btn btn-gold" style="margin-top:12px;" onclick="cloakPost()">📤 Post</button>
+</div>
+
+<script>
+const PY_API = window.location.origin + '/api/py';
+
+function showToast(msg, type) {
+  const t = document.createElement('div');
+  t.className = `toast toast-${type === 'success' ? 'success' : 'error'}`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+async function checkProfile() {
+  const id = document.getElementById('cloak-profile-id').value.trim();
+  if (!id) return showToast('Enter a profile ID', 'error');
+
+  const resultEl = document.getElementById('profile-result');
+  resultEl.style.display = 'block';
+  resultEl.innerHTML = '<div class="loading">Loading...</div>';
+
+  try {
+    const r = await fetch(`${PY_API}/cloak/profile/${encodeURIComponent(id)}/status`);
+    const data = await r.json();
+    const ok = data.status === 'ok' || data.success;
+    resultEl.innerHTML = `
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+          <span style="font-size:24px;">${ok ? '✅' : '⚠️'}</span>
+          <span style="font-weight:600;">Status: ${data.status || data.state || 'unknown'}</span>
+        </div>
+        <table class="mini-table" style="width:100%;">
+          ${Object.entries(data).filter(([k]) => k !== 'success').map(([k, v]) =>
+            `<tr><td style="font-weight:600;width:140px;">${k}</td><td>${JSON.stringify(v) || '—'}</td></tr>`
+          ).join('')}
+        </table>
+      </div>`;
+  } catch (e) {
+    resultEl.innerHTML = `<div style="color:var(--red);">❌ ${e.message}</div>`;
+  }
+}
+
+async function cloakPost() {
+  const profile = document.getElementById('cloak-post-profile').value.trim();
+  const content = document.getElementById('cloak-post-content').value.trim();
+  if (!profile || !content) return showToast('Profile ID and content required', 'error');
+
+  const btn = document.querySelector('button[onclick="cloakPost()"]');
+  btn.textContent = '⏳ Posting...';
+  btn.disabled = true;
+
+  try {
+    const r = await fetch(`${PY_API}/cloak/post`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        profile_id: profile,
+        platform: document.getElementById('cloak-post-platform').value,
+        content,
+        media_url: document.getElementById('cloak-post-media').value || undefined,
+      }),
+    });
+    const data = await r.json();
+    showToast(data.success ? '✅ Posted!' : '❌ ' + (data.error || 'Post failed'), data.success ? 'success' : 'error');
+  } catch (e) {
+    showToast('❌ ' + e.message, 'error');
+  }
+
+  btn.textContent = '📤 Post';
+  btn.disabled = false;
+}
+</script>

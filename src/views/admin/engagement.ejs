@@ -1,0 +1,124 @@
+<!-- Engagement Manager Admin Page -->
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+  <div>
+    <h1 class="section-title">💬 Engagement Manager</h1>
+    <p class="section-sub">Generate automated replies and view engagement stats</p>
+  </div>
+  <button class="btn btn-ghost" onclick="loadStats()">🔄 Refresh Stats</button>
+</div>
+
+<!-- Stats overview -->
+<div class="card" style="margin-bottom:20px;">
+  <h3 style="margin-bottom:16px;font-size:16px;font-weight:700;">📊 Engagement Stats</h3>
+  <div id="stats-content" class="loading">Loading stats...</div>
+</div>
+
+<!-- Generate & send reply -->
+<div class="card" style="margin-bottom:20px;">
+  <h3 style="margin-bottom:16px;font-size:16px;font-weight:700;">Generate Reply</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+    <div class="form-group" style="grid-column:1/3;">
+      <label>Original Comment / Content</label>
+      <textarea class="input" id="eng-comment" rows="4" placeholder="The user said: ..." style="width:100%;resize:vertical;"></textarea>
+    </div>
+    <div class="form-group">
+      <label>Platform</label>
+      <select class="input" id="eng-platform" style="width:100%;">
+        <option value="tiktok">TikTok</option>
+        <option value="instagram">Instagram</option>
+        <option value="youtube">YouTube</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Tone</label>
+      <select class="input" id="eng-tone" style="width:100%;">
+        <option value="friendly">😊 Friendly</option>
+        <option value="professional">👔 Professional</option>
+        <option value="humorous">😄 Humorous</option>
+        <option value="educational">📚 Educational</option>
+        <option value="empathetic">💛 Empathetic</option>
+      </select>
+    </div>
+  </div>
+  <button class="btn btn-gold" style="margin-top:20px;" onclick="generateReply()">💬 Generate Reply</button>
+</div>
+
+<!-- Reply result -->
+<div id="reply-result" class="card" style="display:none;margin-bottom:20px;">
+  <h3 style="margin-bottom:12px;font-size:14px;font-weight:700;">Generated Reply</h3>
+  <div id="reply-content" style="padding:12px;background:var(--bg);border-radius:8px;white-space:pre-wrap;"></div>
+  <button class="btn btn-ghost" style="margin-top:12px;" onclick="sendReply()">📤 Send Reply</button>
+</div>
+
+<script>
+const PY_API = window.location.origin + '/api/py';
+
+function showToast(msg, type) {
+  const t = document.createElement('div');
+  t.className = `toast toast-${type === 'success' ? 'success' : 'error'}`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+async function loadStats() {
+  const el = document.getElementById('stats-content');
+  el.innerHTML = '<div class="loading">Loading...</div>';
+  try {
+    const r = await fetch(`${PY_API}/engagement/stats`);
+    const data = await r.json();
+    const stats = data.stats || data;
+    el.innerHTML = Object.keys(stats).length
+      ? `<table class="mini-table" style="width:100%;">
+          ${Object.entries(stats).map(([k, v]) =>
+            `<tr><td style="font-weight:600;width:180px;">${k}</td><td>${typeof v === 'object' ? JSON.stringify(v) : v}</td></tr>`
+          ).join('')}
+         </table>`
+      : '<div class="empty-state">No stats available</div>';
+  } catch (e) {
+    el.innerHTML = `<div style="color:var(--red);">❌ ${e.message}</div>`;
+  }
+}
+
+async function generateReply() {
+  const comment = document.getElementById('eng-comment').value.trim();
+  if (!comment) return showToast('Enter the original comment', 'error');
+
+  const btn = document.querySelector('button[onclick="generateReply()"]');
+  btn.textContent = '⏳ Generating...';
+  btn.disabled = true;
+
+  document.getElementById('reply-result').style.display = 'none';
+
+  try {
+    const r = await fetch(`${PY_API}/engagement/reply`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        comment,
+        platform: document.getElementById('eng-platform').value,
+        tone: document.getElementById('eng-tone').value,
+      }),
+    });
+    const data = await r.json();
+
+    const section = document.getElementById('reply-result');
+    section.style.display = 'block';
+    document.getElementById('reply-content').textContent = data.reply || data.text || '—';
+  } catch (e) {
+    showToast('❌ ' + e.message, 'error');
+  }
+
+  btn.textContent = '💬 Generate Reply';
+  btn.disabled = false;
+}
+
+async function sendReply() {
+  const reply = document.getElementById('reply-content').textContent;
+  if (!reply || reply === '—') return showToast('Generate a reply first', 'error');
+  showToast('✅ Reply ready. Integrate with your posting workflow.', 'success');
+}
+
+loadStats();
+</script>
