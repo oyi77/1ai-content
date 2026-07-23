@@ -1,0 +1,22 @@
+{
+  "manuscript_intro": {
+    "auto/free-chat": {
+      "model": "auto/free-chat",
+      "task_type": "manuscript_intro",
+      "successes": 1,
+      "failures": 0,
+      "total_tokens": 395,
+      "total_latency_ms": 0.08726119995117188
+    }
+  },
+  "manuscript_subchapter": {
+    "auto/free-chat": {
+      "model": "auto/free-chat",
+      "task_type": "manuscript_subchapter",
+      "successes": 2,
+      "failures": 0,
+      "total_tokens": 790,
+      "total_latency_ms": 0.18024444580078125
+    }
+  }
+}

@@ -34,6 +34,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
 
 # ── Import services ────────────────────────────────────────────
+from services.pinterest import PinterestScraper
 from services.storyboard.engine import StoryboardEngine
 from services.tts.engine import TTSEngine
 from services.suno.client import SunoClient
@@ -131,6 +132,7 @@ _analyzer: Optional[ChannelAnalyzer] = None
 _cloak: Optional[CloakBrowserAdapter] = None
 
 
+_pinterest: Optional[PinterestScraper] = None
 def get_storyboard() -> StoryboardEngine:
     global _storyboard
     if _storyboard is None:
@@ -189,6 +191,13 @@ class StoryboardRequest(BaseModel):
     style: str = "cinematic"
     num_scenes: int = Field(default=4, ge=2, le=6)
     aspect_ratio: str = "16:9"
+
+
+def get_pinterest() -> PinterestScraper:
+    global _pinterest
+    if _pinterest is None:
+        _pinterest = PinterestScraper()
+    return _pinterest
 
 
 class TTSRequest(BaseModel):
@@ -265,6 +274,18 @@ class VideoRegenerateRequest(BaseModel):
     source_url: str
     platform: str = "facebook"
     options: VideoRegenerateOptions = VideoRegenerateOptions()
+
+
+class PinterestSearchRequest(BaseModel):
+    query: str
+    limit: int = Field(default=20, ge=1, le=50)
+
+
+class PinterestPostRequest(BaseModel):
+    image_url: str
+    caption: str
+    profile_name: str
+    link: Optional[str] = None
 
 # ══════════════════════════════════════════════════════════════
 # HEALTH
@@ -582,6 +603,57 @@ async def cloak_profile_status(profile_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+
+# ══════════════════════════════════════════════════════════════
+# PINTEREST — Search pins + Post to Facebook
+# ══════════════════════════════════════════════════════════════
+
+
+@app.post("/pinterest/search")
+async def pinterest_search(req: PinterestSearchRequest):
+    """Search Pinterest by keyword and return pin results."""
+    try:
+        scraper = get_pinterest()
+        results = await asyncio.to_thread(
+            scraper.search_pins,
+            query=req.query,
+            limit=req.limit,
+        )
+        return {"results": results}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/pinterest/post")
+async def pinterest_post(req: PinterestPostRequest):
+    """Download a Pinterest image and post it to a Facebook page via CloakBrowser."""
+    try:
+        scraper = get_pinterest()
+        cloak = get_cloak()
+
+        # 1. Download image
+        local_path = await asyncio.to_thread(
+            scraper.download_image,
+            image_url=req.image_url,
+        )
+        if not local_path:
+            raise HTTPException(status_code=400, detail="Failed to download image")
+
+        # 2. Post to Facebook
+        result = await asyncio.to_thread(
+            cloak.post,
+            profile_name=req.profile_name,
+            media_path=local_path,
+            caption=req.caption,
+            platform="facebook",
+            link=req.link,
+        )
+
+        return {"download_path": local_path, "post_result": result}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 # ══════════════════════════════════════════════════════════════
 # AUDIO FILE UPLOAD (for /loop command)
 # ══════════════════════════════════════════════════════════════

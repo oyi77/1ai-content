@@ -1,0 +1,14 @@
+{
+  "intro": {
+    "section_type": "intro",
+    "token_budget": 800,
+    "words_produced": 304,
+    "samples": 1
+  },
+  "subchapter": {
+    "section_type": "subchapter",
+    "token_budget": 1500,
+    "words_produced": 304,
+    "samples": 2
+  }
+}

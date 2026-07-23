@@ -1,0 +1,87 @@
+{
+  "voice_anchor": "test",
+  "pov": "second-person",
+  "banned_phrases": [
+    "delve",
+    "it's worth noting",
+    "in conclusion",
+    "as we explore",
+    "in today's fast-paced world",
+    "it is important to note",
+    "furthermore",
+    "moreover",
+    "additionally",
+    "needless to say",
+    "in today's world",
+    "it is worth noting",
+    "tapestry",
+    "landscape",
+    "realm",
+    "notably",
+    "indeed",
+    "it should be noted",
+    "in summary",
+    "serves as",
+    "stands as",
+    "fosters",
+    "underscores",
+    "showcases",
+    "bolsters",
+    "garners",
+    "enhances",
+    "pivotal",
+    "crucial",
+    "robust",
+    "comprehensive",
+    "meticulous",
+    "intricate",
+    "nuanced",
+    "profound",
+    "groundbreaking",
+    "cutting-edge",
+    "innovative",
+    "let's explore",
+    "we will explore",
+    "in this chapter we will",
+    "this chapter covers",
+    "it goes without saying",
+    "thereby fostering",
+    "not just",
+    "synergy",
+    "nexus",
+    "paradigm shift",
+    "game-changer",
+    "vibrant",
+    "compelling",
+    "seamlessly"
+  ],
+  "sentence_length_range": [
+    12,
+    18
+  ],
+  "tone_adjectives": [
+    "engaging",
+    "clear",
+    "accessible"
+  ],
+  "gold_standard_paragraph": "{\"audience\": \"test\", \"pain_points\": [], \"promise\": \"test\", \"positioning\": \"test\", \"tone\": \"paid_ebook\", \"goal\": \"test\"}",
+  "readability_target": {
+    "nonfiction": {
+      "fre_min": 60,
+      "fre_max": 75,
+      "fog_max": 13
+    },
+    "academic": {
+      "fre_min": 30,
+      "fre_max": 50,
+      "fog_max": 18
+    },
+    "fiction": {
+      "fre_min": 70,
+      "fre_max": 80,
+      "fog_max": 11
+    }
+  },
+  "passive_voice_threshold": 0.1,
+  "paragraph_max_sentences": 8
+}
