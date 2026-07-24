@@ -2,7 +2,7 @@
 import asyncio
 from typing import Optional
 
-from services.bookshelf.groq_provider import get_groq_client
+from services.bookshelf.openai_provider import get_groq_client
 from services.bookshelf.stats import GenerationStatistics
 
 SYSTEM_PROMPT = (
@@ -11,7 +11,7 @@ SYSTEM_PROMPT = (
     "The title should be attractive to readers, between 7 and 25 words."
 )
 
-MODEL = "meta-llama/llama-4-scout-17b-16e-instruct"
+MODEL = "auto/fast"
 TEMPERATURE = 0.7
 MAX_TOKENS = 100
 

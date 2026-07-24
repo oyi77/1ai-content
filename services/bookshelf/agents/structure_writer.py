@@ -3,7 +3,7 @@ import asyncio
 import json
 from typing import Optional
 
-from services.bookshelf.groq_provider import get_groq_client
+from services.bookshelf.openai_provider import get_groq_client
 from services.bookshelf.stats import GenerationStatistics
 
 SYSTEM_PROMPT = (
@@ -21,7 +21,7 @@ SYSTEM_PROMPT = (
     "For long mode (300+ pages), use nested sections with deeper hierarchy."
 )
 
-MODEL = "meta-llama/llama-4-scout-17b-16e-instruct"
+MODEL = "auto/fast"
 TEMPERATURE = 0.3
 MAX_TOKENS = 8000
 

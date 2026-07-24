@@ -1,6 +1,6 @@
 """Bookshelf — AI-powered book generation from topic description.
 
-Uses Groq API with Llama models to generate structured non-fiction books.
+Uses OmniRoute (OpenAI-compatible endpoint) for model inference.
 """
 
 from services.bookshelf.engine import generate_book_pipeline

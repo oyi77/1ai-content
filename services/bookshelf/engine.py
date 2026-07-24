@@ -2,7 +2,7 @@
 import json
 from typing import AsyncGenerator, Optional
 
-from services.bookshelf.groq_provider import get_groq_client, get_async_groq_client
+from services.bookshelf.openai_provider import get_groq_client, get_async_groq_client
 from services.bookshelf.agents.title_writer import generate_title
 from services.bookshelf.agents.structure_writer import generate_structure
 from services.bookshelf.agents.section_writer import generate_section_content

@@ -1,7 +1,7 @@
 """Generate section/chapter content via Groq (streaming)."""
 from typing import AsyncGenerator, Optional
 
-from services.bookshelf.groq_provider import get_async_groq_client
+from services.bookshelf.openai_provider import get_async_groq_client
 from services.bookshelf.stats import GenerationStatistics
 
 SYSTEM_PROMPT = (
@@ -12,7 +12,7 @@ SYSTEM_PROMPT = (
     "If additional instructions are provided, consider them very important."
 )
 
-MODEL = "meta-llama/llama-4-scout-17b-16e-instruct"
+MODEL = "auto/chat"
 TEMPERATURE = 0.3
 MAX_TOKENS = 8000
 

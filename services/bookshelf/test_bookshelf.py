@@ -3,8 +3,8 @@ import json
 import pytest
 from unittest.mock import MagicMock, AsyncMock, patch
 
-from groq.types.chat import ChatCompletion, ChatCompletionMessage
-from groq.types.chat.chat_completion import Choice
+from openai.types.chat import ChatCompletion, ChatCompletionMessage
+from openai.types.chat.chat_completion import Choice
 
 # -- Helpers --
 
