@@ -216,6 +216,11 @@ async def dl_cloakbrowser(url: str, vid_id: str, tmpdir: str) -> dict:
     if proxy:
         logger.info(f"[cloakbrowser] Using proxy {proxy}")
     fp = os.path.join(tmpdir, f"tiktok_{vid_id}.mp4")
+    debug_log = os.path.join(tmpdir, f"cloak_debug_{vid_id}.log")
+    async def _log(msg: str) -> None:
+        with open(debug_log, "a") as f:
+            f.write(f"{msg}\n")
+    await _log(f"=== CloakBrowser session for {url} ===")
     try:
         browser = await cloakbrowser.launch_async(
             headless=True, stealth_args=True, humanize=True, proxy=proxy,
@@ -224,22 +229,52 @@ async def dl_cloakbrowser(url: str, vid_id: str, tmpdir: str) -> dict:
         page = await context.new_page()
 
         # ── Response interception ────────────────────────────────────────
-        video_urls: list[str] = []
-        def _on_resp(resp):
+        video_urls: list[tuple[int, str]] = []
+        async def _on_resp(resp):
             u = resp.url
             ct = (resp.headers.get("content-type") or "").lower()
             status = resp.status
-            if status != 200:
+            if status not in (200, 206):
                 return
-            # Direct video/audio MIME
-            if any(m in ct for m in ("video/mp4", "video/webm", "video/quicktime", "audio/mp4")):
-                if "ttwstatic" not in u and "p16-va" not in u:
-                    video_urls.append(u)
-            # XHR JSON — may contain CDN URLs
+            # Direct video/audio MIME — accept all CDN domains
+            if "video" not in ct and "audio" not in ct:
+                return
+            cl = int(resp.headers.get("content-length", "0"))
+            video_urls.append((cl, u))
+            # XHR JSON — dump body for RE
             if "json" in ct and ("tiktok" in u.lower() or "api" in u.lower()):
-                video_urls.append(u)
+                try:
+                    body = await resp.body()
+                    text = body.decode("utf-8", errors="replace")[:5000]
+                    await _log(f"API {u}\n{text}")
+                    data = json.loads(text)
+                    for path in (
+                        "itemInfo.itemStruct.video.playAddr",
+                        "itemInfo.itemStruct.video.downloadAddr",
+                    ):
+                        val = data
+                        for key in path.split("."):
+                            if isinstance(val, dict):
+                                val = val.get(key)
+                            else:
+                                val = None
+                                break
+                        if val and isinstance(val, str) and val.startswith("http"):
+                            video_urls.append((10_000_000, val))  # synthetic high pri for API-extracted
+                            await _log(f"EXTRACTED {path}: {val}")
+                except Exception:
+                    pass
         page.on("response", _on_resp)
 
+        # ── Cookie pre-warm: set initial cookies before video page ──────
+        await _log("=== Pre-warm: TikTok homepage ===")
+        try:
+            await page.goto("https://www.tiktok.com/", wait_until="domcontentloaded", timeout=15000)
+            await page.wait_for_timeout(2000)
+            await _log("Pre-warm OK")
+        except Exception as e:
+            await _log(f"Pre-warm failed: {type(e).__name__}")
+            logger.warning(f"[cloakbrowser] Pre-warm failed: {e}")
         # ── Navigation ──────────────────────────────────────────────────
         try:
             await page.goto(url, wait_until="domcontentloaded", timeout=25000)
@@ -273,26 +308,49 @@ async def dl_cloakbrowser(url: str, vid_id: str, tmpdir: str) -> dict:
                 "  var v = document.querySelector('video');"
                 "  if (v) {"
                 "    var vsrc = v.src || v.currentSrc || '';"
-                "    if (vsrc && !vsrc.includes('ttwstatic') && !vsrc.startsWith('blob:')) return vsrc;"
+                "    if (vsrc && !vsrc.startsWith('blob:')) return vsrc;"
                 "  }"
                 "  return '';"
                 "}"
             )
-            if video_url and not video_url.startswith("blob:") and "ttwstatic" not in video_url:
+            if video_url and not video_url.startswith("blob:"):
                 break
             await page.wait_for_timeout(1500)
             video_url = ""
+        # ── Diagnostics: dump rehydration data and page HTML ────────────
+        await _log("=== Diagnostics ===")
+        try:
+            rehydrated = await page.evaluate(
+                "() => {"
+                "  var s = document.querySelector('script[id=\"__UNIVERSAL_DATA_FOR_REHYDRATION__\"]');"
+                "  if (!s) return '<missing>';"
+                "  try { var d = JSON.parse(s.textContent); return JSON.stringify(Object.keys(d)); }"
+                "  catch(e) { return '<parse_error>'; }"
+                "}"
+            )
+            await _log(f"DATA_REHYDRATION keys: {rehydrated}")
+            next_data = await page.evaluate(
+                "() => {"
+                "  var s = document.querySelector('script[id=\"__NEXT_DATA__\"]');"
+                "  if (!s) return '<missing>';"
+                "  return s.textContent.substring(0, 2000);"
+                "}"
+            )
+            await _log(f"__NEXT_DATA__: {next_data[:500]}")
+            video_tag = await page.evaluate(
+                "() => { var v = document.querySelector('video'); return v ? 'src=' + (v.src||'') + ' currentSrc=' + (v.currentSrc||'') + ' readyState=' + v.readyState : '<no_video>'; }"
+            )
+            await _log(f"VIDEO TAG: {video_tag}")
+        except Exception as e:
+            await _log(f"Diagnostics error: {e}")
 
         # ── Fallback: check intercepted responses ──────────────────────
         if not video_url or video_url.startswith("blob:"):
-            # Prefer URLs from CDN domains
-            for u in video_urls:
-                if any(d in u for d in ("tiktokcdn", "tikcdn", "bytecd")):
-                    video_url = u
-                    break
-            if not video_url or video_url.startswith("blob:"):
-                # Pick first non-blob non-empty
-                video_url = next((u for u in video_urls if u.startswith("http")), "")
+            if video_urls:
+                # Pick the intercepted response with the largest content-length
+                video_urls.sort(key=lambda x: x[0], reverse=True)
+                video_url = video_urls[0][1]
+                await _log(f"FALLBACK (size-based): picked {video_url}")
 
         if not video_url or video_url.startswith("blob:"):
             # ── Mobile fallback ──────────────────────────────────────────
@@ -307,21 +365,21 @@ async def dl_cloakbrowser(url: str, vid_id: str, tmpdir: str) -> dict:
                     "  var v = document.querySelector('video');"
                     "  if (v) {"
                     "    var vsrc = v.src || v.currentSrc || '';"
-                    "    if (vsrc && !vsrc.includes('ttwstatic') && !vsrc.startsWith('blob:')) return vsrc;"
+                    "    if (vsrc && !vsrc.startsWith('blob:')) return vsrc;"
                     "  }"
                     "  var l = document.querySelector('link[rel=\"preload\"][as=\"video\"]');"
                     "  if (l) { "
                     "    var lsrc = l.href || '';"
-                    "    if (lsrc && !lsrc.includes('ttwstatic')) return lsrc;"
+                    "    if (lsrc) return lsrc;"
                     "  }"
                     "  return '';"
                     "}"
                 )
                 if not video_url or video_url.startswith("blob:"):
-                    for u in video_urls:
-                        if any(d in u for d in ("tiktokcdn", "tikcdn", "bytecd")):
-                            video_url = u
-                            break
+                    if video_urls:
+                        video_urls.sort(key=lambda x: x[0], reverse=True)
+                        video_url = video_urls[0][1]
+                        await _log(f"MOBILE FALLBACK (size-based): {video_url}")
                 await page2.close()
             except Exception as e:
                 logger.info(f"[cloakbrowser] Mobile fallback failed: {type(e).__name__}")
@@ -343,7 +401,7 @@ async def dl_cloakbrowser(url: str, vid_id: str, tmpdir: str) -> dict:
                     await browser.close()
                     if os.path.exists(fp) and os.path.getsize(fp) > 10000:
                         logger.info(f"[cloakbrowser] Download OK: {os.path.getsize(fp)} bytes")
-                        return {"file_path": fp, "file_type": "video", "status": "downloaded", "tmpdir": tmpdir}
+                        return {"file_path": fp, "file_type": "video", "status": "downloaded", "tmpdir": tmpdir, "debug_log": debug_log}
                 logger.warning(f"[cloakbrowser] Bad response: {resp.status} ct={ct} size={len(body)}")
             else:
                 logger.warning(f"[cloakbrowser] HTTP {resp.status}")
@@ -354,6 +412,110 @@ async def dl_cloakbrowser(url: str, vid_id: str, tmpdir: str) -> dict:
     except Exception as e:
         return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": f"cloakbrowser_{type(e).__name__}"}
 
+
+async def dl_playwright_direct(url: str, vid_id: str, tmpdir: str) -> dict:
+    """Download TikTok video via direct Playwright — proven to capture real CDN video.
+
+    Uses plain Playwright (not CloakBrowser) with stealth init script + broad video MIME
+    detection, matching the deep RE approach that successfully captured 1.7 MB real CDN
+    responses (where CloakBrowser only captured the 197 KB placeholder).
+    """
+    os.makedirs(tmpdir, exist_ok=True)
+    fp = os.path.join(tmpdir, f"tiktok_{vid_id}.mp4")
+
+    try:
+        from playwright.async_api import async_playwright
+    except ImportError:
+        return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": "playwright_not_installed"}
+
+    try:
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(
+                headless=True,
+                args=[
+                    "--disable-blink-features=AutomationControlled",
+                    "--disable-features=IsolateOrigins,site-per-process",
+                    "--no-sandbox",
+                    "--disable-web-security",
+                    "--allow-running-insecure-content",
+                ],
+            )
+            context = await browser.new_context(
+                viewport={"width": 1280, "height": 720},
+                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+                locale="en-US",
+            )
+
+            # Stealth: hide Playwright automation markers
+            await context.add_init_script("""
+                Object.defineProperty(navigator, 'webdriver', { get: () => false });
+                window.chrome = { runtime: {} };
+            """)
+
+            # Collect CDN video responses with size AND body (captured in browser to avoid token expiry)
+            cdn_responses: list[tuple[int, str, bytes]] = []
+
+            async def _on_response(resp):
+                u = resp.url
+                ct = resp.headers.get("content-type", "")
+                is_video_mime = any(
+                    marker in ct for marker in ["video/", "octet-stream", "dash+xml", "vnd.apple.mpegurl"]
+                )
+                if not is_video_mime:
+                    return
+                status = resp.status
+                if status not in (200, 206):
+                    return
+                cl = int(resp.headers.get("content-length", "0"))
+                if cl < 100_000:
+                    return  # skip thumbnails / tiny chunks — not the real video
+                try:
+                    body = await resp.body()
+                except Exception:
+                    return
+                cdn_responses.append((cl, u, body))
+
+            page = await context.new_page()
+            page.on("response", _on_response)
+
+            logger.info(f"[playwright-direct] Pre-warm on homepage")
+            try:
+                await page.goto("https://www.tiktok.com/", wait_until="domcontentloaded", timeout=20000)
+                await page.wait_for_timeout(3000)
+            except Exception:
+                pass
+
+            logger.info(f"[playwright-direct] Navigate to {url}")
+            try:
+                await page.goto(url, wait_until="domcontentloaded", timeout=25000)
+            except Exception:
+                pass
+
+            # Wait generously for CDN video chunks to arrive
+            await page.wait_for_timeout(10000)
+            # Pick largest CDN response as winner — body was captured in-session to avoid CDN token expiry
+            body_bytes: bytes | None = None
+            if cdn_responses:
+                cdn_responses.sort(key=lambda x: x[0], reverse=True)
+                cl_winner, winner_url, winner_body = cdn_responses[0]
+                body_bytes = winner_body
+                logger.info(f"[playwright-direct] CDN winner: {cl_winner} bytes from {winner_url[:100]}")
+
+
+            await browser.close()
+
+            if body_bytes is None or len(body_bytes) < 10000:
+                return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir,
+                        "error": "playwright_direct_no_video_body"}
+
+            with open(fp, "wb") as f:
+                f.write(body_bytes)
+            written = os.path.getsize(fp)
+            logger.info(f"[playwright-direct] OK: {written} bytes -> {fp}")
+            return {"file_path": fp, "file_type": "video", "status": "downloaded", "tmpdir": tmpdir}
+
+    except Exception as e:
+        return {"file_path": None, "file_type": "none", "status": "failed", "tmpdir": tmpdir, "error": f"playwright_direct_{type(e).__name__}"}
 
 _SSSTIK_BROKEN_CHECKED: bool = False
 _SSSTIK_BROKEN: bool = False
@@ -774,7 +936,7 @@ async def dl_placeholder(client: httpx.AsyncClient | None, category: str, tmpdir
 async def download_video(video_url: str, category: str = "general") -> dict:
     """Download a single video with full cascade fallback.
 
-    Cascade: yt-dlp (with cookies) → tikwm → Vidbee → Cobalt → CloakBrowser → scrape → cover → placeholder
+    Cascade: snaptik → ssstik → yt-dlp → Cobalt → tikwm → Vidbee → CloakBrowser → PlaywrightDirect → scrape → cover → placeholder
     Overall timeout: 120s across all fallbacks.
     Returns {file_path, file_type, status, reason, tmpdir}.
     """
@@ -867,6 +1029,14 @@ async def _download_cascade(video_url: str, category: str, tmpdir: str, vid_id: 
                 r["reason"] = "cloakbrowser_video"
                 return r
             errors.append(f"cloakbrowser={r.get('error', 'failed')}")
+
+        # 7b. Playwright direct (TikTok only — fallback when CloakBrowser serves placeholder)
+        if is_tiktok:
+            r = await dl_playwright_direct(video_url, vid_id, tmpdir)
+            if r["status"] == "downloaded":
+                r["reason"] = "playwright_direct_video"
+                return r
+            errors.append(f"playwright_direct={r.get('error', 'failed')}")
 
         # 8. TikTok page scrape → video or slideshow
         if is_tiktok:
