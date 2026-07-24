@@ -1,5 +1,5 @@
 """Generate section/chapter content via Groq (streaming)."""
-from typing import AsyncGenerator, Optional
+import re
 
 from services.bookshelf.openai_provider import get_async_groq_client
 from services.bookshelf.stats import GenerationStatistics
@@ -12,7 +12,7 @@ SYSTEM_PROMPT = (
     "If additional instructions are provided, consider them very important."
 )
 
-MODEL = "auto/chat"
+MODEL = "reka/reka-edge"
 TEMPERATURE = 0.3
 MAX_TOKENS = 8000
 
@@ -28,7 +28,7 @@ async def generate_section_content(
     """Stream section content token by token.
 
     Uses Groq AsyncGroq client for non-blocking streaming.
-    Yields content text chunks and a final __STATS__ sentinel with token usage.
+    Yields content text chunks.
     """
     client = groq_client or get_async_groq_client()
 
@@ -50,12 +50,32 @@ async def generate_section_content(
         temperature=TEMPERATURE,
         max_tokens=MAX_TOKENS,
         stream=True,
-        stream_options={"include_usage": True},
     )
 
+    in_reasoning = False
     async for chunk in stream:
         if chunk.choices and chunk.choices[0].delta and chunk.choices[0].delta.content:
-            yield chunk.choices[0].delta.content
+            token = chunk.choices[0].delta.content
+            # State machine: skip <reasoning>...</reasoning> blocks
+            if in_reasoning:
+                if "</reasoning>" in token:
+                    in_reasoning = False
+                    # Handle closing tag with content after it
+                    after = token.split("</reasoning>", 1)[1]
+                    if after.strip():
+                        yield after
+                continue
+            if "<reasoning>" in token:
+                in_reasoning = True
+                # Emit anything after the opening tag in same chunk
+                after = token.split("<reasoning>", 1)[1]
+                if "</reasoning>" in after:
+                    content = after.split("</reasoning>", 1)[1]
+                    if content.strip():
+                        yield content
+                    in_reasoning = False
+                continue
+            yield token
 
         if chunk.usage:
             stats = GenerationStatistics(

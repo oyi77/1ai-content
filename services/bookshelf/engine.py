@@ -65,6 +65,8 @@ async def generate_book_pipeline(
             structure = json.loads(structure_json)
         except json.JSONDecodeError:
             structure = {"title": title, "sections": []}
+        # Clean title of wrapping quotes that some models add
+        title = structure.get("title", title).strip('"\' ')
 
         yield {
             "type": "progress",

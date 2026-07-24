@@ -1,4 +1,5 @@
 """Generate book title via Groq."""
+import re
 import asyncio
 from typing import Optional
 
@@ -10,8 +11,7 @@ SYSTEM_PROMPT = (
     "You return only the title and nothing else. "
     "The title should be attractive to readers, between 7 and 25 words."
 )
-
-MODEL = "auto/fast"
+MODEL = "reka/reka-edge"
 TEMPERATURE = 0.7
 MAX_TOKENS = 100
 
@@ -41,6 +41,8 @@ async def generate_title(
     )
 
     title = (resp.choices[0].message.content or "").strip()
+    title = re.sub(r'\n*<reasoning>.*?</reasoning>\n*', '', title, count=1, flags=re.DOTALL).strip()
+    title = re.sub(r'\*+', '', title).strip()
     stats = GenerationStatistics(
         prompt_tokens=resp.usage.prompt_tokens if resp.usage else 0,
         completion_tokens=resp.usage.completion_tokens if resp.usage else 0,
