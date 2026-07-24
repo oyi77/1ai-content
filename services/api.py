@@ -12,7 +12,7 @@ Services:
 - music — Background music generation
 - looping — Looping video creation
 - analyze — YouTube/TikTok channel analysis
-- cloakbrowser — Social media posting via CloakBrowser CDP
+- cloak_adapter — Social media posting via CloakBrowser CDP
 
 Run:
     python services/api.py
@@ -41,7 +41,7 @@ from services.suno.client import SunoClient
 from services.music.generator import MusicGenerator
 from services.looping.engine import LoopingEngine
 from services.analysis.channel_analyzer import ChannelAnalyzer
-from services.cloakbrowser import CloakBrowserAdapter
+from services.cloak_adapter import CloakBrowserAdapter
 from services.bookshelf import generate_book_pipeline, GenerationStatistics
 
 

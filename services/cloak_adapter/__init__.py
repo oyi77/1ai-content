@@ -6,7 +6,7 @@ Posts to Facebook, X/Twitter, Instagram, TikTok, YouTube, LinkedIn
 via Playwright CDP through CloakBrowser Manager (port 8090).
 
 Usage:
-    from services.cloakbrowser.adapter import CloakBrowserAdapter
+    from services.cloak_adapter import CloakBrowserAdapter
     adapter = CloakBrowserAdapter()
     result = adapter.post("fb_page_01", "/tmp/video.mp4", "Check this out!", platform="facebook")
 """

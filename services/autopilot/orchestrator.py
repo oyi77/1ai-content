@@ -52,7 +52,7 @@ class AutoPilotOrchestrator:
     def cloak_adapter(self):
         """Lazy-load CloakBrowserAdapter."""
         if self._cloak_adapter is None:
-            from services.cloakbrowser import CloakBrowserAdapter
+            from services.cloak_adapter import CloakBrowserAdapter
             self._cloak_adapter = CloakBrowserAdapter()
         return self._cloak_adapter
 

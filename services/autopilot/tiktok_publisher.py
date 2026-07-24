@@ -18,7 +18,7 @@ from typing import Optional
 
 from services.autopilot.scheduler import AutoPilotScheduler
 from services.autopilot.orchestrator import AutoPilotOrchestrator
-from services.cloakbrowser import CloakBrowserAdapter
+from services.cloak_adapter import CloakBrowserAdapter
 from services.trends.seo_generator import SEOGenerator
 
 
