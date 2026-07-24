@@ -13,8 +13,13 @@ Usage:
 
 import os
 import json
+import asyncio
+import threading
+import time
+import socket
 import subprocess
 import httpx
+import websockets
 from typing import Optional
 from pathlib import Path
 
@@ -30,6 +35,46 @@ class CloakBrowserAdapter:
         self.url = url or CLOAKBROWSER_URL
         self.auth = auth_token or CLOAKBROWSER_AUTH
         self.headers = {"Authorization": f"Bearer {self.auth}"}
+
+    # ── CDP AUTH PROXY ─────────────────────────────────────────
+
+    def _cdp_proxy_thread(self, upstream_ws_url: str, local_port: int):
+        """Background thread: relay WS ↔ upstream CDP with auth headers."""
+        async def handler(ws):
+            async with websockets.connect(
+                upstream_ws_url,
+                additional_headers=self.headers,
+            ) as upstream:
+                async def relay(from_, to_):
+                    async for msg in from_:
+                        await to_.send(msg)
+
+                await asyncio.gather(relay(ws, upstream), relay(upstream, ws))
+
+        async def serve():
+            async with websockets.serve(handler, "127.0.0.1", local_port):
+                await asyncio.get_running_loop().create_future()
+
+        asyncio.run(serve())
+
+    def _start_cdp_proxy(self, upstream_url: str) -> str:
+        """Start local WS proxy → returns 'ws://127.0.0.1:<port>'."""
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.bind(("127.0.0.1", 0))
+        local_port = s.getsockname()[1]
+        s.close()
+
+        # Convert http:// → ws:// for upstream
+        upstream_ws = upstream_url.replace("http://", "ws://", 1).replace("https://", "wss://", 1)
+
+        t = threading.Thread(
+            target=self._cdp_proxy_thread,
+            args=(upstream_ws, local_port),
+            daemon=True,
+        )
+        t.start()
+        time.sleep(0.3)
+        return f"ws://127.0.0.1:{local_port}"
 
     def _api(self, method: str, path: str, **kwargs) -> dict:
         """Make API call to CloakBrowser."""
@@ -58,9 +103,10 @@ class CloakBrowserAdapter:
 
     def post(
         self,
-        profile_name: str,
-        media_path: str,
-        caption: str,
+        profile_name: str = "",
+        profile_id: str = "",
+        media_path: str = "",
+        caption: str = "",
         platform: str = "facebook",
         link: Optional[str] = None,
         tags: Optional[list] = None,
@@ -69,7 +115,8 @@ class CloakBrowserAdapter:
         Post content via CloakBrowser profile.
 
         Args:
-            profile_name: CloakBrowser profile name (e.g., "fb_page_01")
+            profile_name: CloakBrowser profile name (e.g., "fb_page_01") — used to look up ID
+            profile_id: Direct CloakBrowser profile UUID (takes priority over profile_name)
             media_path: Path to media file (video/image)
             caption: Post caption/text
             platform: Target platform (facebook, x, instagram, tiktok, youtube, linkedin)
@@ -79,84 +126,121 @@ class CloakBrowserAdapter:
         Returns:
             dict with success, profile, platform, error
         """
-        # Find profile by name
-        profiles = self.list_profiles(platform)
-        profile = next((p for p in profiles if p.get("name") == profile_name), None)
+        # Resolve profile_id from name or use direct
+        resolved_id = profile_id
+        resolved_name = profile_name
+        if not resolved_id and profile_name:
+            profiles = self.list_profiles(platform)
+            profile = next((p for p in profiles if p.get("name") == profile_name), None)
+            if not profile:
+                return {"success": False, "error": f"Profile not found: {profile_name}"}
+            resolved_id = profile.get("id", "")
+            resolved_name = profile.get("name", profile_name)
+        elif resolved_id and not resolved_name:
+            # profile_id provided without name — look up the name
+            profiles = self.list_profiles()
+            profile = next((p for p in profiles if p.get("id") == resolved_id), None)
+            if profile:
+                resolved_name = profile.get("name", "")
 
-        if not profile:
-            return {"success": False, "error": f"Profile not found: {profile_name}"}
-
-        profile_id = profile.get("id", "")
-
-        # Launch profile
-        launch_result = self._api("POST", f"/api/profiles/{profile_id}/launch")
-        if "error" in launch_result:
-            return {"success": False, "error": f"Launch failed: {launch_result['error']}"}
+        # Launch profile (allow already-running)
+        did_launch = False
+        launch_result = self._api("POST", f"/api/profiles/{resolved_id}/launch")
+        err_str = str(launch_result.get("error") or launch_result.get("detail", ""))
+        if "already running" in err_str.lower():
+            did_launch = False  # profile was already running — don't stop it later
+        elif err_str:
+            return {"success": False, "error": f"Launch failed: {launch_result}"}
+        else:
+            did_launch = True  # we started it, we should stop it
 
         # Get CDP endpoint
-        cdp_info = self._api("GET", f"/api/profiles/{profile_id}/cdp")
-        ws_url = cdp_info.get("webSocketDebuggerUrl", "")
+        cdp_info = self._api("GET", f"/api/profiles/{resolved_id}/cdp")
+        cdp_path = cdp_info.get("cdp_url", "")
+        ws_url = self.url.rstrip("/") + cdp_path if cdp_path.startswith("/") else cdp_path
         if not ws_url:
-            ws_url = cdp_info.get("url", "")
+            return {"success": False, "error": "Could not get CDP endpoint URL", "profile": resolved_name}
 
         # Post via Playwright CDP
         try:
             post_result = self._post_via_cdp(ws_url, media_path, caption, platform, link, tags)
-            return {"success": True, "profile": profile_name, "platform": platform, **post_result}
+            return {"success": True, "profile": resolved_name, "platform": platform, **post_result}
         except Exception as e:
-            return {"success": False, "error": str(e), "profile": profile_name}
+            return {"success": False, "error": str(e), "profile": resolved_name}
         finally:
-            # Stop profile
-            self._api("POST", f"/api/profiles/{profile_id}/stop")
+            # Stop profile only if we launched it
+            if did_launch:
+                self._api("POST", f"/api/profiles/{resolved_id}/stop")
 
     def _post_via_cdp(
         self, ws_url: str, media_path: str, caption: str,
         platform: str, link: Optional[str], tags: Optional[list]
     ) -> dict:
-        """Post via Playwright CDP WebSocket."""
+        """Post via Playwright CDP (synchronous). Supports Facebook only for now."""
+        from playwright.sync_api import sync_playwright
+
+        # Start local WS proxy to bridge CDP auth headers
+        proxy_url = self._start_cdp_proxy(ws_url)
 
         try:
-            from cloakbrowser_cdp_integration import CloakBrowserCDP
+            with sync_playwright() as pw:
+                browser = pw.chromium.connect_over_cdp(proxy_url)
+                context = browser.contexts[0]
+                page = context.pages[0] if context.pages else context.new_page()
 
-            async def _do_post():
-                cdp = CloakBrowserCDP(ws_url)
-                if not await cdp.connect():
-                    return {"error": "CDP connection failed"}
+                if platform != "facebook":
+                    return {"error": f"Unsupported platform: {platform}"}
 
-                # Navigate to platform
-                urls = {
-                    "facebook": "https://www.facebook.com/",
-                    "x": "https://x.com/compose/post",
-                    "instagram": "https://www.instagram.com/",
-                    "tiktok": "https://www.tiktok.com/upload",
-                    "youtube": "https://studio.youtube.com/",
-                    "linkedin": "https://www.linkedin.com/feed/",
-                }
+                # ── Navigate to Facebook ──
+                page.goto("https://www.facebook.com/", wait_until="networkidle", timeout=30000)
 
-                target_url = urls.get(platform, urls["facebook"])
-                await cdp.page.goto(target_url, wait_until="networkidle", timeout=30000)
+                # Open post composer — try multiple selectors
+                composer = None
+                for sel in [
+                    '[aria-label="What\'s on your mind"]',
+                    '[data-testid="xmt_placeholder_0"]',
+                    '[role="button"]:has-text("What\'s on your mind")',
+                ]:
+                    try:
+                        el = page.query_selector(sel)
+                        if el:
+                            el.click()
+                            page.wait_for_timeout(1000)
+                            composer = True
+                            break
+                    except Exception:
+                        continue
 
-                # Platform-specific posting logic
-                if platform == "facebook":
-                    return await self._post_facebook(cdp, media_path, caption, link)
-                elif platform == "x":
-                    return await self._post_x(cdp, media_path, caption, link, tags)
-                elif platform == "instagram":
-                    return await self._post_instagram(cdp, media_path, caption, tags)
-                elif platform == "tiktok":
-                    return await self._post_tiktok(cdp, media_path, caption, tags)
-                elif platform == "youtube":
-                    return await self._post_youtube(cdp, media_path, caption)
-                elif platform == "linkedin":
-                    return await self._post_linkedin(cdp, media_path, caption, link)
+                if not composer:
+                    return {"error": "Could not find post composer"}
 
-                return {"error": f"Unsupported platform: {platform}"}
+                # Upload media
+                if media_path and os.path.exists(media_path):
+                    upload = page.query_selector('input[type="file"]')
+                    if upload:
+                        upload.set_input_files(media_path)
+                        page.wait_for_timeout(3000)
 
-            import asyncio
-            return asyncio.run(_do_post())
+                # Type caption in contenteditable
+                editor = page.query_selector('[contenteditable="true"]')
+                if editor:
+                    editor.click()
+                    page.keyboard.type(caption, delay=20)
+                    if link:
+                        page.keyboard.press("Enter")
+                        page.keyboard.type(f"\n{link}", delay=20)
 
-        except ImportError:
-            return {"error": "CloakBrowser CDP integration not available"}
+                # Click Post
+                post_btn = page.query_selector('[aria-label="Post"]')
+                if post_btn:
+                    post_btn.click()
+                    page.wait_for_timeout(3000)
+                    return {"success": True, "posted": True, "platform": "facebook"}
+
+                return {"error": "Could not find Post button"}
+
+        except Exception as e:
+            return {"error": f"CDP post failed: {e}"}
 
     async def _post_facebook(self, cdp, media_path, caption, link=None) -> dict:
         """Post to Facebook via CDP."""

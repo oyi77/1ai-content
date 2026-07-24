@@ -4,10 +4,14 @@ import os, sys
 SERVICES_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(SERVICES_DIR)
 
-# Ensure PROJECT_ROOT (parent of services/) is on sys.path for 'services.pinterest' import
+# hermes/scripts for cloakbrowser_cdp_integration import
+HERMES_SCRIPTS = os.path.expanduser("~/.hermes/scripts")
+if HERMES_SCRIPTS not in sys.path:
+    sys.path.insert(0, HERMES_SCRIPTS)
+
+# PROJECT_ROOT for services.pinterest import
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
-
 # Load .env manually
 os.chdir(SERVICES_DIR)
 with open(os.path.join(SERVICES_DIR, '.env')) as f:
