@@ -18,6 +18,7 @@
 <div class="tab-bar">
   <div class="tab active" data-tab="videos" onclick="switchTab('videos')">🎬 Videos</div>
   <div class="tab" data-tab="images" onclick="switchTab('images')">🖼️ Images</div>
+  <div class="tab" data-tab="books" onclick="switchTab('books')">📚 Books</div>
   <div class="tab" data-tab="storyboard" onclick="switchTab('storyboard')">📋 Storyboard</div>
 </div>
 
@@ -72,6 +73,13 @@
   </div>
 </div>
 
+<!-- Books Tab -->
+<div id="tab-books" class="tab-content" style="display:none;">
+  <div id="books-grid" class="media-grid">
+    <div class="loading">Loading...</div>
+  </div>
+</div>
+
 <!-- Video Preview Modal -->
 <div class="modal-overlay" id="modal-video">
   <div class="modal" style="max-width:800px;">
@@ -92,6 +100,7 @@
 <script>
 let allVideos = [];
 let currentTab = 'videos';
+let allBooks = [];
 
 function toast(msg, type='info') {
   const el = document.createElement('div');
@@ -124,6 +133,7 @@ function switchTab(tab) {
   document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
   document.getElementById(`tab-${tab}`).style.display = 'block';
   if (tab === 'storyboard') renderStoryboards();
+  if (tab === 'books') renderBooks();
 }
 
 async function loadMedia() {
@@ -212,6 +222,37 @@ function renderStoryboards() {
   }).join('');
 }
 
+async function loadBooks() {
+  try {
+    const r = await fetch('/api/books', { credentials: 'include' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    allBooks = await r.json();
+    document.getElementById('books-grid').innerHTML = renderBooks();
+  } catch(e) {
+    document.getElementById('books-grid').innerHTML = `<div class="empty-state">Failed to load books: ${esc(e.message)}</div>`;
+  }
+}
+
+function renderBooks() {
+  if (!allBooks.length) return '<div class="empty-state">No saved books yet. Generate one in the <a href="/admin/bookshelf" style="color:var(--gold);">Bookshelf</a>.</div>';
+  return allBooks.map(b => `
+    <div class="media-card">
+      <div class="media-thumb no-thumb" style="display:flex;align-items:center;justify-content:center;font-size:36px;">📖</div>
+      <div class="media-info">
+        <div style="font-weight:600;font-size:13px;margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(b.title)}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
+          <span class="badge badge-video">${esc(b.subject || 'Book')}</span>
+          ${b.sections ? `<span class="badge badge-default" style="font-size:10px;">${b.sections.length} ch.</span>` : ''}
+          ${b.stats?.total_tokens ? `<span class="badge badge-default" style="font-size:10px;">${b.stats.total_tokens} tok.</span>` : ''}
+        </div>
+        <div style="font-size:11px;color:var(--muted);">
+          ${b.full_markdown ? (b.full_markdown.length + ' chars • ') : ''}${dt(b.createdAt)}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
 function openVideo(id) {
   const v = allVideos.find(x => x.id === id);
   if (!v) return;
@@ -257,4 +298,5 @@ document.addEventListener('keydown', e => {
 });
 
 loadMedia();
+loadBooks();
 </script>

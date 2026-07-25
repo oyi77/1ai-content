@@ -1,14 +1,17 @@
 """Bookshelf orchestration engine — chains agents to generate a complete book."""
 import json
+import os
 from typing import AsyncGenerator, Optional
 
-from services.bookshelf.openai_provider import get_groq_client, get_async_groq_client
+from services.bookshelf.openai_provider import get_groq_client
 from services.bookshelf.agents.title_writer import generate_title
 from services.bookshelf.agents.structure_writer import generate_structure
 from services.bookshelf.agents.section_writer import generate_section_content
 from services.bookshelf.tools.markdown import assemble_markdown
 from services.bookshelf.stats import GenerationStatistics
 
+
+LOCAL_MODEL_ID = "/home/openclaw/models/Qwen2.5-Coder-7B-Instruct-Q4_K_M.gguf"
 
 async def generate_book_pipeline(
     subject: str,
@@ -29,13 +32,22 @@ async def generate_book_pipeline(
     For "section_content" type: payload = {"title": str, "content": str}
     For "complete" type: payload = {"title": str, "structure": dict, "full_markdown": str}
     """
-    client = get_groq_client()
-    aclient = get_async_groq_client()
-    cumulative_stats = GenerationStatistics()
+    use_local = os.environ.get("BOOKSHELF_LOCAL_URL") or False
+    if use_local:
+        from services.bookshelf.openai_provider import get_local_client
+        client = get_local_client()
+        # llama-server requires exact gguf path as model name
+        title_model = title_model or LOCAL_MODEL_ID
+        structure_model = structure_model or LOCAL_MODEL_ID
+        section_model = section_model or LOCAL_MODEL_ID
+    else:
+        client = get_groq_client()
 
     try:
         # --- Step 1: Generate title ---
         yield {"type": "progress", "phase": "title", "message": "Generating book title..."}
+
+        cumulative_stats = GenerationStatistics()
 
         title_stats, title = await generate_title(
             subject, model=title_model, groq_client=client,
@@ -89,35 +101,22 @@ async def generate_book_pipeline(
                 "stats": cumulative_stats.__dict__,
             }
 
-            content_chunks: list[str] = []
 
-            async for chunk in generate_section_content(
+            section_stats, content = await generate_section_content(
                 section_title,
                 additional_instructions=additional_instructions,
                 book_title=title,
                 model=section_model,
-                groq_client=aclient,
-            ):
-                if chunk.startswith("__STATS__:"):
-                    import ast
-                    try:
-                        stats_dict = ast.literal_eval(chunk[len("__STATS__:"):])
-                        section_stats = GenerationStatistics(**stats_dict)
-                        cumulative_stats += section_stats
-                    except Exception:
-                        pass
-                else:
-                    content_chunks.append(chunk)
-
-            full_content = "".join(content_chunks)
-            sections_content[section_title] = full_content
+                groq_client=client,
+            )
+            sections_content[section_title] = content
+            cumulative_stats += section_stats
 
             yield {
                 "type": "section_content",
-                "payload": {"title": section_title, "content": full_content},
+                "payload": {"title": section_title, "content": content},
                 "stats": cumulative_stats.__dict__,
             }
-
         # --- Step 4: Assemble markdown ---
         full_md = assemble_markdown(title, structure, sections_content)
 

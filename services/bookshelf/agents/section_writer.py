@@ -1,20 +1,25 @@
-"""Generate section/chapter content via Groq (streaming)."""
-import re
+"""Generate section/chapter content via sync OpenAI client in thread.
+Uses asyncio.to_thread with the sync client to avoid event-loop
+incompatibilities with async httpx streaming. Returns (stats, content).
+"""
+from typing import Optional
+import asyncio
 
-from services.bookshelf.openai_provider import get_async_groq_client
+from services.bookshelf.openai_provider import get_groq_client
 from services.bookshelf.stats import GenerationStatistics
 
 SYSTEM_PROMPT = (
-    "You are an expert author writing a non-fiction book. "
-    "Write detailed, engaging chapter content with clear explanations, examples, and insights. "
-    "Use markdown formatting for structure (headings, lists, code blocks where appropriate). "
-    "Each section should be comprehensive (400-800 words). "
-    "If additional instructions are provided, consider them very important."
+    "Kamu adalah penulis novel dan cerita fiksi Indonesia yang berbakat. "
+    "Tulis konten bab yang mendetail, menarik, dengan narasi yang hidup, dialog alami, "
+    "dan alur cerita yang memikat. "
+    "Gunakan format markdown untuk struktur (heading, daftar, blok kutipan jika sesuai). "
+    "Setiap bab harus komprehensif (400-800 kata). "
+    "Jika ada instruksi tambahan, pertimbangkan dengan sangat penting."
 )
-
 MODEL = "reka/reka-edge"
-TEMPERATURE = 0.3
-MAX_TOKENS = 8000
+TEMPERATURE = 0.7
+MAX_TOKENS = 6000
+
 
 
 async def generate_section_content(
@@ -24,63 +29,42 @@ async def generate_section_content(
     book_title: str = "",
     model: Optional[str] = None,
     groq_client=None,
-) -> AsyncGenerator[str, None]:
-    """Stream section content token by token.
+) -> tuple[str, GenerationStatistics]:
+    """Generate section content via sync OpenAI client in thread.
 
-    Uses Groq AsyncGroq client for non-blocking streaming.
-    Yields content text chunks.
+    Returns (stats, content). Uses asyncio.to_thread with the sync client
+    to avoid event-loop incompatibilities with async httpx streaming.
     """
-    client = groq_client or get_async_groq_client()
+    client = groq_client or get_groq_client()
 
     # Build the user prompt
     user_parts = []
     if book_title:
-        user_parts.append(f'This is for the book: "{book_title}"')
-    user_parts.append(f'Write the content for:\n<section_title>\n{section_title}\n</section_title>')
+        user_parts.append(f'Ini untuk buku: "{book_title}"')
+    user_parts.append(f'Tulis konten untuk:\n<section_title>\n{section_title}\n</section_title>')
     if additional_instructions:
-        user_parts.append(f"\nAdditional Instructions:\n{additional_instructions}")
+        user_parts.append(f"\nInstruksi Tambahan:\n{additional_instructions}")
     user_prompt = "\n\n".join(user_parts)
 
-    stream = await client.chat.completions.create(
-        model=model or MODEL,
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": user_prompt},
-        ],
-        temperature=TEMPERATURE,
-        max_tokens=MAX_TOKENS,
-        stream=True,
+    model_id = model or MODEL
+
+    def _generate():
+        resp = client.chat.completions.create(
+            model=model_id,
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": user_prompt},
+            ],
+            temperature=TEMPERATURE,
+            max_tokens=MAX_TOKENS,
+        )
+        return resp
+
+    resp = await asyncio.to_thread(_generate)
+    content = (resp.choices[0].message.content or "").strip()
+    stats = GenerationStatistics(
+        prompt_tokens=resp.usage.prompt_tokens if resp.usage else 0,
+        completion_tokens=resp.usage.completion_tokens if resp.usage else 0,
+        total_tokens=resp.usage.total_tokens if resp.usage else 0,
     )
-
-    in_reasoning = False
-    async for chunk in stream:
-        if chunk.choices and chunk.choices[0].delta and chunk.choices[0].delta.content:
-            token = chunk.choices[0].delta.content
-            # State machine: skip <reasoning>...</reasoning> blocks
-            if in_reasoning:
-                if "</reasoning>" in token:
-                    in_reasoning = False
-                    # Handle closing tag with content after it
-                    after = token.split("</reasoning>", 1)[1]
-                    if after.strip():
-                        yield after
-                continue
-            if "<reasoning>" in token:
-                in_reasoning = True
-                # Emit anything after the opening tag in same chunk
-                after = token.split("<reasoning>", 1)[1]
-                if "</reasoning>" in after:
-                    content = after.split("</reasoning>", 1)[1]
-                    if content.strip():
-                        yield content
-                    in_reasoning = False
-                continue
-            yield token
-
-        if chunk.usage:
-            stats = GenerationStatistics(
-                prompt_tokens=chunk.usage.prompt_tokens or 0,
-                completion_tokens=chunk.usage.completion_tokens or 0,
-                total_tokens=chunk.usage.total_tokens or 0,
-            )
-            yield f"\n__STATS__:{stats.__dict__}\n"
+    return stats, content

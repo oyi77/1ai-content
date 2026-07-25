@@ -69,10 +69,9 @@
 <div id="bk-result" class="card" style="display:none;margin-bottom:20px;">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
     <h3 id="bk-result-title" style="font-size:18px;font-weight:700;"></h3>
-    <div style="display:flex;gap:8px;">
       <button class="btn btn-ghost btn-sm" onclick="copyMarkdown()" style="margin-top:0;">📋 Copy MD</button>
       <button class="btn btn-ghost btn-sm" onclick="downloadMarkdown()" style="margin-top:0;">⬇️ Download</button>
-    </div>
+      <button class="btn btn-gold btn-sm" onclick="saveBook()" style="margin-top:0;">💾 Save</button>
   </div>
   <div id="bk-stats" style="margin-bottom:16px;font-size:12px;color:var(--muted);"></div>
   <div id="bk-sections"></div>
@@ -104,7 +103,14 @@ function showToast(msg, type='success') {
   setTimeout(() => t.remove(), 3000);
 }
 
+let lastBookData = null;
 let bkSectionHtml = '';
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = String(s == null ? '' : s);
+  return d.innerHTML;
+}
+
 
 function toggleAdvanced() {
   const el = document.getElementById('bk-advanced');
@@ -166,6 +172,7 @@ async function generateBook() {
     }
 
     const data = await r.json();
+  lastBookData = data;
     renderBook(data);
     showToast(`✅ "${data.title || 'Book'}" generated!`);
   } catch (e) {
@@ -204,7 +211,7 @@ function renderBook(data) {
         <span style="font-size:10px;color:var(--muted);">▶</span>
       </div>
       <div class="bk-section-body" style="display:none;padding:12px 16px;font-size:12px;line-height:1.6;border-top:1px solid var(--border);">
-        ${content.replace(/\n/g, '<br>')}
+        ${esc(content).replace(/\n/g, '<br>')}
       </div>
     </div>`;
   });
@@ -251,4 +258,23 @@ function downloadMarkdown() {
   a.click();
   URL.revokeObjectURL(url);
 }
+
+async function saveBook() {
+  if (!lastBookData) return showToast('No book data to save', 'error');
+  const { title, full_markdown, sections, stats } = lastBookData;
+  try {
+    const r = await fetch('/api/books', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, subject: title, full_markdown, sections, stats }),
+      credentials: 'include',
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    showToast('✅ Book saved! Redirecting...');
+    setTimeout(() => window.location.href = '/admin/medias', 1500);
+  } catch (e) {
+    showToast('❌ Save failed: ' + e.message, 'error');
+  }
+}
 </script>
+

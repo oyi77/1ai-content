@@ -1120,3 +1120,23 @@ model Fanpage {
   @@index([isActive])
   @@map("facebook_pages")
 }
+
+// =============================================================================
+// Bookshelf — AI-generated books
+// =============================================================================
+model Book {
+  id           BigInt    @id @default(autoincrement())
+  title        String    @db.VarChar(255)
+  subject      String    @db.VarChar(255)
+  fullMarkdown String    @map("full_markdown") @db.Text
+  sections     Json?
+  stats        Json?
+  status       String    @default("completed") @db.VarChar(16)
+  metadata     Json?
+
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  @@index([createdAt])
+  @@map("books")
+}

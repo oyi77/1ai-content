@@ -14,12 +14,14 @@ SYSTEM_PROMPT = (
     '{\n'
     '  "title": "Book Title Here",\n'
     '  "sections": [\n'
-    '    {"title": "Chapter 1: Introduction", "sections": [{"title": "Section 1.1"}, {"title": "Section 1.2"}]},\n'
-    '    {"title": "Chapter 2: Main Topic", "sections": [{"title": "Section 2.1"}, {"title": "Section 2.2"}]}\n'
+    '    {"title": "Chapter 1: Introduction", "content": "Brief overview of the topic", "sections": [{"title": "Section 1.1", "content": "Key concepts explained"}, {"title": "Section 1.2", "content": "Practical applications"}]},\n'
+    '    {"title": "Chapter 2: Main Topic", "content": "Deep dive into core subject", "sections": [{"title": "Section 2.1", "content": "Fundamental principles"}, {"title": "Section 2.2", "content": "Advanced techniques"}]}\n'
     '  ]\n'
     "}\n"
     "Books contain 5-8 chapters by default, each with 2-4 sections. "
-    "For long mode (300+ pages), use nested sections with deeper hierarchy."
+    "For long mode (300+ pages), use nested sections with deeper hierarchy. "
+    "Every section MUST have both \"title\" and \"content\" fields. "
+    "Do NOT use colons inside title values — keep titles concise and put descriptions in the content field."
 )
 MODEL = "reka/reka-edge"
 TEMPERATURE = 0.3
@@ -74,10 +76,12 @@ async def generate_structure(
 
     # Robust JSON extraction — model may wrap JSON in prose or code blocks
     def _extract_json(text: str) -> dict:
-        # Try direct parse first
         text = text.strip()
         # Strip markdown code blocks
         text = re.sub(r'```(?:json)?\s*', '', text).strip()
+        # Pre-process: reka-edge sometimes outputs "title": "X": "Y" (invalid JSON)
+        # where X is the title and Y is a description. Transform to proper content field.
+        text = re.sub(r'"title": "([^"]*?)": "([^"]*?)"', r'"title": "\1", "content": "\2"', text)
         try:
             return json.loads(text)
         except json.JSONDecodeError:

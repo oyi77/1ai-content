@@ -25,6 +25,7 @@ with open(os.path.join(SERVICES_DIR, '.env')) as f:
 print(f"PINTEREST_COOKIES loaded: {len(os.environ.get('PINTEREST_COOKIES',''))} chars")
 print(f"PINTEREST_CSRF loaded: {os.environ.get('PINTEREST_CSRF','')[:20]}...")
 
-# Launch uvicorn
-import uvicorn
-uvicorn.run("api:app", host="127.0.0.1", port=8767, reload=False, loop="asyncio")
+if __name__ == '__main__':
+    # Launch uvicorn
+    import uvicorn
+    uvicorn.run("api:app", host="127.0.0.1", port=8767, reload=False, loop="asyncio")
