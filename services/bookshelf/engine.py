@@ -11,7 +11,7 @@ from services.bookshelf.tools.markdown import assemble_markdown
 from services.bookshelf.stats import GenerationStatistics
 
 
-LOCAL_MODEL_ID = "/home/openclaw/models/Qwen2.5-Coder-7B-Instruct-Q4_K_M.gguf"
+LOCAL_MODEL_ID = "qwen3:4b"
 
 async def generate_book_pipeline(
     subject: str,

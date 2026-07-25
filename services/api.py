@@ -43,6 +43,8 @@ from services.looping.engine import LoopingEngine
 from services.analysis.channel_analyzer import ChannelAnalyzer
 from services.cloak_adapter import CloakBrowserAdapter
 from services.bookshelf import generate_book_pipeline, GenerationStatistics
+from services.comic_gen.engine import generate_comic_pipeline
+from services.comic_gen.comic_types import ComicFormat
 
 
 async def _run_subprocess(cmd: list[str], **kwargs):
@@ -913,7 +915,6 @@ async def research_generate_book(req: ResearchGenerateBookRequest):
                         "title": payload.get("title", ""),
                         "content": payload.get("content", ""),
                     })
-                # Stream every event to the client
                 yield f"data: {json.dumps(event)}\n\n"
 
             book = "\n\n".join(
@@ -991,6 +992,58 @@ async def carousel_styles():
     from services.carousel.generator import STYLE_PRESETS
     return {"styles": {k: {"name": v["name"], "description": v["description"]} for k, v in STYLE_PRESETS.items()}}
 
+    
+# ══════════════════════════════════════════════════════════════
+# COMIC / MANGA / MANHWA GENERATION
+# ══════════════════════════════════════════════════════════════
+
+class ComicGenerateRequest(BaseModel):
+    prompt: str = Field(..., description="Story concept / premise")
+    format: str = Field(default="comic", description="comic / manga / manhwa")
+    language: str = Field(default="en", description="Language code")
+    pages_per_episode: int = Field(default=5, ge=1, le=30, description="Pages per episode")
+    num_episodes: int = Field(default=1, ge=1, le=10, description="Number of episodes")
+    generate_images: bool = Field(default=False, description="Render panel images (slow)")
+
+
+@app.post("/comic/generate")
+async def comic_generate(req: ComicGenerateRequest):
+    """Generate a comic/manga/manhwa: script -> panels -> pages (SSE streamed)."""
+    async def _generate():
+        try:
+            from services.comic_gen.comic_types import ComicFormat
+            from services.comic_gen.engine import generate_comic_pipeline
+            fmt = ComicFormat(req.format)
+            async for event in generate_comic_pipeline(
+                prompt=req.prompt,
+                fmt=fmt,
+                language=req.language,
+                pages_per_episode=req.pages_per_episode,
+                num_episodes=req.num_episodes,
+                generate_images=req.generate_images,
+            ):
+                yield f"data: {json.dumps(event)}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+    
+    return StreamingResponse(_generate(), media_type="text/event-stream")
+
+
+@app.get("/comic/page/{path:path}")
+async def comic_page(path: str):
+    """Serve a generated comic page image."""
+    from pathlib import Path
+    from fastapi.responses import FileResponse
+    
+    full_path = Path("/home/openclaw/projects/1ai-content/output/comic") / path
+    if not full_path.exists():
+        full_path = full_path.with_suffix(".png")
+    if not full_path.exists():
+        raise HTTPException(status_code=404, detail="Page not found")
+    
+    return FileResponse(str(full_path), media_type="image/png")
+
+
 
 # ══════════════════════════════════════════════════════════════
 # AUTOMATION (AutoPilot)
@@ -1003,6 +1056,7 @@ def get_autopilot():
         from services.autopilot.tiktok_publisher import AutoPilotTikTokPublisher
         _autopilot = AutoPilotTikTokPublisher()
     return _autopilot
+
 
 
 class AutoPilotJobRequest(BaseModel):

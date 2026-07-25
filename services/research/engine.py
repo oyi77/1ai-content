@@ -169,6 +169,47 @@ Constraints:
 
         return self._parse_market_response(raw, language, region)
 
+    @staticmethod
+    def _clean_llm_json(raw: str) -> str:
+        """Strip markdown fences and preamble from LLM JSON response.
+
+        Handles:
+        - ```json ... ``` fences
+        - ``` ... ``` generic fences
+        - Preamble text before the first fence
+        - Trailing text after closing fence
+        - Missing fences (pass-through)
+        """
+        if not raw or not raw.strip():
+            return ""
+
+        cleaned = raw.strip()
+
+        # Strip leading fence line (```json, ```, ```JSON, etc.)
+        if cleaned.startswith("```"):
+            idx = cleaned.find("\n")
+            if idx != -1:
+                cleaned = cleaned[idx + 1:]
+            else:
+                return ""
+
+        # Strip trailing fence (```)
+        if cleaned.endswith("```"):
+            cleaned = cleaned[:-3]
+        # Handle ``` at end + trailing whitespace
+        cleaned = cleaned.strip()
+        if cleaned.endswith("```"):
+            cleaned = cleaned[:-3]
+
+        # If there's text after the closing fence, drop it
+        cleaned = cleaned.strip()
+        if cleaned.startswith("```"):
+            idx = cleaned.find("\n")
+            if idx != -1:
+                cleaned = cleaned[idx + 1:]
+
+        return cleaned.strip()
+
     async def generate_book_brief(
         self,
         niche: str,
@@ -221,13 +262,7 @@ Return ONLY valid JSON, no markdown fences."""
             return {"success": False, "error": "LLM unavailable"}
 
         try:
-            cleaned = raw.strip()
-            if cleaned.startswith("```"):
-                lines = cleaned.split("\n")
-                if len(lines) > 1:
-                    cleaned = "\n".join(lines[1:])
-            if cleaned.endswith("```"):
-                cleaned = cleaned.rsplit("```", 1)[0]
+            cleaned = self._clean_llm_json(raw)
 
             parsed = json.loads(cleaned.strip())
             parsed["success"] = True
@@ -240,14 +275,7 @@ Return ONLY valid JSON, no markdown fences."""
     def _parse_market_response(self, raw: str, language: str, region: str) -> LanguageMarket:
         """Parse LLM JSON response into LanguageMarket dataclass."""
         try:
-            cleaned = raw.strip()
-            if cleaned.startswith("```"):
-                lines = cleaned.split("\n")
-                if len(lines) > 1:
-                    cleaned = "\n".join(lines[1:])
-            if cleaned.endswith("```"):
-                cleaned = cleaned.rsplit("```", 1)[0]
-
+            cleaned = self._clean_llm_json(raw)
             parsed = json.loads(cleaned.strip())
         except json.JSONDecodeError:
             return LanguageMarket(
@@ -313,26 +341,47 @@ Return ONLY valid JSON, no markdown fences."""
             except Exception as e:
                 print(f"[ResearchEngine] OmniRoute call failed: {e}")
 
-        # Provider 2: local Ollama fallback (phi3:mini)
+        # Provider 2: local Ollama fallback (qwen3:0.6b — small reasoning model, clean JSON)
         ollama_url = "http://localhost:11434/v1"
         try:
+            # qwen3:0.6b is a reasoning model — ~1K tokens for thinking + ~500-1K for output
+            effective_max = max(max_tokens, 2000)
             async with httpx.AsyncClient(timeout=120) as client:
                 resp = await client.post(
                     f"{ollama_url}/chat/completions",
                     json={
-                        "model": "phi3:mini",
+                        "model": "qwen3:0.6b",
                         "messages": [{"role": "user", "content": prompt}],
-                        "max_tokens": max_tokens,
-                        "temperature": 0.7,
+                        "max_tokens": effective_max,
+                        "temperature": 0.3,
                     },
                     timeout=120,
                 )
                 resp.raise_for_status()
-                content = resp.json()["choices"][0]["message"]["content"]
+                result = resp.json()
+                content = result["choices"][0]["message"]["content"]
+                reasoning = result["choices"][0]["message"].get("reasoning", "")
+                if not content and reasoning:
+                    # Reasoning model consumed all tokens on reasoning — retry with higher limit
+                    print(f"[ResearchEngine] qwen3:0.6b reasoning-only output, retrying with +2000 tokens")
+                    async with httpx.AsyncClient(timeout=120) as client:
+                        resp2 = await client.post(
+                            f"{ollama_url}/chat/completions",
+                            json={
+                                "model": "qwen3:0.6b",
+                                "messages": [{"role": "user", "content": prompt}],
+                                "max_tokens": effective_max + 2000,
+                                "temperature": 0.3,
+                            },
+                            timeout=120,
+                        )
+                        resp2.raise_for_status()
+                        result2 = resp2.json()
+                        content = result2["choices"][0]["message"]["content"]
                 if content:
                     return content
         except Exception as e:
-            print(f"[ResearchEngine] Ollama fallback (phi3:mini) failed: {e}")
+            print(f"[ResearchEngine] Ollama fallback (qwen3:0.6b) failed: {e}")
             return ""
 
 
