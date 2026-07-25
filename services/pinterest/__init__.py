@@ -23,6 +23,15 @@ import httpx
 # ── Config from env ─────────────────────────────────────────────
 PINTEREST_COOKIES = os.getenv("PINTEREST_COOKIES", "")
 PINTEREST_CSRF = os.getenv("PINTEREST_CSRF", "")
+# Pinterest domain varies by geo-location; www may 403 while id works.
+# Detect from the cookie string (_pinterest_sess domain), or fall back to id.pinterest.com
+_cookie_domain = re.search(r"Domain=([^;]+)", PINTEREST_COOKIES)
+if _cookie_domain:
+    PINTEREST_DOMAIN = _cookie_domain.group(1).strip()
+else:
+    PINTEREST_DOMAIN = os.getenv("PINTEREST_DOMAIN", "id.pinterest.com")
+# Strip leading dot if present (cookie domain format)
+PINTEREST_DOMAIN = PINTEREST_DOMAIN.lstrip(".")
 
 _HEADERS = {
     "User-Agent": (
@@ -32,8 +41,8 @@ _HEADERS = {
     "Accept": "application/json, text/javascript, */*; q=0.01",
     "Accept-Language": "en-US,en;q=0.9",
     "X-Requested-With": "XMLHttpRequest",
-    "Origin": "https://www.pinterest.com",
-    "Referer": "https://www.pinterest.com/",
+    "Origin": f"https://{PINTEREST_DOMAIN}",
+    "Referer": f"https://{PINTEREST_DOMAIN}/",
     "Sec-Fetch-Site": "same-origin",
     "Sec-Fetch-Mode": "cors",
 }
@@ -79,7 +88,7 @@ class PinterestScraper:
         }
 
         # Pinterest resource API — returns JSON inside a "resource_response" wrapper
-        url = "https://www.pinterest.com/resource/BaseSearchResource/get/"
+        url = f"https://{PINTEREST_DOMAIN}/resource/BaseSearchResource/get/"
         payload = {
             "source_url": f"/search/pins/?q={query}",
             "data": {

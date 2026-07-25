@@ -288,6 +288,12 @@ class PinterestPostRequest(BaseModel):
     profile_name: str
     link: Optional[str] = None
 
+class PublishToFacebookRequest(BaseModel):
+    image_url: str
+    page_id: str
+    page_token: str = ""
+    message: str = ""
+    affiliate_link: str = ""
 
 class BookshelfRequest(BaseModel):
     subject: str = Field(..., description="Book topic/subject")
@@ -660,6 +666,54 @@ async def pinterest_post(req: PinterestPostRequest):
         )
 
         return {"download_path": local_path, "post_result": result}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/publish-to-facebook")
+async def publish_to_facebook(req: PublishToFacebookRequest):
+    """Download image and publish to Facebook via 1ai-social distribution API.
+
+    Acts as CORS proxy: admin page on content.aitradepulse.com cannot call
+    1ai-social directly, so this endpoint forwards the request.
+    """
+    try:
+        scraper = get_pinterest()
+
+        # Save directly to 1ai-social's allowed publish root
+        social_data_path = Path.home() / "projects" / "1ai-social" / "data" / "pinterest_cache"
+
+        local_path = await asyncio.to_thread(
+            scraper.download_image,
+            image_url=req.image_url,
+            dest_dir=str(social_data_path),
+        )
+        if not local_path:
+            raise HTTPException(status_code=400, detail="Failed to download image")
+
+        # Forward to 1ai-social distribution API
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            resp = await client.post(
+                "http://localhost:8000/v1/distribution/publish",
+                json={
+                    "page_id": req.page_id,
+                    "page_token": req.page_token,
+                    "file_path": local_path,
+                    "message": req.message,
+                    "affiliate_link": req.affiliate_link,
+                },
+                timeout=60.0,
+            )
+            if resp.status_code != 200:
+                detail = resp.text
+                try:
+                    detail = resp.json()
+                except Exception:
+                    pass
+                raise HTTPException(status_code=resp.status_code, detail=detail)
+            return resp.json()
     except HTTPException:
         raise
     except Exception as e:

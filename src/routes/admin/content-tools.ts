@@ -1,4 +1,5 @@
 import { FastifyInstance } from "fastify";
+import { prisma } from "@/config/database";
 import { trackingVars } from "./shared";
 
 export async function registerContentToolsRoutes(server: FastifyInstance) {
@@ -73,4 +74,40 @@ export async function registerContentToolsRoutes(server: FastifyInstance) {
       { layout: "admin/layout.ejs" },
     );
   });
+
+  // ========== Bookshelf API ==========
+
+  // Save a generated book
+  server.post("/api/books", async (request, reply) => {
+    const { title, subject, full_markdown, sections, stats } =
+      request.body as {
+        title: string;
+        subject?: string;
+        full_markdown: string;
+        sections?: unknown;
+        stats?: unknown;
+      };
+    if (!title || !full_markdown) {
+      return reply.status(400).send({ error: "title and full_markdown required" });
+    }
+    const book = await prisma.book.create({
+      data: {
+        title,
+        subject: subject || title,
+        fullMarkdown: full_markdown,
+        sections: sections || undefined,
+        stats: stats || undefined,
+      },
+    });
+    return reply.status(201).send(book);
+  });
+
+  // List all books
+  server.get("/api/books", async (_request, reply) => {
+    const books = await prisma.book.findMany({
+      orderBy: { createdAt: "desc" },
+    });
+    return reply.send(books);
+  });
 }
+

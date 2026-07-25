@@ -54,13 +54,15 @@
       <img id="post-preview" style="width:80px;height:80px;object-fit:cover;border-radius:8px;background:var(--bg);">
       <div style="font-size:13px;color:var(--muted);flex:1;">
         <div>Posting to:</div>
-        <select class="input" id="post-profile" style="width:100%;margin-top:4px;">
-          <option value="">— Select a profile —</option>
+        <select class="input" id="post-page" style="width:100%;margin-top:4px;">
+          <option value="">— Select a Facebook page —</option>
+          <option value="1228320850362715">🏢 Gaya Ngantor Katalog</option>
+          <option value="1180497218477425">🛋️ Sudut Nyaman Go</option>
+          <option value="1091128494093952">🛏️ Kamar Estetik Space</option>
+          <option value="1212341095288340">🍳 Dapur Minimalis Hub</option>
+          <option value="1076073462253318">👕 Berkah Karya Laundry</option>
         </select>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px;">
-          <span id="profile-status"></span>
-        </div>
-      </div>
+</div>
     <div class="form-group">
       <label>Caption</label>
       <textarea class="input" id="post-caption" rows="3" placeholder="Write your caption..." style="width:100%;resize:vertical;">Checkout this amazing home living product! 🏠✨</textarea>
@@ -78,7 +80,7 @@
 <div id="pin-posting" style="display:none;text-align:center;padding:40px;">
   <div style="font-size:18px;margin-bottom:12px;">📤 Posting to Facebook...</div>
   <div class="loading-spinner" style="width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto;"></div>
-  <div style="font-size:13px;color:var(--muted);margin-top:12px;">Opening CloakBrowser, downloading image & posting</div>
+  <div style="font-size:13px;color:var(--muted);margin-top:12px;">Downloading image & posting via Facebook Graph API</div>
 </div>
 
 <style>
@@ -104,44 +106,14 @@
 <script>
 const PY_API = window.location.origin + '/api/py';
 let selectedImageUrl = '';
-let profilesLoaded = false;
 
-// ── Load CloakBrowser profiles on page load ─────────────────────
-async function loadProfiles() {
-  const sel = document.getElementById('post-profile');
-  const status = document.getElementById('profile-status');
-  sel.innerHTML = '<option value="">⏳ Loading profiles...</option>';
-  try {
-    const r = await fetch(PY_API + '/cloak/profiles?platform=facebook');
-    const data = await r.json();
-    const profiles = data.profiles || [];
-    if (profiles.length > 0) {
-      sel.innerHTML = profiles.map(p =>
-        '<option value="' + p.name + '">📱 ' + p.name + (p.platform ? ' (' + p.platform + ')' : '') + '</option>'
-      ).join('');
-      status.textContent = '✅ ' + profiles.length + ' profile(s) loaded from CloakBrowser';
-      profilesLoaded = true;
-    } else {
-      sel.innerHTML = '<option value="">— No profiles found —</option>';
-      status.textContent = '⚠️ CloakBrowser returned 0 profiles';
-    }
-  } catch (e) {
-    // Fallback: hardcoded HOMELIVING profiles
-    sel.innerHTML =
-      '<option value="fb_page_01">🏠 Gaya Ngantor Katalog</option>' +
-      '<option value="fb_page_02">🛋️ Sudut Nyaman Go</option>' +
-      '<option value="fb_page_03">🛏️ Kamar Estetik Space</option>' +
-      '<option value="fb_page_04">🍳 Dapur Minimalis Hub</option>' +
-      '<option value="fb_page_05">📦 Ruang Rapi Daily</option>' +
-      '<option value="fb_page_06">🛍️ Rekomendasi Homeliving Shopee</option>' +
-      '<option value="fb_page_07">🏡 Another Homeliving Page</option>';
-    status.textContent = '⚠️ Using hardcoded profiles (CloakBrowser unreachable)';
-    profilesLoaded = false;  // allow manual entry
-  }
-}
-
-// Load profiles on page load
-document.addEventListener('DOMContentLoaded', loadProfiles);
+const FB_PAGES = [
+  { id: '1228320850362715', name: '🏢 Gaya Ngantor Katalog' },
+  { id: '1180497218477425', name: '🛋️ Sudut Nyaman Go' },
+  { id: '1091128494093952', name: '🛏️ Kamar Estetik Space' },
+  { id: '1212341095288340', name: '🍳 Dapur Minimalis Hub' },
+  { id: '1076073462253318', name: '👕 Berkah Karya Laundry' },
+];
 
 function showToast(msg, type) {
   const t = document.createElement('div');
@@ -151,57 +123,54 @@ function showToast(msg, type) {
   setTimeout(() => t.remove(), 3000);
 }
 
-
 async function searchPinterest() {
   const query = document.getElementById('pin-query').value.trim();
   if (!query) return showToast('Enter a search query', 'error');
   const limit = parseInt(document.getElementById('pin-limit').value) || 12;
-
-  document.getElementById('pin-loading').style.display = 'block';
-  document.getElementById('pin-results').style.display = 'none';
-  document.getElementById('pin-error').style.display = 'none';
-
   const btn = document.querySelector('.btn-gold');
-  btn.textContent = '⏳ Searching...';
+  btn.textContent = '🔍 Searching...';
   btn.disabled = true;
-
+  document.getElementById('pin-loading').style.display = 'block';
+  document.getElementById('pin-error').style.display = 'none';
+  document.getElementById('pin-results').style.display = 'none';
   try {
-    const r = await fetch(PY_API + '/pinterest/search', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, limit }),
+    const res = await fetch(PY_API + '/pinterest/search', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({keyword: query, limit})
     });
-    const data = await r.json();
-
-    document.getElementById('pin-loading').style.display = 'none';
-
-    if (data.results && data.results.length) {
-      document.getElementById('pin-meta').textContent = data.results.length + ' results for "' + query + '"';
-      const grid = document.getElementById('pin-grid');
-      grid.innerHTML = data.results.map((pin, i) => {
-        const imgUrl = pin.image_url || '';
-        const desc = (pin.title || pin.description || '').substring(0, 80);
-        return '<div class="card" style="display:flex;flex-direction:column;overflow:hidden;">' +
-          (imgUrl ? '<img src="' + imgUrl + '" style="width:100%;aspect-ratio:1;object-fit:cover;background:var(--bg);" onerror="this.style.display=\'none\'">' : '') +
-          '<div style="padding:12px;flex:1;display:flex;flex-direction:column;">' +
-          '<div style="font-size:13px;font-weight:500;margin-bottom:4px;flex:1;">' + desc + '</div>' +
-          (imgUrl ? '<button class="btn btn-sm btn-primary" onclick="openPostModal(\'' + imgUrl.replace(/'/g, "\\'") + '\')" style="width:100%;">📤 Post to FB</button>' : '') +
-          '</div></div>';
-      }).join('');
-      document.getElementById('pin-results').style.display = 'block';
-      showToast('✅ Found ' + data.results.length + ' results');
-    } else {
+    const data = await res.json();
+    const results = data.results || data;
+    if (!Array.isArray(results) || results.length === 0) {
       showToast('No results found', 'error');
+      document.getElementById('pin-loading').style.display = 'none';
+      btn.textContent = '🔍 Search Pinterest';
+      btn.disabled = false;
+      return;
     }
+    const meta = document.getElementById('pin-meta');
+    if (meta) meta.textContent = results.length + ' results for "' + query + '"';
+    const grid = document.getElementById('pin-grid');
+    grid.innerHTML = results.map(function(pin, i) {
+      const imgUrl = pin.image || pin.images?.orig?.url || '';
+      const desc = (pin.title || pin.description || '').substring(0, 80);
+      return '<div class="card" style="display:flex;flex-direction:column;overflow:hidden;">' +
+        (imgUrl ? '<img src="' + imgUrl + '" style="width:100%;aspect-ratio:1;object-fit:cover;background:var(--bg);" onerror="this.style.display=\'none\'">' : '') +
+        '<div style="padding:12px;flex:1;display:flex;flex-direction:column;">' +
+        '<div style="font-size:13px;font-weight:500;margin-bottom:4px;flex:1;">' + desc + '</div>' +
+        (imgUrl ? '<button class="btn btn-sm btn-primary" onclick="openPostModal(\'' + imgUrl.replace(/'/g, "\\'") + '\')" style="width:100%;">📤 Post to FB</button>' : '') +
+        '</div></div>';
+    }).join('');
+    document.getElementById('pin-results').style.display = 'block';
+    showToast('✅ Found ' + results.length + ' results');
   } catch (e) {
-    document.getElementById('pin-loading').style.display = 'none';
     document.getElementById('pin-error').style.display = 'block';
-    document.getElementById('pin-error-msg').textContent = '❌ ' + e.message;
-    showToast('❌ ' + e.message, 'error');
+    document.getElementById('pin-error-msg').textContent = '❌ ' + (e.message || e);
+    showToast('❌ Search failed: ' + (e.message || e), 'error');
+  } finally {
+    document.getElementById('pin-loading').style.display = 'none';
+    btn.textContent = '🔍 Search Pinterest';
+    btn.disabled = false;
   }
-
-  btn.textContent = '🔍 Search Pinterest';
-  btn.disabled = false;
 }
 
 function openPostModal(imgUrl) {
@@ -216,33 +185,35 @@ function closePostModal() {
 }
 
 async function confirmPost() {
-  const caption = document.getElementById('post-caption').value.trim();
-  if (!caption) return showToast('Enter a caption', 'error');
-  const profile = document.getElementById('post-profile').value;
-  if (!profile) return showToast('Select a profile', 'error');
-  const link = document.getElementById('post-link').value.trim() || null;
+  const message = document.getElementById('post-caption').value.trim();
+  if (!message) return showToast('Enter a caption', 'error');
+  const pageId = document.getElementById('post-page').value;
+  if (!pageId) return showToast('Select a Facebook page', 'error');
+  const affiliateLink = document.getElementById('post-link').value.trim() || '';
 
   closePostModal();
   document.getElementById('pin-posting').style.display = 'block';
 
   try {
-    const r = await fetch(PY_API + '/pinterest/post', {
+    const r = await fetch(PY_API + '/publish-to-facebook', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         image_url: selectedImageUrl,
-        caption: caption,
-        profile_name: profile,
-        link: link,
+        page_id: pageId,
+        message: message,
+        affiliate_link: affiliateLink,
       }),
     });
     const data = await r.json();
     document.getElementById('pin-posting').style.display = 'none';
 
-    if (data.post_result && data.post_result.success) {
-      showToast('✅ Posted successfully to ' + profile + '!');
+    if (data.success) {
+      const sel = document.getElementById('post-page');
+      const pageName = sel.options[sel.selectedIndex].text;
+      showToast('✅ Posted successfully to ' + pageName + '!');
     } else {
-      showToast('❌ ' + (data.post_result?.error || 'Post failed'), 'error');
+      showToast('❌ ' + (data.detail || 'Post failed'), 'error');
     }
   } catch (e) {
     document.getElementById('pin-posting').style.display = 'none';

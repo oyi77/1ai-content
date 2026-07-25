@@ -194,6 +194,7 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
       url.startsWith("/api/admin/") ||
       url.startsWith("/api/admin-config") ||
       url.startsWith("/api/referral/") ||
+      url.startsWith("/api/books") ||
       url.startsWith("/api/queue/") ||
       url.startsWith("/api/subscriptions") ||
       url.startsWith("/api/interceptions") ||
