@@ -128,11 +128,6 @@ function toast(msg, type = 'success') {
   setTimeout(() => el.remove(), 4000);
 }
 
-function esc(s) {
-  const d = document.createElement('div');
-  d.textContent = String(s == null ? '' : s);
-  return d.innerHTML;
-}
 
 async function loadPrompts() {
   const url = currentNiche === 'all' ? '/api/admin-prompts' : '/api/admin-prompts?niche=' + currentNiche;

@@ -2,12 +2,12 @@
 Uses asyncio.to_thread with the sync client to avoid event-loop
 incompatibilities with async httpx streaming. Returns (stats, content).
 """
-from typing import Optional
 import asyncio
+from typing import Optional
 
+from services.bookshelf.language import get_language_instruction
 from services.bookshelf.openai_provider import get_groq_client
 from services.bookshelf.stats import GenerationStatistics
-
 SYSTEM_PROMPT = (
     "Kamu adalah penulis novel dan cerita fiksi Indonesia yang berbakat. "
     "Tulis konten bab yang mendetail, menarik, dengan narasi yang hidup, dialog alami, "
@@ -27,15 +27,19 @@ async def generate_section_content(
     *,
     additional_instructions: str = "",
     book_title: str = "",
+    language: str = "en",
     model: Optional[str] = None,
     groq_client=None,
-) -> tuple[str, GenerationStatistics]:
+) -> tuple[GenerationStatistics, str]:
     """Generate section content via sync OpenAI client in thread.
 
     Returns (stats, content). Uses asyncio.to_thread with the sync client
     to avoid event-loop incompatibilities with async httpx streaming.
     """
     client = groq_client or get_groq_client()
+
+    lang_instruction = get_language_instruction(language)
+    system_content = f"{SYSTEM_PROMPT}\n\n{lang_instruction}"
 
     # Build the user prompt
     user_parts = []
@@ -52,7 +56,7 @@ async def generate_section_content(
         resp = client.chat.completions.create(
             model=model_id,
             messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "system", "content": system_content},
                 {"role": "user", "content": user_prompt},
             ],
             temperature=TEMPERATURE,

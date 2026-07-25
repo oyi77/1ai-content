@@ -17,6 +17,7 @@ async def generate_book_pipeline(
     subject: str,
     *,
     additional_instructions: str = "",
+    language: str = "en",
     long_mode: bool = False,
     title_model: Optional[str] = None,
     structure_model: Optional[str] = None,
@@ -48,9 +49,8 @@ async def generate_book_pipeline(
         yield {"type": "progress", "phase": "title", "message": "Generating book title..."}
 
         cumulative_stats = GenerationStatistics()
-
         title_stats, title = await generate_title(
-            subject, model=title_model, groq_client=client,
+            subject, language=language, model=title_model, groq_client=client,
         )
         cumulative_stats += title_stats
 
@@ -63,10 +63,10 @@ async def generate_book_pipeline(
 
         # --- Step 2: Generate structure ---
         yield {"type": "progress", "phase": "structure", "message": "Generating book outline..."}
-
         structure_stats, structure_json = await generate_structure(
             subject,
             additional_instructions=additional_instructions,
+            language=language,
             long_mode=long_mode,
             model=structure_model,
             groq_client=client,
@@ -101,10 +101,10 @@ async def generate_book_pipeline(
                 "stats": cumulative_stats.__dict__,
             }
 
-
             section_stats, content = await generate_section_content(
                 section_title,
                 additional_instructions=additional_instructions,
+                language=language,
                 book_title=title,
                 model=section_model,
                 groq_client=client,

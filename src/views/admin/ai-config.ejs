@@ -453,13 +453,6 @@ function toast(msg, type = 'info') {
   setTimeout(() => el.remove(), 4000);
 }
 
-// ===================== HELPERS =====================
-function esc(s) {
-  if (s == null) return '';
-  const d = document.createElement('div');
-  d.textContent = String(s);
-  return d.innerHTML;
-}
 
 function setPreset(fieldId, value) {
   const el = document.getElementById(fieldId);

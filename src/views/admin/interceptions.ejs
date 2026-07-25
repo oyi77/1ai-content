@@ -235,9 +235,6 @@ function appendEvent(type, content, ts, metadata) {
   msgs.scrollTop = msgs.scrollHeight;
 }
 
-function escHtml(str) {
-  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
 
 async function deliverMedia() {
   if (!selectedUser) return;

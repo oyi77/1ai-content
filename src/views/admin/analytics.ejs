@@ -862,11 +862,6 @@ function userName(u) {
   if (!u) return '—';
   return u.firstName || u.username || u.telegramId?.toString() || '—';
 }
-function esc(s) {
-  const d = document.createElement('div');
-  d.textContent = s;
-  return d.innerHTML;
-}
 
 // ===================== NAVIGATION (hash-based) =====================
 let currentSection = 'overview';

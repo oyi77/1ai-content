@@ -109,5 +109,17 @@ export async function registerContentToolsRoutes(server: FastifyInstance) {
     });
     return reply.send(books);
   });
+
+  // Get a single book
+  server.get<{ Params: { id: string } }>("/api/books/:id", async (request, reply) => {
+    const { id } = request.params;
+    const book = await prisma.book.findUnique({
+      where: { id: Number(id) },
+    });
+    if (!book) {
+      return reply.status(404).send({ error: "Book not found" });
+    }
+    return reply.send(book);
+  });
 }
 

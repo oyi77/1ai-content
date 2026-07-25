@@ -135,8 +135,9 @@ async def test_generate_structure_invalid_json():
 
 @pytest.mark.asyncio
 async def test_generate_section_content():
-    """Test section content streaming yields tokens + stats sentinel."""
+    """Test section content returns (stats, content)."""
     from services.bookshelf.agents.section_writer import generate_section_content
+    from services.bookshelf.stats import GenerationStatistics
 
     usage = MagicMock()
     usage.prompt_tokens = 10
@@ -152,15 +153,10 @@ async def test_generate_section_content():
         ])
     )
 
-    chunks = []
-    async for chunk in generate_section_content("Introduction", book_title="Test Book", groq_client=client):
-        chunks.append(chunk)
-
-    combined = "".join(chunks)
-    assert "Hello this is " in combined
-    assert "section content." in combined
-    stats_found = any("__STATS__:" in c for c in chunks)
-    assert stats_found, "Should emit a stats sentinel"
+    stats, content = await generate_section_content("Introduction", book_title="Test Book", groq_client=client)
+    assert "Hello this is section content." in content
+    assert isinstance(stats, GenerationStatistics)
+    assert stats.total_tokens == 15
 
 
 # -- Orchestrator Engine Tests --

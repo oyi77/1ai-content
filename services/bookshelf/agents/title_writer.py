@@ -3,9 +3,9 @@ import re
 import asyncio
 from typing import Optional
 
+from services.bookshelf.language import get_language_instruction
 from services.bookshelf.openai_provider import get_groq_client
 from services.bookshelf.stats import GenerationStatistics
-
 SYSTEM_PROMPT = (
     "You are a helpful assistant that writes book titles. "
     "You return only the title and nothing else. "
@@ -19,6 +19,7 @@ MAX_TOKENS = 100
 async def generate_title(
     subject: str,
     *,
+    language: str = "en",
     model: Optional[str] = None,
     groq_client=None,
 ) -> tuple[GenerationStatistics, str]:
@@ -28,11 +29,14 @@ async def generate_title(
     """
     client = groq_client or get_groq_client()
 
+    lang_instruction = get_language_instruction(language)
+    system_content = f"{SYSTEM_PROMPT}\n\n{lang_instruction}"
+
     resp = await asyncio.to_thread(
         lambda: client.chat.completions.create(
             model=model or MODEL,
             messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "system", "content": system_content},
                 {"role": "user", "content": f"Generate a book title about: {subject}"},
             ],
             temperature=TEMPERATURE,

@@ -299,12 +299,6 @@ function formatBalance(b) {
   return `<span style="color:var(--muted);cursor:help;" title="Balance information unavailable">N/A</span>`;
 }
 
-function esc(s) {
-  if (s == null) return '';
-  const d = document.createElement('div');
-  d.textContent = String(s);
-  return d.innerHTML;
-}
 
 function reltime(s) {
   if (!s) return '—';

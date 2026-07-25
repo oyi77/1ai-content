@@ -94,6 +94,28 @@
   </div>
 </div>
 
+<!-- Book Viewer Modal -->
+<div class="modal-overlay" id="modal-book">
+  <div class="modal" style="max-width:800px;max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;position:sticky;top:0;background:var(--bg);padding-bottom:12px;z-index:1;">
+      <div>
+        <h3 style="margin:0;font-size:16px;" id="modal-book-title">Book</h3>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px;" id="modal-book-subject"></div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="closeBookModal()">✕</button>
+    </div>
+    <div id="modal-book-stats" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;"></div>
+    <div id="modal-book-sections"></div>
+    <div id="modal-book-markdown-section" style="display:none;margin-top:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div style="font-weight:600;font-size:13px;">📝 Full Markdown</div>
+        <button class="btn btn-ghost btn-xs" onclick="copyBookMarkdown()">📋 Copy</button>
+      </div>
+      <pre id="modal-book-markdown" style="background:var(--bg2);padding:16px;border-radius:8px;font-size:12px;line-height:1.6;overflow-x:auto;max-height:400px;white-space:pre-wrap;"></pre>
+    </div>
+  </div>
+</div>
+
 <!-- Toast -->
 <div id="toast-container"></div>
 
@@ -110,11 +132,6 @@ function toast(msg, type='info') {
   setTimeout(() => el.remove(), 4000);
 }
 
-function esc(s) {
-  const d = document.createElement('div');
-  d.textContent = String(s == null ? '' : s);
-  return d.innerHTML;
-}
 
 function dt(s) {
   if (!s) return '—';
@@ -236,7 +253,7 @@ async function loadBooks() {
 function renderBooks() {
   if (!allBooks.length) return '<div class="empty-state">No saved books yet. Generate one in the <a href="/admin/bookshelf" style="color:var(--gold);">Bookshelf</a>.</div>';
   return allBooks.map(b => `
-    <div class="media-card">
+    <div class="media-card" onclick="openBook(${b.id})">
       <div class="media-thumb no-thumb" style="display:flex;align-items:center;justify-content:center;font-size:36px;">📖</div>
       <div class="media-info">
         <div style="font-weight:600;font-size:13px;margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(b.title)}</div>
@@ -246,7 +263,7 @@ function renderBooks() {
           ${b.stats?.total_tokens ? `<span class="badge badge-default" style="font-size:10px;">${b.stats.total_tokens} tok.</span>` : ''}
         </div>
         <div style="font-size:11px;color:var(--muted);">
-          ${b.full_markdown ? (b.full_markdown.length + ' chars • ') : ''}${dt(b.createdAt)}
+          ${b.fullMarkdown ? (b.fullMarkdown.length + ' chars • ') : ''}${dt(b.createdAt)}
         </div>
       </div>
     </div>
@@ -289,12 +306,79 @@ function closeVideoModal() {
   if (video) video.pause();
 }
 
+async function openBook(id) {
+  try {
+    const r = await fetch(`/api/books/${id}`, { credentials: 'include' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const b = await r.json();
+
+    document.getElementById('modal-book-title').textContent = b.title;
+    document.getElementById('modal-book-subject').textContent = b.subject || '';
+
+    // Stats badges
+    const stats = b.stats || {};
+    const parts = [];
+    if (stats.total_tokens) parts.push(`Tokens: ${stats.total_tokens}`);
+    if (stats.total_cost) parts.push(`Cost: $${Number(stats.total_cost).toFixed(4)}`);
+    if (stats.total_time) parts.push(`Time: ${Number(stats.total_time).toFixed(1)}s`);
+    if (stats.total_prompts) parts.push(`Calls: ${stats.total_prompts}`);
+    document.getElementById('modal-book-stats').innerHTML = parts.length
+      ? parts.map(p => `<span class="badge badge-default">${esc(p)}</span>`).join('')
+      : '';
+
+    // Sections (expandable)
+    const sections = b.sections || [];
+    let sHtml = '';
+    sections.forEach((sec, i) => {
+      const st = sec.title || sec.heading || `Section ${i + 1}`;
+      const sc = sec.content || '';
+      sHtml += `<div style="border:1px solid var(--border);border-radius:8px;margin-bottom:8px;overflow:hidden;">
+        <div onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('span:last-child').textContent=this.nextElementSibling.style.display==='block'?'▼':'▶'" style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;cursor:pointer;background:var(--bg);">
+          <span style="font-weight:600;font-size:13px;">${esc(st)}</span>
+          <span style="font-size:10px;color:var(--muted);">▶</span>
+        </div>
+        <div style="display:none;padding:12px 16px;font-size:12px;line-height:1.6;border-top:1px solid var(--border);">
+          ${esc(sc).replace(/\n/g, '<br>')}
+        </div>
+      </div>`;
+    });
+    document.getElementById('modal-book-sections').innerHTML = sHtml || '<div style="color:var(--muted);font-size:13px;padding:16px 0;">No structured sections data.</div>';
+
+    // Full markdown
+    const mdSec = document.getElementById('modal-book-markdown-section');
+    if (b.fullMarkdown) {
+      document.getElementById('modal-book-markdown').textContent = b.fullMarkdown;
+      mdSec.style.display = 'block';
+    } else {
+      mdSec.style.display = 'none';
+    }
+
+    document.getElementById('modal-book').classList.add('open');
+  } catch (e) {
+    toast('Failed to load book: ' + e.message, 'error');
+  }
+}
+
+function closeBookModal() {
+  document.getElementById('modal-book').classList.remove('open');
+}
+
+function copyBookMarkdown() {
+  const md = document.getElementById('modal-book-markdown');
+  if (!md || !md.textContent) return toast('No markdown content', 'error');
+  navigator.clipboard.writeText(md.textContent).then(() => toast('✅ Copied!'));
+}
+
 document.getElementById('modal-video').addEventListener('click', function(e) {
   if (e.target === this) closeVideoModal();
 });
 
+document.getElementById('modal-book').addEventListener('click', function(e) {
+  if (e.target === this) closeBookModal();
+});
+
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeVideoModal();
+  if (e.key === 'Escape') { closeVideoModal(); closeBookModal(); }
 });
 
 loadMedia();

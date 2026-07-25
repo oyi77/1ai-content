@@ -116,6 +116,19 @@ function updateClock() {
 }
 setInterval(updateClock, 1000);
 updateClock();
+// ===================== SHARED HTML ESCAPING HELPERS =====================
+function esc(s) {
+  if (s == null) return '';
+  var d = document.createElement('div');
+  d.textContent = String(s);
+  return d.innerHTML;
+}
+window.esc = esc;
+window.escHtml = esc;
+window.escAttr = function(str) {
+  return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+};
+
 
 // ===================== SIDEBAR TOGGLE =====================
 function toggleSidebar() {

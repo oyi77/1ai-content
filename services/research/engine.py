@@ -17,6 +17,7 @@ from typing import Any
 import httpx
 
 OMNIRoute_URL = os.getenv("OMNIRoute_URL", "http://127.0.0.1:20128/v1")
+OMNIROUTE_API_KEY = os.getenv("OMNIROUTE_API_KEY", "")
 
 
 # ── Data types ──────────────────────────────────────────────────────────────
@@ -288,23 +289,48 @@ Return ONLY valid JSON, no markdown fences."""
         )
 
     async def _call_llm(self, prompt: str, max_tokens: int = 2000) -> str:
-        """Call OmniRoute LLM for research analysis."""
+        """Call LLM for research analysis. Tries OmniRoute first, falls back to local llama.cpp."""
+        # Provider 1: OmniRoute
+        if OMNIROUTE_API_KEY:
+            try:
+                headers = {"Authorization": f"Bearer {OMNIROUTE_API_KEY}"}
+                async with httpx.AsyncClient(timeout=90) as client:
+                    resp = await client.post(
+                        f"{self.llm_url}/chat/completions",
+                        headers=headers,
+                        json={
+                            "model": "auto/best-chat",
+                            "messages": [{"role": "user", "content": prompt}],
+                            "max_tokens": max_tokens,
+                            "temperature": 0.7,
+                        },
+                        timeout=90,
+                    )
+                    resp.raise_for_status()
+                    content = resp.json()["choices"][0]["message"]["content"]
+                    if content:
+                        return content
+            except Exception as e:
+                print(f"[ResearchEngine] OmniRoute call failed: {e}")
+
+        # Provider 2: local llama.cpp fallback
+        llama_url = "http://localhost:11435/v1"
         try:
-            async with httpx.AsyncClient(timeout=90) as client:
+            async with httpx.AsyncClient(timeout=120) as client:
                 resp = await client.post(
-                    f"{self.llm_url}/chat/completions",
+                    f"{llama_url}/chat/completions",
                     json={
-                        "model": "auto/best-chat",
+                        "model": "Qwen2.5-Coder-7B-Instruct-Q4_K_M.gguf",
                         "messages": [{"role": "user", "content": prompt}],
                         "max_tokens": max_tokens,
                         "temperature": 0.7,
                     },
-                    timeout=90,
+                    timeout=120,
                 )
                 resp.raise_for_status()
                 return resp.json()["choices"][0]["message"]["content"]
         except Exception as e:
-            print(f"[ResearchEngine] LLM call failed: {e}")
+            print(f"[ResearchEngine] llama.cpp fallback also failed: {e}")
             return ""
 
 

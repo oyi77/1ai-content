@@ -224,15 +224,6 @@
     document.querySelectorAll('[id$="-arrow"]').forEach(el => { el.innerHTML = '&#9658;'; });
   }
 
-  function escHtml(str) {
-    return String(str)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  }
-
-  function escAttr(str) {
-    return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;');
-  }
 
   let toastTimer;
   function showToast(msg, type) {

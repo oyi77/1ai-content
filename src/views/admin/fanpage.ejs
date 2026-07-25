@@ -284,7 +284,6 @@ function closeModal() {
 }
 
 // ── Utilities ────────────────────────────────────────────────
-function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 function showToast(msg, type) {
   const el = document.getElementById('toast');
   el.textContent = msg; el.className = 'toast ' + type + ' show';

@@ -30,7 +30,7 @@ from typing import Optional
 from datetime import datetime
 
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 # ── Import services ────────────────────────────────────────────
@@ -272,7 +272,7 @@ class VideoRegenerateOptions(BaseModel):
 
 
 class VideoRegenerateRequest(BaseModel):
-    source_url: str
+    url: str
     platform: str = "facebook"
     options: VideoRegenerateOptions = VideoRegenerateOptions()
 
@@ -697,14 +697,36 @@ async def pinterest_post(req: PinterestPostRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+FB_PAGES_CACHE: dict[str, str] | None = None
+def _get_fb_page_token(page_id: str) -> str:
+    """Look up page access token from 1ai-social fb_pages.json."""
+    global FB_PAGES_CACHE
+    if FB_PAGES_CACHE is None:
+        fb_pages_path = Path.home() / "projects" / "1ai-social" / "data" / "fb_pages.json"
+        try:
+            with open(fb_pages_path) as f:
+                pages = json.load(f)
+            FB_PAGES_CACHE = {p["id"]: p["access_token"] for p in pages if "access_token" in p}
+        except (FileNotFoundError, json.JSONDecodeError, KeyError) as e:
+            print(f"[warn] Could not load fb_pages.json: {e}")
+            FB_PAGES_CACHE = {}
+    token = FB_PAGES_CACHE.get(page_id)
+    if not token:
+        raise HTTPException(status_code=400, detail=f"No access token found for page {page_id}")
+    return token
+
 @app.post("/publish-to-facebook")
 async def publish_to_facebook(req: PublishToFacebookRequest):
     """Download image and publish to Facebook via 1ai-social distribution API.
 
     Acts as CORS proxy: admin page on content.aitradepulse.com cannot call
     1ai-social directly, so this endpoint forwards the request.
+    Looks up page access token from fb_pages.json when not provided in request.
     """
     try:
+        # Resolve page token from local config if not supplied
+        token = req.page_token if req.page_token else _get_fb_page_token(req.page_id)
+
         scraper = get_pinterest()
 
         # Save directly to 1ai-social's allowed publish root
@@ -718,13 +740,13 @@ async def publish_to_facebook(req: PublishToFacebookRequest):
         if not local_path:
             raise HTTPException(status_code=400, detail="Failed to download image")
 
-        # Forward to 1ai-social distribution API
+        # Forward to 1ai-social distribution API (port 8200)
         async with httpx.AsyncClient(timeout=60.0) as client:
             resp = await client.post(
-                "http://localhost:8000/v1/distribution/publish",
+                "http://localhost:8200/v1/distribution/publish",
                 json={
                     "page_id": req.page_id,
-                    "page_token": req.page_token,
+                    "page_token": token,
                     "file_path": local_path,
                     "message": req.message,
                     "affiliate_link": req.affiliate_link,
@@ -828,11 +850,11 @@ def _get_research_engine() -> "ResearchEngine":
     return _research_engine
 
 
-@_router.post("/research/topics")
+@app.post("/research/topics")
 async def research_topics(req: ResearchNicheRequest):
     """Research trending niches for a given language / region."""
     engine = _get_research_engine()
-    niches = await engine.research_trending_niches(
+    niches = await engine.research_niches(
         language=req.language,
         region=req.region,
         category=req.category,
@@ -842,7 +864,7 @@ async def research_topics(req: ResearchNicheRequest):
     return {"niches": niches, "language": req.language}
 
 
-@_router.post("/research/book-brief")
+@app.post("/research/book-brief")
 async def research_book_brief(req: BookBriefRequest):
     """Generate a book brief with outline from a niche."""
     engine = _get_research_engine()
@@ -855,44 +877,53 @@ async def research_book_brief(req: BookBriefRequest):
     return {"brief": brief}
 
 
-@_router.post("/research/generate-book")
+@app.post("/research/generate-book")
 async def research_generate_book(req: ResearchGenerateBookRequest):
-    """Full pipeline: research brief → generate book content."""
+    """Full pipeline: research brief → generate book content (SSE streamed)."""
     engine = _get_research_engine()
 
-    # 1. brief (outline)
-    brief = await engine.generate_book_brief(
-        niche=req.subject,
-        language=req.language,
-        region=req.region,
-    )
+    async def _generate():
+        # 1. brief (outline)
+        try:
+            brief = await engine.generate_book_brief(
+                niche=req.subject,
+                language=req.language,
+                region=req.region,
+            )
+            yield f"data: {json.dumps({'type': 'brief', 'payload': brief})}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'type': 'error', 'message': f'Brief generation failed: {e}'})}\n\n"
+            return
 
-    # 2. generate full book using existing bookshelf pipeline
-    from services.bookshelf.engine import generate_book_pipeline
+        # 2. generate full book using existing bookshelf pipeline
+        from services.bookshelf.engine import generate_book_pipeline
 
-    sections = []
-    async for event in generate_book_pipeline(
-        req.subject,
-        language=req.language,
-        additional_instructions=req.additional_instructions,
-    ):
-        if event.get("type") == "section":
-            sections.append({
-                "index": event.get("index", 0),
-                "title": event.get("title", ""),
-                "content": event.get("content", ""),
-            })
-    book = "\n\n".join(
-        f"# {s['title']}\n\n{s['content']}" for s in sections
-    )
+        sections = []
+        try:
+            async for event in generate_book_pipeline(
+                req.subject,
+                additional_instructions=req.additional_instructions,
+                language=req.language,
+            ):
+                event_type = event.get("type")
+                if event_type == "section_content":
+                    payload = event.get("payload", {})
+                    sections.append({
+                        "index": event.get("current", 0),
+                        "title": payload.get("title", ""),
+                        "content": payload.get("content", ""),
+                    })
+                # Stream every event to the client
+                yield f"data: {json.dumps(event)}\n\n"
 
-    return {
-        "subject": req.subject,
-        "language": req.language,
-        "brief": brief,
-        "sections": sections,
-        "word_count": len(book.split()),
-    }
+            book = "\n\n".join(
+                f"# {s['title']}\n\n{s['content']}" for s in sections
+            )
+            yield f"data: {json.dumps({'type': 'complete', 'payload': {'subject': req.subject, 'language': req.language, 'sections': sections, 'word_count': len(book.split())}})}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+
+    return StreamingResponse(_generate(), media_type="text/event-stream")
 @app.post("/upload/video")
 async def upload_video(file: UploadFile = File(...)):
     """Upload a video file for remeta/repurpose processing."""
@@ -1911,7 +1942,7 @@ async def process_video(req: VideoProcessRequest):
 
 
 class VideoSearchRequest(BaseModel):
-    video_url: str
+    url: str
 
 
 @app.post("/video/search")
@@ -1921,7 +1952,7 @@ async def video_search(req: VideoSearchRequest):
     Returns {found, url_hash, processed_at, file_path}.
     """
     import sqlite3 as _sqlite3, hashlib as _hashlib
-    _url_hash = _hashlib.sha256(req.video_url.encode()).hexdigest()
+    _url_hash = _hashlib.sha256(req.url.encode()).hexdigest()
     try:
         _conn = _sqlite3.connect(_PROCESSED_VIDEOS_DB)
         row = _conn.execute(
@@ -1958,7 +1989,7 @@ async def video_regenerate(req: VideoRegenerateRequest):
     # ── 1. Download ──────────────────────────────────────────
     try:
         from services.download.engine import download_video as _dl
-        dl = await _dl(req.source_url)
+        dl = await _dl(req.url)
         if dl.get("status") != "downloaded" or not dl.get("file_path"):
             raise RuntimeError(f"Download failed: {dl.get('reason', 'unknown')}")
         file_path: str = dl["file_path"]
@@ -2326,7 +2357,7 @@ async def video_transforms(req: VideoTransformsRequest):
 
 
 class RenderAdRequest(BaseModel):
-    image_url: str = Field(default="", description="Product image URL")
+    image_url: str = ""
     title: str = Field(..., description="Product title/name")
     category: str = Field(
         default="beauty",
