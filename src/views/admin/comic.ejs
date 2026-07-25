@@ -1,0 +1,328 @@
+<!-- Comic/Manga/Manhwa Generator Admin Page -->
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+  <div>
+    <h1 class="section-title">🎨 Comic / Manga / Manhwa Generator</h1>
+    <p class="section-sub">Generate complete comic scripts and pages using AI</p>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+  <!-- Generate Form -->
+  <div class="card" style="grid-column:1/3;">
+    <h3 style="margin-bottom:16px;font-size:16px;font-weight:700;">Generate Comic</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div class="form-group" style="grid-column:1/3;">
+        <label>Story Prompt / Concept</label>
+        <textarea class="input" id="c-prompt" rows="3" placeholder="e.g. A young samurai discovers a cursed blade that speaks to her in the voice of her long-dead father" style="width:100%;"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Format</label>
+        <select class="input" id="c-format" style="width:100%;">
+          <option value="comic">Comic (Western grid layout)</option>
+          <option value="manga">Manga (right-to-left, grayscale)</option>
+          <option value="manhwa">Manhwa (vertical scroll, full color)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Language</label>
+        <select class="input" id="c-lang" style="width:100%;">
+          <option value="en">English</option>
+          <option value="id">Bahasa Indonesia</option>
+          <option value="ja">Japanese</option>
+          <option value="zh">Chinese</option>
+          <option value="ko">Korean</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Pages per Episode</label>
+        <input class="input" id="c-pages" type="number" value="5" min="1" max="30" style="width:100%;">
+      </div>
+      <div class="form-group">
+        <label>Number of Episodes</label>
+        <input class="input" id="c-episodes" type="number" value="1" min="1" max="10" style="width:100%;">
+      </div>
+      <div class="form-group" style="grid-column:1/3;">
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 0;">
+          <input type="checkbox" id="c-images">
+          <span>Generate images (slow, uses image API)</span>
+        </label>
+        <div style="font-size:12px;color:var(--muted);margin-top:-4px;">When unchecked, generates script only with placeholder images for layout preview</div>
+      </div>
+    </div>
+    <button class="btn btn-gold" style="margin-top:16px;" onclick="generateComic()">🎨 Generate Comic</button>
+  </div>
+
+  <!-- Progress -->
+  <div id="c-progress-section" class="card" style="display:none;grid-column:1/3;">
+    <h3 style="margin-bottom:12px;font-size:14px;font-weight:600;">⏳ Generating...</h3>
+    <div id="c-progress-msg" style="font-size:13px;color:var(--muted);margin-bottom:8px;">Starting...</div>
+    <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;">
+      <div id="c-progress-bar" style="height:100%;width:0%;background:var(--gold);border-radius:3px;transition:width 0.3s;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Script Preview -->
+<div id="c-script-section" class="card" style="display:none;margin-bottom:20px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+    <h3 style="font-size:16px;font-weight:700;">📝 Script Preview</h3>
+    <button class="btn btn-ghost btn-sm" onclick="toggleScriptJson()">📄 Show/Hide JSON</button>
+  </div>
+  <div id="c-script-summary" style="font-size:13px;color:var(--muted);margin-bottom:12px;"></div>
+  <div id="c-script-json" style="display:none;">
+    <pre id="c-json-viewer" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px;font-size:11px;max-height:300px;overflow-y:auto;white-space:pre-wrap;"></pre>
+  </div>
+  <div id="c-script-chapters"></div>
+</div>
+
+<!-- Output Gallery -->
+<div id="c-gallery-section" class="card" style="display:none;margin-bottom:20px;">
+  <h3 style="font-size:16px;font-weight:700;margin-bottom:12px;">🖼️ Generated Pages</h3>
+  <div id="c-gallery" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;"></div>
+</div>
+
+<!-- Cover -->
+<div id="c-cover-section" class="card" style="display:none;margin-bottom:20px;">
+  <h3 style="font-size:16px;font-weight:700;margin-bottom:12px;">📘 Cover</h3>
+  <div id="c-cover-display"></div>
+</div>
+
+<!-- Stats -->
+<div id="c-stats-section" class="card" style="display:none;margin-bottom:20px;">
+  <div id="c-stats" style="font-size:13px;color:var(--muted);"></div>
+</div>
+
+<!-- Error -->
+<div id="c-error" class="card" style="display:none;background:var(--red-bg);border:1px solid var(--red);margin-bottom:20px;">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <span style="font-size:24px;">❌</span>
+    <div>
+      <div style="font-weight:600;margin-bottom:4px;">Generation Failed</div>
+      <div id="c-error-msg" style="font-size:13px;color:var(--muted);"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const PY_API = window.location.origin + '/api/py';
+
+function showToast(msg, type) {
+  const t = document.createElement('div');
+  t.className = `toast toast-${type === 'error' ? 'error' : 'success'}`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+async function generateComic() {
+  const prompt = document.getElementById('c-prompt').value.trim();
+  if (!prompt) return showToast('Enter a story prompt', 'error');
+
+  const btn = document.querySelector('.btn-gold');
+  const origText = btn.textContent;
+  btn.textContent = '⏳ Generating...';
+  btn.disabled = true;
+
+  // Reset UI
+  document.getElementById('c-script-section').style.display = 'none';
+  document.getElementById('c-gallery-section').style.display = 'none';
+  document.getElementById('c-cover-section').style.display = 'none';
+  document.getElementById('c-stats-section').style.display = 'none';
+  document.getElementById('c-error').style.display = 'none';
+
+  const progSection = document.getElementById('c-progress-section');
+  const progMsg = document.getElementById('c-progress-msg');
+  const progBar = document.getElementById('c-progress-bar');
+  progSection.style.display = 'block';
+  progMsg.textContent = 'Starting generation...';
+  progBar.style.width = '0%';
+
+  try {
+    const body = {
+      prompt,
+      format: document.getElementById('c-format').value,
+      language: document.getElementById('c-lang').value,
+      pages_per_episode: parseInt(document.getElementById('c-pages').value) || 5,
+      num_episodes: parseInt(document.getElementById('c-episodes').value) || 1,
+      generate_images: document.getElementById('c-images').checked,
+    };
+
+    const r = await fetch(`${PY_API}/comic/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({ detail: `HTTP ${r.status}` }));
+      throw new Error(err.detail || `HTTP ${r.status}`);
+    }
+
+    // Parse SSE stream from POST response
+    const reader = r.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buf += decoder.decode(value, { stream: true });
+      const parts = buf.split('\n');
+      buf = parts.pop() || '';
+
+      for (const line of parts) {
+        if (line.startsWith('data: ')) {
+          try {
+            const event = JSON.parse(line.slice(6));
+            handleEvent(event, body);
+          } catch (e) {
+            console.warn('SSE parse error:', e);
+          }
+        }
+      }
+    }
+
+    // Handle any remaining buffered data
+    if (buf.startsWith('data: ')) {
+      try {
+        handleEvent(JSON.parse(buf.slice(6)), body);
+      } catch (e) {}
+    }
+
+  } catch (e) {
+    console.error('Comic generation error:', e);
+    progSection.style.display = 'none';
+    document.getElementById('c-error').style.display = 'block';
+    document.getElementById('c-error-msg').textContent = e.message;
+    showToast('❌ ' + e.message, 'error');
+  } finally {
+    btn.textContent = origText;
+    btn.disabled = false;
+  }
+}
+
+function handleEvent(event, reqBody) {
+  const progMsg = document.getElementById('c-progress-msg');
+  const progBar = document.getElementById('c-progress-bar');
+
+  if (event.progress !== undefined) {
+    progBar.style.width = `${Math.round(event.progress * 100)}%`;
+  }
+
+  const type = event.type || event.status;
+  progMsg.textContent = event.message || type;
+
+  switch (type) {
+    case 'script_ready': {
+      const script = event.data ? event.data.script || event.data : event.script;
+      if (!script) return;
+
+      // Show script section
+      document.getElementById('c-script-section').style.display = 'block';
+      document.getElementById('c-json-viewer').textContent = JSON.stringify(script, null, 2);
+
+      // Build summary
+      const fmt = reqBody.format || 'comic';
+      const pages = script.total_pages || (script.episodes ? script.episodes.reduce((s, e) => s + e.pages.length, 0) : 0);
+      document.getElementById('c-script-summary').textContent =
+        `Format: ${fmt} · ${script.episodes ? script.episodes.length : 0} episode(s) · ${pages} page(s)`;
+
+      // Build episode chapter list
+      if (script.episodes && script.episodes.length) {
+        let html = '';
+        script.episodes.forEach((ep, ei) => {
+          html += `<div style="border:1px solid var(--border);border-radius:8px;margin-bottom:8px;overflow:hidden;">
+            <div onclick="toggleChapter(this)" style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;cursor:pointer;background:var(--bg);">
+              <span style="font-weight:600;font-size:13px;">Episode ${ei + 1}: ${esc(ep.title || 'Untitled')}</span>
+              <span style="font-size:10px;color:var(--muted);">▶</span>
+            </div>
+            <div class="c-ep-body" style="display:none;padding:10px 14px;font-size:12px;border-top:1px solid var(--border);">
+              <div style="margin-bottom:8px;color:var(--muted);">${ep.pages ? ep.pages.length : 0} page(s)</div>
+              ${ep.summary ? `<div style="margin-bottom:8px;">${esc(ep.summary)}</div>` : ''}`;
+          if (ep.pages) {
+            ep.pages.forEach((page, pi) => {
+              html += `<div style="padding:4px 0;border-bottom:1px solid var(--border);font-size:11px;">
+                <strong>Page ${pi + 1}</strong>: ${page.panels ? page.panels.length + ' panel(s)' : '-'}
+                ${page.description ? ` — ${esc(page.description)}` : ''}
+              </div>`;
+            });
+          }
+          html += `</div></div>`;
+        });
+        document.getElementById('c-script-chapters').innerHTML = html;
+      }
+      break;
+    }
+
+    case 'page_rendered': {
+      const ep = event.episode || 0;
+      const page = event.page || 0;
+      const path = event.path || '';
+
+      document.getElementById('c-gallery-section').style.display = 'block';
+      const gallery = document.getElementById('c-gallery');
+
+      const imgPath = path.replace('/home/openclaw/projects/1ai-content/output/comic/', '');
+      const imgUrl = `${PY_API}/comic/page/${imgPath}`;
+
+      const div = document.createElement('div');
+      div.style.cssText = 'border:1px solid var(--border);border-radius:8px;overflow:hidden;';
+      div.innerHTML = `<img src="${imgUrl}" loading="lazy" style="width:100%;display:block;aspect-ratio:auto;"
+        onerror="this.style.display='none'">
+        <div style="padding:6px 8px;font-size:11px;color:var(--muted);">Ep ${ep + 1} · Page ${page + 1}</div>`;
+      gallery.appendChild(div);
+      break;
+    }
+
+    case 'cover_rendered': {
+      const path = event.path || '';
+      document.getElementById('c-cover-section').style.display = 'block';
+
+      const imgPath = path.replace('/home/openclaw/projects/1ai-content/output/comic/', '');
+      const imgUrl = `${PY_API}/comic/page/${imgPath}`;
+      document.getElementById('c-cover-display').innerHTML =
+        `<img src="${imgUrl}" style="max-width:300px;border-radius:8px;border:1px solid var(--border);"
+          onerror="this.style.display='none'">`;
+      break;
+    }
+
+    case 'complete': {
+      const data = event.data || event;
+      document.getElementById('c-stats-section').style.display = 'block';
+      const statParts = [];
+      if (data.num_episodes) statParts.push(`Episodes: ${data.num_episodes}`);
+      if (data.total_pages) statParts.push(`Total pages: ${data.total_pages}`);
+      if (data.output_dir) statParts.push(`Output: ${esc(data.output_dir)}`);
+      document.getElementById('c-stats').textContent = statParts.join(' · ') || 'Complete';
+      showToast('✅ Comic generated!');
+      break;
+    }
+
+    case 'error':
+    case 'error_event': {
+      document.getElementById('c-progress-section').style.display = 'none';
+      document.getElementById('c-error').style.display = 'block';
+      document.getElementById('c-error-msg').textContent = event.message || 'Unknown error';
+      break;
+    }
+  }
+}
+
+function toggleScriptJson() {
+  const el = document.getElementById('c-script-json');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function toggleChapter(el) {
+  const body = el.nextElementSibling;
+  const arrow = el.querySelector('span:last-child');
+  if (body.style.display === 'none') {
+    body.style.display = 'block';
+    arrow.textContent = '▼';
+  } else {
+    body.style.display = 'none';
+    arrow.textContent = '▶';
+  }
+}
+</script>

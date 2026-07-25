@@ -75,6 +75,14 @@ export async function registerContentToolsRoutes(server: FastifyInstance) {
     );
   });
 
+  // Comic/Manga/Manhwa Generator
+  server.get("/admin/comic", async (_request, reply) => {
+    return reply.view("admin/comic.ejs", {
+      ...trackingVars,
+      activePage: "comic",
+    });
+  });
+
   // ========== Bookshelf API ==========
 
   // Save a generated book
