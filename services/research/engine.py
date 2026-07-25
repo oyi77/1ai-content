@@ -289,7 +289,7 @@ Return ONLY valid JSON, no markdown fences."""
         )
 
     async def _call_llm(self, prompt: str, max_tokens: int = 2000) -> str:
-        """Call LLM for research analysis. Tries OmniRoute first, falls back to local llama.cpp."""
+        """Call LLM for research analysis. Tries OmniRoute first, falls back to local Ollama."""
         # Provider 1: OmniRoute
         if OMNIROUTE_API_KEY:
             try:
@@ -313,14 +313,14 @@ Return ONLY valid JSON, no markdown fences."""
             except Exception as e:
                 print(f"[ResearchEngine] OmniRoute call failed: {e}")
 
-        # Provider 2: local llama.cpp fallback
-        llama_url = "http://localhost:11435/v1"
+        # Provider 2: local Ollama fallback (phi3:mini)
+        ollama_url = "http://localhost:11434/v1"
         try:
             async with httpx.AsyncClient(timeout=120) as client:
                 resp = await client.post(
-                    f"{llama_url}/chat/completions",
+                    f"{ollama_url}/chat/completions",
                     json={
-                        "model": "Qwen2.5-Coder-7B-Instruct-Q4_K_M.gguf",
+                        "model": "phi3:mini",
                         "messages": [{"role": "user", "content": prompt}],
                         "max_tokens": max_tokens,
                         "temperature": 0.7,
@@ -328,9 +328,11 @@ Return ONLY valid JSON, no markdown fences."""
                     timeout=120,
                 )
                 resp.raise_for_status()
-                return resp.json()["choices"][0]["message"]["content"]
+                content = resp.json()["choices"][0]["message"]["content"]
+                if content:
+                    return content
         except Exception as e:
-            print(f"[ResearchEngine] llama.cpp fallback also failed: {e}")
+            print(f"[ResearchEngine] Ollama fallback (phi3:mini) failed: {e}")
             return ""
 
 
