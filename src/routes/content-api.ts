@@ -358,7 +358,7 @@ export async function contentApiRoutes(server: FastifyInstance): Promise<void> {
     if (!user) return;
 
     const body = request.body as Record<string, unknown>;
-    const { contentFactoryService } = await import("@/services/content-factory.service");
+    const { contentFactoryService } = await import("@/services/content-factory.service.js");
 
     try {
       const result = await contentFactoryService.remetaVideo({
@@ -383,7 +383,7 @@ export async function contentApiRoutes(server: FastifyInstance): Promise<void> {
     if (!user) return;
 
     const body = request.body as Record<string, unknown>;
-    const { contentFactoryService } = await import("@/services/content-factory.service");
+    const { contentFactoryService } = await import("@/services/content-factory.service.js");
 
     try {
       const sources = body.sources as string[];

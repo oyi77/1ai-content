@@ -126,7 +126,7 @@ export async function webhookRoutes(server: FastifyInstance, options: WebhookOpt
         signature_key: String(body.signature),
         transaction_status: statusMap[String(body.status)] || 'pending',
         payment_type: String(body.payment_method),
-      });
+      }, String(body.signature));
 
       // Notify user on payment failure/expiry
       if ((body.status === 'EXPIRED' || body.status === 'FAILED' || body.status === 'CANCELLED') && body.merchant_ref && bot) {

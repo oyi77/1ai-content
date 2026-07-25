@@ -465,6 +465,7 @@ export async function messageHandler(ctx: BotContext): Promise<void> {
           const errMsg = err instanceof Error ? err.message : String(err);
           await c.reply(`❌ Error: ${errMsg}`);
         }
+        return true;
       },
     ];
 

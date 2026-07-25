@@ -201,6 +201,8 @@ const envSchema = z.object({
 
   // ── Social (optional) ──
   POSTBRIDGE_API_KEY: z.string().optional(),
+  SOCIAL_SERVICE_URL: z.string().default("http://localhost:8200"),
+  SOCIAL_SERVICE_KEY: z.string().optional(),
 
   // ── Feature Flags (optional, default false) ──
   FEATURE_PAYMENT: boolStr,

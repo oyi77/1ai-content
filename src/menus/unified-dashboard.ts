@@ -9,7 +9,9 @@ import { BotContext } from "@/types";
 import { UserService } from "@/services/user.service";
 import { prisma } from "@/config/database";
 
-type InlineButton = { text: string; callback_data: string };
+type InlineButton =
+  | { text: string; callback_data: string }
+  | { text: string; url: string };
 type InlineRow = InlineButton[];
 
 // ── Main Dashboard ──
