@@ -113,6 +113,8 @@ const FB_PAGES = [
   { id: '1091128494093952', name: '🛏️ Kamar Estetik Space' },
   { id: '1212341095288340', name: '🍳 Dapur Minimalis Hub' },
   { id: '1076073462253318', name: '👕 Berkah Karya Laundry' },
+  { id: '1180635355135195', name: '🧹 Ruang Rapi Daily' },
+  { id: '1213521515173715', name: '🛒 Rekomendasi Homeliving Shopee' },
 ];
 
 function showToast(msg, type) {
@@ -136,7 +138,7 @@ async function searchPinterest() {
   try {
     const res = await fetch(PY_API + '/pinterest/search', {
       method: 'POST', headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({keyword: query, limit})
+      body: JSON.stringify({query, limit})
     });
     const data = await res.json();
     const results = data.results || data;

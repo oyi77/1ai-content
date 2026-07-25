@@ -102,8 +102,8 @@ async function cloakPost() {
       body: JSON.stringify({
         profile_id: profile,
         platform: document.getElementById('cloak-post-platform').value,
-        content,
-        media_url: document.getElementById('cloak-post-media').value || undefined,
+        caption: content,
+        media_path: document.getElementById('cloak-post-media').value || "",
       }),
     });
     const data = await r.json();

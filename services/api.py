@@ -245,7 +245,7 @@ class CompareRequest(BaseModel):
 
 class CloakPostRequest(BaseModel):
     profile_id: str
-    media_path: str
+    media_path: str = ""
     caption: str
     platform: str
     link: Optional[str] = None
@@ -254,7 +254,7 @@ class CloakPostRequest(BaseModel):
 
 class CloakBatchPostRequest(BaseModel):
     profile_ids: list[str]
-    media_path: str
+    media_path: str = ""
     caption: str
     platform: str
     link: Optional[str] = None
@@ -2326,7 +2326,7 @@ async def video_transforms(req: VideoTransformsRequest):
 
 
 class RenderAdRequest(BaseModel):
-    image_url: str = Field(..., description="Product image URL")
+    image_url: str = Field(default="", description="Product image URL")
     title: str = Field(..., description="Product title/name")
     category: str = Field(
         default="beauty",

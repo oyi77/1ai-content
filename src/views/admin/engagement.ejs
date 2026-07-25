@@ -96,9 +96,8 @@ async function generateReply() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        comment,
+        comment_text: comment,
         platform: document.getElementById('eng-platform').value,
-        tone: document.getElementById('eng-tone').value,
       }),
     });
     const data = await r.json();

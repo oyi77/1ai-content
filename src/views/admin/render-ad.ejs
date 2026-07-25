@@ -82,7 +82,7 @@ async function renderAd() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        product_name: name,
+        title: name,
         format: document.getElementById('ad-format').value,
         style: document.getElementById('ad-style').value,
         background_color: document.getElementById('ad-bg').value || '#FFFFFF',
