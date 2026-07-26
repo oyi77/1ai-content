@@ -3,7 +3,7 @@
   .persona-table th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); }
   .persona-table td { padding: 10px 12px; border-bottom: 1px solid rgba(42,42,58,0.5); vertical-align: middle; }
   .persona-table tr:last-child td { border-bottom: none; }
-  .persona-table tr:hover td { background: rgba(196,163,90,0.03); }
+  .persona-table tr:hover td { background: rgba(168,85,247,0.03); }
   .niche-tag { display: inline-block; padding: 2px 7px; border-radius: 9999px; font-size: 11px; background: #1a2a4a; color: #60a5fa; margin: 1px 2px; }
   .preset-tag { display: inline-block; padding: 2px 7px; border-radius: 9999px; font-size: 11px; background: #2a1a4a; color: #a78bfa; margin: 1px 2px; }
   .inline-edit { display: none; background: rgba(13,13,20,0.7); border-top: 1px solid var(--border); }
@@ -11,8 +11,8 @@
   .inline-edit td { padding: 16px 12px; }
   .niche-checkbox-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
   .niche-cb-label { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 9999px; font-size: 12px; background: #1a1a2e; border: 1px solid var(--border); cursor: pointer; }
-  .niche-cb-label:hover { border-color: var(--gold-dim); }
-  .niche-cb-label input { accent-color: var(--gold); }
+  .niche-cb-label:hover { border-color: var(--accent-dim); }
+  .niche-cb-label input { accent-color: var(--accent); }
 </style>
 
 <div class="section-title">🎭 Persona Management</div>
@@ -53,7 +53,7 @@
           <% (p.allowedPresets || []).forEach(function(pr) { %><span class="preset-tag"><%= pr %></span><% }); %>
         </td>
         <td id="multiplier-display-<%= p.id %>">
-          <span style="font-weight: 600; color: var(--gold);"><%= (p.priceMultiplier || 1.0).toFixed(2) %>x</span>
+          <span style="font-weight: 600; color: var(--accent);"><%= (p.priceMultiplier || 1.0).toFixed(2) %>x</span>
         </td>
         <td>
           <button class="btn btn-ghost btn-xs" onclick="toggleEdit('<%= p.id %>')">✏️ Edit</button>
@@ -110,7 +110,7 @@
             </div>
             <!-- Actions -->
             <div style="display: flex; flex-direction: column; gap: 8px; padding-top: 20px;">
-              <button class="btn btn-gold btn-sm" onclick="savePersona('<%= p.id %>')">💾 Save</button>
+              <button class="btn btn-primary btn-sm" onclick="savePersona('<%= p.id %>')">💾 Save</button>
               <button class="btn btn-ghost btn-sm" onclick="toggleEdit('<%= p.id %>')">Cancel</button>
             </div>
           </div>
@@ -184,7 +184,7 @@ function updateDisplayRow(id, niches, presets, multiplier) {
   const pd = document.getElementById('presets-display-' + id);
   if (pd) pd.innerHTML = presets.map(p => '<span class="preset-tag">' + p + '</span>').join('');
   const md = document.getElementById('multiplier-display-' + id);
-  if (md) md.innerHTML = '<span style="font-weight:600;color:var(--gold);">' + multiplier.toFixed(2) + 'x</span>';
+  if (md) md.innerHTML = '<span style="font-weight:600;color:var(--accent);">' + multiplier.toFixed(2) + 'x</span>';
 }
 
 async function loadPersonas() {

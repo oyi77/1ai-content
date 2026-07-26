@@ -52,7 +52,7 @@
         </div>
       </div>
     </div>
-    <button class="btn btn-gold" style="margin-top:20px;" onclick="generateBook()">📚 Generate Book</button>
+    <button class="btn btn-primary" style="margin-top:20px;" onclick="generateBook()">📚 Generate Book</button>
   </div>
 
   <!-- Progress -->
@@ -60,7 +60,7 @@
     <h3 style="margin-bottom:12px;font-size:14px;font-weight:600;">⏳ Generating...</h3>
     <div id="bk-progress-msg" style="font-size:13px;color:var(--muted);margin-bottom:8px;">Starting...</div>
     <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;">
-      <div id="bk-progress-bar" style="height:100%;width:0%;background:var(--gold);border-radius:3px;transition:width 0.3s;"></div>
+      <div id="bk-progress-bar" style="height:100%;width:0%;background:var(--grad);border-radius:3px;transition:width 0.3s;"></div>
     </div>
   </div>
 </div>
@@ -71,7 +71,7 @@
     <h3 id="bk-result-title" style="font-size:18px;font-weight:700;"></h3>
       <button class="btn btn-ghost btn-sm" onclick="copyMarkdown()" style="margin-top:0;">📋 Copy MD</button>
       <button class="btn btn-ghost btn-sm" onclick="downloadMarkdown()" style="margin-top:0;">⬇️ Download</button>
-      <button class="btn btn-gold btn-sm" onclick="saveBook()" style="margin-top:0;">💾 Save</button>
+      <button class="btn btn-primary btn-sm" onclick="saveBook()" style="margin-top:0;">💾 Save</button>
   </div>
   <div id="bk-stats" style="margin-bottom:16px;font-size:12px;color:var(--muted);"></div>
   <div id="bk-sections"></div>
@@ -121,7 +121,7 @@ async function generateBook() {
   const subject = document.getElementById('bk-subject').value.trim();
   if (!subject) return showToast('Enter a book subject', 'error');
 
-  const btn = document.querySelector('.btn-gold');
+  const btn = document.querySelector('.btn-primary');
   btn.textContent = '⏳ Generating...';
   btn.disabled = true;
 

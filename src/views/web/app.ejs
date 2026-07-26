@@ -7,13 +7,188 @@
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="manifest" href="/manifest.json">
+  <link rel="stylesheet" href="/public/design-system.css">
   <style>
-    :root{
-      --bg:#0a0a1a;--bg2:#111127;--sidebar-w:240px;
-      --card:rgba(255,255,255,0.04);--border:rgba(255,255,255,0.08);
-      --accent:#00d9ff;--accent2:#00ff88;--grad:linear-gradient(135deg,#00d9ff,#00ff88);
-      --text:#fff;--dim:rgba(255,255,255,0.55);--danger:#ff4757;--warn:#ffa502;--ok:#2ed573;
+    :root {
+      --color-bg: #0a0a1a;
+      --color-bg-elevated: #111127;
+      --color-card: rgba(255,255,255,0.04);
+      --color-card-hover: rgba(255,255,255,0.08);
+      --color-border: rgba(255,255,255,0.08);
+      --color-border-strong: rgba(255,255,255,0.15);
+      --color-accent: #a855f7;
+      --color-accent-dim: #7c3aed;
+      --color-accent-2: #6366f1;
+      --color-grad: linear-gradient(135deg, #a855f7, #6366f1);
+      --color-grad-hover: linear-gradient(135deg, #9333ea, #4f46e5);
+      --color-green: #22c55e;
+      --color-red: #ef4444;
+      --color-yellow: #fbbf24;
+      --color-blue: #3b82f6;
+      --color-pink: #ec4899;
+      --color-text: #f1f5f9;
+      --color-dim: rgba(255,255,255,0.55);
+      --color-muted: rgba(255,255,255,0.35);
+      --sidebar-w: 240px;
+      --radius: 14px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      
+      /* Legacy variable aliases (for existing HTML/CSS in web app) */
+      --bg: var(--color-bg);
+      --bg2: var(--color-bg-elevated);
+      --card: var(--color-card);
+      --card-hover: var(--color-card-hover);
+      --border: var(--color-border);
+      --accent: var(--color-accent);
+      --accent2: var(--color-accent-2);
+      --grad: var(--color-grad);
+      --text: var(--color-text);
+      --dim: var(--color-dim);
+      --muted: var(--color-muted);
+      --danger: var(--color-red);
+      --warn: var(--color-yellow);
+      --ok: var(--color-green);
     }
+    
+    /* Surface-specific overrides for design system */
+    .btn-primary {
+      background: var(--color-grad);
+      color: #0a0a1a;
+      box-shadow: var(--shadow-glow);
+    }
+    .btn-primary:hover:not(.btn-disabled):not(:disabled) {
+      background: var(--color-grad-hover);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-glow-hover);
+    }
+    .btn-primary:active:not(.btn-disabled):not(:disabled) {
+      transform: translateY(0) scale(0.98);
+    }
+    
+    .btn-outline {
+      background: transparent;
+      color: var(--color-text);
+      border: 1px solid var(--color-border);
+    }
+    .btn-outline:hover:not(.btn-disabled):not(:disabled) {
+      background: var(--color-card-hover);
+      border-color: var(--color-accent);
+    }
+    
+    .btn-ghost {
+      background: transparent;
+      color: var(--color-text);
+      border: 1px solid transparent;
+    }
+    .btn-ghost:hover:not(.btn-disabled):not(:disabled) {
+      background: var(--color-card);
+    }
+    
+    .btn-secondary {
+      background: var(--color-card);
+      color: var(--color-text);
+      border: 1px solid var(--color-border);
+    }
+    .btn-secondary:hover:not(.btn-disabled):not(:disabled) {
+      background: var(--color-card-hover);
+      border-color: var(--color-border-strong);
+    }
+    
+    .btn-danger {
+      background: rgba(239,68,68,0.15);
+      color: var(--color-red);
+      border: 1px solid rgba(239,68,68,0.2);
+    }
+    .btn-danger:hover:not(.btn-disabled):not(:disabled) {
+      background: var(--color-red);
+      color: #fff;
+      border-color: var(--color-red);
+    }
+    
+    .input {
+      background: var(--color-bg-elevated);
+      border-color: var(--color-border);
+    }
+    .input:focus {
+      border-color: var(--color-accent);
+      box-shadow: 0 0 0 3px rgba(168,85,247,0.15);
+    }
+    
+    .chip {
+      background: var(--color-card);
+      border-color: var(--color-border);
+      color: var(--color-dim);
+    }
+    .chip:hover {
+      border-color: var(--color-accent);
+      background: rgba(168,85,247,0.1);
+      color: var(--color-accent);
+    }
+    .chip.active {
+      background: var(--color-accent);
+      color: #fff;
+      border-color: var(--color-accent);
+    }
+    
+    .card {
+      background: var(--color-card);
+      border-color: var(--color-border);
+      border-radius: var(--radius);
+    }
+    .card:active {
+      background: var(--color-card-hover);
+      transform: scale(0.98);
+    }
+    
+    .stat { background: var(--color-card); border-color: var(--color-border); }
+    .stat .value { 
+      background: var(--color-grad); 
+      -webkit-background-clip: text; 
+      background-clip: text; 
+      -webkit-text-fill-color: transparent; 
+    }
+    
+    .action-btn { background: var(--color-card); border-color: var(--color-border); }
+    .action-btn:active { transform: scale(0.95); background: var(--color-card-hover); }
+    
+    .nav-item.active { color: var(--color-accent); }
+    
+    .progress-bar .fill { background: var(--color-grad); }
+    
+    .generating { animation: pulse-ring 1.5s ease-out infinite; }
+    
+    @keyframes pulse-ring {
+      0% { box-shadow: 0 0 0 0 rgba(168,85,247,0.4); }
+      70% { box-shadow: 0 0 0 10px rgba(168,85,247,0); }
+      100% { box-shadow: 0 0 0 0 rgba(168,85,247,0); }
+    }
+    
+    .empty .title { color: var(--color-text); }
+    .empty .desc { color: var(--color-muted); }
+    
+    .modal { background: var(--color-bg-elevated); border-color: var(--color-border); }
+    .modal-handle { background: var(--color-border); }
+    .modal-close:hover { background: var(--color-card); color: var(--color-text); }
+    
+    /* Focus visible for all interactive elements */
+    :focus-visible {
+      outline: 2px solid var(--color-accent);
+      outline-offset: 2px;
+    }
+    
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+      .generating { animation: none; }
+    }
+    
+    /* Version badge */
+    #version-badge { z-index: 999; }
+  </style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
     a{color:inherit;text-decoration:none}
@@ -203,30 +378,7 @@
 <div id="toast"></div>
 
 <div class="app" id="app" style="display:none">
-  <!-- Sidebar -->
-  <aside class="sidebar">
-    <div class="sidebar-logo">🎬 BerkahKarya</div>
-    <div class="nav-item active" onclick="nav('dashboard')" id="nav-dashboard">🏠 Dashboard</div>
-    <div class="nav-item" onclick="nav('create')" id="nav-create">🎬 Buat Video</div>
-    <div class="nav-item" onclick="nav('image')" id="nav-image">🖼️ Buat Gambar</div>
-    <div class="nav-item" onclick="nav('videos')" id="nav-videos">📁 Video Saya</div>
-    <div class="nav-item" onclick="nav('billing')" id="nav-billing">💳 Billing</div>
-    <div class="nav-item" onclick="nav('referral')" id="nav-referral">👥 Referral</div>
-    <div class="nav-item" onclick="nav('send')" id="nav-send">💸 Kirim Saldo</div>
-    <div class="nav-item" onclick="nav('profile')" id="nav-profile">👤 Profil</div>
-    <div class="nav-item" onclick="nav('settings')" id="nav-settings">⚙️ Pengaturan</div>
-    <div class="sidebar-bottom">
-      <div id="sidebar-credits" class="credits-pill" onclick="nav('billing')">⏳ Credits</div>
-      <div style="margin-top:12px">
-        <div class="nav-item" onclick="logout()" style="padding:8px 0;font-size:13px;color:var(--danger)">🚪 Logout</div>
-      </div>
-      <div style="margin-top:10px;font-size:11px;color:var(--dim);line-height:1.8">
-        <a href="/faq" style="color:var(--dim);text-decoration:none" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--dim)'">FAQ</a> ·
-        <a href="/terms" style="color:var(--dim);text-decoration:none" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--dim)'">Terms</a> ·
-        <a href="/privacy" style="color:var(--dim);text-decoration:none" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--dim)'">Privacy</a>
-      </div>
-    </div>
-  </aside>
+  <%- include('partials/sidebar') %>
 
   <!-- Main -->
   <main class="main">
@@ -238,180 +390,16 @@
       <div id="header-credits" class="credits-pill" style="cursor:pointer" onclick="nav('billing')">⏳</div>
     </div>
 
-    <!-- DASHBOARD -->
-    <div id="view-dashboard" class="view active">
-      <div class="grid-4" style="margin-bottom:20px">
-        <div class="stat-card"><div class="label">Credits</div><div class="value" id="stat-credits">—</div><div class="sub">tersedia</div></div>
-        <div class="stat-card"><div class="label">Total Video</div><div class="value" id="stat-videos">—</div><div class="sub">dibuat</div></div>
-        <div class="stat-card"><div class="label">Referral Code</div><div class="value" id="stat-ref" style="font-size:16px;margin-top:4px">—</div><div class="sub" id="stat-ref-copy" style="cursor:pointer;color:var(--accent)">tap to copy</div></div>
-        <div class="stat-card"><div class="label">Tier</div><div class="value" id="stat-tier" style="font-size:20px;margin-top:4px">—</div><div class="sub">akun kamu</div></div>
-      </div>
-      <div class="grid-4" style="margin-bottom:28px">
-        <div class="action-card" onclick="nav('create')"><div class="icon">🎬</div><h3>Buat Video</h3></div>
-        <div class="action-card" onclick="nav('billing')"><div class="icon">💳</div><h3>Top Up</h3></div>
-        <div class="action-card" onclick="nav('videos')"><div class="icon">📁</div><h3>Video Saya</h3></div>
-        <div class="action-card" onclick="shareRef()"><div class="icon">👥</div><h3>Referral</h3></div>
-      </div>
-      <div class="card">
-        <h3 style="margin-bottom:16px;font-size:15px">Video Terbaru</h3>
-        <div id="recent-videos" class="video-grid"></div>
-      </div>
-    </div>
-
-    <!-- CREATE VIDEO -->
-    <div id="view-create" class="view">
-      <div class="step-indicator" id="step-dots"></div>
-      <div id="create-step-container"></div>
-    </div>
-
-    <!-- MY VIDEOS -->
-    <div id="view-videos" class="view">
-      <div id="videos-container" class="video-grid"></div>
-      <button id="load-more-videos-btn" class="btn btn-outline" style="display:none;margin-top:16px;width:100%" onclick="loadVideos(videosCursor)">Load More</button>
-    </div>
-
-    <!-- BILLING -->
-    <div id="view-billing" class="view">
-      <div class="card" style="margin-bottom:20px;text-align:center;padding:32px">
-        <div style="font-size:13px;color:var(--dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Credit Balance</div>
-        <div style="font-size:52px;font-weight:800;background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent" id="billing-credits">—</div>
-        <div style="font-size:13px;color:var(--dim);margin-top:4px">credits tersedia</div>
-      </div>
-      <h3 style="margin-bottom:16px;font-size:15px">Pilih Paket</h3>
-      <div id="packages-container" class="price-cards" style="margin-bottom:32px"></div>
-      <h3 style="margin-bottom:16px;font-size:15px">Metode Pembayaran Lain</h3>
-      <div class="grid-2" style="margin-bottom:32px">
-        <div class="action-card" onclick="payStars()"><div class="icon">⭐</div><h3>Telegram Stars</h3><div style="font-size:12px;color:var(--dim);margin-top:6px">Bayar instant dari saldo Stars</div></div>
-        <div class="action-card" onclick="payCrypto()"><div class="icon">💎</div><h3>Crypto (USDT/BNB)</h3><div style="font-size:12px;color:var(--dim);margin-top:6px">Min $20 USD</div></div>
-      </div>
-      <h3 style="margin-bottom:16px;font-size:15px">Riwayat Transaksi</h3>
-      <div class="card" style="overflow-x:auto">
-        <table class="txn-table" id="txn-table">
-          <thead><tr><th>Order ID</th><th>Paket</th><th>Jumlah</th><th>Credits</th><th>Status</th><th>Tanggal</th></tr></thead>
-          <tbody id="txn-body"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- SUBSCRIPTION -->
-    <div id="view-subscription" class="view">
-      <div class="card" style="text-align:center;padding:40px">
-        <div style="font-size:48px;margin-bottom:16px">⭐</div>
-        <h2 style="margin-bottom:8px">Langganan</h2>
-        <p style="color:var(--dim);margin-bottom:24px">Kelola paket langganan Anda</p>
-        <div id="subscription-plans" class="grid-3"></div>
-      </div>
-    </div>
-
-    <!-- REFERRAL -->
-    <div id="view-referral" class="view">
-      <div class="card" style="text-align:center;padding:40px">
-        <div style="font-size:48px;margin-bottom:16px">👥</div>
-        <h2 style="margin-bottom:8px">Program Referral</h2>
-        <p style="color:var(--dim);margin-bottom:24px">Ajak teman, dapatkan komisi!</p>
-        <div class="grid-3" style="margin-bottom:24px">
-          <div class="stat-card"><div class="label">Tier 1 (15%)</div><div class="value" id="ref-tier1">0</div></div>
-          <div class="stat-card"><div class="label">Tier 2 (5%)</div><div class="value" id="ref-tier2">0</div></div>
-          <div class="stat-card"><div class="label">Tier 3 (2%)</div><div class="value" id="ref-tier3">0</div></div>
-        </div>
-        <div class="card" style="margin-bottom:16px">
-          <div class="form-label">Link Referral Anda</div>
-          <div style="display:flex;gap:8px">
-            <input id="ref-link" readonly value="" style="flex:1">
-          </div>
-        </div>
-        <div style="font-size:24px;font-weight:800;background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent" id="ref-balance">IDR 0</div>
-        <div style="font-size:12px;color:var(--dim);margin-top:4px">Komisi tersedia</div>
-        <button class="btn btn-primary" style="margin-top:16px; width:100%; max-width:300px;" onclick="withdrawReferral()">Tarik Komisi (Cairkan ke Admin)</button>
-        <p style="font-size:11px; color:var(--dim); margin-top:10px;">* Penarikan (Cashout) dikenakan biaya admin 50% sesuai kebijakan bot.</p>
-      </div>
-    </div>
-
-    <!-- SEND CREDITS -->
-    <div id="view-send" class="view">
-      <div class="card" style="text-align:center;padding:40px">
-        <div style="font-size:48px;margin-bottom:16px">💸</div>
-        <h2 style="margin-bottom:8px">Kirim Saldo (P2P)</h2>
-        <p style="color:var(--dim);margin-bottom:24px">Kirim credits ke pengguna lain (biaya admin 0.5%)</p>
-        <div class="form-group" style="text-align:left; max-width:400px; margin:0 auto 16px;">
-          <label class="form-label">Username Penerima (tanpa @)</label>
-          <input type="text" id="send-username" placeholder="Contoh: agus_setiawan">
-        </div>
-        <div class="form-group" style="text-align:left; max-width:400px; margin:0 auto 24px;">
-          <label class="form-label">Jumlah Credits</label>
-          <input type="number" id="send-amount" placeholder="Minimal 50">
-        </div>
-        <button class="btn btn-primary" style="max-width:400px; width:100%" onclick="sendCredits()">Kirim Sekarang</button>
-      </div>
-    </div>
-
-    <!-- PROFILE -->
-    <div id="view-profile" class="view">
-      <div class="card" style="text-align:center;padding:40px">
-        <div style="font-size:48px;margin-bottom:16px">👤</div>
-        <h2 style="margin-bottom:8px">Profil Saya</h2>
-        <div id="profile-info" style="text-align:left;max-width:400px;margin:24px auto"></div>
-        <button class="btn btn-outline" onclick="toggleEditProfile()" id="edit-profile-btn">✏️ Edit Profil</button>
-        <div id="edit-profile-form" style="display:none;margin-top:20px;text-align:left">
-          <div class="form-group">
-            <label class="form-label">Nama Tampilan</label>
-            <input type="text" id="edit-firstName" maxlength="64" placeholder="Nama Anda">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Bahasa</label>
-            <select id="edit-lang">
-              <option value="id">🇮🇩 Indonesia</option>
-              <option value="en">🇺🇸 English</option>
-              <option value="ru">🇷🇺 Русский</option>
-              <option value="zh">🇨🇳 中文</option>
-            </select>
-          </div>
-          <div style="display:flex;gap:8px">
-            <button class="btn btn-primary" onclick="saveProfile()" style="flex:1">Simpan</button>
-            <button class="btn btn-outline" onclick="toggleEditProfile()" style="flex:1">Batal</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- SETTINGS -->
-    <div id="view-settings" class="view">
-      <div class="card" style="padding:40px">
-        <h2 style="margin-bottom:24px">⚙️ Pengaturan</h2>
-        <div class="form-group">
-          <label class="form-label">Bahasa</label>
-          <select id="settings-lang" onchange="changeLang(this.value)">
-            <option value="id">🇮🇩 Indonesia</option>
-            <option value="en">🇺🇸 English</option>
-            <option value="ru">🇷🇺 Русский</option>
-            <option value="zh">🇨🇳 中文</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Notifikasi</label>
-          <select id="settings-notif">
-            <option value="1">Aktif</option>
-            <option value="0">Nonaktif</option>
-          </select>
-        </div>
-        <button class="btn btn-primary btn-full" onclick="saveSettings()" style="margin-bottom:12px">Simpan Pengaturan</button>
-        <button class="btn btn-danger btn-full" onclick="deleteAccount()" style="margin-top:24px">Hapus Akun</button>
-      </div>
-    </div>
-
-    <!-- IMAGE GENERATION -->
-    <div id="view-image" class="view">
-      <div class="card" style="text-align:center;padding:40px">
-        <div style="font-size:48px;margin-bottom:16px">🖼️</div>
-        <h2 style="margin-bottom:8px">Buat Gambar AI</h2>
-        <p style="color:var(--dim);margin-bottom:24px">Generate gambar dari prompt teks</p>
-        <div class="form-group">
-          <textarea id="image-prompt" placeholder="Deskripsikan gambar yang Anda inginkan..." rows="3"></textarea>
-        </div>
-        <button id="gen-image-btn" class="btn btn-primary btn-full" onclick="generateImage()">Generate Gambar</button>
-        <div id="image-result" style="margin-top:24px"></div>
-      </div>
-    </div>
+    <%- include('partials/dashboard') %>
+    <%- include('partials/view-create') %>
+    <%- include('partials/view-videos') %>
+    <%- include('partials/view-billing') %>
+    <%- include('partials/view-subscription') %>
+    <%- include('partials/view-referral') %>
+    <%- include('partials/view-send') %>
+    <%- include('partials/view-profile') %>
+    <%- include('partials/view-settings') %>
+    <%- include('partials/view-image') %>
   </main>
 </div>
 
@@ -447,743 +435,390 @@ async function apiFetch(path, opts = {}) {
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token, ...(opts.headers || {}) },
     });
     clearTimeout(tid);
-    if (res.status === 401) { logout(); return null; }
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ error: res.statusText }));
-      throw new Error(err.error || `Request failed (${res.status})`);
-    }
+    if (!res.ok) return null;
     return await res.json();
   } catch(e) {
     clearTimeout(tid);
-    if (e.name === 'AbortError') throw new Error('Request timed out. Check your connection.');
-    throw e;
+    return null;
   }
 }
 
-function logout() {
-  localStorage.removeItem('token');
-  window.location.href = '/';
-}
-
-function toast(msg, type = 'info') {
-  const c = document.getElementById('toast');
-  const d = document.createElement('div');
-  d.className = 'toast-msg toast-' + type;
-  d.textContent = msg;
-  c.appendChild(d);
-  requestAnimationFrame(() => { requestAnimationFrame(() => d.classList.add('show')); });
-  setTimeout(() => { d.classList.remove('show'); setTimeout(() => d.remove(), 400); }, 3500);
-}
-
-// ── INIT ──────────────────────────────────────────────────
-async function tryTwaLogin() {
-  const tg = window.Telegram?.WebApp;
-  if (!tg || !tg.initDataUnsafe?.user) return;
-  const u = tg.initDataUnsafe.user;
-  try {
-    const r = await fetch('/auth/telegram', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ initData: tg.initData })
-    });
-    const d = await r.json();
-    if (d.token) { token = d.token; localStorage.setItem('token', token); }
-  } catch(_) {}
-}
-
-async function init() {
-  // Safety timeout — kalau init > 8s, redirect ke landing
-  const safetyTimer = setTimeout(() => {
-    if (!token) window.location.href = '/';
-  }, 8000);
-
-  // Try Telegram WebApp login first (wait a tick for SDK to load)
-  if (!token) {
-    await new Promise(r => setTimeout(r, 300));
-    await tryTwaLogin();
+async function loadUser() {
+  const u = await apiFetch('/api/user');
+  if (!u) { window.location.href='/login'; return; }
+  currentUser = u;
+  document.getElementById('user-greeting').textContent = 'Selamat datang, ' + u.firstName + '!';
+  document.getElementById('stat-credits').textContent = u.credits || 0;
+  document.getElementById('stat-videos').textContent = u.total_videos || 0;
+  document.getElementById('stat-ref').textContent = u.refCode || '—';
+  document.getElementById('stat-tier').textContent = u.tier || 'Free';
+  document.getElementById('billing-credits').textContent = u.credits || 0;
+  document.getElementById('header-credits').innerHTML = '⏳ ' + (u.credits || 0);
+  document.getElementById('sidebar-credits').innerHTML = '⏳ ' + (u.credits || 0) + ' Credits';
+  if (u.refCode) {
+    document.getElementById('ref-link').value = window.location.origin + '/ref/' + u.refCode;
   }
-
-  if (!token) { 
-    clearTimeout(safetyTimer); 
-    showLoginScreen(); 
-    return; 
+  // referral stats
+  document.getElementById('ref-tier1').textContent = u.refTier1 || 0;
+  document.getElementById('ref-tier2').textContent = u.refTier2 || 0;
+  document.getElementById('ref-tier3').textContent = u.refTier3 || 0;
+  document.getElementById('ref-balance').textContent = 'IDR ' + (u.refBalance || 0).toLocaleString();
+  // profile
+  const pi = document.getElementById('profile-info');
+  if (pi) pi.innerHTML = '<div style="margin-bottom:12px"><strong>Username:</strong> ' + esc(u.username) + '</div><div><strong>Nama:</strong> ' + esc(u.firstName) + '</div><div><strong>Language:</strong> ' + esc(u.language) + '</div><div><strong>Joined:</strong> ' + (u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '—') + '</div>';
+  // lang select
+  const langs = ['settings-lang', 'edit-lang'];
+  for (const id of langs) {
+    const el = document.getElementById(id);
+    if (el) el.value = u.language || 'id';
   }
-
-  clearTimeout(safetyTimer);
-
-  const loadingText = document.getElementById('loading-text');
-  if (loadingText) loadingText.textContent = 'Menyiapkan dashboard...';
-
-  const user = await apiFetch('/api/user');
-  if (!user) { window.location.href = '/'; return; }
-  currentUser = user;
-
-  document.getElementById('user-greeting').textContent = 'Halo, ' + (user.firstName || user.username || 'User') + '!';
-  updateCreditsDisplay(user.credits);
-  document.getElementById('stat-tier').textContent = user.tier?.toUpperCase() || 'FREE';
-  document.getElementById('stat-ref').textContent = user.referralCode || '—';
-  document.getElementById('stat-ref-copy').onclick = () => { navigator.clipboard?.writeText(user.referralCode || ''); toast('Referral code disalin!', 'ok'); };
-  document.getElementById('billing-credits').textContent = Math.floor(Number(user.credits));
-
-  document.getElementById('loading-overlay').style.display = 'none';
-  document.getElementById('app').style.display = 'flex';
-
-  loadDashboard();
+  document.getElementById('settings-notif').value = u.notifications !== false ? '1' : '0';
+  updateCreditsDisplay(u.credits);
 }
 
 function updateCreditsDisplay(credits) {
-  const c = Math.floor(Number(credits));
-  document.getElementById('stat-credits').textContent = c;
-  document.getElementById('header-credits').textContent = '✨ ' + c + ' cr';
-  document.getElementById('sidebar-credits').textContent = '✨ ' + c + ' Credits';
-  document.getElementById('billing-credits').textContent = c;
+  document.getElementById('stat-credits').textContent = credits || 0;
+  document.getElementById('billing-credits').textContent = credits || 0;
+  document.getElementById('header-credits').innerHTML = '⏳ ' + (credits || 0);
+  document.getElementById('sidebar-credits').innerHTML = '⏳ ' + (credits || 0) + ' Credits';
 }
 
 // ── NAVIGATION ────────────────────────────────────────────
+const unitPricing = { IMAGE_UNIT: 25, VIDEO_15S: 100, VIDEO_30S: 150, VIDEO_60S: 250, VIDEO_120S: 400 };
+
+// The page title map (for nav function)
+const pageTitles = {
+  dashboard: 'Dashboard',
+  create: 'Buat Video',
+  image: 'Buat Gambar AI',
+  videos: 'Video Saya',
+  billing: 'Billing',
+  subscription: 'Langganan',
+  referral: 'Referral',
+  send: 'Kirim Saldo',
+  profile: 'Profil',
+  settings: 'Pengaturan'
+};
+
 function nav(page) {
+  // hide all views
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.querySelectorAll('.nav-item, .mobile-nav-item').forEach(v => v.classList.remove('active'));
-  document.getElementById('view-' + page).classList.add('active');
-  const navEl = document.getElementById('nav-' + page);
-  const mnavEl = document.getElementById('mnav-' + page);
-  if (navEl) navEl.classList.add('active');
-  if (mnavEl) mnavEl.classList.add('active');
-  const titles = { dashboard: 'Dashboard', create: 'Buat Video', videos: 'Video Saya', billing: 'Billing & Top Up', subscription: 'Langganan', referral: 'Referral', profile: 'Profil', settings: 'Pengaturan', image: 'Buat Gambar' };
-  document.getElementById('page-title').textContent = titles[page] || page;
+  const view = document.getElementById('view-' + page);
+  if (view) view.classList.add('active');
 
+  // update title
+  document.getElementById('page-title').textContent = pageTitles[page] || page;
+
+  // update sidebar active
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const navItem = document.getElementById('nav-' + page);
+  if (navItem) navItem.classList.add('active');
+
+  // update mobile nav active
+  document.querySelectorAll('.mobile-nav-item').forEach(n => n.classList.remove('active'));
+  const mnav = document.getElementById('mnav-' + page);
+  if (mnav) mnav.classList.add('active');
+
+  // lazy loads
   if (page === 'videos') loadVideos();
-  if (page === 'billing') loadBilling();
-  if (page === 'create') initCreate();
-  if (page === 'subscription') loadSubscription();
-  if (page === 'referral') loadReferral();
-  if (page === 'profile') loadProfile();
+  if (page === 'billing') loadPackages();
+  if (page === 'subscription') loadSubscriptions();
 }
 
-// ── DASHBOARD ─────────────────────────────────────────────
-async function loadDashboard() {
-  const { videos } = await apiFetch('/api/user/videos?limit=4');
-  if (!videos) return;
-  document.getElementById('stat-videos').textContent = videos.length;
-  const recent = videos.slice(0, 4);
-  const container = document.getElementById('recent-videos');
-  if (recent.length === 0) {
-    container.innerHTML = '<div class="empty"><div class="icon">🎬</div><h3>Belum ada video</h3><p>Buat video pertamamu sekarang!</p><button class="btn btn-primary" onclick="nav(\'create\')" style="margin-top:16px">Buat Video</button></div>';
-  } else {
-    container.innerHTML = recent.map(v => videoCard(v)).join('');
-  }
-}
-
-function videoCard(v) {
-  const statusMap = { processing: 'processing', completed: 'completed', failed: 'failed', pending: 'pending' };
-  const statusLabel = { processing: '⏳ Processing', completed: '✅ Selesai', failed: '❌ Gagal', pending: '🕐 Pending' };
-  const s = v.status || 'pending';
-  const safeStatus = statusMap[s] || 'pending';
-  const dl = v.downloadUrl || v.videoUrl;
-  const videoSrc = v.videoUrl ? esc(v.videoUrl) : (v.downloadUrl ? esc(v.downloadUrl) : '');
-  const posterSrc = v.thumbnailUrl ? ` poster="${esc(v.thumbnailUrl)}"` : '';
-  
-  let thumbHtml = '<span>🎬</span>';
-  if (s === 'processing' || s === 'pending') {
-    thumbHtml = '<div class="spinner" style="border-width:2px;width:24px;height:24px;"></div>';
-  } else if (s === 'failed') {
-    thumbHtml = '<span style="color:var(--danger)">❌ Failed</span>';
-  } else if (videoSrc) {
-    thumbHtml = `<video src="${videoSrc}" controls autoplay muted loop preload="auto"${posterSrc} playsinline style="width:100%; height:100%; object-fit:cover; border-radius:12px;"></video>`;
-  } else if (dl && !videoSrc) {
-    thumbHtml = v.thumbnailUrl ? `<img src="${esc(v.thumbnailUrl)}" style="width:100%; height:100%; object-fit:cover; border-radius:12px;">` : '<span>🔗</span>';
-  }
-
-  return `<div class="video-card">
-    <div class="video-thumb">${thumbHtml}</div>
-    <div class="video-info">
-      <div class="video-title">${esc(v.niche?.toUpperCase()) || 'VIDEO'} · ${esc(String(v.duration || ''))}s</div>
-      <div class="video-meta">${esc(new Date(v.createdAt).toLocaleDateString('id-ID'))}</div>
-      <span class="status-badge status-${safeStatus}">${statusLabel[s] || esc(s)}</span>
-      <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
-        ${dl && s === 'completed' ? `<a href="${esc(dl)}" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">⬇ Download</a>` : ''}
-        <button class="btn btn-danger btn-sm" onclick="deleteVideo('${esc(v.jobId || v.id)}')">🗑️ Hapus</button>
-      </div>
-    </div>
-  </div>`;
-}
-
-// ── CREATE VIDEO ──────────────────────────────────────────
-const NICHES_DATA = [
-  {id:'fnb',emoji:'🍔',name:'F&B'},
-  {id:'product',emoji:'🛍️',name:'Produk'},
-  {id:'fashion',emoji:'👗',name:'Fashion'},
-  {id:'tech',emoji:'💻',name:'Tech'},
-  {id:'health',emoji:'💪',name:'Health'},
-  {id:'beauty',emoji:'💄',name:'Beauty'},
-  {id:'travel',emoji:'✈️',name:'Travel'},
-  {id:'education',emoji:'📚',name:'Edukasi'},
-];
+// ── CREATE WIZARD ────────────────────────────────────────
+const NICHES = ['F&B','Fashion','Tech','Health','Beauty','Travel','Edukasi','Produk','Lainnya'];
 const STYLES = ['Viral Hook','Testimonial','Tutorial','Showcase'];
-const DURATIONS = [5, 15, 30, 60];
+const DURATIONS = [5,15,30,60];
 
 function initCreate() {
-  createState = { step: 1, niche: '', style: 'Viral Hook', duration: 30, customPrompt: '', storyboard: null };
+  createState = { step:1, niche:'', style:'', duration:30, customPrompt:'', storyboard:null };
   renderCreateStep();
 }
 
 function renderCreateStep() {
-  const dots = 6;
-  const dotEl = document.getElementById('step-dots');
-  dotEl.innerHTML = Array.from({length: dots}, (_, i) =>
-    '<div class="step-dot' + (i < createState.step ? ' done' : '') + '"></div>'
-  ).join('');
+  // update dots
+  const dot = document.getElementById('step-dots');
+  if (!dot) return;
+  dot.innerHTML = Array.from({length:6}, (_,i) => '<div class="step-dot ' + (i+1 <= createState.step ? 'done' : '') + '"></div>').join('');
 
   const c = document.getElementById('create-step-container');
   if (createState.step === 1) {
-    c.innerHTML = `
-      <div class="step-header">Pilih Niche Bisnis</div>
-      <div class="step-sub">Kategori konten akan menentukan gaya video</div>
-      <div class="niche-grid">
-        ${NICHES_DATA.map(n => '<div class="niche-btn' + (createState.niche === n.id ? ' selected' : '') + '" onclick="selectNiche(\'' + n.id + '\')"><span class="ni">' + n.emoji + '</span>' + n.name + '</div>').join('')}
-      </div>
-      <div style="margin-top:24px"><button class="btn btn-primary" onclick="nextStep()" ${!createState.niche ? 'disabled' : ''}>Lanjut →</button></div>
-    `;
+    c.innerHTML = '<div class="step-header">Pilih Niche Bisnis</div><div class="step-sub">Kategori konten akan menentukan gaya video</div><div class="niche-grid">' +
+      NICHES.map(n => '<div class="niche-btn' + (createState.niche === n ? ' selected' : '') + '" onclick="selectNiche(\''+n+'\')"><span class="ni">'+ (['🍔','👗','💻','💊','💄','✈️','📚','🛍️','🎯'][NICHES.indexOf(n)] || '📦') +'</span>' + n + '</div>').join('') +
+      '</div><div style="margin-top:24px"><button class="btn btn-primary" onclick="nextStep()" ' + (createState.niche ? '' : 'disabled') + '>Lanjut →</button></div>';
   } else if (createState.step === 2) {
-    c.innerHTML = `
-      <div class="step-header">Pilih Style Video</div>
-      <div class="step-sub">Gaya penyampaian konten</div>
-      <div class="chip-group">
-        ${STYLES.map(s => '<div class="chip' + (createState.style === s ? ' selected' : '') + '" onclick="selectStyle(\'' + s + '\')">'+s+'</div>').join('')}
-      </div>
-      <div style="margin-top:24px;display:flex;gap:12px">
-        <button class="btn btn-outline" onclick="prevStep()">← Kembali</button>
-        <button class="btn btn-primary" onclick="nextStep()">Lanjut →</button>
-      </div>
-    `;
+    c.innerHTML = '<div class="step-header">Pilih Style Video</div><div class="step-sub">Gaya penyampaian konten</div><div class="chip-group">' +
+      STYLES.map(s => '<div class="chip' + (createState.style === s ? ' selected' : '') + '" onclick="selectStyle(\''+s+'\')">' + s + '</div>').join('') +
+      '</div><div style="margin-top:24px;display:flex;gap:12px"><button class="btn btn-outline" onclick="prevStep()">← Kembali</button><button class="btn btn-primary" onclick="nextStep()">Lanjut →</button></div>';
   } else if (createState.step === 3) {
-    c.innerHTML = `
-      <div class="step-header">Pilih Durasi</div>
-      <div class="step-sub">Durasi video output</div>
-      <div class="dur-group">
-        ${DURATIONS.map(d => '<div class="dur-btn' + (createState.duration === d ? ' selected' : '') + '" onclick="selectDur(' + d + ')">' + d + 's</div>').join('')}
-      </div>
-      <div style="margin-top:24px;display:flex;gap:12px">
-        <button class="btn btn-outline" onclick="prevStep()">← Kembali</button>
-        <button class="btn btn-primary" onclick="nextStep()">Lanjut →</button>
-      </div>
-    `;
+    c.innerHTML = '<div class="step-header">Pilih Durasi</div><div class="step-sub">Durasi video output</div><div class="dur-group">' +
+      DURATIONS.map(d => '<div class="dur-btn' + (createState.duration === d ? ' selected' : '') + '" onclick="selectDur('+d+')">' + d + 's</div>').join('') +
+      '</div><div style="margin-top:24px;display:flex;gap:12px"><button class="btn btn-outline" onclick="prevStep()">← Kembali</button><button class="btn btn-primary" onclick="nextStep()">Lanjut →</button></div>';
   } else if (createState.step === 4) {
-    c.innerHTML = `
-      <div class="step-header">Advanced Setup (Opsional)</div>
-      <div class="step-sub">Deskripsikan produkmu dan atur parameter video</div>
-      <div class="form-group">
-        <label class="form-label">Custom Prompt / Promo</label>
-        <textarea id="custom-prompt" placeholder="Contoh: Kopi arabika single origin dari Aceh..." rows="3">${createState.customPrompt}</textarea>
-      </div>
-      <div class="form-group" style="background:var(--card); padding:16px; border-radius:12px; border:1px solid var(--border);">
-        <label class="form-label" style="margin-bottom:12px; font-weight:700;">Pengaturan Video (AI Bot Parity)</label>
-        <div style="display:flex; flex-direction:column; gap:12px;">
-          <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-            <input type="checkbox" id="adv-no-watermark" style="width:auto;" ${createState.noWatermark ? 'checked' : ''}> Hapus Watermark 
-            <span style="font-size:11px;color:var(--warn);background:rgba(255,165,2,0.15);padding:2px 6px;border-radius:4px;">-10 Credits</span>
-          </label>
-          <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-            <input type="checkbox" id="adv-subtitles" style="width:auto;" ${createState.subtitles !== false ? 'checked' : ''}> Auto Subtitle
-          </label>
-          <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-            <input type="checkbox" id="adv-voiceover" style="width:auto;" ${createState.voiceover !== false ? 'checked' : ''}> Voice Over AI
-          </label>
-        </div>
-      </div>
-      <div style="display:flex;gap:12px;margin-top:24px;">
-        <button class="btn btn-outline" onclick="prevStep()">← Kembali</button>
-        <button class="btn btn-primary" style="flex:1" onclick="saveAdvAndNext()">Preview Storyboard →</button>
-      </div>
-    `;
+    c.innerHTML = '<div class="step-header">Advanced Setup (Opsional)</div><div class="step-sub">Deskripsikan produkmu dan atur parameter video</div>' +
+      '<div class="form-group"><label class="form-label">Custom Prompt / Promo</label><textarea id="custom-prompt" placeholder="Contoh: Kopi arabika single origin dari Aceh..." rows="3">'+esc(createState.customPrompt)+'</textarea></div>' +
+      '<div class="form-group" style="background:var(--card); padding:16px; border-radius:12px; border:1px solid var(--border);">' +
+      '<label class="form-label" style="margin-bottom:12px; font-weight:700;">Pengaturan Video</label>' +
+      '<div style="display:flex; flex-direction:column; gap:12px;">' +
+      '<label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" id="adv-no-watermark" style="width:auto;"> Hapus Watermark <span style="font-size:11px;color:var(--warn);background:rgba(255,165,2,0.15);padding:2px 6px;border-radius:4px;">-10 Credits</span></label>' +
+      '<label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" id="adv-subtitles" style="width:auto;" checked> Auto Subtitle</label>' +
+      '<label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" id="adv-voiceover" style="width:auto;" checked> Voice Over AI</label>' +
+      '</div></div>' +
+      '<div style="display:flex;gap:12px;margin-top:24px;"><button class="btn btn-outline" onclick="prevStep()">← Kembali</button><button class="btn btn-primary" style="flex:1" onclick="saveAdvAndNext()">Preview Storyboard →</button></div>';
   } else if (createState.step === 5) {
-    c.innerHTML = `
-      <div class="step-header">Preview Storyboard</div>
-      <div class="step-sub">AI sedang generate storyboard...</div>
-      <div style="display:flex;align-items:center;gap:12px;padding:20px 0"><div class="spinner"></div><span style="color:var(--dim);font-size:14px">Generating storyboard...</span></div>
-    `;
+    c.innerHTML = '<div class="step-header">Preview Storyboard</div><div class="step-sub">AI sedang generate storyboard...</div><div style="display:flex;align-items:center;gap:12px;padding:20px 0"><div class="spinner"></div><span style="color:var(--dim);font-size:14px">Generating storyboard...</span></div>';
     generateStoryboardPreview();
   } else if (createState.step === 6) {
     const scenes = createState.storyboard?.scenes || [];
     const creditCost = createState.duration <= 5 ? unitPricing.IMAGE_UNIT : createState.duration <= 15 ? unitPricing.VIDEO_15S : createState.duration <= 30 ? unitPricing.VIDEO_30S : createState.duration <= 60 ? unitPricing.VIDEO_60S : unitPricing.VIDEO_120S;
     const canAfford = Number(currentUser?.credits || 0) >= creditCost;
-    c.innerHTML = `
-      <div class="step-header">Konfirmasi & Generate</div>
-      <div class="step-sub">${scenes.length} scene · ${createState.duration}s · ${createState.niche} · ${createState.style}</div>
-      <div style="margin-bottom:20px">
-        ${scenes.map(s => '<div class="scene-card"><div class="scene-num">Scene '+esc(String(s.scene))+' · '+esc(String(s.duration))+'s</div><p>'+esc(s.description)+'</p></div>').join('')}
-      </div>
-      ${createState.storyboard?.caption ? '<div class="card" style="margin-bottom:20px"><div style="font-size:12px;color:var(--dim);margin-bottom:6px">📝 Caption</div><p style="font-size:14px;line-height:1.6">'+esc(createState.storyboard.caption)+'</p></div>' : ''}
-      <div class="card" style="margin-bottom:20px">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <span style="font-size:14px">Biaya</span>
-          <span style="font-size:18px;font-weight:700;color:var(--accent)">${creditCost} Credits</span>
-        </div>
-        ${!canAfford ? '<div style="margin-top:12px;color:var(--danger);font-size:13px">⚠️ Credits tidak cukup. <a href="#" onclick="nav(\'billing\')" style="color:var(--accent)">Top Up sekarang</a></div>' : ''}
-      </div>
-      <div style="display:flex;gap:12px">
-        <button class="btn btn-outline" onclick="createState.step=4;renderCreateStep()">← Kembali</button>
-        <button class="btn btn-primary" onclick="startGeneration()" ${!canAfford ? 'disabled' : ''} id="gen-btn">🎬 Generate Video</button>
-      </div>
-    `;
+    c.innerHTML = '<div class="step-header">Konfirmasi & Generate</div><div class="step-sub">'+scenes.length+' scene · '+createState.duration+'s · '+createState.niche+' · '+createState.style+'</div>' +
+      '<div style="margin-bottom:20px">' + scenes.map(s => '<div class="scene-card"><div class="scene-num">Scene '+s.scene+' · '+s.duration+'s</div><p>'+esc(s.description)+'</p></div>').join('') + '</div>' +
+      (createState.storyboard?.caption ? '<div class="card" style="margin-bottom:20px"><div style="font-size:12px;color:var(--dim);margin-bottom:6px">📝 Caption</div><p style="font-size:14px;line-height:1.6">'+esc(createState.storyboard.caption)+'</p></div>' : '') +
+      '<div class="card" style="margin-bottom:20px"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:14px">Biaya</span><span style="font-size:18px;font-weight:700;color:var(--accent)">'+creditCost+' Credits</span></div>' +
+      (!canAfford ? '<div style="margin-top:12px;color:var(--danger);font-size:13px">⚠️ Credits tidak cukup. <a href="#" onclick="nav(\'billing\')" style="color:var(--accent)">Top Up sekarang</a></div>' : '') +
+      '</div><div style="display:flex;gap:12px"><button class="btn btn-outline" onclick="createState.step=4;renderCreateStep()">← Kembali</button><button class="btn btn-primary" onclick="startGeneration()" ' + (!canAfford ? 'disabled' : '') + ' id="gen-btn">🎬 Generate Video</button></div>';
   }
 }
 
-function selectNiche(id) { createState.niche = id; renderCreateStep(); }
+function selectNiche(n) { createState.niche = n; renderCreateStep(); }
 function selectStyle(s) { createState.style = s; renderCreateStep(); }
 function selectDur(d) { createState.duration = d; renderCreateStep(); }
 function nextStep() { createState.step++; renderCreateStep(); }
 function prevStep() { createState.step--; renderCreateStep(); }
 function saveAdvAndNext() {
-  createState.customPrompt = document.getElementById('custom-prompt').value;
-  createState.noWatermark = document.getElementById('adv-no-watermark').checked;
-  createState.subtitles = document.getElementById('adv-subtitles').checked;
-  createState.voiceover = document.getElementById('adv-voiceover').checked;
+  createState.customPrompt = document.getElementById('custom-prompt')?.value || '';
+  createState.noWatermark = document.getElementById('adv-no-watermark')?.checked || false;
+  createState.subtitles = document.getElementById('adv-subtitles')?.checked !== false;
+  createState.voiceover = document.getElementById('adv-voiceover')?.checked !== false;
   nextStep();
 }
 
 async function generateStoryboardPreview() {
   try {
-    const data = await apiFetch('/api/storyboard', {
-      method: 'POST',
-      body: JSON.stringify({ niche: createState.niche, duration: createState.duration, customPrompt: createState.customPrompt || undefined })
-    });
-    if (!data || data.error) { toast('Gagal generate storyboard: ' + (data?.error || 'Unknown'), 'err'); createState.step = 4; renderCreateStep(); return; }
+    const data = await apiFetch('/api/storyboard', { method:'POST', body:JSON.stringify({ niche:createState.niche, duration:createState.duration, customPrompt:createState.customPrompt||undefined }) });
+    if (!data || data.error) { toast('Gagal generate storyboard: '+(data?.error||'Unknown'),'err'); createState.step=4; renderCreateStep(); return; }
     createState.storyboard = data;
     createState.step = 6;
     renderCreateStep();
-  } catch(e) { toast('Error: ' + e.message, 'err'); createState.step = 4; renderCreateStep(); }
+  } catch(e) { toast('Error: '+e.message,'err'); createState.step=4; renderCreateStep(); }
 }
 
 async function startGeneration() {
   const btn = document.getElementById('gen-btn');
   if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Memulai...'; }
   try {
-    const data = await apiFetch('/api/video/create', {
-      method: 'POST',
-      body: JSON.stringify({
-        niche: createState.niche,
-        style: createState.style,
-        duration: createState.duration,
-        platform: 'tiktok',
-        customPrompt: createState.customPrompt || undefined,
-        customScenes: createState.storyboard?.scenes || undefined,
-        noWatermark: createState.noWatermark,
-        subtitles: createState.subtitles,
-        voiceover: createState.voiceover
-      })
-    });
-    if (!data || data.error) { toast('Gagal: ' + (data?.error || 'Server error'), 'err'); if (btn) { btn.disabled = false; btn.innerHTML = '🎬 Generate Video'; } return; }
+    const data = await apiFetch('/api/video/create', { method:'POST', body:JSON.stringify({
+      niche:createState.niche, style:createState.style, duration:createState.duration, platform:'tiktok',
+      customPrompt:createState.customPrompt||undefined, customScenes:createState.storyboard?.scenes||undefined,
+      noWatermark:createState.noWatermark, subtitles:createState.subtitles, voiceover:createState.voiceover
+    })});
+    if (!data || data.error) { toast('Gagal: '+(data?.error||'Server error'),'err'); if(btn){btn.disabled=false;btn.innerHTML='🎬 Generate Video';} return; }
     toast('✅ Video mulai diproses! Cek di "Video Saya"', 'ok');
-    const user = await apiFetch('/api/user');
-    if (user) { currentUser = user; updateCreditsDisplay(user.credits); }
+    const u = await apiFetch('/api/user');
+    if (u) { currentUser = u; updateCreditsDisplay(u.credits); }
     nav('videos');
     startPolling();
-  } catch(e) { toast('Error: ' + e.message, 'err'); if (btn) { btn.disabled = false; btn.innerHTML = '🎬 Generate Video'; } }
+  } catch(e) { toast('Error: '+e.message,'err'); if(btn){btn.disabled=false;btn.innerHTML='🎬 Generate Video';} }
+}
+
+// ── VIDEOS ────────────────────────────────────────────────
+let videosCursor = null;
+
+async function loadVideos(cursor) {
+  const c = document.getElementById('videos-container');
+  if (!cursor) c.innerHTML = '<div class="skeleton" style="height:200px"></div>';
+  const path = '/api/videos' + (cursor ? '?cursor=' + cursor : '');
+  const data = await apiFetch(path);
+  if (!data) { c.innerHTML = '<div class="empty"><div class="icon">📁</div><h3>Gagal memuat video</h3></div>'; return; }
+  const list = data.videos || data.results || data.data || [];
+  if (!cursor) { c.innerHTML = ''; }
+  if (list.length === 0 && !cursor) {
+    c.innerHTML = '<div class="empty"><div class="icon">🎬</div><h3>Belum ada video</h3><p class="desc">Buat video pertama kamu!</p></div>';
+    return;
+  }
+  videosCursor = data.nextCursor || null;
+  document.getElementById('load-more-videos-btn').style.display = videosCursor ? 'block' : 'none';
+  for (const v of list) {
+    const card = document.createElement('div');
+    card.className = 'video-card';
+    card.innerHTML = '<div class="video-thumb">' + (v.videoUrl ? '<video src="'+esc(v.videoUrl)+'" preload="metadata" controls playsinline></video>' : '🎬') + '</div>' +
+      '<div class="video-info"><div class="video-title">'+esc(v.title||v.prompt||'Video')+'</div>' +
+      '<div class="video-meta">'+(v.duration||'—')+'s · '+(v.niche||'—')+'</div>' +
+      '<span class="status-badge status-'+((v.status||'pending').toLowerCase())+'">'+(v.status||'Pending')+'</span></div>';
+    c.appendChild(card);
+  }
 }
 
 function startPolling() {
   if (pollInterval) clearInterval(pollInterval);
-  let attempts = 0;
-  const MAX_ATTEMPTS = 75; // 5 minutes at 4s intervals
   pollInterval = setInterval(async () => {
-    attempts++;
-    try {
-      const { videos } = await apiFetch('/api/user/videos');
-      if (!videos) { clearInterval(pollInterval); pollInterval = null; return; }
-      loadVideosList(videos);
-      const processing = videos.filter(v => v.status === 'processing' || v.status === 'pending');
-      if (processing.length === 0) {
-        clearInterval(pollInterval); pollInterval = null;
-        toast('🎉 Video selesai diproses!', 'ok');
-        const user = await apiFetch('/api/user');
-        if (user) { currentUser = user; updateCreditsDisplay(user.credits); }
-      } else if (attempts >= MAX_ATTEMPTS) {
-        clearInterval(pollInterval); pollInterval = null;
-        toast('⏱️ Video masih diproses. Refresh halaman untuk update terbaru.', 'warn');
+    const data = await apiFetch('/api/videos?limit=1');
+    if (data && data.videos && data.videos.length > 0) {
+      const v = data.videos[0];
+      if (v.status === 'completed' || v.status === 'failed') {
+        clearInterval(pollInterval);
+        pollInterval = null;
+        loadVideos();
       }
-    } catch(e) {
-      // Network error during polling — don't stop, just wait for next tick
-      if (attempts >= MAX_ATTEMPTS) { clearInterval(pollInterval); pollInterval = null; }
     }
-  }, 4000);
+  }, 5000);
 }
-// Cleanup polling when page unloads
-window.addEventListener('beforeunload', () => { if (pollInterval) clearInterval(pollInterval); });
 
-let videosCursor = null;
+// ── BILLING ───────────────────────────────────────────────
+const PACKAGES = [
+  { key:'starter', label:'Starter', price:15000, credits:25, popular:false },
+  { key:'basic', label:'Basic', price:35000, credits:65, popular:true },
+  { key:'pro', label:'Pro', price:75000, credits:150, popular:false },
+  { key:'enterprise', label:'Enterprise', price:150000, credits:350, popular:false },
+];
 
-async function loadVideos(cursor) {
-  const container = document.getElementById('videos-container');
-  if (!cursor) {
-    videosCursor = null;
-    container.innerHTML = '<div style="padding:20px;color:var(--dim);font-size:14px"><div class="spinner" style="display:inline-block"></div> Memuat video...</div>';
+async function loadPackages() {
+  const c = document.getElementById('packages-container');
+  if (!c) return;
+  c.innerHTML = PACKAGES.map(p => '<div class="price-card' + (p.popular ? ' popular' : '') + '">' +
+    (p.popular ? '<div class="popular-tag">⭐ POPULER</div>' : '') +
+    '<h3>' + p.label + '</h3>' +
+    '<div class="price">IDR ' + p.price.toLocaleString() + '</div>' +
+    '<div class="cred">' + p.credits + ' Credits</div>' +
+    '<button class="btn btn-primary" onclick="payQris(\''+p.key+'\','+p.price+','+p.credits+')">Beli Sekarang</button></div>').join('');
+}
+
+async function payQris(key, price, credits) {
+  toast('Membuka pembayaran QRIS...', 'info');
+  const data = await apiFetch('/api/pay/qris', { method:'POST', body:JSON.stringify({ package:key, amount:price, credits:credits }) });
+  if (!data || !data.qrUrl) { toast('Gagal membuat pembayaran','err'); return; }
+  if (data.qrUrl.startsWith('http')) { window.open(data.qrUrl, '_blank'); }
+  toast('✅ Pembayaran diproses: IDR '+price.toLocaleString(), 'ok');
+}
+
+async function payStars() { toast('Pembayaran Telegram Stars belum tersedia','info'); }
+async function payCrypto() {
+  const data = await apiFetch('/api/pay/crypto', { method:'POST' });
+  if (data && data.address) { toast('💎 Kirim USDT/BNB ke: '+data.address,'info'); } else { toast('Gagal memuat alamat crypto','err'); }
+}
+
+// ── REFERRAL ──────────────────────────────────────────────
+async function shareRef() {
+  const link = document.getElementById('ref-link')?.value;
+  if (link) {
+    try { await navigator.clipboard.writeText(link); toast('✅ Link referral disalin!','ok'); } catch(e) { toast('Link: ' + link, 'info'); }
   }
-  const url = '/api/user/videos?limit=20' + (cursor ? '&cursor=' + encodeURIComponent(cursor) : '');
-  const res = await apiFetch(url);
-  if (!res) return;
-  const { videos, nextCursor } = res;
-  if (!cursor) {
-    loadVideosList(videos);
-  } else {
-    container.insertAdjacentHTML('beforeend', videos.map(v => videoCard(v)).join(''));
-  }
-  videosCursor = nextCursor;
-  const loadMoreBtn = document.getElementById('load-more-videos-btn');
-  if (loadMoreBtn) loadMoreBtn.style.display = nextCursor ? '' : 'none';
-  if (videos.some(v => v.status === 'processing' || v.status === 'pending')) startPolling();
-}
-
-function loadVideosList(videos) {
-  const container = document.getElementById('videos-container');
-  if (!videos || videos.length === 0) {
-    container.innerHTML = '<div class="empty"><div class="icon">📁</div><h3>Belum ada video</h3><p>Buat video pertamamu!</p><button class="btn btn-primary" onclick="nav(\'create\')" style="margin-top:16px">Buat Video</button></div>';
-    return;
-  }
-  container.innerHTML = videos.map(v => videoCard(v)).join('');
-}
-
-let unitPricing = { VIDEO_15S: 0.8, VIDEO_30S: 1.5, VIDEO_60S: 3.0, VIDEO_120S: 6.5, IMAGE_UNIT: 0.2 };
-let enabledGateways = [];
-
-async function loadBilling() {
-  const res = await apiFetch('/api/packages');
-  if (res && res.unitCosts) unitPricing = { ...unitPricing, ...res.unitCosts };
-  if (res && res.enabledGateways) enabledGateways = res.enabledGateways;
-  const pkgs = res && res.packages ? res.packages : (Array.isArray(res) ? res : []);
-  const pc = document.getElementById('packages-container');
-  if (pkgs && pkgs.length > 0) {
-    pc.innerHTML = pkgs.map((p) => `
-      <div class="price-card ${p.isPopular ? 'popular' : ''}">
-        ${p.isPopular ? '<div class="popular-tag">⭐ POPULER</div>' : ''}
-        <h3>${esc(p.name)}</h3>
-        <div class="price">IDR ${Number(p.priceIdr || p.price).toLocaleString('id-ID')}</div>
-        <div class="cred">${esc(String(p.totalCredits || p.credits))} Credits</div>
-        <button class="btn btn-${p.isPopular ? 'primary' : 'outline'} btn-full" data-pkg-id="${esc(p.id)}">Beli Paket</button>
-      </div>
-    `).join('');
-    pc.querySelectorAll('button[data-pkg-id]').forEach(btn => {
-      btn.addEventListener('click', () => buyPackage(btn.dataset.pkgId));
-    });
-  }
-  const txns = await apiFetch('/api/my/transactions');
-  const tbody = document.getElementById('txn-body');
-  if (txns && txns.length > 0) {
-    const safeStatuses = new Set(['processing','completed','failed','pending','paid','expired','cancelled']);
-    tbody.innerHTML = txns.map(t => {
-      const safeStatus = safeStatuses.has(t.status) ? t.status : 'pending';
-      return `
-      <tr>
-        <td style="font-family:monospace;font-size:11px">${esc((t.orderId||'').slice(0,18))}...</td>
-        <td>${esc(t.packageName || '—')}</td>
-        <td>IDR ${Number(t.amountIdr||0).toLocaleString('id-ID')}</td>
-        <td>${Number(t.creditsAmount||0).toFixed(1)}</td>
-        <td><span class="status-badge status-${safeStatus}">${esc(t.status)}</span></td>
-        <td>
-          <a href="/api/my/transactions/${t.id}/receipt" target="_blank" style="color:var(--accent);text-decoration:none;">
-            ${esc(new Date(t.createdAt).toLocaleDateString('id-ID'))}
-          </a>
-        </td>
-        <td>
-          <button onclick="window.open('/api/my/transactions/${t.id}/receipt', '_blank')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:11px;">
-            📄 Receipt
-          </button>
-        </td>
-      </tr>
-    `}).join('');
-  } else {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--dim);padding:24px">Belum ada transaksi</td></tr>';
-  }
-}
-
-async function buyPackage(pkgId) {
-  const gateway = enabledGateways.length > 0 ? enabledGateways[0].id : 'duitku';
-  toast('⏳ Membuat transaksi...', 'info');
-  const data = await apiFetch('/api/payment/create', {
-    method: 'POST',
-    body: JSON.stringify({ packageId: pkgId, gateway })
-  });
-  if (!data || data.error) { toast('Gagal: ' + (data?.error || 'Server error'), 'err'); return; }
-  const url = data.paymentUrl || data.payment_url || data.invoiceUrl;
-  if (url) { window.open(url, '_blank'); toast('✅ Halaman pembayaran dibuka', 'ok'); }
-  else toast('❌ Payment URL tidak ditemukan', 'err');
-}
-
-function payStars() { window.open('https://t.me/<%= botUsername %>?start=topup_stars', '_blank'); }
-function payCrypto() { window.open('https://t.me/<%= botUsername %>?start=topup_crypto', '_blank'); }
-
-function shareRef() {
-  const code = currentUser?.referralCode;
-  if (!code) { toast('Referral code tidak ditemukan', 'err'); return; }
-  const msg = encodeURIComponent('🎬 Buat video viral dengan AI di BerkahKarya! Pakai kode referral saya: ' + code + '\nhttps://t.me/<%= botUsername %>?start=ref_' + code);
-  window.open('https://t.me/share/url?url=https://t.me/<%= botUsername %>&text=' + msg, '_blank');
-}
-
-function showLoginScreen() {
-  document.getElementById('loading-overlay').style.display = 'none';
-  document.getElementById('app').style.display = 'none';
-  const loginHtml = `
-    <div style="min-height:100vh;background:#0a0a1a;display:flex;align-items:center;justify-content:center;font-family:Inter,sans-serif;padding:20px">
-      <div style="text-align:center;max-width:380px;width:100%">
-        <div style="font-size:48px;margin-bottom:16px">🎬</div>
-        <div style="font-size:26px;font-weight:800;background:linear-gradient(135deg,#00d9ff,#00ff88);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px">BerkahKarya</div>
-        <div style="color:rgba(255,255,255,0.55);font-size:14px;margin-bottom:32px">AI Video Studio — Login untuk melanjutkan</div>
-        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:32px">
-          <p style="color:rgba(255,255,255,0.7);font-size:14px;margin-bottom:24px">Login dengan akun Telegram kamu</p>
-          <div id="tg-login-btn"></div>
-          <div style="margin-top:20px;color:rgba(255,255,255,0.35);font-size:12px">atau</div>
-          <a href="https://t.me/<%= botUsername %>" style="display:inline-block;margin-top:16px;padding:12px 24px;background:linear-gradient(135deg,#00d9ff,#00ff88);color:#0a0a1a;border-radius:12px;font-weight:700;text-decoration:none;font-size:14px">🚀 Buka di Telegram</a>
-        </div>
-      </div>
-    </div>`;
-  document.body.innerHTML = loginHtml;
-  const script = document.createElement('script');
-  script.async = true;
-  script.src = 'https://telegram.org/js/telegram-widget.js?22';
-  script.setAttribute('data-telegram-login', '<%= botUsername %>');
-  script.setAttribute('data-size', 'large');
-  script.setAttribute('data-radius', '12');
-  script.setAttribute('data-request-access', 'write');
-  script.setAttribute('data-onauth', 'onTgAuth(user)');
-  document.getElementById('tg-login-btn').appendChild(script);
-}
-
-window.onTgAuth = function(user) {
-  fetch('/auth/telegram', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify(user)
-  }).then(r=>r.json()).then(d=>{
-    if(d.token){ localStorage.setItem('token',d.token); window.location.reload(); }
-    else alert('Login gagal, coba lagi.');
-  }).catch(()=>alert('Login gagal, coba lagi.'));
-}
-
-// ── SUBSCRIPTION ─────────────────────────────────────────
-async function loadSubscription() {
-  const plans = await apiFetch('/api/subscriptions');
-  const container = document.getElementById('subscription-plans');
-  if (!plans || !container) return;
-  container.innerHTML = Object.entries(plans).map(([key, p]) => `
-    <div class="card" style="text-align:center">
-      <h3>${p.name}</h3>
-      <div style="font-size:24px;font-weight:800;margin:12px 0">IDR ${Number(p.monthlyPriceIdr || 0).toLocaleString('id-ID')}</div>
-      <div style="font-size:12px;color:var(--dim);margin-bottom:16px">${p.credits || 0} credits/bulan</div>
-      <button class="btn btn-primary btn-full" onclick="buySubscription('${key}')">Pilih</button>
-    </div>
-  `).join('');
-}
-
-async function buySubscription(plan) {
-  const result = await apiFetch('/api/subscription/buy', { method: 'POST', body: JSON.stringify({ plan, cycle: 'monthly' }) });
-  if (result?.paymentUrl) window.open(result.paymentUrl, '_blank');
-}
-
-// ── REFERRAL ─────────────────────────────────────────────
-async function loadReferral() {
-  const data = await apiFetch('/api/referral');
-  if (!data) return;
-  document.getElementById('ref-tier1').textContent = data.tier1Count || 0;
-  document.getElementById('ref-tier2').textContent = data.tier2Count || 0;
-  document.getElementById('ref-tier3').textContent = data.tier3Count || 0;
-  document.getElementById('ref-balance').textContent = 'IDR ' + Number(data.availableCommission || 0).toLocaleString('id-ID');
-  document.getElementById('ref-link').value = data.referralLink || '';
-}
-
-function copyRefLink() {
-  const input = document.getElementById('ref-link');
-  input.select();
-  document.execCommand('copy');
-  toast('✅ Link referral disalin!', 'ok');
+  nav('referral');
 }
 
 async function withdrawReferral() {
-  if (!confirm('Tarik komisi Anda sekarang?\n\nAnda akan mendapatkan 50% dari total komisi tersedia dalam bentuk saldo IDR (Admin Transfer).\n\nLanjutkan?')) return;
-  
-  toast('⏳ Memproses penarikan...', 'info');
-  try {
-    const res = await apiFetch('/api/referral/withdraw', {
-      method: 'POST',
-      body: JSON.stringify({ action: 'sell_admin' })
-    });
-    
-    if (res && res.ok) {
-      toast('✅ Penarikan diajukan! Tunggu konfirmasi admin.', 'ok');
-      loadReferral();
-    } else {
-      toast(res?.error || 'Gagal menarik komisi', 'err');
-    }
-  } catch (e) {
-    toast(e.message, 'err');
-  }
+  toast('Pengajuan penarikan komisi dikirim ke admin','info');
 }
 
-// ── PROFILE ──────────────────────────────────────────────
-async function loadProfile() {
-  const user = await apiFetch('/api/user');
-  if (!user) return;
-  document.getElementById('profile-info').innerHTML = `
-    <div class="stat-card" style="margin-bottom:12px"><div class="label">Nama</div><div class="value" style="font-size:18px">${esc(user.firstName || '-')}</div></div>
-    <div class="stat-card" style="margin-bottom:12px"><div class="label">Username</div><div class="value" style="font-size:18px">@${esc(user.username || '-')}</div></div>
-    <div class="stat-card" style="margin-bottom:12px"><div class="label">Credits</div><div class="value" style="font-size:18px">${user.credits || 0}</div></div>
-    <div class="stat-card" style="margin-bottom:12px"><div class="label">Tier</div><div class="value" style="font-size:18px">${esc(user.tier || 'free')}</div></div>
-    <div class="stat-card"><div class="label">Bergabung</div><div class="value" style="font-size:18px">${new Date(user.createdAt).toLocaleDateString('id-ID')}</div></div>
-  `;
-}
-
-// ── IMAGE GENERATION ─────────────────────────────────────
-async function generateImage() {
-  const prompt = document.getElementById('image-prompt').value;
-  if (!prompt) { toast('Masukkan prompt!', 'warn'); return; }
-  const btn = document.getElementById('gen-image-btn');
-  btn.disabled = true;
-  btn.innerHTML = '<div class="spinner"></div> Generating...';
-  document.getElementById('image-result').innerHTML = '';
-  try {
-    const result = await apiFetch('/api/image/generate', { method: 'POST', body: JSON.stringify({ prompt }) });
-    if (result?.imageUrl) {
-      document.getElementById('image-result').innerHTML = `<img src="${esc(result.imageUrl)}" style="max-width:100%;border-radius:12px;margin-top:16px;box-shadow: 0 10px 30px rgba(0,217,255,0.2);">`;
-      toast('Gambar berhasil dibuat!', 'ok');
-    } else {
-      toast('Gagal memproses gambar.', 'err');
-    }
-  } catch (e) {
-    toast('Error: ' + e.message, 'err');
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = 'Generate Gambar';
-  }
-}
-
-// ── SETTINGS ─────────────────────────────────────────────
-async function saveSettings() {
-  const lang = document.getElementById('settings-lang').value;
-  const notif = document.getElementById('settings-notif').value === '1';
-  try {
-    const res = await apiFetch('/api/user/settings', {
-      method: 'PATCH',
-      body: JSON.stringify({ language: lang, notificationsEnabled: notif })
-    });
-    if (res?.ok) {
-      toast('Pengaturan berhasil disimpan!', 'ok');
-      localStorage.setItem('lang', lang);
-    } else {
-      toast(res?.error || 'Gagal menyimpan pengaturan', 'err');
-    }
-  } catch(e) {
-    toast('Error: ' + e.message, 'err');
-  }
-}
-
-async function changeLang(lang) {
-  localStorage.setItem('lang', lang);
-  try {
-    await apiFetch('/api/user/settings', {
-      method: 'PATCH',
-      body: JSON.stringify({ language: lang })
-    });
-  } catch (e) {
-    console.error('Failed to save language to server:', e);
-  }
-}
-
-async function deleteAccount() {
-  if (!confirm('Yakin ingin menghapus akun? Tindakan ini tidak dapat dibatalkan.')) return;
-  const result = await apiFetch('/api/user', { method: 'DELETE' });
-  if (result?.message) {
-    alert(result.message);
-    localStorage.removeItem('token');
-    location.reload();
-  }
-}
-
-async function deleteVideo(id) {
-  if (!confirm('Yakin ingin menghapus video ini?')) return;
-  const result = await apiFetch('/api/video/' + id, {method: 'DELETE'});
-  if (result?.ok) {
-    loadVideos();
-  }
-}
-
-// ── P2P TRANSFER ─────────────────────────────────────────
+// ── SEND CREDITS ─────────────────────────────────────────
 async function sendCredits() {
-  const username = document.getElementById('send-username').value.replace('@','').trim();
-  const amount = parseInt(document.getElementById('send-amount').value);
-  
-  if (!username) { toast('Username penerima wajib diisi', 'warn'); return; }
-  if (!amount || amount < 50) { toast('Minimal pengiriman 50 credits', 'warn'); return; }
-  if (!confirm(`Kirim ${amount} credits ke @${username}?\n\n(Akan dikenakan biaya admin 0.5%)`)) return;
-
-  const btn = event.target;
-  const oldText = btn.innerHTML;
-  btn.disabled = true;
-  btn.innerHTML = '<div class="spinner"></div> Diproses...';
-
-  try {
-    const res = await apiFetch('/api/user/p2p-transfer', {
-      method: 'POST',
-      body: JSON.stringify({ recipientUsername: username, amount })
-    });
-    if (res && res.success) {
-      toast(`✅ Berhasil mengirim ${res.amountSent} credits ke @${res.recipient}`, 'ok');
-      document.getElementById('send-username').value = '';
-      document.getElementById('send-amount').value = '';
-      loadDashboard();
-    } else {
-      toast(res?.error || 'Transfer gagal', 'err');
-    }
-  } catch (e) {
-    toast(e.message, 'err');
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = oldText;
-  }
+  const username = document.getElementById('send-username')?.value;
+  const amount = parseInt(document.getElementById('send-amount')?.value);
+  if (!username || !amount || amount < 50) { toast('Isi username dan jumlah (min 50)','err'); return; }
+  const data = await apiFetch('/api/transfer', { method:'POST', body:JSON.stringify({ username, amount }) });
+  if (!data || data.error) { toast('Gagal: '+(data?.error||'Unknown'),'err'); return; }
+  toast('✅ '+amount+' credits dikirim ke @'+username,'ok');
+  const u = await apiFetch('/api/user');
+  if (u) { currentUser = u; updateCreditsDisplay(u.credits); }
 }
 
+// ── PROFILE ───────────────────────────────────────────────
+let editMode = false;
 function toggleEditProfile() {
-  const form = document.getElementById('edit-profile-form');
-  const btn = document.getElementById('edit-profile-btn');
-  const visible = form.style.display !== 'none';
-  form.style.display = visible ? 'none' : 'block';
-  btn.textContent = visible ? '✏️ Edit Profil' : '✖ Tutup';
-  if (!visible && currentUser) {
+  editMode = !editMode;
+  document.getElementById('edit-profile-form').style.display = editMode ? 'block' : 'none';
+  document.getElementById('edit-profile-btn').textContent = editMode ? '✏️ Tutup' : '✏️ Edit Profil';
+  if (editMode && currentUser) {
     document.getElementById('edit-firstName').value = currentUser.firstName || '';
-    document.getElementById('edit-lang').value = currentUser.language || 'id';
   }
 }
 
 async function saveProfile() {
-  const firstName = document.getElementById('edit-firstName').value.trim();
-  const lang = document.getElementById('edit-lang').value;
-  if (!firstName) { toast('Nama tidak boleh kosong', 'warn'); return; }
+  const firstName = document.getElementById('edit-firstName')?.value;
+  const language = document.getElementById('edit-lang')?.value;
+  const data = await apiFetch('/api/user/profile', { method:'PUT', body:JSON.stringify({ firstName, language }) });
+  if (!data || data.error) { toast('Gagal update profil','err'); return; }
+  toast('✅ Profil diupdate','ok');
+  toggleEditProfile();
+  loadUser();
+}
+
+// ── SETTINGS ──────────────────────────────────────────────
+async function saveSettings() {
+  const lang = document.getElementById('settings-lang')?.value;
+  const notif = document.getElementById('settings-notif')?.value === '1';
+  const data = await apiFetch('/api/user/settings', { method:'PUT', body:JSON.stringify({ language:lang, notifications:notif }) });
+  if (!data || data.error) { toast('Gagal simpan pengaturan','err'); return; }
+  toast('✅ Pengaturan disimpan','ok');
+}
+
+function changeLang(val) {
+  document.getElementById('settings-lang').value = val;
+  document.getElementById('edit-lang').value = val;
+}
+
+async function deleteAccount() {
+  if (!confirm('Yakin ingin menghapus akun? Semua data akan hilang!')) return;
+  const data = await apiFetch('/api/user', { method:'DELETE' });
+  if (!data || data.error) { toast('Gagal hapus akun','err'); return; }
+  localStorage.removeItem('token');
+  window.location.href = '/login';
+}
+
+// ── IMAGE GENERATION ─────────────────────────────────────
+async function generateImage() {
+  const prompt = document.getElementById('image-prompt')?.value;
+  if (!prompt) { toast('Masukkan prompt gambar','err'); return; }
+  const btn = document.getElementById('gen-image-btn');
+  btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Generating...';
   try {
-    const res = await apiFetch('/api/user/settings', {
-      method: 'PATCH',
-      body: JSON.stringify({ firstName, language: lang })
-    });
-    if (res?.ok) {
-      toast('Profil berhasil disimpan!', 'ok');
-      currentUser = { ...currentUser, firstName, language: lang };
-      localStorage.setItem('lang', lang);
-      toggleEditProfile();
-      loadProfile();
-    } else {
-      toast(res?.error || 'Gagal menyimpan profil', 'err');
-    }
-  } catch (e) {
-    toast('Error: ' + e.message, 'err');
-  }
+    const data = await apiFetch('/api/image/generate', { method:'POST', body:JSON.stringify({ prompt }) });
+    if (!data || data.error) { toast('Gagal: '+(data?.error||'Unknown'),'err'); return; }
+    const r = document.getElementById('image-result');
+    if (data.imageUrl) { r.innerHTML = '<img src="'+data.imageUrl+'" alt="Generated Image" style="max-width:100%;border-radius:12px">'; }
+    else { r.innerHTML = '<div class="empty"><div class="icon">🖼️</div><h3>Gambar siap!</h3></div>'; }
+    toast('✅ Gambar selesai!','ok');
+    const u = await apiFetch('/api/user');
+    if (u) { currentUser = u; updateCreditsDisplay(u.credits); }
+  } catch(e) { toast('Error: '+e.message,'err'); }
+  finally { btn.disabled = false; btn.innerHTML = 'Generate Gambar'; }
 }
 
-init();
-
-// Initialize Telegram WebApp natively
-if (window.Telegram && window.Telegram.WebApp) {
-  const twa = window.Telegram.WebApp;
-  twa.ready();
-  twa.expand();
-  // Attempt to match Telegram theme colors dynamically if supported
-  if (twa.themeParams && twa.themeParams.bg_color) {
-    document.documentElement.style.setProperty('--bg', twa.themeParams.bg_color);
-  }
+// ── TOAST ─────────────────────────────────────────────────
+function toast(msg, type) {
+  const t = document.getElementById('toast');
+  const el = document.createElement('div');
+  el.className = 'toast-msg toast-'+ (type||'info');
+  el.textContent = msg;
+  t.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('show'));
+  setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 300); }, 3000);
 }
+
+// ── SUBSCRIPTIONS ─────────────────────────────────────────
+async function loadSubscriptions() {
+  const c = document.getElementById('subscription-plans');
+  if (!c) return;
+  const data = await apiFetch('/api/subscriptions');
+  const plans = data?.plans || [{name:'Free',price:0,credits:25},{name:'Basic',price:35000,credits:65},{name:'Pro',price:75000,credits:150}];
+  c.innerHTML = plans.map(p => '<div class="price-card"><h3>'+p.name+'</h3><div class="price">IDR '+(p.price||0).toLocaleString()+'</div><div class="cred">'+p.credits+' credits/bln</div><button class="btn btn-primary btn-full">Pilih</button></div>').join('');
+}
+
+// ── INIT ──────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  if (!token) { window.location.href='/login'; return; }
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('loading-overlay').style.display = 'none';
+  await loadUser();
+  initCreate();
+  
+  // Check URL params for deep link
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('page')) nav(params.get('page'));
+});
 </script>
+
+<div id="version-badge">v4</div>
 </body>
 </html>

@@ -1,7 +1,7 @@
 <style>
   .provider-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 16px; }
   .provider-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; transition: border-color 0.15s; }
-  .provider-card:hover { border-color: var(--gold-dim); }
+  .provider-card:hover { border-color: var(--accent-dim); }
   .provider-card.erroring { border-color: #5a1f1f; }
   .provider-header { padding: 16px; cursor: pointer; }
   .provider-header:hover { background: rgba(255,255,255,0.02); }
@@ -55,7 +55,7 @@
     <span style="font-size: 13px; color: var(--muted); margin-right: 8px;">Bulk Actions:</span>
     <button class="btn btn-ghost btn-sm" onclick="refreshAllBalances()">🔄 Refresh Balances</button>
     <button class="btn btn-danger btn-sm" onclick="resetAllCB()">⚠️ Reset All Circuit Breakers</button>
-    <button class="btn btn-gold btn-sm" style="margin-left: auto;" onclick="loadProviders()">🔃 Reload</button>
+    <button class="btn btn-primary btn-sm" style="margin-left: auto;" onclick="loadProviders()">🔃 Reload</button>
   </div>
 </div>
 
@@ -166,7 +166,7 @@
       <div style="font-size:15px; font-weight:600; margin-bottom:4px;">🔧 Custom AI Providers</div>
       <div style="font-size:12px; color:var(--muted);">Add any OpenAI-compatible provider. Balance is auto-detected by URL pattern.</div>
     </div>
-    <button class="btn btn-gold btn-sm" onclick="openAddCustomProvider()">+ Add Provider</button>
+    <button class="btn btn-primary btn-sm" onclick="openAddCustomProvider()">+ Add Provider</button>
   </div>
   <div id="custom-provider-list" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(360px,1fr)); gap:16px;">
     <div class="loading">Loading...</div>
@@ -196,7 +196,7 @@
         <input class="input" id="cp-apiKey" type="password" placeholder="sk-..." autocomplete="new-password" />
       </div>
       <div style="display:flex; gap:10px; padding-top:6px; flex-wrap:wrap;">
-        <button class="btn btn-gold" id="cp-save-btn" onclick="saveCustomProvider()">💾 Save</button>
+        <button class="btn btn-primary" id="cp-save-btn" onclick="saveCustomProvider()">💾 Save</button>
         <button class="btn btn-ghost" id="cp-test-btn" onclick="testCustomProviderModal()" style="display:none;">⚡ Test</button>
         <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-custom-provider')" style="margin-left:auto;">Cancel</button>
       </div>
@@ -549,7 +549,7 @@ function markChanged(key) {
   // Visual indicator for unsaved changes
   const card = document.querySelector(`.provider-card[data-key="${key}"]`);
   if (card) {
-    card.style.borderColor = 'var(--gold-dim)';
+    card.style.borderColor = 'var(--accent-dim)';
   }
 }
 
@@ -778,8 +778,8 @@ async function saveAITaskSettings() {
 document.addEventListener('DOMContentLoaded', () => {
   // Add floating save button
   const saveBtn = document.createElement('button');
-  saveBtn.className = 'btn btn-gold';
-  saveBtn.style.cssText = 'position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 50; box-shadow: 0 4px 20px rgba(196,163,90,0.3);';
+  saveBtn.className = 'btn btn-primary';
+  saveBtn.style.cssText = 'position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 50; box-shadow: 0 4px 20px rgba(168,85,247,0.3);';
   saveBtn.innerHTML = '💾 Save Changes';
   saveBtn.onclick = () => currentTab === 'ai-tasks' ? saveAITaskSettings() : saveProviders();
   document.body.appendChild(saveBtn);
@@ -819,7 +819,7 @@ function renderCustomProviders() {
   if (!customProvidersData.length) {
     list.innerHTML = `<div class="card" style="grid-column:1/-1; text-align:center; padding:40px; color:var(--muted);">
       No custom providers yet.<br><br>
-      <button class="btn btn-gold btn-sm" onclick="openAddCustomProvider()">+ Add your first provider</button>
+      <button class="btn btn-primary btn-sm" onclick="openAddCustomProvider()">+ Add your first provider</button>
     </div>`;
     return;
   }

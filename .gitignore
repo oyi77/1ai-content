@@ -40,3 +40,10 @@ __pycache__/
 
 # External tools — install via pip, don't clone
 tools/tiktok-carousel-generator/
+
+*.bak
+output/*/
+design-tokens.json
+public/design-system.css
+scripts/fix-css-path.js
+public/hero-comparison.png

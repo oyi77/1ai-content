@@ -1,8 +1,8 @@
 /**
  * OpenClaw Bot - Main Entry Point
  *
- * AI Video Marketing SaaS Platform - Telegram Bot
- * Version: 3.0.0
+ * Telegram bot + Fastify web server for BerkahKarya content platform.
+ * Handles webhooks, admin dashboard, web app, and background workers.
  */
 
 import "dotenv/config";
@@ -15,6 +15,8 @@ import Fastify from "fastify";
 import path from "path";
 import fastifyView from "@fastify/view";
 import ejs from "ejs";
+import proxy from "@fastify/http-proxy";
+import fastifyCookie from "@fastify/cookie";
 import { logger } from "@/utils/logger";
 import { setupCommands } from "@/commands";
 import { setupHandlers } from "@/handlers";
@@ -244,6 +246,9 @@ async function main() {
       viewExt: "ejs",
     });
 
+    // Cookie parsing/setting support (for admin auth)
+    await app.register(fastifyCookie);
+
     // ── Correlation ID — attach to request for downstream logging ──
     app.addHook('onRequest', async (request, _reply) => {
       const incomingId = request.headers['x-request-id'];
@@ -266,7 +271,9 @@ async function main() {
     app.addHook('onRequest', async (request, reply) => {
       const origin = request.headers.origin;
       if (origin && corsOrigin) {
-        const allowedOrigins = corsOrigin.split(',').map((o: string) => o.trim());
+        const allowedOrigins = corsOrigin
+          .split(",")
+          .map((o: string) => o.trim());
         if (allowedOrigins.includes(origin)) {
           reply.header('Access-Control-Allow-Origin', origin);
           reply.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -278,10 +285,12 @@ async function main() {
     });
 
     // Handle CORS preflight
-    app.options('/*', async (request, reply) => {
+    app.options("/*", async (request, reply) => {
       const origin = request.headers.origin;
       if (origin && corsOrigin) {
-        const allowedOrigins = corsOrigin.split(',').map((o: string) => o.trim());
+        const allowedOrigins = corsOrigin
+          .split(",")
+          .map((o: string) => o.trim());
         if (allowedOrigins.includes(origin)) {
           reply.header('Access-Control-Allow-Origin', origin);
           reply.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -293,16 +302,21 @@ async function main() {
       return reply.status(204).send();
     });
 
+    // Reverse proxy /api/py/* to Python FastAPI server on port 8767
+    await app.register(proxy, {
+      upstream: 'http://127.0.0.1:8767',
+      prefix: '/api/py',
+      rewritePrefix: '/',
+      preHandler(req, _reply, done) {
+        req.raw.setTimeout(180_000);
+        done();
+      },
+    });
+    logger.info("🔄 /api/py reverse proxy registered");
     logger.info("🌐 Setting up routes...");
     await app.register(healthCheckRoutes);
     await app.register(webhookRoutes, { bot });
     await app.register(adminRoutes);
-    await app.register(webRoutes);
-    await app.register(agencyRoutes, { prefix: '/api' });
-    await app.register(contentApiRoutes);
-    await app.register(youtubeDashboardRoutes);
-    await app.register(ecosystemRoutes);
-    await app.register((await import('./routes/analytics-api.js')).analyticsRoutes);
 
     // Static files (dashboard, sw.js, images)
     await app.register((await import('@fastify/static')).default, {
@@ -311,6 +325,12 @@ async function main() {
       cacheControl: true,
       maxAge: '1h',
     });
+    await app.register(webRoutes);
+    await app.register(agencyRoutes, { prefix: '/api' });
+    await app.register(contentApiRoutes);
+    await app.register(youtubeDashboardRoutes);
+    await app.register(ecosystemRoutes);
+    await app.register((await import('./routes/analytics-api.js')).analyticsRoutes);
 
     if (appConfig.NODE_ENV === 'test') {
       const testRoutes = require('./routes/test').default;

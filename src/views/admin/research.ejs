@@ -1,0 +1,531 @@
+<!-- Research Admin Page - Trending Niches, Book Briefs & Full Book Generation -->
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+  <div>
+    <h1 class="section-title">🔬 Book Research</h1>
+    <p class="section-sub">Research trending niches, generate book briefs, and create full books</p>
+  </div>
+</div>
+
+<!-- Section 1: Trending Niches -->
+<div class="card" style="margin-bottom:20px;">
+  <h3 style="margin-bottom:16px;font-size:16px;font-weight:700;">🔍 Trending Niches</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+    <div class="form-group">
+      <label>Language</label>
+      <select class="input" id="research-lang" style="width:100%;">
+        <option value="en">🇬🇧 English</option>
+        <option value="id" selected>🇮🇩 Indonesia</option>
+        <option value="ms">🇲🇾 Melayu</option>
+        <option value="zh">🇨🇳 中文</option>
+        <option value="ja">🇯🇵 日本語</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Region (optional)</label>
+      <input class="input" id="research-region" placeholder="e.g. US, UK, Indonesia" style="width:100%;">
+    </div>
+    <div class="form-group">
+      <label>Category (optional)</label>
+      <input class="input" id="research-category" placeholder="e.g. self-help, fiction, education" style="width:100%;">
+    </div>
+    <div class="form-group">
+      <label>Count</label>
+      <input class="input" id="research-count" type="number" value="8" min="3" max="20" style="width:100%;">
+    </div>
+    <div class="form-group" style="grid-column:1/3;">
+      <label>Source Hint (optional)</label>
+      <input class="input" id="research-source-hint" placeholder="e.g. Amazon bestsellers, Google Books" style="width:100%;">
+    </div>
+  </div>
+  <button class="btn btn-primary" style="margin-top:20px;" id="research-btn" onclick="researchNiches()">🔍 Research Niches</button>
+</div>
+
+<!-- Section 1 Results -->
+<div id="research-results" class="card" style="display:none;margin-bottom:20px;">
+  <h3 style="margin-bottom:16px;font-size:16px;font-weight:700;">📊 Trending Niches</h3>
+  <div id="research-content"></div>
+</div>
+
+<!-- Section 2: Book Brief -->
+<div class="card" style="margin-bottom:20px;">
+  <h3 style="margin-bottom:16px;font-size:16px;font-weight:700;">📋 Book Brief Generator</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+    <div class="form-group" style="grid-column:1/3;">
+      <label>Niche / Topic *</label>
+      <input class="input" id="brief-niche" placeholder="e.g. Mindfulness for busy professionals" style="width:100%;">
+    </div>
+    <div class="form-group">
+      <label>Language</label>
+      <select class="input" id="brief-lang" style="width:100%;">
+        <option value="en">🇬🇧 English</option>
+        <option value="id">🇮🇩 Indonesia</option>
+        <option value="ms">🇲🇾 Melayu</option>
+        <option value="zh">🇨🇳 中文</option>
+        <option value="ja">🇯🇵 日本語</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Region (optional)</label>
+      <input class="input" id="brief-region" placeholder="e.g. US, UK" style="width:100%;">
+    </div>
+    <div class="form-group" style="grid-column:1/3;">
+      <label>Target Market (optional)</label>
+      <input class="input" id="brief-target" placeholder="e.g. Beginners, parents, entrepreneurs" style="width:100%;">
+    </div>
+  </div>
+  <button class="btn btn-primary" style="margin-top:20px;" id="brief-btn" onclick="generateBrief()">📋 Generate Book Brief</button>
+</div>
+
+<!-- Section 2 Results -->
+<div id="brief-results" class="card" style="display:none;margin-bottom:20px;">
+  <h3 style="margin-bottom:16px;font-size:16px;font-weight:700;">📚 Book Brief</h3>
+  <div id="brief-content"></div>
+</div>
+
+<!-- Section 3: Full Book Generation -->
+<div class="card" style="margin-bottom:20px;">
+  <h3 style="margin-bottom:16px;font-size:16px;font-weight:700;">📚 Full Book Generation</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+    <div class="form-group" style="grid-column:1/3;">
+      <label>Subject / Topic *</label>
+      <input class="input" id="gen-subject" placeholder="e.g. The Art of Minimalism" style="width:100%;">
+    </div>
+    <div class="form-group">
+      <label>Language</label>
+      <select class="input" id="gen-lang" style="width:100%;">
+        <option value="en">🇬🇧 English</option>
+        <option value="id">🇮🇩 Indonesia</option>
+        <option value="ms">🇲🇾 Melayu</option>
+        <option value="zh">🇨🇳 中文</option>
+        <option value="ja">🇯🇵 日本語</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Region (optional)</label>
+      <input class="input" id="gen-region" placeholder="e.g. US, UK" style="width:100%;">
+    </div>
+    <div class="form-group" style="grid-column:1/3;">
+      <label>Additional Instructions (optional)</label>
+      <textarea class="input" id="gen-instructions" placeholder="Any specific requirements for the book..." style="width:100%;min-height:80px;resize:vertical;"></textarea>
+    </div>
+  </div>
+  <button class="btn btn-primary" style="margin-top:20px;" id="gen-btn" onclick="generateFullBook()">📚 Generate Full Book</button>
+  <div id="gen-progress" style="display:none;margin-top:16px;"></div>
+</div>
+
+<!-- Section 3 Results -->
+<div id="gen-results" class="card" style="display:none;margin-bottom:20px;">
+  <h3 style="margin-bottom:16px;font-size:16px;font-weight:700;">✅ Generated Book</h3>
+  <div id="gen-content"></div>
+</div>
+
+<script>
+const PY_API = window.location.origin + '/api/py';
+
+function showToast(msg, type) {
+  const t = document.createElement('div');
+  t.className = 'toast toast-' + (type === 'error' ? 'error' : 'success');
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(function() { t.remove(); }, 3000);
+}
+
+// ── Section 1: Research Niches ─────────────────────────────────────
+
+async function researchNiches() {
+  const lang = document.getElementById('research-lang').value;
+  const region = document.getElementById('research-region').value.trim();
+  const category = document.getElementById('research-category').value.trim();
+  const count = parseInt(document.getElementById('research-count').value) || 8;
+  const sourceHint = document.getElementById('research-source-hint').value.trim();
+
+  const btn = document.getElementById('research-btn');
+  btn.textContent = '⏳ Researching...';
+  btn.disabled = true;
+
+  try {
+    const r = await fetch(PY_API + '/research/topics', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        language: lang,
+        region: region,
+        category: category,
+        count: count,
+        source_hint: sourceHint,
+      }),
+    });
+    const data = await r.json();
+
+    const section = document.getElementById('research-results');
+    section.style.display = 'block';
+
+    const market = data.niches || {};
+    const niches = market.niches || [];
+    const genres = market.genres || [];
+    const summary = market.summary || '';
+
+    let html = '';
+
+    if (summary) {
+      html += '<div style="padding:16px;background:var(--bg);border-radius:10px;margin-bottom:16px;">' +
+        '<div style="font-size:13px;color:var(--muted);">' + summary + '</div></div>';
+    }
+
+    if (genres.length) {
+      html += '<div style="margin-bottom:16px;">';
+      html += '<div style="font-size:12px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Genres</div>';
+      html += '<div style="display:flex;flex-wrap:wrap;gap:8px;">';
+      genres.forEach(function(g) {
+        var scoreColor = 'badge-blue';
+        if ((g.popularity_score || 0) >= 80) scoreColor = 'badge-green';
+        else if ((g.popularity_score || 0) <= 30) scoreColor = 'badge-orange';
+        var trendIcon = g.growth_trend === 'rising' ? '📈' : g.growth_trend === 'declining' ? '📉' : '➡️';
+        html += '<span class="badge ' + scoreColor + '" style="font-size:13px;">' +
+          trendIcon + ' ' + (g.genre || g.name || '') +
+          ' <span style="opacity:0.7;">(' + (g.popularity_score || 0) + ')</span></span>';
+      });
+      html += '</div></div>';
+    }
+
+    if (niches.length) {
+      html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;">';
+      niches.forEach(function(n) {
+        var compColor = 'badge-green';
+        var compLabel = n.competition_level || 'medium';
+        if (compLabel === 'high') compColor = 'badge-orange';
+        else if (compLabel === 'medium') compColor = 'badge-blue';
+
+        html += '<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px;">';
+        html += '<div style="font-size:15px;font-weight:700;margin-bottom:8px;">' + (n.niche || '') + '</div>';
+
+        if (n.target_audience) {
+          html += '<div style="font-size:12px;color:var(--muted);margin-bottom:4px;">🎯 ' + n.target_audience + '</div>';
+        }
+        if (n.market_angle) {
+          html += '<div style="font-size:12px;color:var(--muted);margin-bottom:8px;">💡 ' + n.market_angle + '</div>';
+        }
+
+        html += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">';
+        html += '<span class="badge ' + compColor + '">' + compLabel + ' competition</span>';
+        if (n.why_now) {
+          html += '<span class="badge badge-green">' + n.why_now + '</span>';
+        }
+        html += '</div>';
+
+        if (n.suggested_titles && n.suggested_titles.length) {
+          html += '<div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Suggested titles:</div>';
+          html += '<ul style="margin:0;padding-left:16px;font-size:12px;color:var(--accent);">';
+          n.suggested_titles.forEach(function(t) {
+            html += '<li>' + t + '</li>';
+          });
+          html += '</ul>';
+        }
+
+        if (n.outline_brief && n.outline_brief.length) {
+          html += '<details style="margin-top:8px;font-size:12px;">' +
+            '<summary style="cursor:pointer;color:var(--accent);">📖 Outline preview</summary>' +
+            '<ul style="padding-left:16px;margin:8px 0 0 0;">';
+          n.outline_brief.forEach(function(o) {
+            html += '<li style="margin-bottom:2px;">' + o + '</li>';
+          });
+          html += '</ul></details>';
+        }
+
+        html += '</div>';
+      });
+      html += '</div>';
+    } else {
+      html += '<div style="color:var(--muted);text-align:center;padding:32px;">No niches found. Try different parameters.</div>';
+    }
+
+    document.getElementById('research-content').innerHTML = html;
+    showToast('✅ Found ' + niches.length + ' niches');
+  } catch (e) {
+    showToast('❌ ' + e.message, 'error');
+  }
+
+  btn.textContent = '🔍 Research Niches';
+  btn.disabled = false;
+}
+
+// ── Section 2: Book Brief ─────────────────────────────────────────
+
+async function generateBrief() {
+  const niche = document.getElementById('brief-niche').value.trim();
+  if (!niche) return showToast('Enter a niche/topic', 'error');
+
+  const lang = document.getElementById('brief-lang').value;
+  const region = document.getElementById('brief-region').value.trim();
+  const target = document.getElementById('brief-target').value.trim();
+
+  const btn = document.getElementById('brief-btn');
+  btn.textContent = '⏳ Generating...';
+  btn.disabled = true;
+
+  try {
+    const r = await fetch(PY_API + '/research/book-brief', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        niche: niche,
+        language: lang,
+        region: region,
+        target_market: target,
+      }),
+    });
+    const data = await r.json();
+
+    const section = document.getElementById('brief-results');
+    section.style.display = 'block';
+
+    const brief = data.brief || {};
+    let html = '';
+
+    if (brief.success === false) {
+      html = '<div style="color:var(--red);padding:16px;">❌ ' + (brief.error || 'Brief generation failed') + '</div>';
+      document.getElementById('brief-content').innerHTML = html;
+      showToast('❌ ' + (brief.error || 'Failed'), 'error');
+      return;
+    }
+
+    // Title section
+    html += '<div style="margin-bottom:16px;">';
+    if (brief.title) {
+      html += '<div style="font-size:20px;font-weight:700;margin-bottom:4px;">' + brief.title + '</div>';
+    }
+    if (brief.subtitle) {
+      html += '<div style="font-size:14px;color:var(--muted);margin-bottom:12px;">' + brief.subtitle + '</div>';
+    }
+    html += '</div>';
+
+    // Description
+    if (brief.description) {
+      html += '<div style="padding:16px;background:var(--bg);border-radius:10px;margin-bottom:16px;">' +
+        '<div style="font-size:12px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Description</div>' +
+        '<div style="font-size:13px;line-height:1.6;">' + brief.description + '</div></div>';
+    }
+
+    // Meta badges
+    html += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">';
+    if (brief.primary_genre) {
+      html += '<span class="badge badge-blue">📂 ' + brief.primary_genre + '</span>';
+    }
+    if (brief.estimated_length_pages) {
+      html += '<span class="badge badge-green">📄 ~' + brief.estimated_length_pages + ' pages</span>';
+    }
+    if (brief.target_audience) {
+      html += '<span class="badge badge-orange">🎯 ' + brief.target_audience + '</span>';
+    }
+    html += '</div>';
+
+    // Keywords
+    if (brief.keywords && brief.keywords.length) {
+      html += '<div style="margin-bottom:16px;">' +
+        '<div style="font-size:12px;color:var(--muted);text-transform:uppercase;margin-bottom:6px;">Keywords</div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:4px;">';
+      brief.keywords.forEach(function(k) {
+        html += '<span class="badge" style="background:var(--accent);color:#fff;">' + k + '</span>';
+      });
+      html += '</div></div>';
+    }
+
+    // Outline
+    if (brief.outline && brief.outline.length) {
+      html += '<div style="margin-bottom:16px;">' +
+        '<div style="font-size:12px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">📖 Outline (' + brief.outline.length + ' chapters)</div>' +
+        '<div style="display:grid;gap:8px;">';
+      brief.outline.forEach(function(ch, i) {
+        html += '<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;">' +
+          '<div style="font-size:13px;font-weight:600;margin-bottom:4px;">' +
+          'Chapter ' + (i + 1) + ': ' + (ch.chapter || '') + '</div>' +
+          '<div style="font-size:12px;color:var(--muted);">' + (ch.summary || '') + '</div></div>';
+      });
+      html += '</div></div>';
+    }
+
+    // Cover style
+    if (brief.cover_style) {
+      html += '<div style="padding:12px;background:var(--bg);border-radius:10px;">' +
+        '<div style="font-size:12px;color:var(--muted);text-transform:uppercase;margin-bottom:4px;">Cover Style</div>' +
+        '<div style="font-size:13px;">' + brief.cover_style + '</div></div>';
+    }
+
+    document.getElementById('brief-content').innerHTML = html;
+    showToast('✅ Brief generated: ' + (brief.title || ''));
+  } catch (e) {
+    showToast('❌ ' + e.message, 'error');
+  }
+
+  btn.textContent = '📋 Generate Book Brief';
+  btn.disabled = false;
+}
+
+// ── Section 3: Full Book Generation (SSE) ─────────────────────────
+
+let _genAbortController = null;
+
+async function generateFullBook() {
+  const subject = document.getElementById('gen-subject').value.trim();
+  if (!subject) return showToast('Enter a subject', 'error');
+
+  // Abort any in-flight generation
+  if (_genAbortController) {
+    _genAbortController.abort();
+    _genAbortController = null;
+  }
+
+  const lang = document.getElementById('gen-lang').value;
+  const region = document.getElementById('gen-region').value.trim();
+  const instructions = document.getElementById('gen-instructions').value.trim();
+
+  const btn = document.getElementById('gen-btn');
+  btn.textContent = '⏳ Generating...';
+  btn.disabled = true;
+
+  const progressDiv = document.getElementById('gen-progress');
+  progressDiv.style.display = 'block';
+  progressDiv.innerHTML = '<div class="badge badge-blue">⏳ Initializing...</div>';
+
+  const section = document.getElementById('gen-results');
+  section.style.display = 'none';
+  const contentDiv = document.getElementById('gen-content');
+
+  _genAbortController = new AbortController();
+
+  try {
+    const r = await fetch(PY_API + '/research/generate-book', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        subject: subject,
+        language: lang,
+        region: region,
+        additional_instructions: instructions,
+      }),
+      signal: _genAbortController.signal,
+    });
+
+    if (!r.ok) {
+      const errText = await r.text();
+      throw new Error(errText || 'HTTP ' + r.status);
+    }
+
+    const reader = r.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let sections = [];
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const jsonStr = line.slice(6).trim();
+        if (!jsonStr) continue;
+
+        try {
+          const event = JSON.parse(jsonStr);
+          handleGenEvent(event, contentDiv, progressDiv, sections);
+        } catch (e) {
+          // skip unparseable SSE lines
+        }
+      }
+    }
+
+    // Process remaining buffer
+    if (buffer.startsWith('data: ')) {
+      try {
+        const event = JSON.parse(buffer.slice(6).trim());
+        handleGenEvent(event, contentDiv, progressDiv, sections);
+      } catch (e) {}
+    }
+
+    section.style.display = 'block';
+    showToast('✅ Book generation complete: ' + sections.length + ' sections');
+  } catch (e) {
+    if (e.name === 'AbortError') {
+      showToast('⚠️ Generation cancelled', 'error');
+    } else {
+      showToast('❌ ' + e.message, 'error');
+    }
+  }
+
+  btn.textContent = '📚 Generate Full Book';
+  btn.disabled = false;
+  _genAbortController = null;
+}
+
+function handleGenEvent(event, contentDiv, progressDiv, sections) {
+  var type = event.type || '';
+  var payload = event.payload || {};
+
+  switch (type) {
+    case 'brief':
+      progressDiv.innerHTML = '<div class="badge badge-green">✅ Brief generated</div>' +
+        '<div style="margin-top:8px;font-size:13px;color:var(--muted);">' +
+        'Title: <strong>' + (payload.title || '') + '</strong></div>';
+      break;
+
+    case 'section_content':
+      sections.push(payload);
+      var progress = payload.progress || '';
+      var chapterTitle = payload.chapter || payload.title || '';
+      progressDiv.innerHTML = '<div class="badge badge-blue">📝 Writing: ' + chapterTitle + ' ' + progress + '</div>';
+      break;
+
+    case 'progress':
+      progressDiv.innerHTML = '<div class="badge badge-blue">⏳ ' + (payload.message || '') + '</div>';
+      break;
+
+    case 'complete':
+      progressDiv.innerHTML = '<div class="badge badge-green">✅ Complete' +
+        (payload.word_count ? ' · ~' + payload.word_count + ' words' : '') + '</div>';
+
+      var sections = payload.sections || [];
+      var html = '';
+
+      if (sections.length) {
+        html += '<div style="display:grid;gap:16px;">';
+        sections.forEach(function(s, i) {
+          var chTitle = s.chapter || s.title || 'Section ' + (i + 1);
+          var content = s.content || s.text || '';
+          html += '<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px;">' +
+            '<div style="font-size:15px;font-weight:700;margin-bottom:8px;">' + chTitle + '</div>';
+          if (content) {
+            html += '<div style="font-size:13px;line-height:1.7;white-space:pre-wrap;">' + escapeHtml(content) + '</div>';
+          }
+          html += '</div>';
+        });
+        html += '</div>';
+      } else if (payload.content) {
+        html += '<div style="font-size:13px;line-height:1.7;white-space:pre-wrap;">' + escapeHtml(payload.content) + '</div>';
+      }
+
+      contentDiv.innerHTML = html;
+      break;
+
+    case 'error':
+      progressDiv.innerHTML = '<div class="badge badge-orange">❌ ' + (payload.message || 'Error') + '</div>';
+      break;
+
+    default:
+      progressDiv.innerHTML = '<div class="badge badge-blue">⏳ ' + (payload.message || type || 'Processing...') + '</div>';
+  }
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  var div = document.createElement('div');
+  div.appendChild(document.createTextNode(str));
+  return div.innerHTML;
+}
+</script>

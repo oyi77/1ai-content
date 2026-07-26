@@ -49,7 +49,7 @@
         <div style="font-size:12px;color:var(--muted);margin-top:-4px;">When unchecked, generates script only with placeholder images for layout preview</div>
       </div>
     </div>
-    <button class="btn btn-gold" style="margin-top:16px;" onclick="generateComic()">🎨 Generate Comic</button>
+    <button class="btn btn-primary" style="margin-top:16px;" onclick="generateComic()">🎨 Generate Comic</button>
   </div>
 
   <!-- Progress -->
@@ -57,7 +57,7 @@
     <h3 style="margin-bottom:12px;font-size:14px;font-weight:600;">⏳ Generating...</h3>
     <div id="c-progress-msg" style="font-size:13px;color:var(--muted);margin-bottom:8px;">Starting...</div>
     <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;">
-      <div id="c-progress-bar" style="height:100%;width:0%;background:var(--gold);border-radius:3px;transition:width 0.3s;"></div>
+      <div id="c-progress-bar" style="height:100%;width:0%;background:var(--grad);border-radius:3px;transition:width 0.3s;"></div>
     </div>
   </div>
 </div>
@@ -105,6 +105,8 @@
 
 <script>
 const PY_API = window.location.origin + '/api/py';
+let lastScript = null;
+let lastCoverPath = null;
 
 function showToast(msg, type) {
   const t = document.createElement('div');
@@ -118,7 +120,7 @@ async function generateComic() {
   const prompt = document.getElementById('c-prompt').value.trim();
   if (!prompt) return showToast('Enter a story prompt', 'error');
 
-  const btn = document.querySelector('.btn-gold');
+  const btn = document.querySelector('.btn-primary');
   const origText = btn.textContent;
   btn.textContent = '⏳ Generating...';
   btn.disabled = true;
@@ -217,6 +219,7 @@ function handleEvent(event, reqBody) {
     case 'script_ready': {
       const script = event.data ? event.data.script || event.data : event.script;
       if (!script) return;
+      lastScript = script;
 
       // Show script section
       document.getElementById('c-script-section').style.display = 'block';
@@ -277,6 +280,7 @@ function handleEvent(event, reqBody) {
 
     case 'cover_rendered': {
       const path = event.path || '';
+      lastCoverPath = path;
       document.getElementById('c-cover-section').style.display = 'block';
 
       const imgPath = path.replace('/home/openclaw/projects/1ai-content/output/comic/', '');
@@ -296,6 +300,30 @@ function handleEvent(event, reqBody) {
       if (data.output_dir) statParts.push(`Output: ${esc(data.output_dir)}`);
       document.getElementById('c-stats').textContent = statParts.join(' · ') || 'Complete';
       showToast('✅ Comic generated!');
+      // Save to gallery DB
+      const saveBody = {
+        title: (lastScript && lastScript.title) || reqBody.prompt.slice(0, 80),
+        format: reqBody.format || 'comic',
+        language: reqBody.language || 'en',
+        prompt: reqBody.prompt,
+        script: lastScript,
+        num_episodes: data.num_episodes || reqBody.num_episodes || 1,
+        total_pages: data.total_pages || 0,
+        output_dir: data.output_dir || '',
+        cover_path: lastCoverPath || '',
+        status: 'completed',
+      };
+      fetch('/api/comics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(saveBody),
+        credentials: 'include',
+      }).then(function(r) {
+        if (r.ok) showToast('✅ Saved to gallery!');
+        else console.warn('Save comic failed:', r.statusText);
+      }).catch(function(e) {
+        console.warn('Save comic error:', e);
+      });
       break;
     }
 

@@ -1,0 +1,219 @@
+<div id="view-create" class="view">
+  <nav class="wizard-stepper" id="wizard-stepper" aria-label="Creation steps">
+    <div class="step" data-step="1">
+      <div class="step-line"><div class="step-progress"></div></div>
+      <div class="step-dot" aria-hidden="true"><span>1</span></div>
+      <span class="step-label">Niche</span>
+    </div>
+    <div class="step" data-step="2">
+      <div class="step-line"><div class="step-progress"></div></div>
+      <div class="step-dot" aria-hidden="true"><span>2</span></div>
+      <span class="step-label">Style</span>
+    </div>
+    <div class="step" data-step="3">
+      <div class="step-line"><div class="step-progress"></div></div>
+      <div class="step-dot" aria-hidden="true"><span>3</span></div>
+      <span class="step-label">Duration</span>
+    </div>
+    <div class="step" data-step="4">
+      <div class="step-line"><div class="step-progress"></div></div>
+      <div class="step-dot" aria-hidden="true"><span>4</span></div>
+      <span class="step-label">Details</span>
+    </div>
+    <div class="step" data-step="5">
+      <div class="step-line"><div class="step-progress"></div></div>
+      <div class="step-dot" aria-hidden="true"><span>5</span></div>
+      <span class="step-label">Preview</span>
+    </div>
+    <div class="step" data-step="6">
+      <div class="step-dot" aria-hidden="true"><span>6</span></div>
+      <span class="step-label">Generate</span>
+    </div>
+  </nav>
+
+  <div id="create-step-container" role="region" aria-live="polite" aria-label="Creation step"></div>
+</div>
+
+<script>
+const NICHES_DATA = [
+  {id:'fnb',emoji:'🍔',name:'F&B'},
+  {id:'product',emoji:'🛍️',name:'Produk'},
+  {id:'fashion',emoji:'👗',name:'Fashion'},
+  {id:'tech',emoji:'💻',name:'Tech'},
+  {id:'health',emoji:'💪',name:'Health'},
+  {id:'beauty',emoji:'💄',name:'Beauty'},
+  {id:'travel',emoji:'✈️',name:'Travel'},
+  {id:'education',emoji:'📚',name:'Edukasi'},
+];
+const STYLES = ['Viral Hook','Testimonial','Tutorial','Showcase'];
+const DURATIONS = [5, 15, 30, 60];
+
+function initCreate() {
+  createState = { step: 1, niche: '', style: 'Viral Hook', duration: 30, customPrompt: '', storyboard: null };
+  renderCreateStep();
+}
+
+function renderCreateStep() {
+  const dots = 6;
+  const dotEl = document.getElementById('wizard-stepper');
+  dotEl.innerHTML = Array.from({length: dots}, (_, i) => {
+    const step = i + 1;
+    const isActive = step === createState.step;
+    const isDone = step < createState.step;
+    return `
+      <div class="step" data-step="${step}" role="button" aria-current="${isActive ? 'step' : 'false'}" aria-disabled="${isActive || isDone ? 'false' : 'true'}">
+        <div class="step-line"><div class="step-progress" style="width: ${isDone ? '100%' : '0%'}"></div></div>
+        <div class="step-dot ${isActive ? 'active' : ''} ${isDone ? 'done' : ''}" aria-hidden="true"><span>${step}</span></div>
+        <span class="step-label">${['Niche','Style','Duration','Details','Preview','Generate'][i]}</span>
+      </div>
+    `;
+  }).join('');
+
+  const c = document.getElementById('create-step-container');
+  if (createState.step === 1) {
+    c.innerHTML = `
+      <div class="step-header">Pilih Niche Bisnis</div>
+      <div class="step-sub">Kategori konten akan menentukan gaya video</div>
+      <div class="niche-grid">
+        ${NICHES_DATA.map(n => `<div class="niche-btn${createState.niche === n.id ? ' selected' : ''}" onclick="selectNiche('${n.id}')"><span class="ni">${n.emoji}</span>${n.name}</div>`).join('')}
+      </div>
+      <div style="margin-top:24px"><button class="btn btn-primary" onclick="nextStep()" ${!createState.niche ? 'disabled' : ''}>Lanjut →</button></div>
+    `;
+  } else if (createState.step === 2) {
+    c.innerHTML = `
+      <div class="step-header">Pilih Style Video</div>
+      <div class="step-sub">Gaya penyampaian konten</div>
+      <div class="chip-group">
+        ${STYLES.map(s => `<div class="chip${createState.style === s ? ' active' : ''}" onclick="selectStyle('${s}')">${s}</div>`).join('')}
+      </div>
+      <div style="margin-top:24px;display:flex;gap:12px">
+        <button class="btn btn-outline" onclick="prevStep()">← Kembali</button>
+        <button class="btn btn-primary" onclick="nextStep()">Lanjut →</button>
+      </div>
+    `;
+  } else if (createState.step === 3) {
+    c.innerHTML = `
+      <div class="step-header">Pilih Durasi</div>
+      <div class="step-sub">Durasi video output</div>
+      <div class="dur-group">
+        ${DURATIONS.map(d => `<div class="dur-btn${createState.duration === d ? ' selected' : ''}" onclick="selectDur(${d})">${d}s</div>`).join('')}
+      </div>
+      <div style="margin-top:24px;display:flex;gap:12px">
+        <button class="btn btn-outline" onclick="prevStep()">← Kembali</button>
+        <button class="btn btn-primary" onclick="nextStep()">Lanjut →</button>
+      </div>
+    `;
+  } else if (createState.step === 4) {
+    c.innerHTML = `
+      <div class="step-header">Advanced Setup (Opsional)</div>
+      <div class="step-sub">Deskripsikan produkmu dan atur parameter video</div>
+      <div class="form-group">
+        <label class="form-label">Custom Prompt / Promo</label>
+        <textarea id="custom-prompt" placeholder="Contoh: Kopi arabika single origin dari Aceh..." rows="3">${createState.customPrompt}</textarea>
+      </div>
+      <div class="form-group" style="background:var(--card); padding:16px; border-radius:12px; border:1px solid var(--border);">
+        <label class="form-label" style="margin-bottom:12px; font-weight:700;">Pengaturan Video (AI Bot Parity)</label>
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+            <input type="checkbox" id="adv-no-watermark" style="width:auto;" ${createState.noWatermark ? 'checked' : ''}> Hapus Watermark 
+            <span style="font-size:11px;color:var(--warn);background:rgba(255,165,2,0.15);padding:2px 6px;border-radius:4px;">-10 Credits</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+            <input type="checkbox" id="adv-subtitles" style="width:auto;" ${createState.subtitles !== false ? 'checked' : ''}> Auto Subtitle
+          </label>
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+            <input type="checkbox" id="adv-voiceover" style="width:auto;" ${createState.voiceover !== false ? 'checked' : ''}> Voice Over AI
+          </label>
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;margin-top:24px;">
+        <button class="btn btn-outline" onclick="prevStep()">← Kembali</button>
+        <button class="btn btn-primary" style="flex:1" onclick="saveAdvAndNext()">Preview Storyboard →</button>
+      </div>
+    `;
+  } else if (createState.step === 5) {
+    c.innerHTML = `
+      <div class="step-header">Preview Storyboard</div>
+      <div class="step-sub">AI sedang generate storyboard...</div>
+      <div style="display:flex;align-items:center;gap:12px;padding:20px 0"><div class="spinner"></div><span style="color:var(--dim);font-size:14px">Generating storyboard...</span></div>
+    `;
+    generateStoryboardPreview();
+  } else if (createState.step === 6) {
+    const scenes = createState.storyboard?.scenes || [];
+    const creditCost = createState.duration <= 5 ? unitPricing.IMAGE_UNIT : createState.duration <= 15 ? unitPricing.VIDEO_15S : createState.duration <= 30 ? unitPricing.VIDEO_30S : createState.duration <= 60 ? unitPricing.VIDEO_60S : unitPricing.VIDEO_120S;
+    const canAfford = Number(currentUser?.credits || 0) >= creditCost;
+    c.innerHTML = `
+      <div class="step-header">Konfirmasi & Generate</div>
+      <div class="step-sub">${scenes.length} scene · ${createState.duration}s · ${createState.niche} · ${createState.style}</div>
+      <div style="margin-bottom:20px">
+        ${scenes.map(s => '<div class="scene-card"><div class="scene-num">Scene '+esc(String(s.scene))+' · '+esc(String(s.duration))+'s</div><p>'+esc(s.description)+'</p></div>').join('')}
+      </div>
+      ${createState.storyboard?.caption ? '<div class="card" style="margin-bottom:20px"><div style="font-size:12px;color:var(--dim);margin-bottom:6px">📝 Caption</div><p style="font-size:14px;line-height:1.6">'+esc(createState.storyboard.caption)+'</p></div>' : ''}
+      <div class="card" style="margin-bottom:20px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:14px">Biaya</span>
+          <span style="font-size:18px;font-weight:700;color:var(--accent)">${creditCost} Credits</span>
+        </div>
+        ${!canAfford ? '<div style="margin-top:12px;color:var(--danger);font-size:13px">⚠️ Credits tidak cukup. <a href="#" onclick="nav(\'billing\')" style="color:var(--accent)">Top Up sekarang</a></div>' : ''}
+      </div>
+      <div style="display:flex;gap:12px">
+        <button class="btn btn-outline" onclick="createState.step=4;renderCreateStep()">← Kembali</button>
+        <button class="btn btn-primary" onclick="startGeneration()" ${!canAfford ? 'disabled' : ''} id="gen-btn">🎬 Generate Video</button>
+      </div>
+    `;
+  }
+}
+
+function selectNiche(id) { createState.niche = id; renderCreateStep(); }
+function selectStyle(s) { createState.style = s; renderCreateStep(); }
+function selectDur(d) { createState.duration = d; renderCreateStep(); }
+function nextStep() { createState.step++; renderCreateStep(); }
+function prevStep() { createState.step--; renderCreateStep(); }
+function saveAdvAndNext() {
+  createState.customPrompt = document.getElementById('custom-prompt').value;
+  createState.noWatermark = document.getElementById('adv-no-watermark').checked;
+  createState.subtitles = document.getElementById('adv-subtitles').checked;
+  createState.voiceover = document.getElementById('adv-voiceover').checked;
+  nextStep();
+}
+
+async function generateStoryboardPreview() {
+  try {
+    const data = await apiFetch('/api/storyboard', {
+      method: 'POST',
+      body: JSON.stringify({ niche: createState.niche, duration: createState.duration, customPrompt: createState.customPrompt || undefined })
+    });
+    if (!data || data.error) { toast('Gagal generate storyboard: ' + (data?.error || 'Unknown'), 'err'); createState.step = 4; renderCreateStep(); return; }
+    createState.storyboard = data;
+    createState.step = 6;
+    renderCreateStep();
+  } catch(e) { toast('Error: ' + e.message, 'err'); createState.step = 4; renderCreateStep(); }
+}
+
+async function startGeneration() {
+  const btn = document.getElementById('gen-btn');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Memulai...'; }
+  try {
+    const data = await apiFetch('/api/video/create', {
+      method: 'POST',
+      body: JSON.stringify({
+        niche: createState.niche,
+        style: createState.style,
+        duration: createState.duration,
+        platform: 'tiktok',
+        customPrompt: createState.customPrompt || undefined,
+        customScenes: createState.storyboard?.scenes || undefined,
+        noWatermark: createState.noWatermark,
+        subtitles: createState.subtitles,
+        voiceover: createState.voiceover
+      })
+    });
+    if (!data || data.error) { toast('Gagal: ' + (data?.error || 'Server error'), 'err'); if (btn) { btn.disabled = false; btn.innerHTML = '🎬 Generate Video'; } return; }
+    toast('✅ Video mulai diproses! Cek di "Video Saya"', 'ok');
+    const user = await apiFetch('/api/user');
+    if (user) { currentUser = user; updateCreditsDisplay(user.credits); }
+    nav('videos');
+    startPolling();
+  } catch(e) { toast('Error: ' + e.message, 'err'); if (btn) { btn.disabled = false; btn.innerHTML = '🎬 Generate Video'; } }
+}
+</script>

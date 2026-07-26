@@ -50,7 +50,7 @@
       <input class="input" id="cap-hashtags" type="number" value="10" min="3" max="30" style="width:100%;">
     </div>
   </div>
-  <button class="btn btn-gold" style="margin-top:20px;" onclick="generateCaption()">✍️ Generate Caption</button>
+  <button class="btn btn-primary" style="margin-top:20px;" onclick="generateCaption()">✍️ Generate Caption</button>
 </div>
 
 <!-- Result -->
@@ -120,7 +120,7 @@ async function generateCaption() {
   const topic = document.getElementById('cap-topic').value.trim();
   if (!topic) return showToast('Enter a topic', 'error');
 
-  const btn = document.querySelector('.btn-gold');
+  const btn = document.querySelector('.btn-primary');
   btn.textContent = '⏳ Generating...';
   btn.disabled = true;
 
@@ -145,7 +145,7 @@ async function generateCaption() {
         <div style="padding:16px;background:var(--bg);border-radius:10px;margin-bottom:12px;">
           <div style="white-space:pre-wrap;font-size:14px;line-height:1.6;">${data.caption || '—'}</div>
         </div>
-        ${data.hashtags?.length ? `<div style="font-size:13px;color:var(--gold);">${data.hashtags.join(' ')}</div>` : ''}
+        ${data.hashtags?.length ? `<div style="font-size:13px;color:var(--accent);">${data.hashtags.join(' ')}</div>` : ''}
         ${data.style ? `<div style="margin-top:8px;"><span class="badge badge-blue">${data.style}</span></div>` : ''}
       `;
       showToast('✅ Caption generated!');

@@ -52,7 +52,7 @@
       </select>
     </div>
   </div>
-  <button class="btn btn-gold" style="margin-top:20px;" onclick="generateCarousel()">🖼️ Generate Carousel</button>
+  <button class="btn btn-primary" style="margin-top:20px;" onclick="generateCarousel()">🖼️ Generate Carousel</button>
 </div>
 
 <!-- Result -->
@@ -82,7 +82,7 @@ async function generateCarousel() {
   const topic = document.getElementById('car-topic').value.trim();
   if (!topic) return showToast('Enter a topic', 'error');
 
-  const btn = document.querySelector('.btn-gold');
+  const btn = document.querySelector('.btn-primary');
   btn.textContent = '⏳ Generating...';
   btn.disabled = true;
 
@@ -138,7 +138,7 @@ async function generateCarousel() {
       }
 
       if (data.hashtags?.length) {
-        html += `<div style="margin-top:8px;font-size:13px;color:var(--gold);">${data.hashtags.join(' ')}</div>`;
+        html += `<div style="margin-top:8px;font-size:13px;color:var(--accent);">${data.hashtags.join(' ')}</div>`;
       }
 
       document.getElementById('result-content').innerHTML = html;

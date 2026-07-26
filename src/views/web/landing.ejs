@@ -19,14 +19,166 @@
   <link rel="canonical" href="<%= siteUrl %>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/public/design-system.css">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
     :root {
-      --bg: #0a0a1a; --bg2: #111127; --card: rgba(255,255,255,0.04);
-      --border: rgba(255,255,255,0.08); --accent: #00d9ff; --accent2: #00ff88;
-      --grad: linear-gradient(135deg, #00d9ff, #00ff88);
-      --text: #fff; --dim: rgba(255,255,255,0.55); --red: #ff4444;
+      --color-bg: #0a0a1a;
+      --color-bg-elevated: #111127;
+      --color-card: rgba(255,255,255,0.04);
+      --color-card-hover: rgba(255,255,255,0.08);
+      --color-border: rgba(255,255,255,0.08);
+      --color-border-strong: rgba(255,255,255,0.15);
+      --color-accent: #a855f7;
+      --color-accent-dim: #7c3aed;
+      --color-accent-2: #6366f1;
+      --color-grad: linear-gradient(135deg, #a855f7, #6366f1);
+      --color-grad-hover: linear-gradient(135deg, #9333ea, #4f46e5);
+      --color-green: #22c55e;
+      --color-red: #ef4444;
+      --color-yellow: #fbbf24;
+      --color-blue: #3b82f6;
+      --color-pink: #ec4899;
+      --color-text: #f1f5f9;
+      --color-dim: rgba(255,255,255,0.55);
+      --color-muted: rgba(255,255,255,0.35);
+      
+      /* Legacy variable aliases (for existing HTML/CSS in landing) */
+      --bg: var(--color-bg);
+      --bg2: var(--color-bg-elevated);
+      --card: var(--color-card);
+      --card-hover: var(--color-card-hover);
+      --border: var(--color-border);
+      --accent: var(--color-accent);
+      --accent2: var(--color-accent-2);
+      --grad: var(--color-grad);
+      --text: var(--color-text);
+      --dim: var(--color-dim);
+      --muted: var(--color-muted);
+      --red: var(--color-red);
     }
+    
+    /* Surface-specific overrides for design system */
+    .btn-primary {
+      background: var(--color-grad);
+      color: #0a0a1a;
+      box-shadow: var(--shadow-glow);
+    }
+    .btn-primary:hover {
+      background: var(--color-grad-hover);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-glow-hover);
+    }
+    .btn-outline {
+      background: transparent;
+      color: var(--color-text);
+      border: 1px solid var(--color-border);
+    }
+    .btn-outline:hover {
+      background: var(--color-card-hover);
+      border-color: var(--color-accent);
+    }
+    
+    .btn-nav {
+      background: rgba(168,85,247,0.12);
+      color: #a855f7;
+      border: 1px solid rgba(168,85,247,0.25);
+      padding: 6px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all .25s;
+    }
+    .btn-nav:hover {
+      background: rgba(168,85,247,0.2);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(168,85,247,0.15);
+    }
+    
+    .input {
+      background: var(--color-bg-elevated);
+      border-color: var(--color-border);
+    }
+    .input:focus {
+      border-color: var(--color-accent);
+      box-shadow: 0 0 0 3px rgba(168,85,247,0.15);
+    }
+    
+    .chip {
+      background: var(--color-card);
+      border-color: var(--color-border);
+      color: var(--color-dim);
+    }
+    .chip:hover {
+      border-color: var(--color-accent);
+      background: rgba(168,85,247,0.1);
+      color: var(--color-accent);
+    }
+    .chip.active {
+      background: var(--color-accent);
+      color: #fff;
+      border-color: var(--color-accent);
+    }
+    
+    .card {
+      background: var(--color-card);
+      border-color: var(--color-border);
+      border-radius: var(--radius);
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(168,85,247,0.25);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+    }
+    
+    .action-btn {
+      background: var(--color-card);
+      border-color: var(--color-border);
+    }
+    .action-btn:hover {
+      transform: translateY(-3px);
+      border-color: rgba(168,85,247,0.25);
+    }
+    
+    .nav-item { color: var(--color-dim); }
+    .nav-item:hover { color: var(--color-text); }
+    
+    .progress-bar .fill { background: var(--color-grad); }
+    
+    .generating { animation: pulse-ring 1.5s ease-out infinite; }
+    
+    @keyframes pulse-ring {
+      0% { box-shadow: 0 0 0 0 rgba(168,85,247,0.4); }
+      70% { box-shadow: 0 0 0 10px rgba(168,85,247,0); }
+      100% { box-shadow: 0 0 0 0 rgba(168,85,247,0); }
+    }
+    
+    .empty .title { color: var(--color-text); }
+    .empty .desc { color: var(--color-muted); }
+    
+    .modal { background: var(--color-bg-elevated); border-color: var(--color-border); }
+    .modal-handle { background: var(--color-border); }
+    .modal-close:hover { background: var(--color-card); color: var(--color-text); }
+    
+    /* Focus visible for all interactive elements */
+    :focus-visible {
+      outline: 2px solid var(--color-accent);
+      outline-offset: 2px;
+    }
+    
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+      .generating { animation: none; }
+    }
+    
+    /* Version badge */
+    #version-badge { z-index: 999; }
+  </style>
     html { scroll-behavior: smooth; }
     body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; line-height: 1.6; }
     .container { max-width: 1100px; width: 100%; margin: 0 auto; padding: 0 20px; box-sizing: border-box; }

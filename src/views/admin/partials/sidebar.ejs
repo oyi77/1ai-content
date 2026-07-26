@@ -7,7 +7,7 @@
 <div class="sidebar" id="sidebar">
   <nav style="flex: 1; padding: 12px 0; overflow-y: auto;">
     <div style="padding: 20px; border-bottom: 1px solid var(--border);">
-      <div style="font-size: 16px; font-weight: 700; color: var(--gold);">⚡ Vilona Content</div>
+      <div style="font-size: 16px; font-weight: 700; color: var(--accent);">⚡ Vilona Content</div>
       <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">Admin Dashboard</div>
     </div>
     <div class="nav-category" onclick="toggleCategory(this)">
@@ -73,6 +73,13 @@
       <div class="<%= _nav('fanpage') %>" id="nav-fanpage" onclick="window.location='/admin/fanpage'">📘 Fanpage Manager</div>
       <div class="<%= _nav('bookshelf') %>" id="nav-bookshelf" onclick="window.location='/admin/bookshelf'">📚 AI Book Generator</div>
       <div class="<%= _nav('comic') %>" id="nav-comic" onclick="window.location='/admin/comic'">🎨 Comic / Manga Gen</div>
+      <div class="<%= _nav('movie') %>" id="nav-movie" onclick="window.location='/admin/movie'">🎬 Movie Generator</div>
+      <div class="<%= _nav('tts') %>" id="nav-tts" onclick="window.location='/admin/tts'">🔊 TTS Voice</div>
+      <div class="<%= _nav('music') %>" id="nav-music" onclick="window.location='/admin/music'">🎵 Music Generator</div>
+      <div class="<%= _nav('looping') %>" id="nav-looping" onclick="window.location='/admin/looping'">🔄 Loop Video</div>
+      <div class="<%= _nav('research') %>" id="nav-research" onclick="window.location='/admin/research'">🔍 Research</div>
+      <div class="<%= _nav('autopilot') %>" id="nav-autopilot" onclick="window.location='/admin/autopilot'">🤖 Autopilot</div>
+      <div class="<%= _nav('analyze') %>" id="nav-analyze" onclick="window.location='/admin/analyze'">📊 Analyze Channel</div>
     </div>
     <!-- 🔌 Technical -->
     <div class="nav-category" onclick="toggleCategory(this)">
@@ -88,6 +95,7 @@
 
     <!-- ⚙️ System -->
     <div class="nav-category" onclick="toggleCategory(this)">
+
       <span class="nav-category-icon">⚙️</span>
       <span class="nav-category-label">System</span>
       <span class="nav-category-arrow">▶</span>
@@ -95,6 +103,8 @@
     <div class="nav-category-items" id="cat-system">
       <div class="<%= _nav('settings') %>" onclick="window.location='/admin/settings'">⚙️ Settings</div>
       <div class="nav-item" onclick="window.location='/admin/dashboard#ai-assistant'">🤖 AI Assistant</div>
+      <div class="<%= _nav('config') %>" id="nav-config" onclick="window.location='/admin/config'">🔧 Config</div>
+      <div class="<%= _nav('system') %>" id="nav-system" onclick="window.location='/admin/system'">🖥️ System</div>
     </div>
 
   </nav>

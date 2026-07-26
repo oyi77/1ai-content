@@ -1,0 +1,21 @@
+<div id="view-billing" class="view">
+  <div class="card" style="margin-bottom:20px;text-align:center;padding:32px">
+    <div style="font-size:13px;color:var(--dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Credit Balance</div>
+    <div style="font-size:52px;font-weight:800;background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent" id="billing-credits">—</div>
+    <div style="font-size:13px;color:var(--dim);margin-top:4px">credits tersedia</div>
+  </div>
+  <h3 style="margin-bottom:16px;font-size:15px">Pilih Paket</h3>
+  <div id="packages-container" class="price-cards" style="margin-bottom:32px"></div>
+  <h3 style="margin-bottom:16px;font-size:15px">Metode Pembayaran Lain</h3>
+  <div class="grid-2" style="margin-bottom:32px">
+    <div class="action-card" onclick="payStars()"><div class="icon">⭐</div><h3>Telegram Stars</h3><div style="font-size:12px;color:var(--dim);margin-top:6px">Bayar instant dari saldo Stars</div></div>
+    <div class="action-card" onclick="payCrypto()"><div class="icon">💎</div><h3>Crypto (USDT/BNB)</h3><div style="font-size:12px;color:var(--dim);margin-top:6px">Min $20 USD</div></div>
+  </div>
+  <h3 style="margin-bottom:16px;font-size:15px">Riwayat Transaksi</h3>
+  <div class="card" style="overflow-x:auto">
+    <table class="txn-table" id="txn-table">
+      <thead><tr><th>Order ID</th><th>Paket</th><th>Jumlah</th><th>Credits</th><th>Status</th><th>Tanggal</th></tr></thead>
+      <tbody id="txn-body"></tbody>
+    </table>
+  </div>
+</div>

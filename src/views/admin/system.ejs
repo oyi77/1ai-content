@@ -1,15 +1,15 @@
 <style>
   .group-header { display: flex; align-items: center; justify-content: space-between; cursor: pointer; padding: 12px 16px; background: #111118; border-radius: 8px 8px 0 0; border: 1px solid var(--border); user-select: none; margin-top: 16px; }
-  .group-header:hover { background: rgba(196,163,90,0.06); }
+  .group-header:hover { background: rgba(168,85,247,0.06); }
   .group-title { font-size: 14px; font-weight: 600; color: var(--text); }
   .group-body { border: 1px solid var(--border); border-top: none; border-radius: 0 0 8px 8px; overflow: hidden; margin-bottom: 4px; }
   .config-row { display: grid; grid-template-columns: 220px 1fr 180px; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid rgba(42,42,58,0.5); font-size: 13px; }
   .config-row:last-child { border-bottom: none; }
-  .config-row:hover { background: rgba(196,163,90,0.03); }
+  .config-row:hover { background: rgba(168,85,247,0.03); }
   .config-key { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 11px; color: #a0a0c0; word-break: break-all; }
   .config-val { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 12px; color: var(--text); }
   .config-val.clickable { cursor: pointer; }
-  .config-val.clickable:hover { color: var(--gold); text-decoration: underline; }
+  .config-val.clickable:hover { color: var(--accent); text-decoration: underline; }
   .actions { display: flex; gap: 6px; }
   .sys-toast { position: fixed; bottom: 24px; right: 24px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 20px; font-size: 13px; z-index: 999; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
   .sys-toast.show { opacity: 1; }
@@ -28,7 +28,7 @@
 
 <!-- Tab Bar -->
 <div style="display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border);">
-  <div id="tab-btn-config" onclick="switchSysTab('config')" style="padding:10px 20px;cursor:pointer;font-size:14px;border-bottom:2px solid var(--gold);color:var(--gold);">⚙️ Runtime Config</div>
+  <div id="tab-btn-config" onclick="switchSysTab('config')" style="padding:10px 20px;cursor:pointer;font-size:14px;border-bottom:2px solid var(--accent);color:var(--accent);">⚙️ Runtime Config</div>
   <div id="tab-btn-apikeys" onclick="switchSysTab('apikeys')" style="padding:10px 20px;cursor:pointer;font-size:14px;border-bottom:2px solid transparent;color:var(--muted);">🔑 API Keys</div>
 </div>
 
@@ -38,7 +38,7 @@
     <input class="input" id="search" placeholder="Filter by key..." style="max-width: 280px; padding: 8px 12px;" oninput="filterRows(this.value)" />
     <button class="btn btn-ghost btn-sm" onclick="expandAll()">Expand All</button>
     <button class="btn btn-ghost btn-sm" onclick="collapseAll()">Collapse All</button>
-    <button class="btn btn-gold btn-sm" onclick="loadConfig()">&#8635; Refresh</button>
+    <button class="btn btn-primary btn-sm" onclick="loadConfig()">&#8635; Refresh</button>
     <span id="summary" style="font-size: 12px; color: var(--muted);"></span>
   </div>
   <div id="config-container">
@@ -49,7 +49,7 @@
 <!-- API Keys Tab -->
 <div id="tab-apikeys" style="display:none;">
   <div style="margin-bottom:16px;display:flex;gap:8px;align-items:center;">
-    <button class="btn btn-gold btn-sm" onclick="loadApiKeys()">&#8635; Refresh</button>
+    <button class="btn btn-primary btn-sm" onclick="loadApiKeys()">&#8635; Refresh</button>
     <span style="font-size:12px;color:var(--muted);">DB values override env vars immediately. Masked display only — full values never shown.</span>
   </div>
   <div id="apikeys-container">
@@ -247,8 +247,8 @@
       const btn = document.getElementById('tab-btn-' + t);
       const panel = document.getElementById('tab-' + t);
       const active = t === tab;
-      btn.style.borderBottom = active ? '2px solid var(--gold)' : '2px solid transparent';
-      btn.style.color = active ? 'var(--gold)' : 'var(--muted)';
+      btn.style.borderBottom = active ? '2px solid var(--accent)' : '2px solid transparent';
+      btn.style.color = active ? 'var(--accent)' : 'var(--muted)';
       panel.style.display = active ? '' : 'none';
     });
     if (tab === 'apikeys') loadApiKeys();

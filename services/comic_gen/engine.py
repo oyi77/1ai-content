@@ -73,6 +73,8 @@ async def generate_comic_pipeline(
             "progress": 1.0,
             "data": {
                 "script": script_dict,
+                "num_episodes": len(script.episodes),
+                "total_pages": total_pages,
                 **stats,
             },
         }
@@ -126,7 +128,7 @@ async def generate_comic_pipeline(
             "output_dir": str(output_subdir),
             "total_pages": total_pages,
             "total_images": len(all_rendered),
-            "episodes": len(script.episodes),
+            "num_episodes": len(script.episodes),
             **stats,
         },
     }

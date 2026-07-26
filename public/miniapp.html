@@ -7,326 +7,381 @@
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/public/design-system.css">
   <style>
     :root {
-      --bg: #0a0a1a; --bg2: #111127; --card: rgba(255,255,255,0.05);
-      --card-hover: rgba(255,255,255,0.08); --border: rgba(255,255,255,0.08);
-      --accent: #6366f1; --accent2: #8b5cf6; --green: #22c55e; --red: #ef4444;
-      --yellow: #eab308; --blue: #3b82f6; --pink: #ec4899;
-      --text: #f1f5f9; --dim: rgba(255,255,255,0.6); --muted: rgba(255,255,255,0.35);
-      --grad: linear-gradient(135deg, #6366f1, #8b5cf6);
-      --radius: 14px; --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --color-bg: #0a0a1a;
+      --color-bg-elevated: #111127;
+      --color-card: rgba(255,255,255,0.04);
+      --color-card-hover: rgba(255,255,255,0.08);
+      --color-border: rgba(255,255,255,0.08);
+      --color-border-strong: rgba(255,255,255,0.15);
+      --color-accent: #a855f7;
+      --color-accent-dim: #7c3aed;
+      --color-accent-2: #6366f1;
+      --color-grad: linear-gradient(135deg, #a855f7, #6366f1);
+      --color-grad-hover: linear-gradient(135deg, #9333ea, #4f46e5);
+      --color-green: #22c55e;
+      --color-red: #ef4444;
+      --color-yellow: #eab308;
+      --color-blue: #3b82f6;
+      --color-pink: #ec4899;
+      --color-text: #f1f5f9;
+      --color-dim: rgba(255,255,255,0.6);
+      --color-muted: rgba(255,255,255,0.35);
+      --radius: 14px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
     }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
-    .hidden { display: none !important; }
-
-    /* ── Header ── */
-    .header { position: sticky; top: 0; z-index: 100; background: rgba(10,10,26,0.95); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; }
-    .header h1 { font-size: 18px; font-weight: 800; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .header .user-info { display: flex; align-items: center; gap: 8px; }
-    .header .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; }
-    .header .credits { font-size: 12px; color: var(--yellow); font-weight: 600; }
-
-    /* ── Bottom Nav ── */
-    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; background: rgba(10,10,26,0.98); backdrop-filter: blur(20px); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 8px 0 calc(8px + var(--safe-bottom)); }
-    .nav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 12px; border-radius: 10px; cursor: pointer; transition: all 0.2s; border: none; background: none; color: var(--muted); font-size: 10px; font-family: inherit; }
-    .nav-item.active { color: var(--accent); }
-    .nav-item .icon { font-size: 22px; }
-
-    /* ── Page container ── */
-    .page { padding: 16px; padding-bottom: 80px; min-height: 100vh; }
-    .page-title { font-size: 22px; font-weight: 800; margin-bottom: 16px; }
-
-    /* ── Cards ── */
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; transition: all 0.2s; }
-    .card:active { background: var(--card-hover); transform: scale(0.98); }
-    .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .card-accent { border-left: 3px solid var(--accent); }
-
-    /* ── Quick Actions ── */
-    .quick-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
-    .action-btn { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 8px; text-align: center; cursor: pointer; transition: all 0.2s; }
-    .action-btn:active { transform: scale(0.95); background: var(--card-hover); }
-    .action-btn .icon { font-size: 28px; margin-bottom: 6px; }
-    .action-btn .label { font-size: 11px; font-weight: 600; color: var(--dim); }
-
-    /* ── Buttons ── */
-    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 12px 20px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; border: none; transition: all 0.2s; font-family: inherit; }
-    .btn:active { transform: scale(0.97); }
-    .btn-primary { background: var(--grad); color: white; width: 100%; }
-    .btn-secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); }
-    .btn-sm { padding: 8px 14px; font-size: 12px; }
-    .btn-icon { width: 40px; height: 40px; padding: 0; border-radius: 50%; }
-
-    /* ── Inputs ── */
-    .input-group { margin-bottom: 14px; }
-    .input-group label { display: block; font-size: 12px; font-weight: 600; color: var(--dim); margin-bottom: 6px; }
-    .input { width: 100%; padding: 12px 14px; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 14px; font-family: inherit; outline: none; transition: border-color 0.2s; }
-    .input:focus { border-color: var(--accent); }
-    .input::placeholder { color: var(--muted); }
-    textarea.input { resize: vertical; min-height: 80px; }
-    select.input { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; }
-
-    /* ── Chips/Tags ── */
-    .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
-    .chip { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--card); color: var(--dim); transition: all 0.2s; }
-    .chip.active { background: var(--accent); color: white; border-color: var(--accent); }
-
-    /* ── List items ── */
-    .list-item { display: flex; align-items: center; gap: 12px; padding: 12px; border-bottom: 1px solid var(--border); }
-    .list-item:last-child { border-bottom: none; }
-    .list-item .thumb { width: 48px; height: 48px; border-radius: 8px; background: var(--bg2); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; }
-    .list-item .info { flex: 1; min-width: 0; }
-    .list-item .info .title { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .list-item .info .meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
-
-    /* ── Stat cards ── */
-    .stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
-    .stat { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
-    .stat .label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
-    .stat .value { font-size: 22px; font-weight: 800; }
-    .stat .change { font-size: 11px; margin-top: 2px; }
-    .stat .change.up { color: var(--green); }
-
-    /* ── Modal ── */
-    .modal-overlay { position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.7); display: flex; align-items: flex-end; justify-content: center; }
-    .modal { background: var(--bg2); border-radius: 20px 20px 0 0; width: 100%; max-width: 500px; max-height: 85vh; overflow-y: auto; padding: 20px; }
-    .modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 16px; }
-
-    /* ── Progress ── */
-    .progress-bar { width: 100%; height: 6px; background: var(--bg2); border-radius: 3px; overflow: hidden; margin: 8px 0; }
-    .progress-bar .fill { height: 100%; background: var(--grad); border-radius: 3px; transition: width 0.3s; }
-
-    /* ── Loading ── */
-    .spinner { width: 24px; height: 24px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .loading-overlay { position: fixed; inset: 0; z-index: 300; background: rgba(10,10,26,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
-
-    /* ── Toast ── */
-    .toast { position: fixed; top: 60px; left: 50%; transform: translateX(-50%); z-index: 400; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 20px; font-size: 13px; font-weight: 600; animation: slideDown 0.3s ease; }
-    @keyframes slideDown { from { opacity: 0; transform: translateX(-50%) translateY(-20px); } }
-    .toast.success { border-color: var(--green); color: var(--green); }
-    .toast.error { border-color: var(--red); color: var(--red); }
-
-    /* ── Empty state ── */
-    .empty { text-align: center; padding: 40px 20px; }
-    .empty .icon { font-size: 48px; margin-bottom: 12px; }
-    .empty .title { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
-    .empty .desc { font-size: 13px; color: var(--muted); }
+    
+    /* Base overrides for design system */
+    .btn-primary {
+      background: var(--color-grad);
+      color: #0a0a1a;
+      box-shadow: var(--shadow-glow);
+    }
+    .btn-primary:hover:not(.btn-disabled):not(:disabled) {
+      background: var(--color-grad-hover);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-glow-hover);
+    }
+    .btn-primary:active:not(.btn-disabled):not(:disabled) {
+      transform: translateY(0) scale(0.98);
+    }
+    
+    .btn-outline {
+      background: transparent;
+      color: var(--color-text);
+      border: 1px solid var(--color-border);
+    }
+    .btn-outline:hover:not(.btn-disabled):not(:disabled) {
+      background: var(--color-card-hover);
+      border-color: var(--color-accent);
+    }
+    
+    .btn-ghost {
+      background: transparent;
+      color: var(--color-text);
+      border: 1px solid transparent;
+    }
+    .btn-ghost:hover:not(.btn-disabled):not(:disabled) {
+      background: var(--color-card);
+    }
+    
+    .btn-secondary {
+      background: var(--color-card);
+      color: var(--color-text);
+      border: 1px solid var(--color-border);
+    }
+    .btn-secondary:hover:not(.btn-disabled):not(:disabled) {
+      background: var(--color-card-hover);
+      border-color: var(--color-border-strong);
+    }
+    
+    .btn-danger {
+      background: rgba(239,68,68,0.15);
+      color: var(--color-red);
+      border: 1px solid rgba(239,68,68,0.2);
+    }
+    .btn-danger:hover:not(.btn-disabled):not(:disabled) {
+      background: var(--color-red);
+      color: #fff;
+      border-color: var(--color-red);
+    }
+    
+    .input {
+      background: var(--color-bg-elevated);
+      border-color: var(--color-border);
+    }
+    .input:focus {
+      border-color: var(--color-accent);
+      box-shadow: 0 0 0 3px rgba(168,85,247,0.15);
+    }
+    
+    .chip {
+      background: var(--color-card);
+      border-color: var(--color-border);
+      color: var(--color-dim);
+    }
+    .chip:hover {
+      border-color: var(--color-accent);
+      background: rgba(168,85,247,0.1);
+      color: var(--color-accent);
+    }
+    .chip.active {
+      background: var(--color-accent);
+      color: #fff;
+      border-color: var(--color-accent);
+    }
+    
+    .card {
+      background: var(--color-card);
+      border-color: var(--color-border);
+      border-radius: var(--radius);
+    }
+    .card:active {
+      background: var(--color-card-hover);
+      transform: scale(0.98);
+    }
+    
+    .stat { background: var(--color-card); border-color: var(--color-border); }
+    .stat .value { 
+      background: var(--color-grad); 
+      -webkit-background-clip: text; 
+      background-clip: text; 
+      -webkit-text-fill-color: transparent; 
+    }
+    
+    .action-btn { background: var(--color-card); border-color: var(--color-border); }
+    .action-btn:active { transform: scale(0.95); background: var(--color-card-hover); }
+    
+    .nav-item.active { color: var(--color-accent); }
+    
+    .progress-bar .fill { background: var(--color-grad); }
+    
+    .generating { animation: pulse-ring 1.5s ease-out infinite; }
+    
+    @keyframes pulse-ring {
+      0% { box-shadow: 0 0 0 0 rgba(168,85,247,0.4); }
+      70% { box-shadow: 0 0 0 10px rgba(168,85,247,0); }
+      100% { box-shadow: 0 0 0 0 rgba(168,85,247,0); }
+    }
+    
+    .empty .title { color: var(--color-text); }
+    .empty .desc { color: var(--color-muted); }
+    
+    .toast.success { border-color: var(--color-green); color: var(--color-green); }
+    .toast.error { border-color: var(--color-red); color: var(--color-red); }
+    
+    /* Modal improvements */
+    .modal { background: var(--color-bg-elevated); border-color: var(--color-border); }
+    .modal-handle { background: var(--color-border); }
+    .modal-close:hover { background: var(--color-card); color: var(--color-text); }
+    
+    /* Focus visible for all interactive elements */
+    :focus-visible {
+      outline: 2px solid var(--color-accent);
+      outline-offset: 2px;
+    }
+    
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+      .generating { animation: none; }
+    }
+    
+    /* Version badge */
+    #version-badge { z-index: 999; }
   </style>
 </head>
 <body>
   <!-- Header -->
-  <div class="header" id="header">
-    <h1>Vilona Content</h1>
-    <div class="user-info">
-      <div class="credits" id="creditsDisplay">💎 0</div>
-      <div class="avatar" id="userAvatar">?</div>
+  <header class="header" id="header" role="banner">
+    <h1 class="text-gradient">Vilona Content</h1>
+    <div class="user-info" style="display:flex;align-items:center;gap:8px;">
+      <span class="credits" id="creditsDisplay" style="font-size:var(--text-sm);color:var(--color-yellow);font-weight:var(--font-semibold);">💎 0</span>
+      <div class="avatar" id="userAvatar" style="width:32px;height:32px;border-radius:50%;background:var(--color-grad);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;">?</div>
     </div>
-  </div>
+  </header>
 
   <!-- Pages -->
-  <div id="page-home" class="page">
-    <div class="page-title">👋 <span id="greeting">Halo</span></div>
+  <main id="page-home" class="page" role="main" aria-label="Home">
+    <h2 class="page-title" style="font-size:var(--text-3xl);font-weight:var(--font-black);margin-bottom:var(--space-4);">👋 <span id="greeting">Halo</span></h2>
 
-    <div class="stats-row">
-      <div class="stat"><div class="label">Videos</div><div class="value" id="statVideos">0</div></div>
-      <div class="stat"><div class="label">Credits</div><div class="value" id="statCredits">0</div></div>
-      <div class="stat"><div class="label">Carousels</div><div class="value" id="statCarousels">0</div></div>
-      <div class="stat"><div class="label">Scheduled</div><div class="value" id="statScheduled">0</div></div>
+    <div class="stats-row" role="region" aria-label="Statistik">
+      <article class="stat"><div class="stat-label">Videos</div><div class="stat-value" id="statVideos">0</div></article>
+      <article class="stat"><div class="stat-label">Credits</div><div class="stat-value" id="statCredits">0</div></article>
+      <article class="stat"><div class="stat-label">Carousels</div><div class="stat-value" id="statCarousels">0</div></article>
+      <article class="stat"><div class="stat-label">Scheduled</div><div class="stat-value" id="statScheduled">0</div></article>
     </div>
 
-    <div class="quick-actions">
-      <div class="action-btn" onclick="navigate('generate')"><div class="icon">🎬</div><div class="label">Buat Video</div></div>
-      <div class="action-btn" onclick="navigate('carousel')"><div class="icon">🖼️</div><div class="label">Carousel</div></div>
-      <div class="action-btn" onclick="navigate('remeta')"><div class="icon">🔄</div><div class="label">Re-Meta</div></div>
-      <div class="action-btn" onclick="navigate('calendar')"><div class="icon">📅</div><div class="label">Calendar</div></div>
-      <div class="action-btn" onclick="navigate('videos')"><div class="icon">📁</div><div class="label">My Videos</div></div>
-      <div class="action-btn" onclick="navigate('abtest')"><div class="icon">🧪</div><div class="label">A/B Test</div></div>
+    <div class="quick-actions" role="list" aria-label="Quick actions">
+      <button class="action-btn" onclick="navigate('generate')" role="listitem"><span class="action-icon">🎬</span><span class="action-label">Buat Video</span></button>
+      <button class="action-btn" onclick="navigate('carousel')" role="listitem"><span class="action-icon">🖼️</span><span class="action-label">Carousel</span></button>
+      <button class="action-btn" onclick="navigate('remeta')" role="listitem"><span class="action-icon">🔄</span><span class="action-label">Re-Meta</span></button>
+      <button class="action-btn" onclick="navigate('calendar')" role="listitem"><span class="action-icon">📅</span><span class="action-label">Calendar</span></button>
+      <button class="action-btn" onclick="navigate('videos')" role="listitem"><span class="action-icon">📁</span><span class="action-label">My Videos</span></button>
+      <button class="action-btn" onclick="navigate('abtest')" role="listitem"><span class="action-icon">🧪</span><span class="action-label">A/B Test</span></button>
     </div>
 
-    <div class="card" onclick="navigate('trending')">
-      <div style="display:flex;align-items:center;gap:10px">
+    <article class="card card-hover" onclick="navigate('trending')" style="cursor:pointer;">
+      <div style="display:flex;align-items:center;gap:var(--space-3);">
         <span style="font-size:24px">🔥</span>
         <div>
           <div style="font-weight:700">Trending Now</div>
-          <div style="font-size:12px;color:var(--muted)">Scan & generate from trending topics</div>
+          <div style="font-size:var(--text-sm);color:var(--color-muted)">Scan & generate from trending topics</div>
         </div>
       </div>
-    </div>
+    </article>
 
-    <div class="card" onclick="navigate('repurpose')">
-      <div style="display:flex;align-items:center;gap:10px">
+    <article class="card card-hover" onclick="navigate('repurpose')" style="cursor:pointer;">
+      <div style="display:flex;align-items:center;gap:var(--space-3);">
         <span style="font-size:24px">🔄</span>
         <div>
           <div style="font-weight:700">Repurpose Content</div>
-          <div style="font-size:12px;color:var(--muted)">Multi-source remix — anti-copyright</div>
+          <div style="font-size:var(--text-sm);color:var(--color-muted)">Multi-source remix — anti-copyright</div>
         </div>
       </div>
-    </div>
-  </div>
+    </article>
+  </main>
 
-  <!-- Generate Video Page -->
-  <div id="page-generate" class="page hidden">
-    <div class="page-title">🎬 Buat Video</div>
+  <main id="page-generate" class="page hidden" role="main" aria-label="Generate Video">
+    <h2 class="page-title">🎬 Buat Video</h2>
     <div class="input-group">
-      <label>Deskripsi Video</label>
-      <textarea class="input" id="genPrompt" placeholder="Contoh: Cinematic food shot dengan steam rising effect..."></textarea>
+      <label class="input-label">Deskripsi Video</label>
+      <textarea class="input" id="genPrompt" placeholder="Contoh: Cinematic food shot dengan steam rising effect..." rows="3"></textarea>
     </div>
     <div class="input-group">
-      <label>Niche</label>
-      <div class="chips" id="genNicheChips">
-        <div class="chip active" data-val="fnb">🍔 F&B</div>
-        <div class="chip" data-val="beauty">💄 Beauty</div>
-        <div class="chip" data-val="fashion">👗 Fashion</div>
-        <div class="chip" data-val="tech">📱 Tech</div>
-        <div class="chip" data-val="fitness">💪 Fitness</div>
-        <div class="chip" data-val="education">📚 Edukasi</div>
+      <label class="input-label">Niche</label>
+      <div class="chips" id="genNicheChips" role="radiogroup" aria-label="Pilih niche">
+        <button class="chip active" data-val="fnb" role="radio" aria-checked="true">🍔 F&B</button>
+        <button class="chip" data-val="beauty" role="radio" aria-checked="false">💄 Beauty</button>
+        <button class="chip" data-val="fashion" role="radio" aria-checked="false">👗 Fashion</button>
+        <button class="chip" data-val="tech" role="radio" aria-checked="false">📱 Tech</button>
+        <button class="chip" data-val="fitness" role="radio" aria-checked="false">💪 Fitness</button>
+        <button class="chip" data-val="education" role="radio" aria-checked="false">📚 Edukasi</button>
       </div>
     </div>
     <div class="input-group">
-      <label>Durasi</label>
-      <div class="chips" id="genDurationChips">
-        <div class="chip active" data-val="15">15 detik</div>
-        <div class="chip" data-val="30">30 detik</div>
-        <div class="chip" data-val="60">60 detik</div>
+      <label class="input-label">Durasi</label>
+      <div class="chips" id="genDurationChips" role="radiogroup" aria-label="Pilih durasi">
+        <button class="chip active" data-val="15" role="radio" aria-checked="true">15 detik</button>
+        <button class="chip" data-val="30" role="radio" aria-checked="false">30 detik</button>
+        <button class="chip" data-val="60" role="radio" aria-checked="false">60 detik</button>
       </div>
     </div>
-    <button class="btn btn-primary" onclick="generateVideo()">🎬 Generate Video</button>
-  </div>
+    <button class="btn btn-primary btn-full" onclick="generateVideo()"><span class="btn-icon">🎬</span><span class="btn-text">Generate Video</span></button>
+  </main>
 
-  <!-- Carousel Page -->
-  <div id="page-carousel" class="page hidden">
-    <div class="page-title">🖼️ Buat Carousel</div>
+  <main id="page-carousel" class="page hidden" role="main" aria-label="Generate Carousel">
+    <h2 class="page-title">🖼️ Buat Carousel</h2>
     <div class="input-group">
-      <label>Topik</label>
-      <textarea class="input" id="carTopic" placeholder="Contoh: Tips hemat belanja online"></textarea>
+      <label class="input-label">Topik</label>
+      <textarea class="input" id="carTopic" placeholder="Contoh: Tips hemat belanja online" rows="3"></textarea>
     </div>
     <div class="input-group">
-      <label>Style</label>
-      <div class="chips" id="carStyleChips">
-        <div class="chip active" data-val="outline">📋 Outline</div>
-        <div class="chip" data-val="educational">🎓 Edukatif</div>
-        <div class="chip" data-val="storytelling">📖 Story</div>
-        <div class="chip" data-val="minimal">✨ Minimal</div>
-        <div class="chip" data-val="bold">🎨 Bold</div>
-        <div class="chip" data-val="dark">🌙 Dark</div>
+      <label class="input-label">Style</label>
+      <div class="chips" id="carStyleChips" role="radiogroup" aria-label="Pilih style">
+        <button class="chip active" data-val="outline" role="radio" aria-checked="true">📋 Outline</button>
+        <button class="chip" data-val="educational" role="radio" aria-checked="false">🎓 Edukatif</button>
+        <button class="chip" data-val="storytelling" role="radio" aria-checked="false">📖 Story</button>
+        <button class="chip" data-val="minimal" role="radio" aria-checked="false">✨ Minimal</button>
+        <button class="chip" data-val="bold" role="radio" aria-checked="false">🎨 Bold</button>
+        <button class="chip" data-val="dark" role="radio" aria-checked="false">🌙 Dark</button>
       </div>
     </div>
     <div class="input-group">
-      <label>Jumlah Slide</label>
-      <div class="chips" id="carSlideChips">
-        <div class="chip" data-val="5">5</div>
-        <div class="chip active" data-val="7">7</div>
-        <div class="chip" data-val="10">10</div>
+      <label class="input-label">Jumlah Slide</label>
+      <div class="chips" id="carSlideChips" role="radiogroup" aria-label="Pilih jumlah slide">
+        <button class="chip" data-val="5" role="radio" aria-checked="false">5</button>
+        <button class="chip active" data-val="7" role="radio" aria-checked="true">7</button>
+        <button class="chip" data-val="10" role="radio" aria-checked="false">10</button>
       </div>
     </div>
-    <button class="btn btn-primary" onclick="generateCarousel()">🖼️ Generate Carousel</button>
-  </div>
+    <button class="btn btn-primary btn-full" onclick="generateCarousel()"><span class="btn-icon">🖼️</span><span class="btn-text">Generate Carousel</span></button>
+  </main>
 
-  <!-- Re-Meta Page -->
-  <div id="page-remeta" class="page hidden">
-    <div class="page-title">🔄 Re-Metadata</div>
-    <p style="font-size:13px;color:var(--dim);margin-bottom:16px">Upload video, tambah overlay, re-render. Metadata berubah = anti-copyright.</p>
+  <main id="page-remeta" class="page hidden" role="main" aria-label="Re-Metadata">
+    <h2 class="page-title">🔄 Re-Metadata</h2>
+    <p style="font-size:var(--text-sm);color:var(--color-dim);margin-bottom:var(--space-4);">Upload video, tambah overlay, re-render. Metadata berubah = anti-copyright.</p>
     <div class="input-group">
-      <label>Overlay Text</label>
+      <label class="input-label">Overlay Text</label>
       <input class="input" id="remetaOverlay" placeholder="@brandname">
     </div>
     <div class="input-group">
-      <label>Watermark (opsional)</label>
+      <label class="input-label">Watermark (opsional)</label>
       <input class="input" id="remetaWatermark" placeholder="@username">
     </div>
     <div class="input-group">
-      <label>Niche (untuk SEO metadata)</label>
+      <label class="input-label">Niche (untuk SEO metadata)</label>
       <input class="input" id="remetaNiche" placeholder="tech tips" value="general">
     </div>
-    <div style="border:2px dashed var(--border);border-radius:var(--radius);padding:30px;text-align:center;margin-bottom:16px;cursor:pointer" onclick="document.getElementById('remetaFile').click()">
-      <div style="font-size:32px;margin-bottom:8px">📹</div>
-      <div style="font-size:13px;color:var(--dim)">Tap untuk upload video</div>
-      <input type="file" id="remetaFile" accept="video/*" style="display:none">
+    <div class="card" style="border:2px dashed var(--color-border);cursor:pointer;" onclick="document.getElementById('remetaFile').click()" role="button" tabindex="0" aria-label="Upload video">
+      <div style="font-size:32px;margin-bottom:var(--space-2)">📹</div>
+      <div style="font-size:var(--text-sm);color:var(--color-dim)">Tap untuk upload video</div>
+      <input type="file" id="remetaFile" accept="video/*" style="display:none" aria-hidden="true">
     </div>
-    <div id="remetaFileInfo" class="hidden" style="font-size:12px;color:var(--green);margin-bottom:12px"></div>
-    <button class="btn btn-primary" onclick="processRemeta()">🔄 Re-Render Video</button>
-  </div>
+    <div id="remetaFileInfo" class="hidden" style="font-size:var(--text-xs);color:var(--color-green);margin-bottom:var(--space-3)"></div>
+    <button class="btn btn-primary btn-full" onclick="processRemeta()"><span class="btn-icon">🔄</span><span class="btn-text">Re-Render Video</span></button>
+  </main>
 
-  <!-- Videos Page -->
-  <div id="page-videos" class="page hidden">
-    <div class="page-title">📁 Video Saya</div>
-    <div id="videosList"><div class="empty"><div class="icon">🎬</div><div class="title">Loading...</div></div></div>
-  </div>
+  <main id="page-videos" class="page hidden" role="main" aria-label="My Videos">
+    <h2 class="page-title">📁 Video Saya</h2>
+    <div id="videosList" role="list"><div class="empty"><div class="empty-icon">🎬</div><div class="empty-title">Loading...</div></div></div>
+  </main>
 
-  <!-- Calendar Page -->
-  <div id="page-calendar" class="page hidden">
-    <div class="page-title">📅 Content Calendar</div>
-    <div style="display:flex;gap:8px;margin-bottom:16px">
-      <button class="btn btn-secondary btn-sm" onclick="calendarView='today';loadCalendar()">Hari Ini</button>
-      <button class="btn btn-secondary btn-sm" onclick="calendarView='week';loadCalendar()">7 Hari</button>
-      <button class="btn btn-secondary btn-sm" onclick="calendarView='all';loadCalendar()">Semua</button>
+  <main id="page-calendar" class="page hidden" role="main" aria-label="Content Calendar">
+    <h2 class="page-title">📅 Content Calendar</h2>
+    <div class="chips" role="radiogroup" aria-label="Filter jadwal" style="margin-bottom:var(--space-4);">
+      <button class="chip active" data-view="today" role="radio" aria-checked="true" onclick="calendarView='today';loadCalendar()">Hari Ini</button>
+      <button class="chip" data-view="week" role="radio" aria-checked="false" onclick="calendarView='week';loadCalendar()">7 Hari</button>
+      <button class="chip" data-view="all" role="radio" aria-checked="false" onclick="calendarView='all';loadCalendar()">Semua</button>
     </div>
-    <div id="calendarList"><div class="empty"><div class="icon">📅</div><div class="title">Loading...</div></div></div>
-    <button class="btn btn-primary" onclick="showScheduleModal()" style="margin-top:12px">➕ Schedule Content</button>
-  </div>
+    <div id="calendarList" role="list"><div class="empty"><div class="empty-icon">📅</div><div class="empty-title">Loading...</div></div></div>
+    <button class="btn btn-primary btn-full" onclick="showScheduleModal()" style="margin-top:var(--space-3)"><span class="btn-icon">➕</span><span class="btn-text">Schedule Content</span></button>
+  </main>
 
-  <!-- A/B Test Page -->
-  <div id="page-abtest" class="page hidden">
-    <div class="page-title">🧪 A/B Testing</div>
-    <div id="abtestList"><div class="empty"><div class="icon">🧪</div><div class="title">Loading...</div></div></div>
-    <button class="btn btn-primary" onclick="showNewABTestModal()" style="margin-top:12px">➕ New Test</button>
-  </div>
+  <main id="page-abtest" class="page hidden" role="main" aria-label="A/B Testing">
+    <h2 class="page-title">🧪 A/B Testing</h2>
+    <div id="abtestList" role="list"><div class="empty"><div class="empty-icon">🧪</div><div class="empty-title">Loading...</div></div></div>
+    <button class="btn btn-primary btn-full" onclick="showNewABTestModal()" style="margin-top:var(--space-3)"><span class="btn-icon">➕</span><span class="btn-text">New Test</span></button>
+  </main>
 
-  <!-- Trending Page -->
-  <div id="page-trending" class="page hidden">
-    <div class="page-title">🔥 Trending</div>
-    <button class="btn btn-primary" onclick="scanTrending()" style="margin-bottom:16px">🔥 Scan Trending Now</button>
-    <div id="trendingList"></div>
-  </div>
+  <main id="page-trending" class="page hidden" role="main" aria-label="Trending">
+    <h2 class="page-title">🔥 Trending</h2>
+    <button class="btn btn-primary btn-full" onclick="scanTrending()" style="margin-bottom:var(--space-4)"><span class="btn-icon">🔥</span><span class="btn-text">Scan Trending Now</span></button>
+    <div id="trendingList" role="list"></div>
+  </main>
 
-  <!-- Repurpose Page -->
-  <div id="page-repurpose" class="page hidden">
-    <div class="page-title">🔄 Repurpose Content</div>
-    <p style="font-size:13px;color:var(--dim);margin-bottom:16px">Download beberapa konten, split, gabung jadi video baru dengan metadata baru.</p>
+  <main id="page-repurpose" class="page hidden" role="main" aria-label="Repurpose Content">
+    <h2 class="page-title">🔄 Repurpose Content</h2>
+    <p style="font-size:var(--text-sm);color:var(--color-dim);margin-bottom:var(--space-4);">Download beberapa konten, split, gabung jadi video baru dengan metadata baru.</p>
     <div class="input-group">
-      <label>Source URLs (satu per baris)</label>
+      <label class="input-label">Source URLs (satu per baris)</label>
       <textarea class="input" id="repUrls" placeholder="https://tiktok.com/...&#10;https://tiktok.com/..." rows="4"></textarea>
     </div>
     <div class="input-group">
-      <label>Durasi Target (detik)</label>
+      <label class="input-label">Durasi Target (detik)</label>
       <input class="input" id="repDuration" type="number" value="120">
     </div>
     <div class="input-group">
-      <label>Color Preset</label>
-      <div class="chips" id="repColorChips">
-        <div class="chip active" data-val="cinematic">🎬 Cinematic</div>
-        <div class="chip" data-val="warm">☀️ Warm</div>
-        <div class="chip" data-val="cool">❄️ Cool</div>
-        <div class="chip" data-val="vibrant">🌈 Vibrant</div>
+      <label class="input-label">Color Preset</label>
+      <div class="chips" id="repColorChips" role="radiogroup" aria-label="Pilih color preset">
+        <button class="chip active" data-val="cinematic" role="radio" aria-checked="true">🎬 Cinematic</button>
+        <button class="chip" data-val="warm" role="radio" aria-checked="false">☀️ Warm</button>
+        <button class="chip" data-val="cool" role="radio" aria-checked="false">❄️ Cool</button>
+        <button class="chip" data-val="vibrant" role="radio" aria-checked="false">🌈 Vibrant</button>
       </div>
     </div>
     <div class="input-group">
-      <label>Watermark</label>
+      <label class="input-label">Watermark</label>
       <input class="input" id="repWatermark" placeholder="@brandname">
     </div>
-    <button class="btn btn-primary" onclick="startRepurpose()">🔄 Start Repurpose</button>
-  </div>
+    <button class="btn btn-primary btn-full" onclick="startRepurpose()"><span class="btn-icon">🔄</span><span class="btn-text">Start Repurpose</span></button>
+  </main>
 
   <!-- Bottom Navigation -->
-  <div class="bottom-nav">
-    <button class="nav-item active" data-page="home" onclick="navigate('home')"><span class="icon">🏠</span><span>Home</span></button>
-    <button class="nav-item" data-page="generate" onclick="navigate('generate')"><span class="icon">🎬</span><span>Generate</span></button>
-    <button class="nav-item" data-page="videos" onclick="navigate('videos')"><span class="icon">📁</span><span>Videos</span></button>
-    <button class="nav-item" data-page="calendar" onclick="navigate('calendar')"><span class="icon">📅</span><span>Calendar</span></button>
-    <button class="nav-item" data-page="abtest" onclick="navigate('abtest')"><span class="icon">🧪</span><span>A/B</span></button>
-  </div>
+  <nav class="bottom-nav" role="navigation" aria-label="Main navigation" style="position:fixed;bottom:0;left:0;right:0;z-index:var(--z-fixed);background:rgba(10,10,26,0.98);backdrop-filter:blur(20px);border-top:1px solid var(--color-border);display:flex;justify-content:space-around;padding:8px 0 calc(8px + var(--safe-bottom));">
+    <button class="nav-item active" data-page="home" onclick="navigate('home')" role="tab" aria-selected="true" style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 12px;border-radius:10px;cursor:pointer;transition:all 0.2s;border:none;background:none;color:var(--color-muted);font-size:var(--text-xs);font-family:inherit;"><span class="nav-icon" style="font-size:22px">🏠</span><span>Home</span></button>
+    <button class="nav-item" data-page="generate" onclick="navigate('generate')" role="tab" aria-selected="false" style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 12px;border-radius:10px;cursor:pointer;transition:all 0.2s;border:none;background:none;color:var(--color-muted);font-size:var(--text-xs);font-family:inherit;"><span class="nav-icon" style="font-size:22px">🎬</span><span>Generate</span></button>
+    <button class="nav-item" data-page="videos" onclick="navigate('videos')" role="tab" aria-selected="false" style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 12px;border-radius:10px;cursor:pointer;transition:all 0.2s;border:none;background:none;color:var(--color-muted);font-size:var(--text-xs);font-family:inherit;"><span class="nav-icon" style="font-size:22px">📁</span><span>Videos</span></button>
+    <button class="nav-item" data-page="calendar" onclick="navigate('calendar')" role="tab" aria-selected="false" style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 12px;border-radius:10px;cursor:pointer;transition:all 0.2s;border:none;background:none;color:var(--color-muted);font-size:var(--text-xs);font-family:inherit;"><span class="nav-icon" style="font-size:22px">📅</span><span>Calendar</span></button>
+    <button class="nav-item" data-page="abtest" onclick="navigate('abtest')" role="tab" aria-selected="false" style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 12px;border-radius:10px;cursor:pointer;transition:all 0.2s;border:none;background:none;color:var(--color-muted);font-size:var(--text-xs);font-family:inherit;"><span class="nav-icon" style="font-size:22px">🧪</span><span>A/B</span></button>
+  </nav>
 
   <!-- Modal Container -->
-  <div id="modalContainer" class="hidden"></div>
+  <div id="modalContainer" class="hidden" aria-hidden="true"></div>
 
-  <!-- Loading -->
-  <div id="loadingOverlay" class="loading-overlay hidden">
-    <div class="spinner"></div>
-    <div id="loadingText" style="font-size:14px;color:var(--dim)">Processing...</div>
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay" class="loading-overlay hidden" role="alert" aria-live="polite" style="position:fixed;inset:0;z-index:var(--z-loading);background:rgba(10,10,26,0.9);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--space-4);">
+    <div class="spinner big-spinner" style="width:48px;height:48px;border-width:4px"></div>
+    <p id="loadingText" style="color:var(--color-dim);font-size:var(--text-base)">Processing...</p>
   </div>
+
+  <div id="version-badge" style="position:fixed;bottom:12px;right:12px;font-size:var(--text-xs);color:var(--color-muted);z-index:var(--z-tooltip);">v4</div>
 
   <script>
     // ═══════════════════════════════════════════════════════════
@@ -338,7 +393,7 @@
 
     // Apply Telegram theme
     if (tg.colorScheme === 'dark') {
-      document.documentElement.style.setProperty('--bg', tg.themeParams.bg_color || '#0a0a1a');
+      document.documentElement.style.setProperty('--color-bg', tg.themeParams.bg_color || '#0a0a1a');
     }
 
     // User info from Telegram
@@ -354,13 +409,13 @@
     let currentPage = 'home';
     let calendarView = 'today';
     let userData = null;
-    let authToken = null; // JWT from /auth/telegram
+    let authToken = null;
 
     // ═══════════════════════════════════════════════════════════
     // AUTH — Get JWT via Telegram initData
     // ═══════════════════════════════════════════════════════════
     async function authenticate() {
-      if (!initData) return; // No auth in non-Telegram context
+      if (!initData) return;
       try {
         const r = await fetch(`${API_BASE}/auth/telegram`, {
           method: 'POST',
@@ -375,7 +430,6 @@
       } catch {}
     }
 
-
     // ═══════════════════════════════════════════════════════════
     // NAVIGATION
     // ═══════════════════════════════════════════════════════════
@@ -385,7 +439,6 @@
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
       document.querySelector(`.nav-item[data-page="${page}"]`)?.classList.add('active');
       currentPage = page;
-      // Load page data
       if (page === 'home') loadHome();
       if (page === 'videos') loadVideos();
       if (page === 'calendar') loadCalendar();
@@ -403,7 +456,6 @@
       } catch (e) { throw e; }
     }
 
-    // Call Python API via nginx proxy (for calendar, abtest, trending, carousel, remeta, repurpose)
     const PY_API = API_BASE + '/api/py';
     async function pyApi(path, opts = {}) {
       try {
@@ -425,6 +477,15 @@
       const t = document.createElement('div');
       t.className = `toast ${type}`;
       t.textContent = msg;
+      t.style.cssText = `
+        position:fixed;bottom:100px;left:50%;transform:translateX(-50%);
+        z-index:var(--z-toast);background:var(--color-card);border:1px solid var(--color-border);
+        border-radius:var(--radius-lg);padding:var(--space-3) var(--space-4);font-size:var(--text-sm);
+        font-weight:var(--font-medium);max-width:320px;animation:slideIn var(--duration-normal) var(--ease-out);
+        pointer-events:auto;display:flex;align-items:center;gap:var(--space-2);
+      `;
+      if (type === 'success') t.style.borderColor = 'var(--color-green)', t.style.color = 'var(--color-green)';
+      if (type === 'error') t.style.borderColor = 'var(--color-red)', t.style.color = 'var(--color-red)';
       document.body.appendChild(t);
       setTimeout(() => t.remove(), 3000);
     }
@@ -436,27 +497,21 @@
       document.getElementById('greeting').textContent = `Halo ${firstName}`;
       document.getElementById('userAvatar').textContent = firstName.charAt(0).toUpperCase();
 
-      // Fetch all stats in parallel
       const [analytics, calendar, abtests] = await Promise.allSettled([
         api(`/api/analytics/overview?userId=${userId}&days=30`),
         pyApi(`/calendar/list/${userId}`),
         pyApi(`/ab-test/list/${userId}`),
       ]);
 
-      // Videos + credits from analytics
       if (analytics.status === 'fulfilled' && analytics.value.totals) {
         document.getElementById('statVideos').textContent = analytics.value.totals.videos ?? 0;
         document.getElementById('statCredits').textContent = analytics.value.totals.credits_used ?? 0;
       }
-
-      // Scheduled from calendar
       if (calendar.status === 'fulfilled') {
         const entries = calendar.value.entries || [];
         const scheduled = entries.filter(e => e.status === 'scheduled').length;
         document.getElementById('statScheduled').textContent = scheduled;
       }
-
-      // Carousels from A/B test count (proxy — no direct carousel count API yet)
       document.getElementById('statCarousels').textContent = '—';
     }
 
@@ -545,7 +600,6 @@
 
       showLoading('Uploading video...');
       try {
-        // Step 1: Upload video
         const formData = new FormData();
         formData.append('file', file);
         const uploadRes = await fetch(`${PY_API}/upload/video`, {
@@ -556,7 +610,6 @@
         const uploadData = await uploadRes.json();
         if (!uploadData.success) throw new Error(uploadData.error || 'Upload failed');
 
-        // Step 2: Process remeta
         showLoading('Re-rendering video... 1-3 min');
         const result = await pyApi('/remeta', {
           method: 'POST',
@@ -575,10 +628,10 @@
           const changes = (result.changes_applied || []).join(', ');
           showToast(`✅ Done! Hash: ${(result.new_hash || '').slice(0, 12)}...`);
           tg.showAlert(
- `✅ Video re-rendered!\n\n` +
- `Changes: ${changes}\n` +
- `New hash: ${(result.new_hash || '').slice(0, 16)}...\n\n` +
- `Title: ${(meta.title || '').slice(0, 80)}`
+            `✅ Video re-rendered!\n\n` +
+            `Changes: ${changes}\n` +
+            `New hash: ${(result.new_hash || '').slice(0, 16)}...\n\n` +
+            `Title: ${(meta.title || '').slice(0, 80)}`
           );
         } else {
           showToast(`❌ ${result.error}`, 'error');
@@ -597,20 +650,38 @@
       try {
         const data = await api(`/api/user/videos?userId=${userId}`);
         if (!data.videos?.length) {
-          el.innerHTML = '<div class="empty"><div class="icon">🎬</div><div class="title">Belum ada video</div><div class="desc">Buat video pertama kamu!</div></div>';
+          el.innerHTML = '<div class="empty" role="status"><div class="empty-icon">🎬</div><div class="empty-title">Belum ada video</div><div class="empty-desc">Buat video pertama kamu!</div><button class="btn btn-primary" onclick="navigate(\'generate\')" style="margin-top:var(--space-4)">Buat Video</button></div>';
           return;
         }
-        el.innerHTML = data.videos.map(v => `
-          <div class="list-item">
-            <div class="thumb">🎬</div>
-            <div class="info">
-              <div class="title">${v.title || 'Untitled'}</div>
-              <div class="meta">${v.platform} · ${v.status} · ${v.duration || 0}s</div>
+        el.innerHTML = data.videos.map(v => {
+          const s = v.status || 'pending';
+          const statusLabel = { processing: '⏳ Processing', completed: '✅ Selesai', failed: '❌ Gagal', pending: '🕐 Pending' };
+          const videoSrc = v.videoUrl ? `src="${v.videoUrl}"` : (v.downloadUrl ? `src="${v.downloadUrl}"` : '');
+          const posterSrc = v.thumbnailUrl ? `poster="${v.thumbnailUrl}"` : '';
+          let thumbHtml = '<span>🎬</span>';
+          if (s === 'processing' || s === 'pending') {
+            thumbHtml = '<div class="spinner" style="border-width:2px;width:24px;height:24px;"></div>';
+          } else if (s === 'failed') {
+            thumbHtml = '<span style="color:var(--color-red)">❌ Failed</span>';
+          } else if (videoSrc) {
+            thumbHtml = `<video ${videoSrc} controls autoplay muted loop preload="auto" ${posterSrc} playsinline style="width:100%;height:100%;object-fit:cover;border-radius:12px;"></video>`;
+          } else if (v.downloadUrl && !videoSrc) {
+            thumbHtml = v.thumbnailUrl ? `<img src="${v.thumbnailUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">` : '<span>🔗</span>';
+          }
+          return `<article class="list-item" role="listitem">
+            <div class="thumb" style="width:48px;height:48px;border-radius:8px;background:var(--color-bg-elevated);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;">${thumbHtml}</div>
+            <div class="info" style="flex:1;min-width:0;">
+              <div class="title" style="font-size:var(--text-base);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${v.niche?.toUpperCase() || 'VIDEO'} · ${v.duration || 0}s</div>
+              <div class="meta" style="font-size:var(--text-xs);color:var(--color-muted);margin-top:2px;">${new Date(v.createdAt).toLocaleDateString('id-ID')}</div>
             </div>
-          </div>
-        `).join('');
+            <div style="display:flex;gap:var(--space-2);flex-wrap:wrap;margin-top:var(--space-2);">
+              ${v.downloadUrl && s === 'completed' ? `<a href="${v.downloadUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">⬇ Download</a>` : ''}
+              <button class="btn btn-danger btn-sm" onclick="deleteVideo('${v.jobId || v.id}')">🗑️ Hapus</button>
+            </div>
+          </article>`;
+        }).join('');
       } catch {
-        el.innerHTML = '<div class="empty"><div class="icon">🎬</div><div class="title">Belum ada video</div><div class="desc">Buat video pertama lewat bot Telegram!</div></div>';
+        el.innerHTML = '<div class="empty" role="status"><div class="empty-icon">🎬</div><div class="empty-title">Belum ada video</div><div class="empty-desc">Buat video pertama lewat bot Telegram!</div></div>';
       }
     }
 
@@ -623,16 +694,16 @@
         const data = await pyApi(`/calendar/list/${userId}`);
         const entries = data.entries || [];
         if (!entries.length) {
-          el.innerHTML = '<div class="empty"><div class="icon">📅</div><div class="title">Belum ada jadwal</div><div class="desc">Schedule konten lewat bot: /calendar</div></div>';
+          el.innerHTML = '<div class="empty" role="status"><div class="empty-icon">📅</div><div class="empty-title">Belum ada jadwal</div><div class="empty-desc">Schedule konten lewat bot: /calendar</div></div>';
           return;
         }
         el.innerHTML = entries.map(e => {
           const emoji = e.content_type === 'carousel' ? '🖼️' : '🎬';
           const status = e.status === 'published' ? '✅' : '⏰';
-          return `<div class="list-item"><div class="thumb">${emoji}</div><div class="info"><div class="title">${e.topic}</div><div class="meta">${status} ${e.scheduled_at} · ${e.platform}</div></div></div>`;
+          return `<article class="list-item" role="listitem"><div class="thumb">${emoji}</div><div class="info"><div class="title">${e.topic}</div><div class="meta">${status} ${e.scheduled_at} · ${e.platform}</div></div></article>`;
         }).join('');
       } catch {
-        el.innerHTML = '<div class="empty"><div class="icon">📅</div><div class="title">Belum ada jadwal</div><div class="desc">Schedule konten lewat bot: /calendar</div></div>';
+        el.innerHTML = '<div class="empty" role="status"><div class="empty-icon">📅</div><div class="empty-title">Belum ada jadwal</div><div class="empty-desc">Schedule konten lewat bot: /calendar</div></div>';
       }
     }
 
@@ -650,15 +721,15 @@
         const data = await pyApi(`/ab-test/list/${userId}`);
         const tests = data.tests || [];
         if (!tests.length) {
-          el.innerHTML = '<div class="empty"><div class="icon">🧪</div><div class="title">Belum ada test</div><div class="desc">Buat A/B test lewat bot: /abtest</div></div>';
+          el.innerHTML = '<div class="empty" role="status"><div class="empty-icon">🧪</div><div class="empty-title">Belum ada test</div><div class="empty-desc">Buat A/B test lewat bot: /abtest</div></div>';
           return;
         }
         el.innerHTML = tests.map(t => {
           const winner = t.winner ? (t.winner === 'tie' ? '🤝 Tie' : `🏆 ${t.winner}`) : '⏳';
-          return `<div class="list-item"><div class="thumb">🧪</div><div class="info"><div class="title">${t.name}</div><div class="meta">${t.status} · ${t.content_type} · ${winner}</div></div></div>`;
+          return `<article class="list-item" role="listitem"><div class="thumb">🧪</div><div class="info"><div class="title">${t.name}</div><div class="meta">${t.status} · ${t.content_type} · ${winner}</div></div></article>`;
         }).join('');
       } catch {
-        el.innerHTML = '<div class="empty"><div class="icon">🧪</div><div class="title">Belum ada test</div><div class="desc">Buat A/B test lewat bot: /abtest</div></div>';
+        el.innerHTML = '<div class="empty" role="status"><div class="empty-icon">🧪</div><div class="empty-title">Belum ada test</div><div class="empty-desc">Buat A/B test lewat bot: /abtest</div></div>';
       }
     }
 
@@ -697,11 +768,11 @@
           const segs = result.segments_used || [];
           showToast(`✅ ${segs.length} segments remixed!`);
           tg.showAlert(
- `✅ Content repurposed!\n\n` +
- `Segments: ${segs.length}\n` +
- `Duration: ${result.duration || duration}s\n` +
- `Platform: ${result.platform || 'tiktok'}\n\n` +
- `Title: ${(meta.title || '').slice(0, 80)}`
+            `✅ Content repurposed!\n\n` +
+            `Segments: ${segs.length}\n` +
+            `Duration: ${result.duration || duration}s\n` +
+            `Platform: ${result.platform || 'tiktok'}\n\n` +
+            `Title: ${(meta.title || '').slice(0, 80)}`
           );
         } else {
           showToast(`❌ ${result.error}`, 'error');
@@ -710,11 +781,6 @@
         hideLoading();
         showToast(`❌ ${e.message}`, 'error');
       }
-    }
-
-    function showNewABTestModal() {
-      showToast('Ketik /abtest create <topic> di bot');
-      tg.close();
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -732,14 +798,14 @@
         if (data.reddit) items.push(...data.reddit.slice(0, 3).map(p => ({...p, source: 'Reddit'})));
         if (data.tiktok) items.push(...data.tiktok.slice(0, 3).map(t => ({...t, source: 'TikTok'})));
         if (!items.length) {
-          el.innerHTML = '<div class="empty"><div class="icon">📊</div><div class="title">Trending data loading...</div><div class="desc">Background scan runs every 10 min</div></div>';
+          el.innerHTML = '<div class="empty" role="status"><div class="empty-icon">📊</div><div class="empty-title">Trending data loading...</div><div class="empty-desc">Background scan runs every 10 min</div></div>';
           return;
         }
         el.innerHTML = items.map((t, i) => `
-          <div class="card" onclick="useTrending(${i})" style="margin-bottom:8px;">
+          <article class="card" onclick="useTrending(${i})" style="margin-bottom:var(--space-2);cursor:pointer;">
             <div style="font-weight:600">${t.title || 'Trending #' + (i+1)}</div>
-            <div style="font-size:11px;color:var(--muted);margin-top:4px">${t.source}${t.views ? ' · ' + (t.views/1000).toFixed(0) + 'K views' : ''}${t.traffic ? ' · ' + t.traffic + ' searches' : ''}</div>
-          </div>
+            <div style="font-size:var(--text-xs);color:var(--color-muted);margin-top:var(--space-1)">${t.source}${t.views ? ' · ' + (t.views/1000).toFixed(0) + 'K views' : ''}${t.traffic ? ' · ' + t.traffic + ' searches' : ''}</div>
+          </article>
         `).join('');
       } catch (e) {
         hideLoading();
@@ -750,6 +816,7 @@
     function useTrending(idx) {
       showToast('Ketik /repurpose <url> di bot untuk generate dari trending');
     }
+
     // ── File input handler for remeta ──
     document.getElementById('remetaFile')?.addEventListener('change', (e) => {
       const file = e.target.files?.[0];

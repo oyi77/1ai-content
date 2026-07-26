@@ -1140,3 +1140,53 @@ model Book {
   @@index([createdAt])
   @@map("books")
 }
+
+// =============================================================================
+// Comic/Manga/Manhwa — AI-generated comics
+// =============================================================================
+model Comic {
+  id         BigInt   @id @default(autoincrement())
+  title      String   @db.VarChar(255)
+  format     String   @default("comic") @db.VarChar(16)
+  language   String   @default("en") @db.VarChar(5)
+  prompt     String   @db.Text
+  script     Json?
+  numEpisodes Int     @default(1) @map("num_episodes")
+  totalPages Int      @default(0) @map("total_pages")
+  outputDir  String?  @map("output_dir") @db.VarChar(512)
+  coverPath  String?  @map("cover_path") @db.VarChar(512)
+  stats      Json?
+  status     String   @default("completed") @db.VarChar(16)
+  metadata   Json?
+
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@index([createdAt])
+  @@map("comics")
+}
+
+// =============================================================================
+// Movie / Short-Film — AI-generated movie pipeline
+// =============================================================================
+model Movie {
+  id         BigInt   @id @default(autoincrement())
+  title      String   @db.VarChar(255)
+  genre      String   @default("general") @db.VarChar(64)
+  numScenes  Int      @default(8) @map("num_scenes")
+  duration   Int      @default(0)
+  prompt     String   @db.Text
+  script     Json?
+  videoPath  String?  @map("video_path") @db.VarChar(512)
+  coverPath  String?  @map("cover_path") @db.VarChar(512)
+  outputDir  String?  @map("output_dir") @db.VarChar(512)
+  stats      Json?
+  status     String   @default("completed") @db.VarChar(16)
+  metadata   Json?
+
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@index([createdAt])
+  @@map("movies")
+}

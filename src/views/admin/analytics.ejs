@@ -44,7 +44,7 @@
   .badge-free { background: #2a2a3a; color: #aaa; }
   .badge-starter { background: #1a2a4a; color: #60a5fa; }
   .badge-pro { background: #2a1a4a; color: #a78bfa; }
-  .badge-enterprise { background: #3a2a0a; color: var(--gold); }
+  .badge-enterprise { background: #3a2a0a; color: var(--accent); }
   .badge-banned { background: #3a0f0f; color: #f87171; }
   .badge-pending { background: #3a2a0a; color: #fbbf24; }
   .badge-success { background: #0f3020; color: #4ade80; }
@@ -59,9 +59,9 @@
   th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); }
   td { padding: 10px 12px; border-bottom: 1px solid rgba(42,42,58,0.5); vertical-align: middle; }
   tr:last-child td { border-bottom: none; }
-  tr:hover td { background: rgba(196,163,90,0.03); }
+  tr:hover td { background: rgba(168,85,247,0.03); }
   .select { background: #0d0d14; border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 8px; font-size: 13px; outline: none; }
-  .select:focus { border-color: var(--gold); }
+  .select:focus { border-color: var(--accent); }
   textarea.input { resize: vertical; min-height: 100px; }
   .health-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
   .provider-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
@@ -149,7 +149,7 @@
           <option value="pro">pro</option>
           <option value="agency">agency</option>
         </select>
-        <button class="btn btn-gold btn-sm" onclick="loadUsers(true)">Refresh</button>
+        <button class="btn btn-primary btn-sm" onclick="loadUsers(true)">Refresh</button>
       </div>
     </div>
     <div class="card" style="overflow-x: auto;">
@@ -197,7 +197,7 @@
     <div class="section-sub">Today's performance & system health</div>
     <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;">
       <div class="kpi-card"><div class="label">Generations Today</div><div class="value" id="an-gen">—</div></div>
-      <div class="kpi-card"><div class="label">Success Rate</div><div class="value" id="an-rate" style="color:var(--gold);">—</div></div>
+      <div class="kpi-card"><div class="label">Success Rate</div><div class="value" id="an-rate" style="color:var(--accent);">—</div></div>
       <div class="kpi-card"><div class="label">Revenue Today</div><div class="value" id="an-rev" style="font-size:18px;">—</div></div>
       <div class="kpi-card"><div class="label">Active Users 24h</div><div class="value" id="an-active">—</div></div>
     </div>
@@ -241,7 +241,7 @@
     <div class="card">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
         <span id="pricing-category-label" style="font-size: 13px; color: var(--muted);">Credit Packages</span>
-        <button class="btn btn-gold btn-sm" onclick="openPricingModal()">+ Add</button>
+        <button class="btn btn-primary btn-sm" onclick="openPricingModal()">+ Add</button>
       </div>
       <div id="pricing-table-wrap" style="overflow-x: auto; min-width: 600px;"><div class="loading">Loading...</div></div>
     </div>
@@ -256,7 +256,7 @@
         <select class="select" id="prompt-niche-filter" onchange="loadPrompts()">
           <option value="">All Niches</option>
         </select>
-        <button class="btn btn-gold btn-sm" onclick="openPromptModal()">+ New Prompt</button>
+        <button class="btn btn-primary btn-sm" onclick="openPromptModal()">+ New Prompt</button>
         <button class="btn btn-ghost btn-sm" onclick="loadPrompts()">Refresh</button>
       </div>
     </div>
@@ -276,7 +276,7 @@
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);">
           <div style="font-size:14px;font-weight:600;">Page Content</div>
           <div style="display:flex;gap:8px;align-items:center;">
-            <button class="btn btn-gold btn-sm" onclick="saveLanding()">Save</button>
+            <button class="btn btn-primary btn-sm" onclick="saveLanding()">Save</button>
             <a href="/" target="_blank" class="btn btn-sm" style="background:var(--bg);border:1px solid var(--border);padding:4px 12px;border-radius:6px;color:var(--text);font-size:12px;text-decoration:none;">👁️ Preview</a>
           </div>
         </div>
@@ -361,7 +361,7 @@
       </div>
       <div style="display: flex; gap: 12px;">
         <button class="btn btn-ghost" onclick="previewBroadcast()">👁 Preview</button>
-        <button class="btn btn-gold" onclick="sendBroadcast()">📢 Send Broadcast</button>
+        <button class="btn btn-primary" onclick="sendBroadcast()">📢 Send Broadcast</button>
       </div>
     </div>
   </div>
@@ -394,7 +394,7 @@
       </div>
     </div>
     <div style="text-align: right; margin-top: 16px;">
-      <button class="btn btn-gold" onclick="loadSystem()">🔄 Refresh Health</button>
+      <button class="btn btn-primary" onclick="loadSystem()">🔄 Refresh Health</button>
     </div>
   </div>
 
@@ -406,12 +406,12 @@
       <button class="tab active" onclick="setTokenPeriod(this,7)">7 Days</button>
       <button class="tab" onclick="setTokenPeriod(this,30)">30 Days</button>
       <button class="tab" onclick="setTokenPeriod(this,90)">90 Days</button>
-      <button class="btn btn-gold btn-sm" style="margin-left:auto;" onclick="loadTokenStats()">🔄 Refresh</button>
+      <button class="btn btn-primary btn-sm" style="margin-left:auto;" onclick="loadTokenStats()">🔄 Refresh</button>
     </div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;">
       <div class="kpi-card"><div class="label">Total Requests</div><div class="value" id="tk-requests">—</div></div>
       <div class="kpi-card"><div class="label">Total Tokens</div><div class="value" id="tk-tokens">—</div></div>
-      <div class="kpi-card"><div class="label">Cost (USD)</div><div class="value" id="tk-usd" style="color:var(--gold)">—</div></div>
+      <div class="kpi-card"><div class="label">Cost (USD)</div><div class="value" id="tk-usd" style="color:var(--accent)">—</div></div>
       <div class="kpi-card"><div class="label">Cost (IDR)</div><div class="value" id="tk-idr" style="font-size:18px">—</div></div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;">
@@ -448,12 +448,12 @@
       <button class="tab active" onclick="setProfitPeriod(this,7)">7 Days</button>
       <button class="tab" onclick="setProfitPeriod(this,30)">30 Days</button>
       <button class="tab" onclick="setProfitPeriod(this,90)">90 Days</button>
-      <button class="btn btn-gold btn-sm" style="margin-left:auto;" onclick="loadProfitReport()">🔄 Refresh</button>
+      <button class="btn btn-primary btn-sm" style="margin-left:auto;" onclick="loadProfitReport()">🔄 Refresh</button>
     </div>
     <div class="kpi-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;">
       <div class="kpi-card"><div class="label">Revenue (IDR)</div><div class="value" id="pf-revenue" style="color:#4ade80">—</div></div>
       <div class="kpi-card"><div class="label">Costs (IDR)</div><div class="value" id="pf-costs" style="color:#f87171">—</div></div>
-      <div class="kpi-card"><div class="label">Profit (IDR)</div><div class="value" id="pf-profit" style="color:var(--gold)">—</div></div>
+      <div class="kpi-card"><div class="label">Profit (IDR)</div><div class="value" id="pf-profit" style="color:var(--accent)">—</div></div>
       <div class="kpi-card"><div class="label">Margin %</div><div class="value" id="pf-margin">—</div></div>
     </div>
     <div class="kpi-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;">
@@ -481,7 +481,7 @@
       <div class="card" style="padding:20px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);">
           <div style="font-size:14px;font-weight:600;">AI Provider Priority</div>
-          <button class="btn btn-gold btn-sm" onclick="saveProviders()">Save</button>
+          <button class="btn btn-primary btn-sm" onclick="saveProviders()">Save</button>
         </div>
         <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Lower number = higher priority in fallback chain</div>
         <div id="st-videoProviders" style="display:flex;flex-direction:column;gap:8px;">
@@ -499,7 +499,7 @@
           <div style="font-size:14px;font-weight:600;">💱 USD → IDR Exchange Rate</div>
           <div style="display:flex;gap:8px;">
             <button class="btn btn-sm" style="background:rgba(99,179,237,0.15);color:#63b3ed;border:1px solid rgba(99,179,237,0.3);" onclick="refreshLiveRate()" title="Fetch latest from frankfurter.dev">&#8635; Live</button>
-            <button class="btn btn-gold btn-sm" onclick="saveExchangeRate()">Save Manual</button>
+            <button class="btn btn-primary btn-sm" onclick="saveExchangeRate()">Save Manual</button>
           </div>
         </div>
         <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Used for cost calculations, profit reports, and pricing recommendations. Changes take effect immediately.</div>
@@ -515,7 +515,7 @@
       <div class="card" style="padding:20px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);">
           <div style="font-size:14px;font-weight:600;">📊 Tracking Pixels</div>
-          <button class="btn btn-gold btn-sm" onclick="savePixels()">Save</button>
+          <button class="btn btn-primary btn-sm" onclick="savePixels()">Save</button>
         </div>
         <div style="display:flex;flex-direction:column;gap:10px;">
           <div>
@@ -541,7 +541,7 @@
       <div class="card" style="padding:20px;">
         <div style="font-size:14px;font-weight:600;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border);">Pricing Data</div>
         <div style="font-size:12px;color:var(--muted);margin-bottom:16px;">Seed the database with default packages and subscription plans from static config. Safe to run multiple times (idempotent).</div>
-        <button class="btn btn-gold btn-sm" onclick="seedPricing()">🌱 Seed Default Pricing Data</button>
+        <button class="btn btn-primary btn-sm" onclick="seedPricing()">🌱 Seed Default Pricing Data</button>
         <div id="st-seed-result" style="margin-top:10px;font-size:12px;color:var(--muted);"></div>
       </div>
 
@@ -549,7 +549,7 @@
       <div class="card" style="padding:20px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);">
           <div style="font-size:14px;font-weight:600;">Referral Commission Rates</div>
-          <button class="btn btn-gold btn-sm" onclick="saveReferralRates()">Save</button>
+          <button class="btn btn-primary btn-sm" onclick="saveReferralRates()">Save</button>
         </div>
         <div style="display:flex;flex-direction:column;gap:12px;">
           <div>
@@ -571,7 +571,7 @@
       <div class="card" style="padding:20px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);">
           <div style="font-size:14px;font-weight:600;">🎁 Free Trial Settings</div>
-          <button class="btn btn-gold btn-sm" onclick="saveFreeTrial()">Save</button>
+          <button class="btn btn-primary btn-sm" onclick="saveFreeTrial()">Save</button>
         </div>
         <div id="st-freeTrialConfig"><div class="loading">Loading...</div></div>
       </div>
@@ -587,7 +587,7 @@
     <div class="card" style="padding:20px;margin-bottom:20px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
         <div style="font-size:13px;color:var(--muted);">Niches are shown to users during onboarding to personalise their video content.</div>
-        <button class="btn btn-gold btn-sm" onclick="showNicheForm()">+ Add Niche</button>
+        <button class="btn btn-primary btn-sm" onclick="showNicheForm()">+ Add Niche</button>
       </div>
       <div id="nicheList"><div class="loading">Loading...</div></div>
     </div>
@@ -612,7 +612,7 @@
           <input id="nicheKeywords" type="text" placeholder="delicious, fresh, homemade" style="width:100%;background:var(--bg);border:1px solid var(--border);padding:8px;border-radius:6px;color:var(--text);">
         </div>
         <div style="display:flex;gap:10px;margin-top:8px;">
-          <button onclick="saveNiche()" class="btn btn-gold btn-sm">Save Niche</button>
+          <button onclick="saveNiche()" class="btn btn-primary btn-sm">Save Niche</button>
           <button onclick="document.getElementById('nicheId').readOnly=false;document.getElementById('nicheForm').style.display='none'" class="btn btn-sm" style="background:var(--bg);border:1px solid var(--border);color:var(--text);">Cancel</button>
         </div>
       </div>
@@ -687,7 +687,7 @@
     </div>
     <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
       <button class="btn btn-ghost" onclick="closeModal('modal-credits')">Cancel</button>
-      <button class="btn btn-gold" onclick="submitCredits()">Grant Credits</button>
+      <button class="btn btn-primary" onclick="submitCredits()">Grant Credits</button>
     </div>
   </div>
 </div>
@@ -712,7 +712,7 @@
     </div>
     <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
       <button class="btn btn-ghost" onclick="closeModal('modal-tier')">Cancel</button>
-      <button class="btn btn-gold" onclick="submitTier()">Change Tier</button>
+      <button class="btn btn-primary" onclick="submitTier()">Change Tier</button>
     </div>
   </div>
 </div>
@@ -758,7 +758,7 @@
     </div>
     <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
       <button class="btn btn-ghost" onclick="closeModal('modal-pricing')">Cancel</button>
-      <button class="btn btn-gold" onclick="submitPricing()">Save</button>
+      <button class="btn btn-primary" onclick="submitPricing()">Save</button>
     </div>
   </div>
 </div>
@@ -785,7 +785,7 @@
     </div>
     <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
       <button class="btn btn-ghost" onclick="closeModal('modal-prompt')">Cancel</button>
-      <button class="btn btn-gold" onclick="submitPrompt()">Save Prompt</button>
+      <button class="btn btn-primary" onclick="submitPrompt()">Save Prompt</button>
     </div>
   </div>
 </div>
@@ -945,7 +945,7 @@ async function loadOverview() {
     if (chartRevenue) chartRevenue.destroy();
     chartRevenue = new Chart(document.getElementById('chart-revenue'), {
       type: 'line',
-      data: { labels: revLabels, datasets: [{ label: 'Revenue', data: revData, borderColor: '#c4a35a', backgroundColor: 'rgba(196,163,90,0.08)', tension: 0.4, fill: true, pointRadius: 4 }] },
+      data: { labels: revLabels, datasets: [{ label: 'Revenue', data: revData, borderColor: '#a855f7', backgroundColor: 'rgba(168,85,247,0.08)', tension: 0.4, fill: true, pointRadius: 4 }] },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => 'Rp' + (v/1000).toFixed(0)+'K' } } } }
     });
 
@@ -1273,7 +1273,7 @@ async function loadAnalytics() {
     document.getElementById('an-queue').innerHTML = `
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div class="provider-card"><div style="font-size:11px;color:var(--muted);">Waiting</div><div style="font-size:20px;font-weight:700;">${qv.waiting||0}</div></div>
-        <div class="provider-card"><div style="font-size:11px;color:var(--muted);">Active</div><div style="font-size:20px;font-weight:700;color:var(--gold);">${qv.active||0}</div></div>
+        <div class="provider-card"><div style="font-size:11px;color:var(--muted);">Active</div><div style="font-size:20px;font-weight:700;color:var(--accent);">${qv.active||0}</div></div>
         <div class="provider-card"><div style="font-size:11px;color:var(--muted);">Completed</div><div style="font-size:20px;font-weight:700;color:#4ade80;">${qv.completed||0}</div></div>
         <div class="provider-card"><div style="font-size:11px;color:var(--muted);">Failed</div><div style="font-size:20px;font-weight:700;color:#f87171;">${qv.failed||0}</div></div>
       </div>`;
@@ -1584,7 +1584,7 @@ async function previewBroadcast() {
     const params = tier ? '?tier=' + tier : '';
     const users = await api('/api/users?limit=1000' + (tier ? '&tier=' + tier : ''));
     if (!users) return;
-    document.getElementById('bc-preview').innerHTML = `<span style="color:var(--gold);font-weight:700;">${users.length} recipients</span> ${tier ? `(Tier: ${tier})` : '(All users)'}`;
+    document.getElementById('bc-preview').innerHTML = `<span style="color:var(--accent);font-weight:700;">${users.length} recipients</span> ${tier ? `(Tier: ${tier})` : '(All users)'}`;
   } catch(e) { toast('Preview failed: ' + e.message, 'error'); }
 }
 
@@ -1670,7 +1670,7 @@ async function loadTokenStats() {
           <td><span class="badge badge-starter">${esc(r.provider)}</span></td>
           <td>${Number(r.requests).toLocaleString()}</td>
           <td>${Number(r.tokens).toLocaleString()}</td>
-          <td style="color:var(--gold);">$${Number(r.cost_usd).toFixed(5)}</td>
+          <td style="color:var(--accent);">$${Number(r.cost_usd).toFixed(5)}</td>
         </tr>`).join('')}
       </tbody></table>` : '<div class="empty-state">No data yet — usage appears after first AI call</div>';
 
@@ -1679,7 +1679,7 @@ async function loadTokenStats() {
         ${stats.byModel.map(r => `<tr>
           <td style="font-size:11px;font-family:monospace;max-width:160px;overflow:hidden;text-overflow:ellipsis;">${esc(r.model)}</td>
           <td>${Number(r.requests).toLocaleString()}</td>
-          <td style="color:var(--gold);">$${Number(r.cost_usd).toFixed(5)}</td>
+          <td style="color:var(--accent);">$${Number(r.cost_usd).toFixed(5)}</td>
         </tr>`).join('')}
       </tbody></table>` : '<div class="empty-state">No data yet</div>';
 
@@ -1697,7 +1697,7 @@ async function loadTokenStats() {
         ${stats.daily.map(r => `<tr>
           <td style="font-size:12px;">${r.date}</td>
           <td>${Number(r.tokens).toLocaleString()}</td>
-          <td style="color:var(--gold);">$${Number(r.cost_usd).toFixed(5)}</td>
+          <td style="color:var(--accent);">$${Number(r.cost_usd).toFixed(5)}</td>
           <td>${Number(r.requests).toLocaleString()}</td>
         </tr>`).join('')}
       </tbody></table>` : '<div class="empty-state">No data yet</div>';
@@ -1709,7 +1709,7 @@ async function loadTokenStats() {
           <td style="font-size:11px;font-family:monospace;max-width:140px;overflow:hidden;text-overflow:ellipsis;">${esc(r.model)}</td>
           <td><span class="badge badge-pro">${esc(r.service)}</span></td>
           <td>${Number(r.totalTokens).toLocaleString()}</td>
-          <td style="color:var(--gold);">$${Number(r.costUsd).toFixed(6)}</td>
+          <td style="color:var(--accent);">$${Number(r.costUsd).toFixed(6)}</td>
           <td style="font-size:11px;color:var(--muted);">${reltime(r.createdAt)}</td>
         </tr>`).join('')}
       </tbody></table>` :
@@ -1765,7 +1765,7 @@ async function loadProfitReport() {
           <td style="font-size:12px;">${r.date}</td>
           <td style="color:#4ade80;">Rp ${fmt(r.revenue)}</td>
           <td style="color:#f87171;">Rp ${fmt(r.cost)}</td>
-          <td style="color:${r.profit >= 0 ? 'var(--gold)' : '#f87171'};">Rp ${fmt(r.profit)}</td>
+          <td style="color:${r.profit >= 0 ? 'var(--accent)' : '#f87171'};">Rp ${fmt(r.profit)}</td>
         </tr>`).join('')}
       </tbody></table>` : '<div class="empty-state">No data for this period</div>';
 
@@ -2002,7 +2002,7 @@ async function loadNiches() {
         <td style="font-size:13px;">${n.name}</td>
         <td style="font-size:12px;color:var(--muted);">${(n.keywords || []).join(', ')}</td>
         <td>
-          <button class="btn btn-sm" style="background:rgba(196,163,90,0.1);color:var(--gold);border:1px solid rgba(196,163,90,0.2);padding:4px 10px;font-size:12px;margin-right:4px;" onclick="editNiche('${n.id}','${(n.name||'').replace(/'/g,"\\'")}','${(n.emoji||'').replace(/'/g,"\\'")}','${(n.keywords||[]).join(', ').replace(/'/g,"\\'")}')">✏️ Edit</button>
+          <button class="btn btn-sm" style="background:rgba(168,85,247,0.1);color:var(--accent);border:1px solid rgba(168,85,247,0.2);padding:4px 10px;font-size:12px;margin-right:4px;" onclick="editNiche('${n.id}','${(n.name||'').replace(/'/g,"\\'")}','${(n.emoji||'').replace(/'/g,"\\'")}','${(n.keywords||[]).join(', ').replace(/'/g,"\\'")}')">✏️ Edit</button>
           <button class="btn btn-sm" style="background:rgba(255,68,68,0.1);color:#ff4444;border:1px solid rgba(255,68,68,0.2);padding:4px 10px;font-size:12px;" onclick="deleteNiche('${n.id}')">Delete</button>
         </td>
       </tr>`).join('')}

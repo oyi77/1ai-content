@@ -7,20 +7,27 @@ descriptions, dialogue, and narration for any comic format.
 
 import asyncio
 import json
+import os
 import re
 from typing import Optional
 
-from services.bookshelf.openai_provider import get_groq_client
+from json_repair import repair_json
+
+from openai import OpenAI
+
 from services.bookshelf.language import get_language_instruction
 from services.comic_gen.comic_types import (
     ComicFormat, ComicScript, Character, Episode, Page, Panel,
     SpeechBubble, PanelShape,
 )
 
-MODEL = "reka/reka-edge"
+# Default LLM config — override via env vars
+COMIC_BASE_URL = os.environ.get("COMIC_BASE_URL", "http://localhost:11434/v1")
+COMIC_API_KEY = os.environ.get("COMIC_API_KEY") or ""
+COMIC_MODEL = os.environ.get("COMIC_MODEL", "qwen3:0.6b")
+NUM_CTX = int(os.environ.get("COMIC_NUM_CTX", "4096"))
 TEMPERATURE = 0.7
 MAX_TOKENS = 8000
-
 
 # ── Format-specific prompting ──────────────────────────────────────────
 
@@ -143,20 +150,63 @@ Return ONLY valid JSON (no markdown, no code fences):
 """
 
 
-def _parse_script(raw: str, fmt: ComicFormat) -> ComicScript:
-    """Parse LLM output into ComicScript, with fallback extraction."""
-    # Strip markdown fences
-    cleaned = raw.strip()
-    if cleaned.startswith("```"):
-        # Find first { or [ and last } or ]
-        first_brace = cleaned.find("{")
-        if first_brace >= 0:
-            cleaned = cleaned[first_brace:]
-        last_brace = cleaned.rfind("}")
-        if last_brace >= 0:
-            cleaned = cleaned[:last_brace + 1]
+def _normalize_script_data(data: dict) -> dict:
+    """Sanitize LLM output fields — contract is list-of-dicts for dialogue."""
+    for ep in data.get("episodes") or []:
+        for pg in ep.get("pages") or []:
+            for pn in pg.get("panels") or []:
+                raw = pn.get("dialogue")
+                if isinstance(raw, dict):
+                    pn["dialogue"] = [raw]
+                elif isinstance(raw, str):
+                    pn["dialogue"] = [{"speaker": "Narrator", "text": raw}]
+                elif not isinstance(raw, list):
+                    pn["dialogue"] = []
+                for field in ("scene_description", "narration", "character_positions",
+                             "background", "action", "mood"):
+                    if not isinstance(pn.get(field), str):
+                        pn[field] = str(pn[field]) if pn.get(field) else ""
+    return data
 
-    data = json.loads(cleaned)
+
+def _clean_json(text: str) -> str:
+    """Extract and clean the outermost JSON object from LLM output."""
+    text = text.strip()
+    if text.startswith("```"):
+        text = text.split("\n", 1)[-1] if "\n" in text else text[3:]
+    fb = text.find("{")
+    if fb >= 0:
+        text = text[fb:]
+    lb = text.rfind("}")
+    if lb >= 0:
+        text = text[:lb + 1]
+    text = re.sub(r",\s*}", "}", text)
+    text = re.sub(r",\s*]", "]", text)
+    return text
+
+def _parse_json(text: str) -> dict:
+    """Parse JSON with automatic repair fallback."""
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+    try:
+        repaired = repair_json(text)
+        return json.loads(repaired)
+    except Exception:
+        raise ValueError(f"JSON parse failed after repair. Last 200 chars: {text[-200:]!r}")
+
+
+def _parse_script(raw: str, fmt: ComicFormat) -> ComicScript:
+    cleaned = _clean_json(raw)
+    data = _parse_json(cleaned)
+    data = _normalize_script_data(data)
+
+    def _get_text(d):
+        t = d.get("text")
+        if isinstance(t, list):
+            return " ".join(str(x) for x in t if x)
+        return str(t) if t else ""
 
     characters = [
         Character(
@@ -178,7 +228,7 @@ def _parse_script(raw: str, fmt: ComicFormat) -> ComicScript:
                 dialogue = [
                     SpeechBubble(
                         speaker=d.get("speaker", ""),
-                        text=d.get("text", ""),
+                        text=_get_text(d),
                         position_hint=d.get("position_hint", "auto"),
                     )
                     for d in pn_data.get("dialogue", [])
@@ -214,7 +264,7 @@ def _parse_script(raw: str, fmt: ComicFormat) -> ComicScript:
     return ComicScript(
         title=data.get("title", "Untitled"),
         format=fmt,
-        language="en",  # will be overwritten by caller
+        language="en",
         synopsis=data.get("synopsis", ""),
         characters=characters,
         episodes=episodes,
@@ -240,27 +290,48 @@ async def generate_script(
         language: Language code for content.
         num_episodes: How many episodes/chapters.
         pages_per_episode: Pages per episode.
-        model: Override model ID.
+        model: Override model ID (default: COMIC_MODEL env var or phi3:mini).
+
+    Config env vars:
+        COMIC_BASE_URL  — OpenAI-compatible endpoint (default: http://localhost:11434/v1).
+        COMIC_API_KEY   — API key if needed (default: empty, fine for Ollama).
+        COMIC_MODEL     — Model name (default: phi3:mini).
 
     Returns:
         (stats_json, ComicScript) where stats_json has token usage.
     """
-    client = get_groq_client()
+    client = OpenAI(api_key=COMIC_API_KEY or "ollama", base_url=COMIC_BASE_URL)
     system_prompt = _build_generation_prompt(
         prompt, fmt, language, num_episodes, pages_per_episode,
     )
 
+    extra = {"num_ctx": NUM_CTX}
     def _call():
-        return client.chat.completions.create(
-            model=model or MODEL,
-            messages=[
-                {"role": "system", "content": "You are a professional comic writer and storyboard artist. Generate complete, structured comic scripts in JSON format."},
-                {"role": "user", "content": system_prompt},
-            ],
-            temperature=TEMPERATURE,
-            max_tokens=MAX_TOKENS,
-            response_format={"type": "json_object"},
-        )
+        # Primary: text-based JSON prompting (works with most models)
+        try:
+            return client.chat.completions.create(
+                model=model or COMIC_MODEL,
+                messages=[
+                    {"role": "system", "content": "You are a professional comic writer and storyboard artist. Generate complete, structured comic scripts in JSON format. Return ONLY valid JSON, no markdown."},
+                    {"role": "user", "content": system_prompt},
+                ],
+                temperature=TEMPERATURE,
+                max_tokens=MAX_TOKENS,
+                extra_body=extra,
+            )
+        except Exception:
+            # Fallback: use response_format for models that enforce JSON natively
+            return client.chat.completions.create(
+                model=model or COMIC_MODEL,
+                messages=[
+                    {"role": "system", "content": "You are a professional comic writer and storyboard artist. Generate complete, structured comic scripts in JSON format."},
+                    {"role": "user", "content": system_prompt},
+                ],
+                temperature=TEMPERATURE,
+                max_tokens=MAX_TOKENS,
+                response_format={"type": "json_object"},
+                extra_body=extra,
+            )
 
     resp = await asyncio.to_thread(_call)
     raw = resp.choices[0].message.content or "{}"
@@ -279,11 +350,10 @@ async def generate_script(
 
 def script_to_dict(script: ComicScript) -> dict:
     """Convert ComicScript to a JSON-serializable dict."""
+    fmt = script.format.value if isinstance(script.format, ComicFormat) else script.format
     return {
         "title": script.title,
-        "format": script.format.value,
-        "language": script.language,
-        "synopsis": script.synopsis,
+        "format": fmt,
         "style_notes": script.style_notes,
         "cover_description": script.cover_description,
         "characters": [

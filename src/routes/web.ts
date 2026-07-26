@@ -146,38 +146,6 @@ export async function webRoutes(server: FastifyInstance): Promise<void> {
     return reply.type("image/svg+xml").send(svg);
   });
 
-  server.get("/public/:filename", async (request, reply) => {
-    const { filename } = request.params as { filename: string };
-    const publicDir = path.resolve(process.cwd(), "src/public");
-    const filePath = path.resolve(publicDir, filename);
-
-    // Path traversal guard — reject any path that escapes the public directory
-    if (!filePath.startsWith(publicDir + path.sep) && filePath !== publicDir) {
-      return reply.code(400).send("Invalid filename");
-    }
-
-    if (!fs.existsSync(filePath)) {
-      reply.code(404).send("File not found");
-      return;
-    }
-
-    const ext = filename.split(".").pop()?.toLowerCase();
-    const mimeTypes: Record<string, string> = {
-      png: "image/png",
-      jpg: "image/jpeg",
-      jpeg: "image/jpeg",
-      gif: "image/gif",
-      svg: "image/svg+xml",
-      webp: "image/webp",
-    };
-
-    const mimeType = mimeTypes[ext || ""] || "application/octet-stream";
-    const stream = fs.createReadStream(filePath);
-
-    reply.type(mimeType);
-    return reply.send(stream);
-  });
-
   // Payment finish — redirect target after gateway payment
   server.get("/payment/finish", async (request, reply) => {
     const { order_id } = request.query as Record<string, string>;

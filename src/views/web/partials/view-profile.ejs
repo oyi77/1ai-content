@@ -1,0 +1,27 @@
+<div id="view-profile" class="view">
+  <div class="card" style="text-align:center;padding:40px">
+    <div style="font-size:48px;margin-bottom:16px">👤</div>
+    <h2 style="margin-bottom:8px">Profil Saya</h2>
+    <div id="profile-info" style="text-align:left;max-width:400px;margin:24px auto"></div>
+    <button class="btn btn-outline" onclick="toggleEditProfile()" id="edit-profile-btn">✏️ Edit Profil</button>
+    <div id="edit-profile-form" style="display:none;margin-top:20px;text-align:left">
+      <div class="form-group">
+        <label class="form-label">Nama Tampilan</label>
+        <input type="text" id="edit-firstName" maxlength="64" placeholder="Nama Anda">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Bahasa</label>
+        <select id="edit-lang">
+          <option value="id">🇮🇩 Indonesia</option>
+          <option value="en">🇺🇸 English</option>
+          <option value="ru">🇷🇺 Русский</option>
+          <option value="zh">🇨🇳 中文</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary" onclick="saveProfile()" style="flex:1">Simpan</button>
+        <button class="btn btn-outline" onclick="toggleEditProfile()" style="flex:1">Batal</button>
+      </div>
+    </div>
+  </div>
+</div>

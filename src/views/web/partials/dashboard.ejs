@@ -1,0 +1,18 @@
+<div id="view-dashboard" class="view active">
+  <div class="grid-4" style="margin-bottom:20px">
+    <div class="stat-card"><div class="label">Credits</div><div class="value" id="stat-credits">—</div><div class="sub">tersedia</div></div>
+    <div class="stat-card"><div class="label">Total Video</div><div class="value" id="stat-videos">—</div><div class="sub">dibuat</div></div>
+    <div class="stat-card"><div class="label">Referral Code</div><div class="value" id="stat-ref" style="font-size:16px;margin-top:4px">—</div><div class="sub" id="stat-ref-copy" style="cursor:pointer;color:var(--accent)">tap to copy</div></div>
+    <div class="stat-card"><div class="label">Tier</div><div class="value" id="stat-tier" style="font-size:20px;margin-top:4px">—</div><div class="sub">akun kamu</div></div>
+  </div>
+  <div class="grid-4" style="margin-bottom:28px">
+    <div class="action-card" onclick="nav('create')"><div class="icon">🎬</div><h3>Buat Video</h3></div>
+    <div class="action-card" onclick="nav('billing')"><div class="icon">💳</div><h3>Top Up</h3></div>
+    <div class="action-card" onclick="nav('videos')"><div class="icon">📁</div><h3>Video Saya</h3></div>
+    <div class="action-card" onclick="shareRef()"><div class="icon">👥</div><h3>Referral</h3></div>
+  </div>
+  <div class="card">
+    <h3 style="margin-bottom:16px;font-size:15px">Video Terbaru</h3>
+    <div id="recent-videos" class="video-grid"></div>
+  </div>
+</div>

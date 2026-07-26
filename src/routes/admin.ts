@@ -119,6 +119,15 @@ async function verifyAdmin(request: FastifyRequest, reply: FastifyReply) {
       timingSafeCompare(queryToken, ADMIN_PASSWORD) ||
       timingSafeCompare(queryToken, makeAdminToken(ADMIN_PASSWORD))
     ) {
+      // Also set cookie so subsequent fetch() calls with credentials:'include' pass auth
+      const token = makeAdminToken(ADMIN_PASSWORD);
+      reply.setCookie("admin_token", token, {
+        path: "/",
+        httpOnly: true,
+        sameSite: "strict",
+        maxAge: 86400,
+        secure: request.protocol === "https",
+      });
       return true;
     }
   }
@@ -148,9 +157,9 @@ function getQueueByName(name: string) {
  */
 export async function adminRoutes(server: FastifyInstance): Promise<void> {
   server.addHook("onRequest", async (request, reply) => {
-    const url = request.url;
-    // Exclude login page and login POST from auth
-    if (url === "/admin/login" || url.startsWith("/admin/login?")) {
+    const url = request.url.split("?")[0];
+    // Exclude login page from auth
+    if (url === "/admin/login") {
       return;
     }
     const isAdminRoute =
@@ -183,8 +192,16 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
       url === "/admin/storyboard" ||
       url === "/admin/pinterest" ||
       url === "/admin/fanpage" ||
+      url === "/admin/research" ||
+      url === "/admin/analyze" ||
+      url === "/admin/tts" ||
+      url === "/admin/music" ||
+      url === "/admin/looping" ||
+      url === "/admin/autopilot" ||
       url === "/admin/bookshelf" ||
       url === "/admin/comic" ||
+      url === "/admin/movie" ||
+      url === "/admin/medias" ||
       url.startsWith("/api/fanpages") ||
       url.startsWith("/api/token-usage") ||
       url.startsWith("/api/profit-report") ||
@@ -196,6 +213,8 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
       url.startsWith("/api/admin-config") ||
       url.startsWith("/api/referral/") ||
       url.startsWith("/api/books") ||
+      url.startsWith("/api/comics") ||
+      url.startsWith("/api/movies") ||
       url.startsWith("/api/queue/") ||
       url.startsWith("/api/subscriptions") ||
       url.startsWith("/api/interceptions") ||

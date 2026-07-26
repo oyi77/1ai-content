@@ -53,7 +53,7 @@
       </select>
     </div>
   </div>
-  <button class="btn btn-gold" style="margin-top:20px;" onclick="processRemeta()">🔄 Re-Render Video</button>
+  <button class="btn btn-primary" style="margin-top:20px;" onclick="processRemeta()">🔄 Re-Render Video</button>
 </div>
 
 <!-- Result -->
@@ -79,7 +79,7 @@ async function processRemeta() {
   if (!source) return showToast('Enter video file path', 'error');
   if (!overlay) return showToast('Enter overlay text', 'error');
 
-  const btn = document.querySelector('.btn-gold');
+  const btn = document.querySelector('.btn-primary');
   btn.textContent = '⏳ Processing...';
   btn.disabled = true;
 

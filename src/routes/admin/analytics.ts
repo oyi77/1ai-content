@@ -41,6 +41,11 @@ export async function registerAnalyticsRoutes(server: FastifyInstance) {
     return reply.view("admin/repurpose.ejs", { ...trackingVars(), activePage: 'repurpose', title: 'Content Repurpose' }, { layout: 'admin/layout.ejs' });
   });
 
+  // Research page
+  server.get("/admin/research", async (_request, reply) => {
+    return reply.view("admin/research.ejs", { ...trackingVars(), activePage: 'research', title: 'Book Research' }, { layout: 'admin/layout.ejs' });
+  });
+
 
 
   // API: Analytics data (today's metrics, active users, provider health, top niches, recent errors)

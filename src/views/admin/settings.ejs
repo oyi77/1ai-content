@@ -1,22 +1,22 @@
 <style>
   .settings-tabs { display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border);flex-wrap:wrap; }
   .settings-tab { padding:10px 20px;cursor:pointer;font-size:14px;border-bottom:2px solid transparent;color:var(--muted);white-space:nowrap; }
-  .settings-tab.active { border-bottom:2px solid var(--gold);color:var(--gold); }
+  .settings-tab.active { border-bottom:2px solid var(--accent);color:var(--accent); }
   .settings-panel { display:none; }
   .settings-panel.active { display:block; }
 
   /* Runtime Config styles (from system.ejs) */
   .group-header { display: flex; align-items: center; justify-content: space-between; cursor: pointer; padding: 12px 16px; background: #111118; border-radius: 8px 8px 0 0; border: 1px solid var(--border); user-select: none; margin-top: 16px; }
-  .group-header:hover { background: rgba(196,163,90,0.06); }
+  .group-header:hover { background: rgba(168,85,247,0.06); }
   .group-title { font-size: 14px; font-weight: 600; color: var(--text); }
   .group-body { border: 1px solid var(--border); border-top: none; border-radius: 0 0 8px 8px; overflow: hidden; margin-bottom: 4px; }
   .config-row { display: grid; grid-template-columns: 220px 1fr 180px; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid rgba(42,42,58,0.5); font-size: 13px; }
   .config-row:last-child { border-bottom: none; }
-  .config-row:hover { background: rgba(196,163,90,0.03); }
+  .config-row:hover { background: rgba(168,85,247,0.03); }
   .config-key { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 11px; color: #a0a0c0; word-break: break-all; }
   .config-val { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 12px; color: var(--text); }
   .config-val.clickable { cursor: pointer; }
-  .config-val.clickable:hover { color: var(--gold); text-decoration: underline; }
+  .config-val.clickable:hover { color: var(--accent); text-decoration: underline; }
   .actions { display: flex; gap: 6px; }
   @media (max-width: 768px) {
     .config-row { grid-template-columns: 1fr; gap: 4px; }
@@ -47,7 +47,7 @@
         <div style="font-size:14px;font-weight:600;">&#128177; USD &#8594; IDR Exchange Rate</div>
         <div style="display:flex;gap:8px;">
           <button class="btn btn-sm" style="background:rgba(99,179,237,0.15);color:#63b3ed;border:1px solid rgba(99,179,237,0.3);" onclick="refreshLiveRate()" title="Fetch latest from frankfurter.dev">&#8635; Live</button>
-          <button class="btn btn-gold btn-sm" onclick="saveExchangeRate()">Save Manual</button>
+          <button class="btn btn-primary btn-sm" onclick="saveExchangeRate()">Save Manual</button>
         </div>
       </div>
       <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Used for cost calculations, profit reports, and pricing recommendations. Changes take effect immediately.</div>
@@ -63,7 +63,7 @@
     <div class="card" style="padding:20px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);">
         <div style="font-size:14px;font-weight:600;">Referral Commission Rates</div>
-        <button class="btn btn-gold btn-sm" onclick="saveReferralRates()">Save</button>
+        <button class="btn btn-primary btn-sm" onclick="saveReferralRates()">Save</button>
       </div>
       <div style="display:flex;flex-direction:column;gap:12px;">
         <div>
@@ -86,7 +86,7 @@
     <div class="card" style="padding:20px;">
       <div style="font-size:14px;font-weight:600;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border);">Pricing Data</div>
       <div style="font-size:12px;color:var(--muted);margin-bottom:16px;">Seed the database with default packages and subscription plans from static config. Safe to run multiple times (idempotent).</div>
-      <button class="btn btn-gold btn-sm" onclick="seedPricing()">&#127793; Seed Default Pricing Data</button>
+      <button class="btn btn-primary btn-sm" onclick="seedPricing()">&#127793; Seed Default Pricing Data</button>
       <div id="st-seed-result" style="margin-top:10px;font-size:12px;color:var(--muted);"></div>
     </div>
 
@@ -94,7 +94,7 @@
     <div class="card" style="padding:20px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);">
         <div style="font-size:14px;font-weight:600;">&#127873; Free Trial Settings</div>
-        <button class="btn btn-gold btn-sm" onclick="saveFreeTrial()">Save</button>
+        <button class="btn btn-primary btn-sm" onclick="saveFreeTrial()">Save</button>
       </div>
       <div id="st-freeTrialConfig"><div class="loading">Loading...</div></div>
     </div>
@@ -107,7 +107,7 @@
   <div class="card" style="padding:20px;max-width:600px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);">
       <div style="font-size:14px;font-weight:600;">&#128202; Tracking Pixels</div>
-      <button class="btn btn-gold btn-sm" onclick="savePixels()">Save</button>
+      <button class="btn btn-primary btn-sm" onclick="savePixels()">Save</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:10px;">
       <div>
@@ -150,7 +150,7 @@
     </div>
     <div style="display: flex; gap: 12px;">
       <button class="btn btn-ghost" onclick="previewBroadcast()">&#128065; Preview</button>
-      <button class="btn btn-gold" onclick="sendBroadcast()">&#128226; Send Broadcast</button>
+      <button class="btn btn-primary" onclick="sendBroadcast()">&#128226; Send Broadcast</button>
     </div>
   </div>
 </div>
@@ -161,7 +161,7 @@
     <input class="input" id="search" placeholder="Filter by key..." style="max-width: 280px; padding: 8px 12px;" oninput="filterRows(this.value)" />
     <button class="btn btn-ghost btn-sm" onclick="expandAll()">Expand All</button>
     <button class="btn btn-ghost btn-sm" onclick="collapseAll()">Collapse All</button>
-    <button class="btn btn-gold btn-sm" onclick="loadConfig()">&#8635; Refresh</button>
+    <button class="btn btn-primary btn-sm" onclick="loadConfig()">&#8635; Refresh</button>
     <span id="summary" style="font-size: 12px; color: var(--muted);"></span>
   </div>
   <div id="config-container">
@@ -172,7 +172,7 @@
 <!-- ====== API KEYS TAB ====== -->
 <div id="stab-apikeys" class="settings-panel">
   <div style="margin-bottom:16px;display:flex;gap:8px;align-items:center;">
-    <button class="btn btn-gold btn-sm" onclick="loadApiKeys()">&#8635; Refresh</button>
+    <button class="btn btn-primary btn-sm" onclick="loadApiKeys()">&#8635; Refresh</button>
     <span style="font-size:12px;color:var(--muted);">DB values override env vars immediately. Masked display only &#8212; full values never shown.</span>
   </div>
   <div id="apikeys-container">
@@ -394,7 +394,7 @@ async function previewBroadcast() {
   try {
     const users = await api('/api/users?limit=1000' + (tier ? '&tier=' + tier : ''));
     if (!users) return;
-    document.getElementById('bc-preview').innerHTML = '<span style="color:var(--gold);font-weight:700;">' + users.length + ' recipients</span> ' + (tier ? '(Tier: ' + tier + ')' : '(All users)');
+    document.getElementById('bc-preview').innerHTML = '<span style="color:var(--accent);font-weight:700;">' + users.length + ' recipients</span> ' + (tier ? '(Tier: ' + tier + ')' : '(All users)');
   } catch(e) { toast('Preview failed: ' + e.message, 'error'); }
 }
 

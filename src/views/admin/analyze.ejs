@@ -1,0 +1,413 @@
+<!-- Channel Analysis Admin Page -->
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+  <div>
+    <h1 class="section-title">📊 Channel Analysis</h1>
+    <p class="section-sub">Analyze YouTube/TikTok channels — metrics, videos, and competitive comparison</p>
+  </div>
+</div>
+
+<!-- Section 1: Channel Analysis -->
+<div class="card" style="margin-bottom:20px;">
+  <h3 style="margin-bottom:16px;font-size:16px;font-weight:700;">🔍 Single Channel Analysis</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+    <div class="form-group" style="grid-column:1/3;">
+      <label>Channel URL <span style="color:var(--red);">*</span></label>
+      <input class="input" id="analyze-url" placeholder="https://youtube.com/@channel or https://tiktok.com/@user" style="width:100%;">
+    </div>
+    <div class="form-group">
+      <label>Niche (optional)</label>
+      <input class="input" id="analyze-niche" placeholder="e.g. tech, food, gaming" style="width:100%;">
+    </div>
+    <div class="form-group">
+      <label>Videos to analyze</label>
+      <input class="input" id="analyze-limit" type="number" value="50" min="5" max="200" style="width:100%;">
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:20px;">
+    <button class="btn btn-primary" onclick="analyzeChannel()">🔍 Analyze Channel</button>
+    <button class="btn btn-ghost" onclick="getChannelInfo()">ℹ️ Get Channel Info</button>
+  </div>
+</div>
+
+<!-- Section 1 Results -->
+<div id="analyze-results" class="card" style="display:none;margin-bottom:20px;">
+  <h3 style="margin-bottom:16px;font-size:16px;font-weight:700;">📈 Analysis Results</h3>
+  <div id="analyze-content"></div>
+</div>
+
+<!-- Section 2: Compare Channels -->
+<div class="card" style="margin-bottom:20px;">
+  <h3 style="margin-bottom:16px;font-size:16px;font-weight:700;">⚖️ Compare Channels</h3>
+  <div class="form-group">
+    <label>Channel URLs <span style="color:var(--red);">*</span></label>
+    <textarea class="input" id="compare-urls" placeholder="https://youtube.com/@channel1&#10;https://youtube.com/@channel2" style="width:100%;min-height:80px;resize:vertical;"></textarea>
+    <div style="font-size:12px;color:var(--muted);margin-top:4px;">One URL per line — YouTube or TikTok channels</div>
+  </div>
+  <div class="form-group" style="margin-top:16px;">
+    <label>Niche (optional)</label>
+    <input class="input" id="compare-niche" placeholder="e.g. tech, food" style="width:100%;">
+  </div>
+  <button class="btn btn-primary" style="margin-top:20px;" onclick="compareChannels()">⚖️ Compare Channels</button>
+</div>
+
+<!-- Section 2 Results -->
+<div id="compare-results" class="card" style="display:none;margin-bottom:20px;">
+  <h3 style="margin-bottom:16px;font-size:16px;font-weight:700;">📊 Comparison Results</h3>
+  <div id="compare-content"></div>
+</div>
+
+<script>
+const PY_API = window.location.origin + '/api/py';
+
+function showToast(msg, type='success') {
+  const t = document.createElement('div');
+  t.className = `toast toast-${type === 'success' ? 'success' : 'error'}`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+function formatNumber(n) {
+  if (n == null || isNaN(n)) return '—';
+  if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+  return n.toLocaleString();
+}
+
+function formatDate(d) {
+  if (!d) return '—';
+  const dt = new Date(d);
+  if (isNaN(dt.getTime())) return d;
+  return dt.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function highlightTopVideos(videos, topN) {
+  if (!videos || !videos.length) return [];
+  const sorted = [...videos].sort((a, b) => (b.views || 0) - (a.views || 0));
+  const top = new Set(sorted.slice(0, topN || 5).map(v => v.title || v.id));
+  return top;
+}
+
+function buildChannelInfoCard(channel) {
+  if (!channel) return '<div style="color:var(--red);">No channel data available.</div>';
+  return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;margin-bottom:20px;padding:16px;background:var(--bg);border-radius:10px;">
+    <div>
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:4px;">Channel</div>
+      <div style="font-size:16px;font-weight:700;">${channel.title || channel.name || 'Unknown'}</div>
+    </div>
+    <div>
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:4px;">Subscribers</div>
+      <div style="font-size:20px;font-weight:700;color:var(--accent);">${formatNumber(channel.subscriber_count || channel.subscribers || 0)}</div>
+    </div>
+    <div>
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:4px;">Total Videos</div>
+      <div style="font-size:20px;font-weight:700;">${formatNumber(channel.video_count || channel.videos || 0)}</div>
+    </div>
+    <div>
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:4px;">Total Views</div>
+      <div style="font-size:20px;font-weight:700;">${formatNumber(channel.total_views || channel.views || 0)}</div>
+    </div>
+    ${channel.platform ? `<div>
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:4px;">Platform</div>
+      <span class="badge badge-blue">${channel.platform}</span>
+    </div>` : ''}
+    ${channel.description ? `<div style="grid-column:1/-1;margin-top:4px;">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:4px;">Description</div>
+      <div style="font-size:13px;color:var(--muted);">${channel.description}</div>
+    </div>` : ''}
+  </div>`;
+}
+
+function buildVideoTable(videos, topSet) {
+  if (!videos || !videos.length) return '<div style="color:var(--muted);">No videos found.</div>';
+
+  let html = `<div style="overflow-x:auto;">
+    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+      <thead>
+        <tr style="border-bottom:2px solid var(--border);">
+          <th style="padding:10px 8px;text-align:left;color:var(--muted);font-weight:600;">#</th>
+          <th style="padding:10px 8px;text-align:left;color:var(--muted);font-weight:600;">Title</th>
+          <th style="padding:10px 8px;text-align:right;color:var(--muted);font-weight:600;">Views</th>
+          <th style="padding:10px 8px;text-align:right;color:var(--muted);font-weight:600;">Likes</th>
+          <th style="padding:10px 8px;text-align:right;color:var(--muted);font-weight:600;">Comments</th>
+          <th style="padding:10px 8px;text-align:right;color:var(--muted);font-weight:600;">Engagement</th>
+          <th style="padding:10px 8px;text-align:right;color:var(--muted);font-weight:600;">Published</th>
+        </tr>
+      </thead>
+      <tbody>`;
+
+  videos.forEach((v, i) => {
+    const isTop = topSet && topSet.has(v.title || v.id);
+    const engagement = (v.views && v.views > 0)
+      ? (((v.likes || 0) + (v.comments || 0) + (v.shares || 0)) / v.views * 100).toFixed(2) + '%'
+      : '—';
+    html += `<tr style="border-bottom:1px solid var(--border);${isTop ? 'background:rgba(99,102,241,0.08);' : ''}">
+      <td style="padding:8px;color:var(--muted);">${i + 1}</td>
+      <td style="padding:8px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+        ${isTop ? '<span title="Top performer">⭐ </span>' : ''}
+        ${v.title || 'Untitled'}
+      </td>
+      <td style="padding:8px;text-align:right;font-weight:600;">${formatNumber(v.views || 0)}</td>
+      <td style="padding:8px;text-align:right;">${formatNumber(v.likes || 0)}</td>
+      <td style="padding:8px;text-align:right;">${formatNumber(v.comments || 0)}</td>
+      <td style="padding:8px;text-align:right;font-weight:600;${parseFloat(engagement) > 5 ? 'color:var(--green);' : ''}">${engagement}</td>
+      <td style="padding:8px;text-align:right;color:var(--muted);font-size:12px;">${formatDate(v.published_at || v.publish_date || v.date)}</td>
+    </tr>`;
+  });
+
+  html += `</tbody></table></div>`;
+  return html;
+}
+
+async function analyzeChannel() {
+  const url = document.getElementById('analyze-url').value.trim();
+  if (!url) return showToast('Enter a channel URL', 'error');
+
+  const btn = document.querySelector('.btn-primary');
+  const originalText = btn.textContent;
+  btn.textContent = '⏳ Analyzing...';
+  btn.disabled = true;
+
+  try {
+    const r = await fetch(`${PY_API}/analyze/channel`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        channel_url: url,
+        niche: document.getElementById('analyze-niche').value.trim(),
+        limit: parseInt(document.getElementById('analyze-limit').value) || 50,
+      }),
+    });
+    const data = await r.json();
+
+    const section = document.getElementById('analyze-results');
+    section.style.display = 'block';
+
+    if (data.error) {
+      document.getElementById('analyze-content').innerHTML = `<div style="color:var(--red);padding:16px;background:rgba(239,68,68,0.1);border-radius:10px;">❌ ${data.error}</div>`;
+      showToast('❌ ' + data.error, 'error');
+      return;
+    }
+
+    const channel = data.channel || {};
+    const videos = data.videos || [];
+    const topN = data.top_count || 5;
+    const topSet = highlightTopVideos(videos, topN);
+
+    let html = '';
+
+    // Summary badges
+    html += `<div style="margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap;">
+      <span class="badge badge-green">✅ ${videos.length} videos analyzed</span>
+      <span class="badge badge-blue">⭐ Top ${topN} highlighted</span>
+      ${data.avg_engagement ? `<span class="badge badge-purple">📈 Avg engagement: ${data.avg_engagement}</span>` : ''}
+      ${data.avg_views ? `<span class="badge">👁️ Avg views: ${formatNumber(data.avg_views)}</span>` : ''}
+    </div>`;
+
+    // Channel info card
+    if (Object.keys(channel).length > 0) {
+      html += buildChannelInfoCard(channel);
+    }
+
+    // Video table
+    html += buildVideoTable(videos, topSet);
+
+    // Stats summary row
+    if (data.avg_views || data.avg_engagement || data.total_views_analyzed) {
+      html += `<div style="display:flex;gap:16px;margin-top:16px;padding:12px 16px;background:var(--bg);border-radius:10px;font-size:13px;">
+        ${data.total_views_analyzed ? `<div>📊 <strong>Total views:</strong> ${formatNumber(data.total_views_analyzed)}</div>` : ''}
+        ${data.avg_views ? `<div>📈 <strong>Avg views:</strong> ${formatNumber(data.avg_views)}</div>` : ''}
+        ${data.avg_engagement ? `<div>💬 <strong>Avg engagement:</strong> ${data.avg_engagement}</div>` : ''}
+        ${data.top_niche ? `<div>🏷️ <strong>Top niche:</strong> ${data.top_niche}</div>` : ''}
+      </div>`;
+    }
+
+    document.getElementById('analyze-content').innerHTML = html;
+    showToast(`✅ Analyzed ${videos.length} videos`);
+  } catch (e) {
+    showToast('❌ ' + e.message, 'error');
+    document.getElementById('analyze-results').style.display = 'block';
+    document.getElementById('analyze-content').innerHTML = `<div style="color:var(--red);">❌ ${e.message}</div>`;
+  }
+
+  btn.textContent = originalText;
+  btn.disabled = false;
+}
+
+async function getChannelInfo() {
+  const url = document.getElementById('analyze-url').value.trim();
+  if (!url) return showToast('Enter a channel URL', 'error');
+
+  const btn = document.querySelector('.btn-ghost');
+  btn.textContent = '⏳ Loading...';
+  btn.disabled = true;
+
+  try {
+    const r = await fetch(`${PY_API}/analyze/info?channel_url=${encodeURIComponent(url)}`, {
+      credentials: 'include',
+    });
+    const data = await r.json();
+
+    const section = document.getElementById('analyze-results');
+    section.style.display = 'block';
+
+    if (data.error) {
+      document.getElementById('analyze-content').innerHTML = `<div style="color:var(--red);padding:16px;background:rgba(239,68,68,0.1);border-radius:10px;">❌ ${data.error}</div>`;
+      showToast('❌ ' + data.error, 'error');
+      return;
+    }
+
+    const channel = data.channel || data;
+    const html = buildChannelInfoCard(channel);
+    document.getElementById('analyze-content').innerHTML = html;
+    showToast('✅ Channel info loaded');
+  } catch (e) {
+    showToast('❌ ' + e.message, 'error');
+  }
+
+  btn.textContent = 'ℹ️ Get Channel Info';
+  btn.disabled = false;
+}
+
+async function compareChannels() {
+  const urlsText = document.getElementById('compare-urls').value.trim();
+  if (!urlsText) return showToast('Enter at least one channel URL per line', 'error');
+
+  const urls = urlsText.split('\n').map(u => u.trim()).filter(u => u.length > 0);
+  if (urls.length < 1) return showToast('Enter at least one channel URL', 'error');
+
+  const btn = document.querySelector('.card:last-of-type .btn-primary');
+  const originalText = btn.textContent;
+  btn.textContent = '⏳ Comparing...';
+  btn.disabled = true;
+
+  try {
+    const r = await fetch(`${PY_API}/analyze/compare`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        channel_urls: urls,
+        niche: document.getElementById('compare-niche').value.trim(),
+      }),
+    });
+    const data = await r.json();
+
+    const section = document.getElementById('compare-results');
+    section.style.display = 'block';
+
+    if (data.error) {
+      document.getElementById('compare-content').innerHTML = `<div style="color:var(--red);padding:16px;background:rgba(239,68,68,0.1);border-radius:10px;">❌ ${data.error}</div>`;
+      showToast('❌ ' + data.error, 'error');
+      return;
+    }
+
+    const channels = data.channels || [];
+    const comparison = data.comparison || {};
+
+    if (!channels.length) {
+      document.getElementById('compare-content').innerHTML = '<div style="color:var(--muted);">No channel data returned.</div>';
+      return;
+    }
+
+    let html = '';
+
+    // Summary badge
+    html += `<div style="margin-bottom:16px;">
+      <span class="badge badge-green">✅ ${channels.length} channels compared</span>
+      ${comparison.winner ? `<span class="badge badge-purple">🏆 Winner: ${comparison.winner}</span>` : ''}
+    </div>`;
+
+    // Comparison table
+    const metrics = [
+      { key: 'subscribers', label: 'Subscribers', fmt: formatNumber },
+      { key: 'total_views', label: 'Total Views', fmt: formatNumber },
+      { key: 'video_count', label: 'Videos', fmt: formatNumber },
+      { key: 'avg_views', label: 'Avg Views', fmt: formatNumber },
+      { key: 'avg_engagement', label: 'Engagement', fmt: v => v ? String(v) : '—' },
+      { key: 'growth_rate', label: 'Growth Rate', fmt: v => v ? String(v) : '—' },
+      { key: 'platform', label: 'Platform', fmt: v => v || '—' },
+      { key: 'niche', label: 'Niche', fmt: v => v || '—' },
+    ];
+
+    // Find winner for each numeric metric
+    function findWinner(metricKey) {
+      let bestIdx = -1;
+      let bestVal = -Infinity;
+      channels.forEach((ch, i) => {
+        const val = ch[metricKey] || ch[comparison.mapped_metrics?.[metricKey]] || 0;
+        if (typeof val === 'number' && val > bestVal) {
+          bestVal = val;
+          bestIdx = i;
+        }
+      });
+      return bestIdx;
+    }
+
+    html += `<div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead>
+          <tr style="border-bottom:2px solid var(--border);">
+            <th style="padding:10px 12px;text-align:left;color:var(--muted);font-weight:600;">Metric</th>`;
+    channels.forEach((ch, i) => {
+      const winnerIdx = findWinner('subscribers');
+      const isWinner = i === winnerIdx;
+      html += `<th style="padding:10px 12px;text-align:center;color:var(--muted);font-weight:600;${isWinner ? 'background:rgba(99,102,241,0.1);border-radius:8px 8px 0 0;' : ''}">
+        ${ch.title || ch.name || `Channel ${i+1}`}
+        ${isWinner ? '<br><span style="font-size:10px;color:var(--accent);">🏆 Best</span>' : ''}
+      </th>`;
+    });
+    html += `</tr></thead><tbody>`;
+
+    metrics.forEach(m => {
+      const winnerIdx = findWinner(m.key);
+      html += `<tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:10px 12px;font-weight:600;">${m.label}</td>`;
+      channels.forEach((ch, i) => {
+        const val = ch[m.key] ?? ch[comparison.mapped_metrics?.[m.key]] ?? '—';
+        const isWinner = i === winnerIdx;
+        html += `<td style="padding:10px 12px;text-align:center;${isWinner ? 'font-weight:700;color:var(--green);' : ''}">
+          ${m.fmt(val)}
+          ${isWinner ? ' 👑' : ''}
+        </td>`;
+      });
+      html += `</tr>`;
+    });
+
+    html += `</tbody></table></div>`;
+
+    // Per-channel breakdown
+    html += `<div style="margin-top:24px;">
+      <h4 style="font-size:14px;font-weight:600;margin-bottom:12px;">📋 Per-Channel Breakdown</h4>`;
+    channels.forEach((ch, i) => {
+      const videos = ch.videos || ch.recent_videos || [];
+      html += `<div style="margin-bottom:20px;padding:16px;background:var(--bg);border-radius:10px;">
+        <div style="font-weight:700;font-size:15px;margin-bottom:8px;">
+          ${i + 1}. ${ch.title || ch.name || `Channel ${i+1}`}
+        </div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-bottom:8px;">
+          <span>👥 ${formatNumber(ch.subscribers || ch.subscriber_count || 0)} subscribers</span>
+          <span>🎬 ${formatNumber(ch.video_count || ch.videos || 0)} videos</span>
+          <span>👁️ ${formatNumber(ch.total_views || ch.views || 0)} views</span>
+        </div>
+        ${videos.length ? `<div style="margin-top:8px;font-size:11px;color:var(--muted);text-transform:uppercase;">Recent Videos</div>
+        <ul style="margin:4px 0 0;padding-left:20px;font-size:13px;">
+          ${videos.slice(0, 5).map(v => `<li style="margin-bottom:4px;">${v.title || 'Untitled'} — ${formatNumber(v.views || 0)} views</li>`).join('')}
+        </ul>` : ''}
+      </div>`;
+    });
+    html += `</div>`;
+
+    document.getElementById('compare-content').innerHTML = html;
+    showToast(`✅ Compared ${channels.length} channels`);
+  } catch (e) {
+    showToast('❌ ' + e.message, 'error');
+    document.getElementById('compare-results').style.display = 'block';
+    document.getElementById('compare-content').innerHTML = `<div style="color:var(--red);">❌ ${e.message}</div>`;
+  }
+
+  btn.textContent = originalText;
+  btn.disabled = false;
+}
+</script>

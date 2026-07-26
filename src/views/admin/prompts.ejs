@@ -32,11 +32,11 @@ const nicheEmoji = { fnb:'🍔', fashion:'👗', tech:'📱', health:'💪', tra
       <div class="tab" data-niche="<%= n %>" onclick="filterNiche('<%= n %>', this)"><%= nicheEmoji[n] %> <%= n.charAt(0).toUpperCase() + n.slice(1) %></div>
     <% }); %>
   </div>
-  <button class="btn btn-gold" onclick="showAddForm()">➕ Add Prompt</button>
+  <button class="btn btn-primary" onclick="showAddForm()">➕ Add Prompt</button>
 </div>
 
 <!-- Add Form -->
-<div class="card" id="add-form" style="display: none; border-color: var(--gold-dim); margin-bottom: 20px;">
+<div class="card" id="add-form" style="display: none; border-color: var(--accent-dim); margin-bottom: 20px;">
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
     <span style="font-weight: 700;">➕ New Admin Prompt</span>
     <button class="btn btn-ghost btn-sm" onclick="document.getElementById('add-form').style.display='none'">✕</button>
@@ -59,7 +59,7 @@ const nicheEmoji = { fnb:'🍔', fashion:'👗', tech:'📱', health:'💪', tra
       <textarea id="new-prompt" class="input" style="height:100px; width:100%; resize:vertical;" placeholder="Cinematic food shot with steam rising effect, slow zoom in..."></textarea>
     </div>
   </div>
-  <button class="btn btn-gold" onclick="addPrompt()">💾 Save to Bot</button>
+  <button class="btn btn-primary" onclick="addPrompt()">💾 Save to Bot</button>
 </div>
 
 <!-- Prompts Table -->
@@ -106,7 +106,7 @@ const nicheEmoji = { fnb:'🍔', fashion:'👗', tech:'📱', health:'💪', tra
       <textarea id="edit-prompt" class="input" style="height:140px; width:100%; resize:vertical;"></textarea>
     </div>
     <div style="display:flex; gap:8px; margin-top:8px;">
-      <button class="btn btn-gold" onclick="saveEdit()">💾 Save</button>
+      <button class="btn btn-primary" onclick="saveEdit()">💾 Save</button>
       <button class="btn btn-ghost" onclick="document.getElementById('edit-modal').classList.remove('open')">Cancel</button>
     </div>
   </div>

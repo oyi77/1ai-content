@@ -5,7 +5,7 @@
     <p class="section-sub">Test two content variants to find what performs better</p>
   </div>
   <div style="display:flex;gap:8px;">
-    <button class="btn btn-gold" onclick="showCreateForm()">➕ New Test</button>
+    <button class="btn btn-primary" onclick="showCreateForm()">➕ New Test</button>
     <button class="btn btn-ghost" onclick="loadTests()">🔄 Refresh</button>
   </div>
 </div>
@@ -39,7 +39,7 @@
     </div>
   </div>
   <div style="display:flex;gap:8px;margin-top:20px;">
-    <button class="btn btn-gold" onclick="createTest()">🧪 Create Test</button>
+    <button class="btn btn-primary" onclick="createTest()">🧪 Create Test</button>
     <button class="btn btn-ghost" onclick="document.getElementById('create-form').style.display='none'">Cancel</button>
   </div>
 </div>
@@ -107,7 +107,7 @@ async function loadTests() {
           </div>
         </div>
         <div style="margin-top:16px;display:flex;gap:8px;">
-          ${t.status === 'draft' ? `<button class="btn btn-gold btn-sm" onclick="startTest('${t.id}')">▶️ Start Test</button>` : ''}
+          ${t.status === 'draft' ? `<button class="btn btn-primary btn-sm" onclick="startTest('${t.id}')">▶️ Start Test</button>` : ''}
           ${t.status === 'running' ? `<button class="btn btn-ghost btn-sm" onclick="endTest('${t.id}')">⏹ End & Pick Winner</button>` : ''}
           ${t.winner ? `<span style="font-size:14px;color:var(--green);font-weight:600;">🏆 Winner: Variant ${t.winner}</span>` : ''}
           <button class="btn btn-danger btn-sm" onclick="deleteTest('${t.id}')">🗑️</button>

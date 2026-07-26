@@ -1,0 +1,23 @@
+<aside class="sidebar">
+  <div class="sidebar-logo">🎬 BerkahKarya</div>
+  <div class="nav-item active" onclick="nav('dashboard')" id="nav-dashboard">🏠 Dashboard</div>
+  <div class="nav-item" onclick="nav('create')" id="nav-create">🎬 Buat Video</div>
+  <div class="nav-item" onclick="nav('image')" id="nav-image">🖼️ Buat Gambar</div>
+  <div class="nav-item" onclick="nav('videos')" id="nav-videos">📁 Video Saya</div>
+  <div class="nav-item" onclick="nav('billing')" id="nav-billing">💳 Billing</div>
+  <div class="nav-item" onclick="nav('referral')" id="nav-referral">👥 Referral</div>
+  <div class="nav-item" onclick="nav('send')" id="nav-send">💸 Kirim Saldo</div>
+  <div class="nav-item" onclick="nav('profile')" id="nav-profile">👤 Profil</div>
+  <div class="nav-item" onclick="nav('settings')" id="nav-settings">⚙️ Pengaturan</div>
+  <div class="sidebar-bottom">
+    <div id="sidebar-credits" class="credits-pill" onclick="nav('billing')">⏳ Credits</div>
+    <div style="margin-top:12px">
+      <div class="nav-item" onclick="logout()" style="padding:8px 0;font-size:13px;color:var(--danger)">🚪 Logout</div>
+    </div>
+    <div style="margin-top:10px;font-size:11px;color:var(--dim);line-height:1.8">
+      <a href="/faq" style="color:var(--dim);text-decoration:none" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--dim)'">FAQ</a> ·
+      <a href="/terms" style="color:var(--dim);text-decoration:none" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--dim)'">Terms</a> ·
+      <a href="/privacy" style="color:var(--dim);text-decoration:none" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--dim)'">Privacy</a>
+    </div>
+  </div>
+</aside>

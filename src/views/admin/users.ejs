@@ -5,173 +5,235 @@
   <title>Admin - Users Management</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/public/design-system.css">
   <style>
     :root {
-      --bg: #0d0d14;
+      --color-bg: #0d0d14;
+      --color-bg-elevated: #111118;
+      --color-card: #1a1a24;
+      --color-card-hover: rgba(255,255,255,0.08);
+      --color-border: #2a2a3a;
+      --color-border-strong: rgba(255,255,255,0.15);
+      --color-accent: #a855f7;
+      --color-accent-dim: #7c3aed;
+      --color-accent-glow: rgba(168,85,247,0.15);
+      --color-grad: linear-gradient(135deg, #a855f7, #6366f1);
+      --color-grad-hover: linear-gradient(135deg, #9333ea, #4f46e5);
+      --color-text: #e0e0f0;
+      --color-muted: #888899;
+      --color-green: #4ade80;
+      --color-red: #f87171;
+      --color-blue: #3b82f6;
+      --color-yellow: #fbbf24;
+      --radius: 14px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      
+      --bg: var(--color-bg);
       --sidebar: #111118;
       --card: #1a1a24;
       --border: #2a2a3a;
-      --gold: #c4a35a;
-      --gold-dim: #8a6f3a;
+      --accent: #a855f7;
+      --accent-dim: #7c3aed;
+      --grad: linear-gradient(135deg, #a855f7, #6366f1);
       --text: #e0e0f0;
+      --muted: #888899;
+      --green: #4ade80;
+      --red: #f87171;
+      --blue: #3b82f6;
+      --yellow: #fbbf24;
     }
-    body { background-color: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; }
-    .sidebar { background-color: var(--sidebar); border-right: 1px solid var(--border); }
-    .card { background-color: var(--card); border: 1px solid var(--border); }
-    .btn-primary { background: var(--gold); color: #000; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: bold; }
-    .btn-primary:hover { background: #d5b875; }
+    
+    /* Page-specific only */
+    .input:focus {
+      border-color: var(--color-accent);
+      box-shadow: 0 0 0 3px rgba(168,85,247,0.15);
+    }
+    
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+      .generating { animation: none; }
+    }
   </style>
 </head>
 <body class="flex h-screen overflow-hidden">
 
-  <!-- Sidebar -->
-  <aside class="sidebar w-64 h-full flex flex-col hidden md:flex">
-    <div class="p-6 border-b border-[var(--border)]">
-      <h1 class="text-2xl font-bold" style="color: var(--gold)">BK Vilona <span class="text-white text-sm">v3.0</span></h1>
-    </div>
-    <nav class="flex-1 p-4 space-y-2">
-      <a href="/admin/dashboard" class="block p-3 rounded hover:bg-[var(--card)] transition">📊 Analytics</a>
-      <a href="/admin/users" class="block p-3 rounded bg-[var(--card)] font-bold transition">👥 Users</a>
-      <a href="/admin/pricing" class="block p-3 rounded hover:bg-[var(--card)] transition">💰 Pricing</a>
-      <a href="/admin/prompts" class="block p-3 rounded hover:bg-[var(--card)] transition">📝 Prompts</a>
-      <a href="/admin/settings" class="block p-3 rounded hover:bg-[var(--card)] transition">⚙️ Settings</a>
-    </nav>
-  </aside>
+  <!-- Users page uses layout.ejs -->
+  <div class="page-header">
+    <h1 class="page-title">User Management</h1>
+  </div>
 
-  <!-- Main Content -->
-  <main class="flex-1 overflow-y-auto p-8">
-    <div class="flex justify-between items-center mb-8">
-      <h2 class="text-3xl font-bold">User Management</h2>
+  <!-- Search Card -->
+  <article class="data-card" style="margin-bottom: 24px;">
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:end;">
+      <div style="flex:1;min-width:240px;">
+        <label class="input-label">Search Users</label>
+        <input type="text" id="searchInput" placeholder="Search by username or ID..." class="input" oninput="debouncedSearch(this.value)">
+      </div>
+      <button class="btn btn-primary" onclick="searchUsers()">Search</button>
     </div>
+  </article>
 
-    <!-- Search -->
-    <div class="card p-6 rounded-xl mb-6">
-      <input type="text" id="searchInput" placeholder="Search by username or ID..." class="w-full bg-[var(--bg)] border border-[var(--border)] p-3 rounded text-white mb-4 focus:outline-none focus:border-[var(--gold)]">
-      <button onclick="searchUsers()" class="btn-primary">Search Users</button>
+  <!-- Users Grid -->
+  <div class="card-grid" id="usersGrid">
+    <div class="empty-state" style="grid-column:1/-1;">
+      <div class="empty-icon">&#128100;</div>
+      <div class="empty-title">Loading users...</div>
     </div>
+  </div>
 
-    <!-- Users Table -->
-    <div class="card rounded-xl overflow-hidden">
-      <table class="w-full text-left border-collapse">
-        <thead class="bg-[#2a2a3a]">
-          <tr>
-            <th class="p-4">Telegram ID</th>
-            <th class="p-4">Username</th>
-            <th class="p-4">Tier</th>
-            <th class="p-4">Credits</th>
-            <th class="p-4">Status</th>
-            <th class="p-4">Actions</th>
-          </tr>
-        </thead>
-        <tbody id="usersTable">
-          <!-- Populated by JS -->
-        </tbody>
-      </table>
+  <!-- Transfers Section -->
+  <section style="margin-top: 32px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h2 class="section-title">Recent Credit Transfers (P2P)</h2>
     </div>
-
-    <!-- Transfers Section -->
-    <div class="mt-12">
-      <h2 class="text-2xl font-bold mb-4">Recent Credit Transfers (P2P)</h2>
-      <div class="card rounded-xl overflow-hidden p-6">
-        <div id="transfersLog" class="space-y-3">Loading transfers...</div>
+    <div class="card-grid" id="transfersGrid">
+      <div class="empty-state" style="grid-column:1/-1;">
+        <div class="empty-icon">&#128176;</div>
+        <div class="empty-title">Loading transfers...</div>
       </div>
     </div>
-  </main>
+  </section>
 
   <script>
     async function loadUsers(query = '') {
-      const res = await fetch(\`/api/users/search?q=\${query}&limit=20\`, { credentials: 'include' });
-      const users = await res.json();
-      
-      const tbody = document.getElementById('usersTable');
-      tbody.innerHTML = '';
-      
-      if (!users.length) {
-        tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-500">No users found. Try searching.</td></tr>';
-        return;
-      }
+      const grid = document.getElementById('usersGrid');
+      grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">&#128100;</div><div class="empty-title">Loading...</div></div>';
+      try {
+        const res = await fetch(`/api/users/search?q=${encodeURIComponent(query)}&limit=50`, { credentials: 'include' });
+        const users = await res.json();
+        
+        if (!users.length) {
+          grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">&#128100;</div><div class="empty-title">No users found</div><div class="empty-desc">Try a different search term</div></div>';
+          return;
+        }
 
-      users.forEach(u => {
-        tbody.innerHTML += \`
-          <tr class="border-b border-[var(--border)]">
-            <td class="p-4">\${u.telegramId}</td>
-            <td class="p-4">@\${u.username || 'unknown'}</td>
-            <td class="p-4"><span class="px-2 py-1 rounded bg-gray-800 text-xs font-bold">\${u.tier}</span></td>
-            <td class="p-4">\${u.creditBalance}</td>
-            <td class="p-4">\${u.isBanned ? '<span class="text-red-500">BANNED</span>' : '<span class="text-green-500">ACTIVE</span>'}</td>
-            <td class="p-4">
-              <button onclick="promptCredit('\${u.telegramId}')" class="text-blue-400 hover:underline mr-2">Add Credit</button>
-              <button onclick="promptTier('\${u.telegramId}')" class="text-yellow-400 hover:underline mr-2">Set Tier</button>
-              <button onclick="toggleBan('\${u.telegramId}', \${!u.isBanned})" class="text-red-400 hover:underline">\${u.isBanned ? 'Unban' : 'Ban'}</button>
-            </td>
-          </tr>
-        \`;
-      });
+        grid.innerHTML = users.map(u => `
+          <article class="data-card">
+            <div class="data-card-header">
+              <div class="data-card-title">@${u.username || 'unknown'}</div>
+              <span class="badge ${u.isBanned ? 'badge-inactive' : 'badge-active'}">${u.isBanned ? 'Banned' : 'Active'}</span>
+            </div>
+            <div class="data-card-meta">
+              <div class="meta-row">
+                <span class="meta-label">ID</span>
+                <span class="meta-value" style="font-family:monospace;font-size:12px;">${u.telegramId}</span>
+              </div>
+              <div class="meta-row">
+                <span class="meta-label">Tier</span>
+                <span class="meta-value"><span class="badge badge-active" style="background:rgba(168,85,247,0.15);color:var(--accent)">${u.tier?.toUpperCase() || 'FREE'}</span></span>
+              </div>
+              <div class="meta-row">
+                <span class="meta-label">Credits</span>
+                <span class="meta-value" style="font-weight:700;color:var(--color-yellow)">${u.creditBalance}</span>
+              </div>
+            </div>
+            <div class="data-card-actions">
+              <button class="btn btn-outline btn-sm" onclick="promptCredit('${u.telegramId}')">+ Credit</button>
+              <button class="btn btn-outline btn-sm" onclick="promptTier('${u.telegramId}')">Tier</button>
+              <button class="btn ${u.isBanned ? 'btn-secondary' : 'btn-danger'} btn-sm" onclick="toggleBan('${u.telegramId}', ${!u.isBanned})">${u.isBanned ? 'Unban' : 'Ban'}</button>
+            </div>
+          </article>
+        `).join('');
+      } catch (e) {
+        grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">&#128100;</div><div class="empty-title">Failed to load</div><div class="empty-desc">' + escHtml(e.message) + '</div></div>';
+      }
     }
 
     async function loadTransfers() {
-      const res = await fetch('/api/transactions/transfers', { credentials: 'include' });
-      const transfers = await res.json();
-      
-      const div = document.getElementById('transfersLog');
-      if (!transfers.length) {
-        div.innerHTML = '<span class="text-gray-500">No recent transfers found.</span>';
-        return;
+      const grid = document.getElementById('transfersGrid');
+      try {
+        const res = await fetch('/api/transactions/transfers', { credentials: 'include' });
+        const transfers = await res.json();
+        
+        if (!transfers.length) {
+          grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">&#128176;</div><div class="empty-title">No recent transfers</div></div>';
+          return;
+        }
+        
+        grid.innerHTML = transfers.map(t => `
+          <article class="data-card">
+            <div class="data-card-header">
+              <div class="data-card-title">@${t.user?.username || 'unknown'}</div>
+              <span class="badge badge-active">${t.creditsAmount} Credits</span>
+            </div>
+            <div class="data-card-meta">
+              <div class="meta-row">
+                <span class="meta-label">From ID</span>
+                <span class="meta-value" style="font-family:monospace;font-size:12px;">${t.userId}</span>
+              </div>
+              <div class="meta-row">
+                <span class="meta-label">Date</span>
+                <span class="meta-value">${new Date(t.createdAt).toLocaleString()}</span>
+              </div>
+            </div>
+          </article>
+        `).join('');
+      } catch {
+        grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">&#128176;</div><div class="empty-title">Failed to load transfers</div></div>';
       }
-      
-      div.innerHTML = transfers.map(t => \`
-        <div class="p-3 bg-[var(--bg)] rounded border border-[var(--border)] flex justify-between">
-          <span>From: <b>@\${t.user?.username}</b> (\${t.userId})</span>
-          <span>Amount: <b>\${t.creditsAmount} Credits</b></span>
-          <span class="text-gray-400">\${new Date(t.createdAt).toLocaleString()}</span>
-        </div>
-      \`).join('');
     }
 
-    function searchUsers() {
-      loadUsers(document.getElementById('searchInput').value);
+    let searchTimeout;
+    function debouncedSearch(val) {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => searchUsers(val), 300);
+    }
+
+    function searchUsers(query = '') {
+      loadUsers(query || document.getElementById('searchInput')?.value || '');
     }
 
     async function promptCredit(id) {
       const amt = prompt('Amount of credits to add:');
       if(!amt) return;
-      await fetch(\`/api/users/\${id}/credits\`, {
+      await fetch(`/api/users/${id}/credits`, {
         method:'POST',
         credentials: 'include',
         headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ amount: parseFloat(amt), reason: 'admin manual' })
       });
-      alert('Credit added!');
+      showToast('Credit added!');
       searchUsers();
     }
 
     async function promptTier(id) {
       const tier = prompt('Enter new tier (free, basic, lite, pro, agency):');
       if(!tier) return;
-      await fetch(\`/api/users/\${id}/tier\`, {
+      await fetch(`/api/users/${id}/tier`, {
         method:'PATCH',
         credentials: 'include',
         headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ tier: tier.toLowerCase() })
       });
-      alert('Tier updated!');
+      showToast('Tier updated!');
       searchUsers();
     }
 
     async function toggleBan(id, banState) {
       if(!confirm('Are you sure?')) return;
-      await fetch(\`/api/users/\${id}/ban\`, {
+      await fetch(`/api/users/${id}/ban`, {
         method:'POST',
         credentials: 'include',
         headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ banned: banState })
       });
+      showToast(banState ? 'User banned' : 'User unbanned');
       searchUsers();
     }
 
     // Load initial
-    loadUsers('a'); // load some users with 'a'
+    loadUsers('');
     loadTransfers();
   </script>
+
+  <script>
+    console.info("1ai-content UI v4 \u2014 Suno-inspired theme");
+  </script>
+
+  <div id="version-badge">v4</div>
 </body>
 </html>

@@ -5,12 +5,152 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>1AI Content Dashboard</title>
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#6366f1">
+  <meta name="theme-color" content="#a855f7">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/public/design-system.css">
   <style>
-    :root { --bg: #0f0f23; --card: #1a1a2e; --accent: #6366f1; --green: #22c55e; --red: #ef4444; --text: #e2e8f0; --muted: #94a3b8; --border: #334155; }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --color-bg: #0d0d14;
+      --color-bg-elevated: #111127;
+      --color-card: #1a1a24;
+      --color-card-hover: rgba(255,255,255,0.08);
+      --color-border: #2a2a3a;
+      --color-border-strong: rgba(255,255,255,0.15);
+      --color-accent: #a855f7;
+      --color-accent-dim: #7c3aed;
+      --color-accent-2: #6366f1;
+      --color-grad: linear-gradient(135deg, #a855f7, #6366f1);
+      --color-grad-hover: linear-gradient(135deg, #9333ea, #4f46e5);
+      --color-green: #4ade80;
+      --color-red: #f87171;
+      --color-blue: #60a5fa;
+      --color-yellow: #fbbf24;
+      --color-text: #e0e0f0;
+      --color-dim: rgba(224,224,240,0.55);
+      --color-muted: #888899;
+      --radius: 14px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      
+      /* Legacy variable aliases (for existing HTML/CSS in dashboard) */
+      --bg: var(--color-bg);
+      --card: var(--color-card);
+      --border: var(--color-border);
+      --accent: var(--color-accent);
+      --accent-2: var(--color-accent-2);
+      --grad: var(--color-grad);
+      --text: var(--color-text);
+      --muted: var(--color-muted);
+      --green: var(--color-green);
+      --red: var(--color-red);
+      --blue: var(--color-blue);
+    }
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-glow-hover);
+    }
+    .btn-primary:active:not(.btn-disabled):not(:disabled) {
+      transform: translateY(0) scale(0.98);
+    }
+    
+    .btn-secondary {
+      background: transparent;
+      color: var(--color-text);
+      border: 1px solid var(--color-border);
+    }
+    .btn-secondary:hover:not(.btn-disabled):not(:disabled) {
+      background: var(--color-card-hover);
+      border-color: var(--color-accent);
+    }
+    
+    .btn-primary {
+      background: var(--color-grad);
+      color: white;
+    }
+    
+    .input {
+      background: var(--color-bg-elevated);
+      border-color: var(--color-border);
+    }
+    .input:focus {
+      border-color: var(--color-accent);
+      box-shadow: 0 0 0 3px rgba(168,85,247,0.15);
+    }
+    
+    .chip {
+      background: var(--color-card);
+      border-color: var(--color-border);
+      color: var(--color-muted);
+    }
+    .chip:hover {
+      border-color: var(--color-accent);
+      background: rgba(168,85,247,0.1);
+      color: var(--color-accent);
+    }
+    .chip.active {
+      background: var(--color-accent);
+      color: #fff;
+      border-color: var(--color-accent);
+    }
+    
+    .card {
+      background: var(--color-card);
+      border-color: var(--color-border);
+      border-radius: var(--radius);
+    }
+    .card:active {
+      background: var(--color-card-hover);
+      transform: scale(0.98);
+    }
+    
+    .stat { background: var(--color-card); border-color: var(--color-border); }
+    .stat .value { 
+      background: var(--color-grad); 
+      -webkit-background-clip: text; 
+      background-clip: text; 
+      -webkit-text-fill-color: transparent; 
+    }
+    
+    .action-btn { background: var(--color-card); border-color: var(--color-border); }
+    .action-btn:active { transform: scale(0.95); background: var(--color-card-hover); }
+    
+    .tab.active { color: var(--color-accent); }
+    
+    .progress-bar .fill { background: var(--color-grad); }
+    
+    .generating { animation: pulse-ring 1.5s ease-out infinite; }
+    
+    @keyframes pulse-ring {
+      0% { box-shadow: 0 0 0 0 rgba(168,85,247,0.4); }
+      70% { box-shadow: 0 0 0 10px rgba(168,85,247,0); }
+      100% { box-shadow: 0 0 0 0 rgba(168,85,247,0); }
+    }
+    
+    .empty .title { color: var(--color-text); }
+    .empty .desc { color: var(--color-muted); }
+    
+    .modal { background: var(--color-bg-elevated); border-color: var(--color-border); }
+    .modal-handle { background: var(--color-border); }
+    .modal-close:hover { background: var(--color-card); color: var(--color-text); }
+    
+    /* Focus visible for all interactive elements */
+    :focus-visible {
+      outline: 2px solid var(--color-accent);
+      outline-offset: 2px;
+    }
+    
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+      .generating { animation: none; }
+    }
+    
+    /* Version badge */
+    #version-badge { z-index: 999; }
+  </style>
     body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
     .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
     .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
@@ -39,8 +179,14 @@
     .chart-placeholder { height: 200px; background: var(--bg); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--muted); }
     .actions { display: flex; gap: 8px; margin-bottom: 20px; }
     .btn { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; font-size: 14px; }
-    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary { background: var(--grad); color: white; }
     .btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    @keyframes pulse-ring {
+      0% { box-shadow: 0 0 0 0 rgba(168,85,247,0.4); }
+      70% { box-shadow: 0 0 0 10px rgba(168,85,247,0); }
+      100% { box-shadow: 0 0 0 0 rgba(168,85,247,0); }
+    }
+    .generating { animation: pulse-ring 1.5s ease-out infinite; }
     @media (max-width: 768px) { .stats-grid { grid-template-columns: 1fr 1fr; } }
   </style>
 </head>
@@ -103,8 +249,8 @@
     <div class="section">
       <h2>📈 Engagement Trend (30 days)</h2>
       <div class="chart-placeholder" id="trendChart">Chart loads with data</div>
-    </div>
   </div>
+  <div id="version-badge" style="position:fixed;bottom:12px;right:12px;font-size:10px;color:var(--muted);">v4</div>
 
   <script>
     const API_BASE = window.location.origin;

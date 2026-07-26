@@ -1,0 +1,257 @@
+<!-- Music Generator Admin Page -->
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+  <div>
+    <h1 class="section-title">🎵 Music Generator</h1>
+    <p class="section-sub">Generate music with Suno AI or local MusicGen</p>
+  </div>
+  <div style="display:flex;gap:8px;">
+    <button class="btn btn-ghost" id="suno-lofi-btn" onclick="generateLofi()">🎧 Lo-Fi Beats</button>
+    <button class="btn btn-ghost" id="suno-bgm-btn" onclick="generateBgm()">🎼 Corporate BGM</button>
+  </div>
+</div>
+
+<!-- Suno AI Section -->
+<div class="card" style="margin-bottom:20px;">
+  <h3 style="margin-bottom:16px;font-size:16px;font-weight:700;">☀️ Suno AI Music</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+    <div class="form-group" style="grid-column:1/3;">
+      <label>Prompt <span style="color:var(--red);">*</span></label>
+      <textarea class="input" id="suno-prompt" rows="3" placeholder="Describe the music you want... e.g. upbeat electronic dance track with tropical vibes" style="width:100%;resize:vertical;"></textarea>
+    </div>
+    <div class="form-group">
+      <label>Style</label>
+      <input class="input" id="suno-style" placeholder="e.g. pop, rock, jazz, electronic" style="width:100%;">
+    </div>
+    <div class="form-group">
+      <label>Lyrics (optional)</label>
+      <textarea class="input" id="suno-lyrics" rows="2" placeholder="Optional lyrics for the song" style="width:100%;resize:vertical;"></textarea>
+    </div>
+    <div class="form-group" style="display:flex;align-items:center;gap:8px;padding-top:8px;">
+      <input type="checkbox" id="suno-instrumental" checked style="width:18px;height:18px;accent-color:var(--accent);">
+      <label for="suno-instrumental" style="margin:0;cursor:pointer;">Instrumental (no vocals)</label>
+    </div>
+  </div>
+  <button class="btn btn-primary" style="margin-top:20px;" id="suno-btn" onclick="generateSuno()">🎵 Generate Suno Music</button>
+</div>
+
+<!-- MusicGen Section -->
+<div class="card" style="margin-bottom:20px;">
+  <h3 style="margin-bottom:16px;font-size:16px;font-weight:700;">🎛️ MusicGen (Local)</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+    <div class="form-group" style="grid-column:1/3;">
+      <label>Prompt <span style="color:var(--red);">*</span></label>
+      <textarea class="input" id="mg-prompt" rows="3" placeholder="Describe the music... e.g. calming ambient piano with soft strings" style="width:100%;resize:vertical;"></textarea>
+    </div>
+    <div class="form-group">
+      <label>Duration (seconds)</label>
+      <input type="number" class="input" id="mg-duration" value="60" min="15" max="300" style="width:100%;">
+    </div>
+    <div class="form-group">
+      <label>Model</label>
+      <select class="input" id="mg-engine" style="width:100%;">
+        <option value="auto">🤖 Auto (recommended)</option>
+        <option value="melody">🎶 Melody</option>
+        <option value="medium">📐 Medium</option>
+        <option value="small">📏 Small (fastest)</option>
+      </select>
+    </div>
+    <div class="form-group" style="grid-column:1/3;">
+      <label>Style (optional)</label>
+      <input class="input" id="mg-style" placeholder="e.g. cinematic, ambient, orchestral, lofi, jazz" style="width:100%;">
+    </div>
+  </div>
+  <button class="btn btn-primary" style="margin-top:20px;" id="mg-btn" onclick="generateMusicGen()">🎵 Generate MusicGen</button>
+</div>
+
+<!-- Quick Buttons Row -->
+<div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+  <button class="btn btn-secondary" onclick="generateLofi()">🎧 Lo-Fi Beats</button>
+  <button class="btn btn-secondary" onclick="generateBgm()">🎼 Corporate BGM</button>
+</div>
+
+<!-- Result -->
+<div id="result-section" class="card" style="display:none;margin-bottom:20px;">
+  <h3 style="margin-bottom:16px;font-size:16px;font-weight:700;">Generated Music</h3>
+  <div id="result-content"></div>
+</div>
+
+<script>
+const PY_API = window.location.origin + '/api/py';
+
+function showToast(msg, type='success') {
+  const t = document.createElement('div');
+  t.className = `toast toast-${type === 'success' ? 'success' : 'error'}`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+async function generateSuno() {
+  const prompt = document.getElementById('suno-prompt').value.trim();
+  if (!prompt) return showToast('Enter a music prompt', 'error');
+
+  const btn = document.getElementById('suno-btn');
+  btn.textContent = '⏳ Generating Suno Music...';
+  btn.disabled = true;
+
+  try {
+    const r = await fetch(`${PY_API}/suno/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt,
+        style: document.getElementById('suno-style').value.trim() || undefined,
+        lyrics: document.getElementById('suno-lyrics').value.trim() || undefined,
+        instrumental: document.getElementById('suno-instrumental').checked,
+      }),
+    });
+    const data = await r.json();
+    showResult(data);
+  } catch (e) {
+    showToast('❌ ' + e.message, 'error');
+  }
+
+  btn.textContent = '🎵 Generate Suno Music';
+  btn.disabled = false;
+}
+
+async function generateMusicGen() {
+  const prompt = document.getElementById('mg-prompt').value.trim();
+  if (!prompt) return showToast('Enter a music prompt', 'error');
+
+  const btn = document.getElementById('mg-btn');
+  btn.textContent = '⏳ Generating MusicGen...';
+  btn.disabled = true;
+
+  try {
+    const r = await fetch(`${PY_API}/music/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt,
+        duration_seconds: parseInt(document.getElementById('mg-duration').value) || 60,
+        engine: document.getElementById('mg-engine').value,
+        style: document.getElementById('mg-style').value.trim() || undefined,
+      }),
+    });
+    const data = await r.json();
+    showResult(data);
+  } catch (e) {
+    showToast('❌ ' + e.message, 'error');
+  }
+
+  btn.textContent = '🎵 Generate MusicGen';
+  btn.disabled = false;
+}
+
+async function generateLofi() {
+  const btn = document.getElementById('suno-lofi-btn');
+  btn.textContent = '⏳ Generating Lo-Fi...';
+  btn.disabled = true;
+
+  try {
+    const r = await fetch(`${PY_API}/suno/lofi?mood=chill`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const data = await r.json();
+    showResult(data);
+  } catch (e) {
+    showToast('❌ ' + e.message, 'error');
+  }
+
+  btn.textContent = '🎧 Lo-Fi Beats';
+  btn.disabled = false;
+}
+
+async function generateBgm() {
+  const btn = document.getElementById('suno-bgm-btn');
+  btn.textContent = '⏳ Generating BGM...';
+  btn.disabled = true;
+
+  try {
+    const r = await fetch(`${PY_API}/suno/bgm?theme=corporate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const data = await r.json();
+    showResult(data);
+  } catch (e) {
+    showToast('❌ ' + e.message, 'error');
+  }
+
+  btn.textContent = '🎼 Corporate BGM';
+  btn.disabled = false;
+}
+
+function showResult(data) {
+  const section = document.getElementById('result-section');
+  section.style.display = 'block';
+  const container = document.getElementById('result-content');
+
+  if (data.success && (data.file_path || data.filename)) {
+    const filename = data.filename || data.file_path.split('/').pop();
+    const audioUrl = `${PY_API}/tts/audio/${filename}`;
+    container.innerHTML = `
+      <div style="margin-bottom:16px;">
+        <span class="badge badge-green">✅ Generated successfully</span>
+      </div>
+      <div style="background:var(--bg);border-radius:12px;padding:20px;text-align:center;">
+        <audio controls style="width:100%;max-width:500px;margin-bottom:16px;">
+          <source src="${audioUrl}" type="audio/mpeg">
+          Your browser does not support audio playback.
+        </audio>
+        <div style="margin-top:12px;">
+          <a href="${audioUrl}" download="${filename}" class="btn btn-primary" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+            ⬇️ Download MP3
+          </a>
+        </div>
+      </div>
+    `;
+    showToast('✅ Music generated!');
+  } else if (data.audio_url || data.url) {
+    const url = data.audio_url || data.url;
+    container.innerHTML = `
+      <div style="margin-bottom:16px;">
+        <span class="badge badge-green">✅ Generated successfully</span>
+      </div>
+      <div style="background:var(--bg);border-radius:12px;padding:20px;text-align:center;">
+        <audio controls style="width:100%;max-width:500px;margin-bottom:16px;">
+          <source src="${url}" type="audio/mpeg">
+          Your browser does not support audio playback.
+        </audio>
+        <div style="margin-top:12px;">
+          <a href="${url}" target="_blank" class="btn btn-primary" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+            ⬇️ Download
+          </a>
+        </div>
+      </div>
+    `;
+    showToast('✅ Music generated!');
+  } else if (data.file) {
+    const url = PY_API + '/' + data.file.replace(/^\//, '');
+    container.innerHTML = `
+      <div style="margin-bottom:16px;">
+        <span class="badge badge-green">✅ Generated successfully</span>
+      </div>
+      <div style="background:var(--bg);border-radius:12px;padding:20px;text-align:center;">
+        <audio controls style="width:100%;max-width:500px;margin-bottom:16px;">
+          <source src="${url}" type="audio/mpeg">
+          Your browser does not support audio playback.
+        </audio>
+        <div style="margin-top:12px;">
+          <a href="${url}" target="_blank" class="btn btn-primary" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+            ⬇️ Download
+          </a>
+        </div>
+      </div>
+    `;
+    showToast('✅ Music generated!');
+  } else {
+    container.innerHTML = `<div style="color:var(--red);">❌ ${data.error || 'Generation failed — no audio file returned'}</div>`;
+    showToast('❌ ' + (data.error || 'Failed'), 'error');
+  }
+
+  container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+</script>

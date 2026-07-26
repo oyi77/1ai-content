@@ -19,13 +19,13 @@
       <input class="input" id="pin-limit" type="number" value="12" min="1" max="50" style="width:100%;">
     </div>
   </div>
-  <button class="btn btn-gold" style="margin-top:20px;" onclick="searchPinterest()">🔍 Search Pinterest</button>
+  <button class="btn btn-primary" style="margin-top:20px;" onclick="searchPinterest()">🔍 Search Pinterest</button>
 </div>
 
 <!-- Loading -->
 <div id="pin-loading" style="display:none;text-align:center;padding:40px;">
   <div style="font-size:18px;margin-bottom:12px;">🔍 Searching Pinterest...</div>
-  <div class="loading-spinner" style="width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto;"></div>
+  <div class="loading-spinner" style="width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto;"></div>
 </div>
 
 <!-- Results grid -->
@@ -79,7 +79,7 @@
 <!-- Post loading -->
 <div id="pin-posting" style="display:none;text-align:center;padding:40px;">
   <div style="font-size:18px;margin-bottom:12px;">📤 Posting to Facebook...</div>
-  <div class="loading-spinner" style="width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto;"></div>
+  <div class="loading-spinner" style="width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto;"></div>
   <div style="font-size:13px;color:var(--muted);margin-top:12px;">Downloading image & posting via Facebook Graph API</div>
 </div>
 
@@ -129,7 +129,7 @@ async function searchPinterest() {
   const query = document.getElementById('pin-query').value.trim();
   if (!query) return showToast('Enter a search query', 'error');
   const limit = parseInt(document.getElementById('pin-limit').value) || 12;
-  const btn = document.querySelector('.btn-gold');
+  const btn = document.querySelector('.btn-primary');
   btn.textContent = '🔍 Searching...';
   btn.disabled = true;
   document.getElementById('pin-loading').style.display = 'block';

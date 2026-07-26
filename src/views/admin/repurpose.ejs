@@ -84,7 +84,7 @@
       </select>
     </div>
   </div>
-  <button class="btn btn-gold" style="margin-top:20px;" onclick="startRepurpose()">🔄 Start Repurpose</button>
+  <button class="btn btn-primary" style="margin-top:20px;" onclick="startRepurpose()">🔄 Start Repurpose</button>
 </div>
 
 <!-- Result -->
@@ -108,7 +108,7 @@ async function startRepurpose() {
   const urls = document.getElementById('rep-urls').value.trim().split('\n').filter(u => u.trim());
   if (urls.length < 2) return showToast('Minimum 2 source URLs', 'error');
 
-  const btn = document.querySelector('.btn-gold');
+  const btn = document.querySelector('.btn-primary');
   btn.textContent = '⏳ Processing (2-5 min)...';
   btn.disabled = true;
 
@@ -157,7 +157,7 @@ async function startRepurpose() {
           <div style="font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">New Metadata</div>
           <div style="font-size:16px;font-weight:600;">${meta.title || '—'}</div>
           <div style="font-size:13px;color:var(--muted);margin-top:8px;">${meta.caption?.slice(0, 200) || ''}</div>
-          <div style="font-size:13px;color:var(--gold);margin-top:8px;">${(meta.hashtags||[]).join(' ')}</div>
+          <div style="font-size:13px;color:var(--accent);margin-top:8px;">${(meta.hashtags||[]).join(' ')}</div>
         </div>
         <div style="margin-top:12px;font-size:12px;color:var(--muted);">📁 Output: ${data.video_path || '—'}</div>
       `;

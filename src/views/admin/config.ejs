@@ -3,102 +3,131 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Config — BerkahKarya Admin</title>
+  <title>Config \u2014 BerkahKarya Admin</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/public/design-system.css">
   <style>
     :root {
-      --bg: #0d0d14;
+      --color-bg: #0d0d14;
+      --color-bg-elevated: #111118;
+      --color-card: #1a1a24;
+      --color-card-hover: rgba(255,255,255,0.08);
+      --color-border: #2a2a3a;
+      --color-border-strong: rgba(255,255,255,0.15);
+      --color-accent: #a855f7;
+      --color-accent-dim: #7c3aed;
+      --color-accent-glow: rgba(168,85,247,0.15);
+      --color-grad: linear-gradient(135deg, #a855f7, #6366f1);
+      --color-grad-hover: linear-gradient(135deg, #9333ea, #4f46e5);
+      --color-text: #e0e0f0;
+      --color-muted: #888899;
+      --color-green: #4ade80;
+      --color-red: #f87171;
+      --color-blue: #3b82f6;
+      --color-yellow: #fbbf24;
+      --radius: 14px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      
+      --bg: var(--color-bg);
       --sidebar: #111118;
       --card: #1a1a24;
       --border: #2a2a3a;
-      --gold: #c4a35a;
-      --gold-dim: #8a6f3a;
+      --accent: #a855f7;
+      --accent-dim: #7c3aed;
+      --grad: linear-gradient(135deg, #a855f7, #6366f1);
       --text: #e0e0f0;
       --muted: #888899;
+      --green: #4ade80;
+      --red: #f87171;
+      --blue: #3b82f6;
+      --yellow: #fbbf24;
+      --gold: #a855f7;
+      --gold-dim: #7c3aed;
     }
-    * { box-sizing: border-box; }
-    body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; margin: 0; min-height: 100vh; }
-    .sidebar { background: var(--sidebar); border-right: 1px solid var(--border); width: 240px; min-height: 100vh; position: fixed; top: 0; left: 0; z-index: 50; display: flex; flex-direction: column; }
-    .main { margin-left: 240px; padding: 24px; min-height: 100vh; }
-    .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; cursor: pointer; border-left: 3px solid transparent; transition: all 0.15s; color: var(--muted); font-size: 14px; text-decoration: none; }
-    .nav-item:hover { background: rgba(196,163,90,0.08); color: var(--text); }
-    .nav-item.active { border-left-color: var(--gold); color: var(--gold); background: rgba(196,163,90,0.1); }
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
-    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; transition: all 0.15s; }
-    .btn-gold { background: var(--gold); color: #0d0d14; }
-    .btn-gold:hover { background: #d4b36a; }
-    .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
-    .btn-ghost:hover { background: rgba(255,255,255,0.05); color: var(--text); }
-    .btn-sm { padding: 4px 10px; font-size: 12px; }
-    .input { background: #0d0d14; border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 8px; font-size: 13px; outline: none; width: 100%; }
-    .input:focus { border-color: var(--gold); }
-    .section-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
-    .section-sub { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
-    .group-header { display: flex; align-items: center; justify-content: space-between; cursor: pointer; padding: 14px 16px; background: #111118; border-radius: 8px; margin-bottom: 2px; user-select: none; }
-    .group-header:hover { background: rgba(196,163,90,0.06); }
-    .group-title { font-size: 14px; font-weight: 600; color: var(--text); }
-    .group-body { border: 1px solid var(--border); border-radius: 0 0 8px 8px; overflow: hidden; margin-bottom: 12px; }
-    .config-row { display: grid; grid-template-columns: 260px 1fr 100px; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid rgba(42,42,58,0.5); font-size: 13px; }
-    .config-row:last-child { border-bottom: none; }
-    .config-row:hover { background: rgba(196,163,90,0.03); }
-    .config-key { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 12px; color: #a0a0c0; word-break: break-all; }
-    .config-val { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 12px; color: var(--text); word-break: break-all; }
-    .badge { display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 600; }
-    .badge-set { background: #0f3020; color: #4ade80; }
-    .badge-default { background: #3a2a0a; color: #fbbf24; }
-    .badge-unset { background: #3a0f0f; color: #f87171; }
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-    .hamburger { display: none; position: fixed; top: 12px; left: 12px; z-index: 200; background: var(--gold); border: none; border-radius: 8px; padding: 8px 10px; cursor: pointer; font-size: 18px; color: #000; }
-    @media (max-width: 768px) {
-      .sidebar { transform: translateX(-100%); transition: transform 0.25s ease; z-index: 150; }
-      .sidebar.open { transform: translateX(0); }
-      .main { margin-left: 0 !important; }
-      .hamburger { display: block; }
-      .config-row { grid-template-columns: 1fr; gap: 4px; }
+    
+    /* Surface-specific overrides only */
+    .input {
+      background: #0d0d14;
+      border-color: var(--color-border);
     }
+    .input:focus {
+      border-color: var(--color-accent);
+      box-shadow: 0 0 0 3px rgba(168,85,247,0.15);
+    }
+    
+    .chip {
+      background: var(--color-card);
+      border-color: var(--color-border);
+      color: var(--color-muted);
+    }
+    .chip:hover {
+      border-color: var(--color-accent);
+      background: rgba(168,85,247,0.1);
+      color: var(--color-accent);
+    }
+    .chip.active {
+      background: var(--color-accent);
+      color: #fff;
+      border-color: var(--color-accent);
+    }
+    
+    .card {
+      background: var(--color-card);
+      border-color: var(--color-border);
+      border-radius: var(--radius);
+    }
+    .card:active {
+      background: var(--color-card-hover);
+      transform: scale(0.98);
+    }
+    
+    .stat { background: var(--color-card); border-color: var(--color-border); }
+    .stat .value { 
+      background: var(--color-grad); 
+      -webkit-background-clip: text; 
+      background-clip: text; 
+      -webkit-text-fill-color: transparent; 
+    }
+    
+    .action-btn { background: var(--color-card); border-color: var(--color-border); }
+    .action-btn:active { transform: scale(0.95); background: var(--color-card-hover); }
+    
+    .nav-item.active { color: var(--color-accent); }
+    
+    .progress-bar .fill { background: var(--color-grad); }
+    
+    .empty .title { color: var(--color-text); }
+    .empty .desc { color: var(--color-muted); }
+    
+    .modal { background: var(--color-card); border-color: var(--color-border); }
+    .modal-handle { background: var(--color-border); }
+    .modal-close:hover { background: var(--color-card); color: var(--color-text); }
+    
+    /* Version badge */
+    #version-badge { z-index: 999; }
   </style>
 </head>
 <body>
 
-<button class="hamburger" onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
-
-<!-- Sidebar -->
-<div class="sidebar">
-  <div style="padding: 20px; border-bottom: 1px solid var(--border);">
-    <div style="font-size: 16px; font-weight: 700; color: var(--gold);">&#9889; BerkahKarya</div>
-    <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">Admin Dashboard v3</div>
-  </div>
-  <nav style="flex: 1; padding: 12px 0;">
-    <a href="/admin/dashboard" class="nav-item">&#128202; Overview</a>
-    <a href="/admin/pricing" class="nav-item">&#128176; Pricing</a>
-    <a href="/admin/prompts" class="nav-item">&#9997;&#65039; Prompts</a>
-    <a href="/admin/config" class="nav-item active">&#9881;&#65039; Config</a>
-    <a href="/admin/system" class="nav-item">&#9881; System</a>
-  </nav>
-  <div style="padding: 16px 20px; border-top: 1px solid var(--border);">
-    <button class="btn btn-ghost btn-sm" style="width: 100%; justify-content: center;" onclick="logout()">&#128682; Logout</button>
+<!-- Config page uses layout.ejs via reply.view with layout: 'admin/layout.ejs' -->
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Environment Config</h1>
+    <p class="page-sub">All 72 environment variables grouped by concern. Secrets are masked. Green = configured, yellow = using default, red = not set.</p>
   </div>
 </div>
 
-<!-- Main Content -->
-<div class="main">
-  <div class="section-title">Environment Config</div>
-  <div class="section-sub">All 72 environment variables grouped by concern. Secrets are masked. Green = configured, yellow = using default, red = not set.</div>
+<!-- Toolbar -->
+<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;">
+  <input class="input" id="search" placeholder="Filter by key name..." style="max-width: 320px;" oninput="filterRows(this.value)" />
+  <button class="btn btn-ghost btn-sm" onclick="expandAll()">Expand All</button>
+  <button class="btn btn-ghost btn-sm" onclick="collapseAll()">Collapse All</button>
+  <button class="btn btn-primary btn-sm" onclick="loadConfig()">&#8635; Refresh</button>
+  <span id="summary" style="font-size: 12px; color: var(--muted);"></span>
+</div>
 
-  <!-- Toolbar -->
-  <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;">
-    <input class="input" id="search" placeholder="Filter by key name..." style="max-width: 320px;" oninput="filterRows(this.value)" />
-    <button class="btn btn-ghost btn-sm" onclick="expandAll()">Expand All</button>
-    <button class="btn btn-ghost btn-sm" onclick="collapseAll()">Collapse All</button>
-    <button class="btn btn-gold btn-sm" onclick="loadConfig()">&#8635; Refresh</button>
-    <span id="summary" style="font-size: 12px; color: var(--muted);"></span>
-  </div>
-
-  <div id="config-container">
-    <div style="text-align: center; padding: 40px; color: var(--muted);">Loading configuration...</div>
-  </div>
+<div id="config-container">
+  <div style="text-align: center; padding: 40px; color: var(--muted);">Loading configuration...</div>
 </div>
 
 <script>
@@ -119,7 +148,6 @@
   }
 
   function renderConfig(data, filterText) {
-    // Group by group field
     const groups = {};
     for (const [key, entry] of Object.entries(data)) {
       if (!groups[entry.group]) groups[entry.group] = [];
@@ -142,47 +170,54 @@
         const isDefault = !isUnset && !entry.sensitive && isDefaultValue(entry.key, entry.value);
         let badgeClass, badgeLabel;
         if (isUnset) {
-          badgeClass = 'badge-unset'; badgeLabel = 'not set';
+          badgeClass = 'badge-inactive'; badgeLabel = 'not set';
           totalUnset++;
         } else if (isDefault) {
-          badgeClass = 'badge-default'; badgeLabel = 'default';
+          badgeClass = 'badge-warning'; badgeLabel = 'default';
           totalDefault++;
         } else {
-          badgeClass = 'badge-set'; badgeLabel = 'set';
+          badgeClass = 'badge-active'; badgeLabel = 'set';
           totalSet++;
         }
 
         rowsHtml += `
-          <div class="config-row" data-key="${entry.key}">
-            <div class="config-key">${entry.key}</div>
-            <div class="config-val">${escHtml(entry.value)}</div>
-            <div><span class="badge ${badgeClass}">${badgeLabel}</span></div>
-          </div>`;
+          <article class="data-card" data-key="${entry.key}">
+            <div class="data-card-header">
+              <div class="data-card-title">${entry.key}</div>
+              <span class="badge ${badgeClass}">${badgeLabel}</span>
+            </div>
+            <div class="data-card-meta">
+              <div class="meta-row">
+                <span class="meta-label">Value</span>
+                <span class="meta-value" style="font-family:monospace;font-size:12px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(entry.value)}</span>
+              </div>
+              ${entry.sensitive ? '<div class="meta-row"><span class="meta-label">Type</span><span class="meta-value" style="color:var(--color-yellow)">Secret (masked)</span></div>' : ''}
+            </div>
+          </article>`;
       }
 
       html += `
-        <div class="group-wrapper" id="${groupId}-wrapper">
-          <div class="group-header" onclick="toggleGroup('${groupId}')">
-            <span class="group-title">${group} <span style="color: var(--muted); font-weight: 400; font-size: 12px;">(${filtered.length})</span></span>
-            <span id="${groupId}-arrow" style="color: var(--muted); font-size: 12px;">&#9660;</span>
+        <section class="group-wrapper" id="${groupId}-wrapper">
+          <div class="group-header" onclick="toggleGroup('${groupId}')" style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;cursor:pointer;">
+            <h2 class="section-title">${group} <span style="font-weight:400;font-size:12px;color:var(--muted);">(${filtered.length})</span></h2>
+            <span id="${groupId}-arrow" style="transition:transform 0.2s;">&#9660;</span>
           </div>
-          <div class="group-body" id="${groupId}-body">
+          <div class="card-grid" id="${groupId}-body" style="display:grid;">
             ${rowsHtml}
           </div>
-        </div>`;
+        </section>`;
     }
 
-    document.getElementById('config-container').innerHTML = html || '<div style="text-align:center;padding:40px;color:var(--muted);">No matching variables.</div>';
+    document.getElementById('config-container').innerHTML = html || '<div class="empty-state"><div class="empty-icon">&#128269;</div><div class="empty-title">No matching variables</div><div class="empty-desc">Try adjusting your filter</div></div>';
 
     if (!ft) {
       document.getElementById('summary').textContent =
-        `${totalSet} set · ${totalDefault} default · ${totalUnset} not set`;
+        `${totalSet} set \u00b7 ${totalDefault} default \u00b7 ${totalUnset} not set`;
     } else {
       document.getElementById('summary').textContent = '';
     }
   }
 
-  // Known defaults to colour-code yellow
   const DEFAULTS = {
     NODE_ENV: 'development',
     PORT: '3000',
@@ -214,20 +249,19 @@
     const arrow = document.getElementById(id + '-arrow');
     if (!body) return;
     const isHidden = body.style.display === 'none';
-    body.style.display = isHidden ? '' : 'none';
-    if (arrow) arrow.innerHTML = isHidden ? '&#9660;' : '&#9658;';
+    body.style.display = isHidden ? 'grid' : 'none';
+    if (arrow) arrow.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(-90deg)';
   }
 
   function expandAll() {
-    document.querySelectorAll('.group-body').forEach(el => { el.style.display = ''; });
-    document.querySelectorAll('[id$="-arrow"]').forEach(el => { el.innerHTML = '&#9660;'; });
+    document.querySelectorAll('.card-grid').forEach(el => { el.style.display = 'grid'; });
+    document.querySelectorAll('[id$="-arrow"]').forEach(el => { el.style.transform = 'rotate(0deg)'; });
   }
 
   function collapseAll() {
-    document.querySelectorAll('.group-body').forEach(el => { el.style.display = 'none'; });
-    document.querySelectorAll('[id$="-arrow"]').forEach(el => { el.innerHTML = '&#9658;'; });
+    document.querySelectorAll('.card-grid').forEach(el => { el.style.display = 'none'; });
+    document.querySelectorAll('[id$="-arrow"]').forEach(el => { el.style.transform = 'rotate(-90deg)'; });
   }
-
 
   function logout() {
     document.cookie = 'admin_token=; Max-Age=0; Path=/';
@@ -236,5 +270,11 @@
 
   loadConfig();
 </script>
+
+<script>
+console.info("1ai-content UI v4 \u2014 Suno-inspired theme");
+</script>
+
+<div id="version-badge">v4</div>
 </body>
 </html>

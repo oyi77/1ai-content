@@ -5,10 +5,10 @@
   .preview-container { min-height: 200px; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); border-radius: 12px; border: 1px dashed var(--border); }
   .tab-bar { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 1px; }
   .tab { padding: 10px 20px; cursor: pointer; color: var(--muted); font-size: 14px; border-bottom: 2px solid transparent; transition: all 0.2s; background: transparent; border-left: none; border-right: none; border-top: none; border-radius: 0; }
-  .tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
   .tab:hover:not(.active) { color: var(--text); }
   .input { width: 100%; }
-  .pg-spinner { width: 24px; height: 24px; border: 3px solid rgba(196,163,90,0.2); border-top-color: var(--gold); border-radius: 50%; animation: spin 1s linear infinite; }
+  .pg-spinner { width: 24px; height: 24px; border: 3px solid rgba(168,85,247,0.2); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
 </style>
 
 <div style="margin-bottom: 24px;">
@@ -39,7 +39,7 @@
         <label style="display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px;">Prompt</label>
         <textarea id="text-prompt" class="input" style="height: 200px;" placeholder="Tanyakan sesuatu..."></textarea>
       </div>
-      <button id="btn-text" class="btn btn-gold" style="width: 100%; justify-content: center;" onclick="runText()">Send Message</button>
+      <button id="btn-text" class="btn btn-primary" style="width: 100%; justify-content: center;" onclick="runText()">Send Message</button>
     </div>
     <div class="card">
       <h3 style="margin-bottom: 16px; font-weight: 600;">Output</h3>
@@ -77,7 +77,7 @@
         <label style="display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px;">Prompt</label>
         <textarea id="image-prompt" class="input" style="height: 120px;" placeholder="Describe the image..."></textarea>
       </div>
-      <button id="btn-image" class="btn btn-gold" style="width: 100%; justify-content: center;" onclick="runImage()">Generate Image</button>
+      <button id="btn-image" class="btn btn-primary" style="width: 100%; justify-content: center;" onclick="runImage()">Generate Image</button>
     </div>
     <div class="card">
       <h3 style="margin-bottom: 16px; font-weight: 600;">Output</h3>
@@ -126,7 +126,7 @@
         <label style="display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px;">Prompt</label>
         <textarea id="video-prompt" class="input" style="height: 100px;" placeholder="Describe the video..."></textarea>
       </div>
-      <button id="btn-video" class="btn btn-gold" style="width: 100%; justify-content: center;" onclick="runVideo()">Generate Video</button>
+      <button id="btn-video" class="btn btn-primary" style="width: 100%; justify-content: center;" onclick="runVideo()">Generate Video</button>
     </div>
     <div class="card">
       <h3 style="margin-bottom: 16px; font-weight: 600;">Output</h3>
@@ -200,7 +200,7 @@
       const data = await res.json();
       if (data.success) {
         preview.innerHTML = `<img src="${data.imageUrl}" class="max-w-full max-h-96 rounded-lg shadow-lg">`;
-        meta.innerHTML = `<div style="font-size:12px; color:var(--muted);">Provider: <span style="color:var(--gold);">${data.provider}</span></div>`;
+        meta.innerHTML = `<div style="font-size:12px; color:var(--muted);">Provider: <span style="color:var(--accent);">${data.provider}</span></div>`;
       } else {
         preview.innerHTML = `<span style="color:var(--red);">Error: ${data.error || 'Failed to generate'}</span>`;
       }
@@ -235,7 +235,7 @@
       const data = await res.json();
       if (data.success) {
         preview.innerHTML = `<video src="${data.videoUrl}" controls class="max-w-full max-h-96 rounded-lg shadow-lg"></video>`;
-        meta.innerHTML = `<div style="font-size:12px; color:var(--muted);">Provider: <span style="color:var(--gold);">${data.provider}</span></div>`;
+        meta.innerHTML = `<div style="font-size:12px; color:var(--muted);">Provider: <span style="color:var(--accent);">${data.provider}</span></div>`;
       } else {
         preview.innerHTML = `<span style="color:var(--red);">Error: ${data.error || 'Failed to generate'}</span>`;
       }

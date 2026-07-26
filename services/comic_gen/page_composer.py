@@ -288,7 +288,7 @@ def _draw_panel_text(
         # Semi-transparent background
         draw.rectangle(
             [(nx - pad, ny), (nx + tw + pad, ny + th + pad)],
-            fill=(0, 0, 0, 180),
+            fill=(0, 0, 0),
         )
         draw.text((nx, ny), nar_text, fill=narration_color, font=small_font)
 

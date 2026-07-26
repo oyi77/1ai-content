@@ -5,7 +5,7 @@
     <p class="section-sub">Auto-scanned every 10 min · Cached data served instantly</p>
   </div>
   <div style="display:flex;gap:8px;">
-    <button class="btn btn-gold" onclick="forceScan()">🔥 Scan Now (Admin)</button>
+    <button class="btn btn-primary" onclick="forceScan()">🔥 Scan Now (Admin)</button>
     <button class="btn btn-ghost" onclick="loadCached()">🔄 Refresh Cache</button>
   </div>
 </div>
@@ -65,7 +65,7 @@ async function loadCached() {
 }
 
 async function forceScan() {
-  const btn = document.querySelector('.btn-gold');
+  const btn = document.querySelector('.btn-primary');
   btn.textContent = '⏳ Scanning...';
   btn.disabled = true;
   document.getElementById('results').innerHTML = '<div class="loading">⏳ Scanning YouTube, Google Trends, Reddit, TikTok...</div>';

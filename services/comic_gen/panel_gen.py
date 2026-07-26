@@ -225,7 +225,7 @@ def _render_placeholder(
     # Narration in dark overlay at bottom
     if panel.narration:
         y_offset = height - 40
-        draw.rectangle([(0, y_offset - 4), (width, height)], fill=(0, 0, 0, 160))
+        draw.rectangle([(0, y_offset - 4), (width, height)], fill=(0, 0, 0))
         _draw_wrapped_text(
             draw, f"[{panel.narration}]", margin, y_offset,
             width - 2 * margin, font, (200, 200, 100),
