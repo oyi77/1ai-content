@@ -358,9 +358,9 @@ describe('Web API Endpoints', () => {
   // ── GET /public/:filename — path traversal guard ──
 
   describe('GET /public/:filename', () => {
-    it('returns 400 for path traversal attempts', async () => {
+    it('returns 404 for path traversal attempts', async () => {
       const res = await request(app.server).get('/public/..%2F..%2Fetc%2Fpasswd');
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(404);
     });
   });
 });

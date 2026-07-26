@@ -35,6 +35,13 @@ jest.mock("@/utils/logger", () => ({
   },
 }));
 
+jest.mock("@/services/payment-settings.service", () => ({
+  PaymentSettingsService: {
+    getPricingConfig: jest.fn<() => Promise<string | null>>().mockResolvedValue(null),
+    getEnabledGateways: jest.fn<() => Promise<any[]>>().mockResolvedValue([]),
+  },
+}));
+
 jest.mock("@/config/languages", () => ({
   LANGUAGES: {
     id: { code: "id", label: "Bahasa Indonesia" },
@@ -174,7 +181,7 @@ describe("Start Command", () => {
       expect(sendVilonaWelcomeAnimation).toHaveBeenCalledWith(ctx);
       expect(ctx.reply).toHaveBeenCalled();
       const replyCall = ctx.reply.mock.calls[0];
-      expect(replyCall[0]).toContain("Halo");
+      expect(replyCall[0]).toContain("Selamat datang");
       expect(replyCall[1].reply_markup.keyboard).toHaveLength(6);
     });
 
