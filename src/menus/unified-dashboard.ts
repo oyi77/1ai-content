@@ -31,7 +31,7 @@ export async function showMainDashboard(ctx: BotContext): Promise<void> {
   const text = [
     `👋 ${user.first_name}`,
     "",
-    `🤖 Vilona Content Automation`,
+    `🎵 Vilona Content Factory`,
     "",
     `💎 Credits: ${credits} | Tier: ${tier}`,
     "",

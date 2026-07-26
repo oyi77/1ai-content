@@ -176,28 +176,28 @@ export function setupCommands(bot: Telegraf<BotContext>): void {
 
   // Set bot commands menu — Vilona Content Automation
   bot.telegram.setMyCommands([
-    { command: "start", description: "🏠 Start bot & main menu" },
+    { command: "start", description: "🏠 Start & main menu" },
     { command: "create", description: "🎬 Buat video baru" },
     { command: "image", description: "🖼️ Buat foto produk/logo" },
     { command: "carousel", description: "🖼️ Buat TikTok carousel" },
     { command: "autopilot", description: "🤖 Auto-generate & publish" },
     { command: "calendar", description: "📅 Content calendar" },
-    { command: "abtest", description: "🧪 A/B testing konten" },
+    { command: "abtest", description: "🧪 A/B test konten" },
     { command: "chat", description: "💬 Chat dengan AI Assistant" },
     { command: "prompts", description: "📚 Browse prompt library" },
     { command: "trending", description: "🔥 Trending content" },
     { command: "viral", description: "🔥 Find viral videos" },
-    { command: "clip", description: "✂️ Download & clip videos" },
-    { command: "repurpose", description: "🔄 Repurpose multi-source (anti-copyright remix)" },
-    { command: "remeta", description: "🔄 Re-metadata single video (overlay + re-render)" },
-    { command: "connect", description: "🔗 Connect social media accounts" },
-    { command: "publish", description: "📤 Publish to social media" },
-    { command: "schedule", description: "📅 Schedule content" },
+    { command: "clip", description: "✂️ Clip videos" },
+    { command: "repurpose", description: "🔄 Repurpose content" },
+    { command: "remeta", description: "🔄 Re-metadata video" },
+    { command: "connect", description: "🔗 Connect social accounts" },
+    { command: "publish", description: "📤 Publish to social" },
+    { command: "schedule", description: "📅 Schedule posts" },
     { command: "videos", description: "📁 Video saya" },
     { command: "profile", description: "👤 Profil saya" },
     { command: "settings", description: "⚙️ Pengaturan" },
-    { command: "support", description: "🆘 Hubungi support" },
-    { command: "help", description: "📖 Panduan lengkap" },
+    { command: "support", description: "🆘 Contact support" },
+    { command: "help", description: "📖 Full guide" },
   ]).catch(() => { /* ignore - bot token may not be set yet */ });
 
   logger.info("Bot commands registered successfully");
