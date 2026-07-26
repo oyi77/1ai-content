@@ -64,6 +64,10 @@ import { registerAdminConfigRoutes } from "./admin/admin-config";
 import { registerPersonaRoutes } from "./admin/persona";
 import { registerContentToolsRoutes } from "./admin/content-tools";
 import { registerFanpageRoutes } from "./admin/fanpage";
+import { registerDashboardRoutes } from "./admin/dashboard-api";
+import { registerContentRoutes } from "./admin/content-api";
+import { registerUsersApiRoutes } from "./admin/users-api";
+import { registerPaymentsApiRoutes } from "./admin/payments-api";
 import { trackingVars } from "./admin/shared";
 import { ConfigError } from '@/utils/app-errors';
 
@@ -248,6 +252,10 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
   await registerFanpageRoutes(server);
   await registerAdminConfigRoutes(server, verifyAdmin);
   await registerPersonaRoutes(server, verifyAdmin);
+  await registerDashboardRoutes(server);
+  await registerContentRoutes(server);
+  await registerUsersApiRoutes(server);
+  await registerPaymentsApiRoutes(server);
 
   // Login page (no auth required)
   server.get("/admin/login", async (_request, reply) => {

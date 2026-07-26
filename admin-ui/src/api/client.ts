@@ -27,7 +27,7 @@ export interface AnalyticsData {
 }
 
 export async function fetchAnalytics(): Promise<AnalyticsData> {
-  const res = await fetch(`${API_BASE}/api/analytics`);
+  const res = await fetch(`${API_BASE}/api/admin/dashboard`);
   if (!res.ok) throw new Error(`Analytics fetch failed: ${res.status}`);
   return res.json();
 }

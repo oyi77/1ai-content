@@ -22,6 +22,7 @@ const categories: NavCategory[] = [
     icon: "💰",
     label: "Monetization",
     items: [
+      { path: "/payments", icon: "💳", label: "Payments" },
       { path: "/pricing", icon: "💰", label: "Pricing" },
       { path: "/dynamic-pricing", icon: "💵", label: "Dynamic Pricing" },
     ],
@@ -31,6 +32,7 @@ const categories: NavCategory[] = [
     label: "Content",
     items: [
       { path: "/medias", icon: "🎬", label: "Medias" },
+      { path: "/content", icon: "📋", label: "Content" },
       { path: "/prompts", icon: "🤖", label: "Prompts" },
       { path: "/trending", icon: "🔥", label: "Trending" },
     ],
@@ -42,6 +44,13 @@ const categories: NavCategory[] = [
       { path: "/settings", icon: "⚙️", label: "Settings" },
       { path: "/providers", icon: "🔌", label: "Providers" },
       { path: "/system", icon: "🖥️", label: "System" },
+    ],
+  },
+  {
+    icon: "🔧",
+    label: "Tools",
+    items: [
+      { path: "/tools", icon: "🛠️", label: "Tools" },
     ],
   },
 ];
