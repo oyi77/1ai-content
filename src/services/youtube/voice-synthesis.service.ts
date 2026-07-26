@@ -6,6 +6,7 @@
  */
 
 import { logger } from "@/utils/logger";
+import { ConfigError, AllProvidersFailedError } from "@/utils/app-errors";
 import { getConfig } from "@/config/env";
 import { getCircuitBreakerThreshold, getCircuitBreakerResetMs } from "@/config/youtube.config";
 
@@ -44,7 +45,7 @@ const elevenLabsProvider: VoiceProvider = {
   name: "elevenlabs",
   async synthesize(text, outputPath, tone) {
     const apiKey = getConfig().ELEVENLABS_API_KEY;
-    if (!apiKey) throw new Error("ELEVENLABS_API_KEY not configured");
+    if (!apiKey) throw new ConfigError("ELEVENLABS_API_KEY");
     const axios = (await import("axios")).default;
     const voiceId = getConfig().ELEVENLABS_VOICE_ID || "21m00Tcm4TlvDq8ikWAM";
     const res = await axios.post(
@@ -61,7 +62,7 @@ const azureProvider: VoiceProvider = {
   name: "azure",
   async synthesize(text, outputPath) {
     const apiKey = getConfig().AZURE_SPEECH_KEY;
-    if (!apiKey) throw new Error("AZURE_SPEECH_KEY not configured");
+    if (!apiKey) throw new ConfigError("AZURE_SPEECH_KEY");
     const axios = (await import("axios")).default;
     const region = getConfig().AZURE_SPEECH_REGION || "eastus";
     const res = await axios.post(
@@ -95,5 +96,5 @@ export async function synthesizeNarration(
       logger.error(`[voice-synthesis] ${provider.name} failed: ${err}`);
     }
   }
-  throw new Error("All TTS providers failed");
+  throw new AllProvidersFailedError("All TTS providers failed");
 }

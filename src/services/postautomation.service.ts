@@ -37,6 +37,18 @@ export interface PublishResult {
   error?: string;
 }
 
+export interface ConnectAccountResult {
+  id: number;
+  userId: bigint;
+  platform: string;
+  pbAccountId: string;
+  accountName: string | null;
+  avatarUrl: string | null;
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 /**
  * PostAutomation Service
  */
@@ -104,7 +116,7 @@ export class PostAutomationService {
     pbAccountId: string,
     accountName?: string,
     avatarUrl?: string
-  ): Promise<any> {
+  ): Promise<ConnectAccountResult> {
     // Check if already connected
     const existing = await prisma.socialAccount.findFirst({
       where: {

@@ -15,8 +15,9 @@ import Fastify from "fastify";
 import path from "path";
 import fastifyView from "@fastify/view";
 import ejs from "ejs";
-import proxy from "@fastify/http-proxy";
+import fastifyHttpProxy from "@fastify/http-proxy";
 import fastifyCookie from "@fastify/cookie";
+import { ApiError } from "@/utils/app-errors";
 import { logger } from "@/utils/logger";
 import { setupCommands } from "@/commands";
 import { setupHandlers } from "@/handlers";
@@ -303,12 +304,12 @@ async function main() {
     });
 
     // Reverse proxy /api/py/* to Python FastAPI server on port 8767
-    await app.register(proxy, {
+    await app.register(fastifyHttpProxy, {
       upstream: 'http://127.0.0.1:8767',
       prefix: '/api/py',
       rewritePrefix: '/',
-      preHandler(req, _reply, done) {
-        req.raw.setTimeout(180_000);
+      preHandler(request, _reply, done) {
+        (request as any).raw.setTimeout(180_000);
         done();
       },
     });
@@ -355,6 +356,12 @@ async function main() {
 
     // 500 handler
     app.setErrorHandler((error, request, reply) => {
+      if (error instanceof ApiError) {
+        return reply.status(error.statusCode).send({
+          error: error.code,
+          message: error.message,
+        });
+      }
       app.log.error(error);
       const wantsHtml = request.headers.accept?.includes('text/html');
       if (wantsHtml) {
@@ -365,7 +372,7 @@ async function main() {
         );
       }
       return reply.status(500).send({ error: 'Internal Server Error' });
-    });
+    })
 
     // Start Fastify server FIRST (non-blocking)
     logger.info(`🌐 Starting HTTP server on port ${port}...`);

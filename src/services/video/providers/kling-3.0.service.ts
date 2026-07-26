@@ -16,6 +16,7 @@ import axios, { type AxiosResponse } from "axios";
 import { logger } from "@/utils/logger";
 import { getConfig } from "@/config/env";
 import { redis } from "@/config/redis";
+import { ConfigError, ProviderError } from "@/utils/app-errors";
 
 // ══════════════════════════════════════════════════════════════════════
 // Types
@@ -95,7 +96,7 @@ export class KlingVideoService {
    */
   async generateVideo(request: KlingVideoRequest): Promise<KlingVideoResponse> {
     if (!this.isAvailable()) {
-      throw new Error("Kling 3.0 API key not configured");
+      throw new ConfigError("KLING_API_KEY");
     }
 
     const resolution = request.resolution || "4k";
@@ -226,11 +227,10 @@ export class KlingVideoService {
         if (task.task_result?.video_url) {
           return { videoUrl: task.task_result.video_url };
         }
-        throw new Error("Kling task completed but no video URL returned");
+        throw new ProviderError("kling", "Task completed but no video URL returned");
       }
-
       if (task.task_status === "failed") {
-        throw new Error(`Kling task failed: ${task.task_error?.message || "Unknown error"}`);
+        throw new ProviderError("kling", `Task failed: ${task.task_error?.message || "Unknown error"}`);
       }
 
       // Update cache with progress
@@ -251,7 +251,7 @@ export class KlingVideoService {
       });
     }
 
-    throw new Error("Kling video generation timed out after 12 minutes");
+    throw new ProviderError("kling", "Video generation timed out after 12 minutes");
   }
 
   /**

@@ -10,6 +10,7 @@
  * centralize conversions and prevent runtime type errors.
  */
 
+import { ValidationError } from '@/utils/app-errors';
 import { Decimal } from '@prisma/client/runtime/library';
 
 /**
@@ -93,7 +94,7 @@ export function fromTelegramId(str: string | number): bigint {
   try {
     return BigInt(str);
   } catch (error) {
-    throw new Error(`Invalid telegram ID: ${str}. Error: ${error instanceof Error ? error.message : String(error)}`);
+    throw new ValidationError(`Invalid telegram ID: ${str}. Error: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
@@ -132,7 +133,7 @@ export function fromUserId(str: string | number): bigint {
   try {
     return BigInt(str);
   } catch (error) {
-    throw new Error(`Invalid user ID: ${str}. Error: ${error instanceof Error ? error.message : String(error)}`);
+    throw new ValidationError(`Invalid user ID: ${str}. Error: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 

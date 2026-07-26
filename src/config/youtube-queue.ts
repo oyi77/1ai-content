@@ -8,6 +8,7 @@
 
 import { Queue, QueueEvents } from "bullmq";
 import { bullmqRedis } from "./redis";
+import { logger } from "@/utils/logger";
 
 const defaultOpts = { connection: bullmqRedis, prefix: "yt" };
 
@@ -60,10 +61,10 @@ export function initYtQueueEvents(): void {
   for (const name of queueNames) {
     const ev = new QueueEvents(name, { connection: bullmqRedis, prefix: "yt" });
     ev.on("failed", ({ jobId, failedReason }) => {
-      console.error(`[yt-queue:${name}] Job ${jobId} failed: ${failedReason}`);
+      logger.error(`[yt-queue:${name}] Job ${jobId} failed: ${failedReason}`);
     });
     ev.on("completed", ({ jobId }) => {
-      console.log(`[yt-queue:${name}] Job ${jobId} completed`);
+      logger.info(`[yt-queue:${name}] Job ${jobId} completed`);
     });
     events.push(ev);
   }

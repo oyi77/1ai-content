@@ -1,7 +1,8 @@
 import { getConfig } from '@/config/env';
 import { logger } from '@/utils/logger';
+import type { PostBridgePlatformAdapter } from '@1ai/platform-adapters';
 
-let adapterInstance: any = null;
+let adapterInstance: PostBridgePlatformAdapter | null = null;
 
 async function getAdapter() {
   if (adapterInstance) return adapterInstance;

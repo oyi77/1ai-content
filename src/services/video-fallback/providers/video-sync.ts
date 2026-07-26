@@ -7,6 +7,7 @@ import axios from "axios";
 import * as fs from "fs";
 import { getConfig } from "@/config/env";
 import type { VideoFallbackResult } from "../../video-fallback.service";
+import { ProviderError } from "@/utils/app-errors";
 
 interface VideoFallbackParams {
   prompt: string;
@@ -62,7 +63,7 @@ async function generateViaLaoZhang(
   );
 
   const choices = response.data?.choices;
-  if (!choices?.length) throw new Error("no choices in response");
+  if (!choices?.length) throw new ProviderError("laozhang", "No choices in response");
 
   const messageContent = choices[0]?.message?.content || "";
   const urlMatch =
@@ -71,7 +72,7 @@ async function generateViaLaoZhang(
       : null;
 
   if (!urlMatch) {
-    throw new Error(`no video URL in response: ${String(messageContent).substring(0, 200)}`);
+    throw new ProviderError("laozhang", `No video URL in response: ${String(messageContent).substring(0, 200)}`);
   }
 
   return { success: true, videoUrl: urlMatch[0], provider: "laozhang" };

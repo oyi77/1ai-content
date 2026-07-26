@@ -16,6 +16,7 @@ import axios, { type AxiosResponse } from "axios";
 import { logger } from "@/utils/logger";
 import { getConfig } from "@/config/env";
 import { redis } from "@/config/redis";
+import { ConfigError, ProviderError } from "@/utils/app-errors";
 
 // ══════════════════════════════════════════════════════════════════════
 // Types
@@ -94,7 +95,7 @@ export class VeoVideoService {
    */
   async generateVideo(request: VeoVideoRequest): Promise<VeoVideoResponse> {
     if (!this.isAvailable()) {
-      throw new Error("Veo 3.1 API key not configured");
+      throw new ConfigError("VEO_API_KEY");
     }
 
     const resolution = request.resolution || "4k";
@@ -228,7 +229,7 @@ export class VeoVideoService {
 
       if (operation.done) {
         if (operation.error) {
-          throw new Error(`Veo operation failed: ${operation.error.message}`);
+          throw new ProviderError("veo", `Operation failed: ${operation.error.message}`);
         }
 
         if (operation.response?.videoUri) {
@@ -237,7 +238,7 @@ export class VeoVideoService {
           return { videoUrl };
         }
 
-        throw new Error("Veo operation completed but no video URL returned");
+        throw new ProviderError("veo", "Operation completed but no video URL returned");
       }
 
       // Update cache with progress
@@ -258,7 +259,7 @@ export class VeoVideoService {
       });
     }
 
-    throw new Error("Veo video generation timed out after 10 minutes");
+    throw new ProviderError("veo", "Video generation timed out after 10 minutes");
   }
 
   /**

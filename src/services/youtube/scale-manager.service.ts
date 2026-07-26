@@ -8,10 +8,11 @@
 import { logger } from "@/utils/logger";
 import { prisma } from "@/config/database";
 import { getTier2MinAvgViews, getTier2MinAgeDays, getTier3MinAvgViews } from "@/config/youtube.config";
+import { NotFoundError } from "@/utils/app-errors";
 
 export async function runWeeklyReview(channelId: string): Promise<Record<string, unknown>> {
   const channel = await prisma.ytChannel.findUnique({ where: { channelId } });
-  if (!channel) throw new Error(`Channel ${channelId} not found`);
+  if (!channel) throw new NotFoundError("Channel", channelId);
 
   const recentVideos = await prisma.ytPublishedVideo.findMany({
     where: { channelId, publishedAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } },

@@ -15,6 +15,7 @@
 import axios, { type AxiosResponse } from "axios";
 import { logger } from "@/utils/logger";
 import { getConfig } from "@/config/env";
+import { ConfigError, ExternalServiceError } from "@/utils/app-errors";
 
 // ══════════════════════════════════════════════════════════════════════
 // Types
@@ -85,7 +86,7 @@ export class AudioGenerationService {
    */
   async generateAudio(request: AudioGenerationRequest): Promise<AudioGenerationResponse> {
     if (!this.isAvailable()) {
-      throw new Error("ElevenLabs API key not configured or audio generation disabled");
+      throw new ConfigError("ELEVENLABS_API_KEY");
     }
 
     const voiceId = request.voiceId || this.defaultVoiceId;
@@ -146,7 +147,7 @@ export class AudioGenerationService {
     } catch (err) {
       const error = err instanceof Error ? err.message : "Unknown error";
       logger.error({ msg: "Audio generation: Failed", error });
-      throw new Error(`Audio generation failed: ${error}`);
+      throw new ExternalServiceError("ElevenLabs", `Audio generation failed: ${error}`);
     }
   }
 

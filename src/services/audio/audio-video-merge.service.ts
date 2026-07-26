@@ -17,6 +17,7 @@ import path from "path";
 import fs from "fs/promises";
 import { logger } from "@/utils/logger";
 import { getConfig } from "@/config/env";
+import { ExternalServiceError } from "@/utils/app-errors";
 
 const execAsync = promisify(exec);
 
@@ -137,7 +138,7 @@ export class AudioVideoMergeService {
     } catch (err) {
       const error = err instanceof Error ? err.message : "Unknown error";
       logger.error({ msg: "Audio-Video merge: Failed", error });
-      throw new Error(`Audio-Video merge failed: ${error}`);
+      throw new ExternalServiceError("AudioVideoMerge", `Audio-Video merge failed: ${error}`);
     }
   }
 

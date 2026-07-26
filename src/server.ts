@@ -9,12 +9,13 @@
  * - Error handlers
  */
 
-import Fastify from "fastify";
 import path from "path";
 import fastifyStatic from "@fastify/static";
 import fastifyView from "@fastify/view";
 import ejs from "ejs";
+import Fastify from "fastify";
 import { logger } from "@/utils/logger";
+import { ApiError } from "@/utils/app-errors";
 import { getConfig } from "@/config/env";
 import { healthCheckRoutes } from "@/routes/health";
 import { webhookRoutes } from "@/routes/webhook";
@@ -194,8 +195,13 @@ export function registerErrorHandlers(
     return reply.status(404).send({ error: "Not Found" });
   });
 
-  // 500 handler
   app.setErrorHandler((error: Error, request: { headers: { accept?: string } }, reply: { status: (code: number) => { type: (t: string) => { send: (body: string) => unknown }; send: (body: unknown) => unknown } }) => {
+    if (error instanceof ApiError) {
+      return reply.status(error.statusCode).send({
+        error: error.code,
+        message: error.message,
+      });
+    }
     app.log.error(error);
     const wantsHtml = request.headers.accept?.includes("text/html");
     if (wantsHtml) {

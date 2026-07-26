@@ -10,6 +10,7 @@ import { prisma } from "@/config/database";
 import { updateVideoMetadata } from "./youtube-api.service";
 import { generateSeoPackage } from "./seo-optimizer.service";
 import type { NicheVertical } from "@/config/youtube.config";
+import { NotFoundError } from "@/utils/app-errors";
 
 interface ReoptimizeResult {
   videoId: string;
@@ -20,7 +21,7 @@ interface ReoptimizeResult {
 
 export async function reoptimizeVideo(videoId: string, breakoutPrimaryElement: string): Promise<ReoptimizeResult> {
   const video = await prisma.ytPublishedVideo.findUnique({ where: { videoId } });
-  if (!video) throw new Error(`Video ${videoId} not found`);
+  if (!video) throw new NotFoundError("Video", videoId);
 
   const oldTitle = video.title || "";
   const niche = (video.nicheVertical || "folklore_history") as NicheVertical;

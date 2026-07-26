@@ -13,11 +13,12 @@
 
 import { logger } from '@/utils/logger';
 import { getConfig } from '@/config/env';
+import type { Telegram } from 'telegraf';
 
-let telegramInstance: any = null;
+let telegramInstance: Telegram | null = null;
 
 /** Set the Telegram instance (call once at startup) */
-export function setAlertTelegram(telegram: any): void {
+export function setAlertTelegram(telegram: Telegram): void {
   telegramInstance = telegram;
 }
 

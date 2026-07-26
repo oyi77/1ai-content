@@ -8,6 +8,7 @@
 import { logger } from "@/utils/logger";
 import { getConfig } from "@/config/env";
 import { getCircuitBreakerThreshold, getCircuitBreakerResetMs } from "@/config/youtube.config";
+import { ConfigError, AllProvidersFailedError, ExternalServiceError } from "@/utils/app-errors";
 
 interface MusicResult {
   audioPath: string;
@@ -54,12 +55,12 @@ export async function generateMusic(genre: string, mood: string, durationMinutes
     }
   }
 
-  throw new Error("All music providers failed");
+  throw new AllProvidersFailedError("All music providers failed");
 }
 
 async function generateViaSuno(genre: string, mood: string, durationMinutes: number, outputPath: string): Promise<MusicResult> {
   const apiKey = getConfig().SUNO_API_KEY;
-  if (!apiKey) throw new Error("SUNO_API_KEY not configured");
+  if (!apiKey) throw new ConfigError("SUNO_API_KEY");
 
   const axios = (await import("axios")).default;
   const prompt = `${genre} music, ${mood} mood, ${durationMinutes} minutes, seamless loop`;
@@ -71,7 +72,7 @@ async function generateViaSuno(genre: string, mood: string, durationMinutes: num
   );
 
   const audioUrl = res.data.audio_url || res.data.data?.[0]?.audio_url;
-  if (!audioUrl) throw new Error("No audio URL from Suno");
+  if (!audioUrl) throw new ExternalServiceError("Suno", "No audio URL from Suno");
 
   const audioRes = await axios.get(audioUrl, { responseType: "arraybuffer" });
   require("fs").writeFileSync(outputPath, audioRes.data);

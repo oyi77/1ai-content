@@ -16,6 +16,7 @@
  * 9. Demo mode (fallback)
  */
 
+import { AllProvidersFailedError, ValidationError } from '@/utils/app-errors';
 import { logger } from "@/utils/logger";
 import { getConfig } from "@/config/env";
 import { veoVideoService, type VeoVideoRequest } from "./providers/veo-3.1.service";
@@ -189,7 +190,7 @@ export class VideoProviderRegistry {
     }
 
     // All providers failed
-    throw new Error("All video generation providers failed");
+    throw new AllProvidersFailedError("All video generation providers failed");
   }
 
   /**
@@ -251,7 +252,7 @@ export class VideoProviderRegistry {
         };
 
       default:
-        throw new Error(`Unknown provider: ${provider}`);
+        throw new ValidationError(`Unknown provider: ${provider}`);
     }
   }
 }

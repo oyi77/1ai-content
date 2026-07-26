@@ -5,6 +5,7 @@
  * Services are lazily initialized on first access.
  */
 
+import { AppError } from '@/utils/app-errors';
 type ServiceFactory<T> = () => T;
 
 class Container {
@@ -23,7 +24,7 @@ class Container {
     if (!this.services.has(name)) {
       const factory = this.factories.get(name);
       if (!factory) {
-        throw new Error(`Service not registered: ${name}`);
+        throw new AppError("SERVICE_NOT_REGISTERED", `Service not registered: ${name}`);
       }
       this.services.set(name, factory());
     }

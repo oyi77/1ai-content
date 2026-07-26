@@ -11,6 +11,7 @@ import { prisma } from "@/config/database";
 import { getProvenThemeRatio } from "@/config/youtube.config";
 import { NICHE_VERTICALS } from "@/config/youtube.config";
 import type { YtIdeaCreate } from "@/types/youtube.types";
+import { NotFoundError, ValidationError } from "@/utils/app-errors";
 
 interface IdeaBatch {
   batchId: string;
@@ -22,11 +23,11 @@ interface IdeaBatch {
 
 export async function generateIdeas(channelId: string, batchSize = 15): Promise<IdeaBatch> {
   const channel = await prisma.ytChannel.findUnique({ where: { channelId } });
-  if (!channel) throw new Error(`Channel ${channelId} not found`);
+  if (!channel) throw new NotFoundError("Channel", channelId);
 
   const niche = channel.nicheVertical as keyof typeof NICHE_VERTICALS;
   const nicheConfig = NICHE_VERTICALS[niche];
-  if (!nicheConfig) throw new Error(`Unknown niche vertical: ${niche}`);
+  if (!nicheConfig) throw new ValidationError(`Unknown niche vertical: ${niche}`);
 
   const pastVideos = await prisma.ytPublishedVideo.findMany({
     where: { channelId },

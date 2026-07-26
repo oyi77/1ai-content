@@ -4,6 +4,7 @@
  */
 
 import { z } from "zod";
+import { logger } from "@/utils/logger";
 
 const boolStr = z
   .string()
@@ -224,9 +225,9 @@ let _config: AppConfig | undefined;
 export function initConfig(): AppConfig {
   const result = envSchema.safeParse(process.env);
   if (!result.success) {
-    console.error("Invalid environment configuration:");
+    logger.error("Invalid environment configuration:");
     for (const issue of result.error.issues) {
-      console.error(`  ${issue.path.join(".")}: ${issue.message}`);
+      logger.error(`  ${issue.path.join(".")}: ${issue.message}`);
     }
     process.exit(1);
   }

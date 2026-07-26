@@ -73,6 +73,13 @@ export class CircuitOpenError extends AppError {
   }
 }
 
+/** External service (HTTP API, third-party) returned an error or is unreachable */
+export class ExternalServiceError extends AppError {
+  constructor(public readonly service: string, message?: string, cause?: unknown) {
+    super(`EXT_SERVICE_${service.toUpperCase().replace(/-/g, "_")}`, message ?? `External service "${service}" failed`, cause);
+  }
+}
+
 /** Required resource not found */
 export class NotFoundError extends ApiError {
   constructor(resource: string, id?: string, cause?: unknown) {

@@ -6,6 +6,7 @@
  */
 
 import axios from "axios";
+import { NotFoundError } from "@/utils/app-errors";
 
 import { getConfig } from "@/config/env";
 import { logger } from "@/utils/logger";
@@ -42,7 +43,7 @@ const YT_API_BASE = "https://www.googleapis.com/youtube/v3";
 
 async function getAccessToken(channelId: string): Promise<string> {
   const channel = await prisma.ytChannel.findUnique({ where: { channelId } });
-  if (!channel?.ytOauthToken) throw new Error(`No OAuth token for channel ${channelId}`);
+  if (!channel?.ytOauthToken) throw new NotFoundError("OAuth token", `channel ${channelId}`);
   const tokens = JSON.parse(channel.ytOauthToken);
   return tokens.access_token || "";
 }
@@ -50,7 +51,7 @@ async function getAccessToken(channelId: string): Promise<string> {
 export async function refreshToken(channelId: string): Promise<boolean> {
   try {
     const channel = await prisma.ytChannel.findUnique({ where: { channelId } });
-    if (!channel?.ytOauthToken) throw new Error("No token");
+    if (!channel?.ytOauthToken) throw new NotFoundError("OAuth token");
     const tokens = JSON.parse(channel.ytOauthToken);
     const config = getConfig();
     const res = await axios.post("https://oauth2.googleapis.com/token", {

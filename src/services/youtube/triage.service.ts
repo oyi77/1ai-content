@@ -12,6 +12,7 @@ import {
   getTriageGoodMinCtr, getTriageGoodMinAvd,
 } from "@/config/youtube.config";
 import type { VideoTriageDecision } from "@/config/youtube.config";
+import { NotFoundError } from "@/utils/app-errors";
 
 interface TriageResult {
   videoId: string;
@@ -23,14 +24,14 @@ interface TriageResult {
 
 export async function triageVideo(videoId: string): Promise<TriageResult> {
   const video = await prisma.ytPublishedVideo.findUnique({ where: { videoId } });
-  if (!video) throw new Error(`Video ${videoId} not found`);
+  if (!video) throw new NotFoundError("Video", videoId);
 
   const metrics = await prisma.ytVideoMetrics.findFirst({
     where: { videoId, checkAt: "10d" },
     orderBy: { recordedAt: "desc" },
   });
 
-  if (!metrics) throw new Error(`No 10d metrics for ${videoId}`);
+  if (!metrics) throw new NotFoundError("10d metrics", videoId);
 
   const channelAvg = await getChannelAvgViews(video.channelId);
 

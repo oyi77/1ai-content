@@ -9,10 +9,11 @@ import { logger } from "@/utils/logger";
 import { prisma } from "@/config/database";
 import { NICHE_VERTICALS } from "@/config/youtube.config";
 import type { YtBreakoutCluster, YtAngleVariation } from "@/types/youtube.types";
+import { NotFoundError } from "@/utils/app-errors";
 
 export async function analyzeBreakout(videoId: string): Promise<YtBreakoutCluster> {
   const video = await prisma.ytPublishedVideo.findUnique({ where: { videoId } });
-  if (!video) throw new Error(`Video ${videoId} not found`);
+  if (!video) throw new NotFoundError("Video", videoId);
 
   const _metrics = await prisma.ytVideoMetrics.findFirst({
     where: { videoId },

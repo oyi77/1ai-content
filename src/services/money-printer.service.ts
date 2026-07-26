@@ -10,6 +10,7 @@
 
 import { spawn } from "child_process";
 import { resolve as resolvePath } from "path";
+import { logger } from "@/utils/logger";
 
 
 
@@ -84,7 +85,7 @@ export class MoneyPrinterService {
 			});
 
 			if (stderr) {
-				console.warn("MPT stderr:", stderr);
+        logger.warn("MPT stderr:", stderr);
 			}
 
 			const result = JSON.parse(stdout) as VideoGenerationResult;

@@ -17,6 +17,21 @@ import { secureRandomString } from '@/utils/crypto';
 import { ValidationError, ApiError } from '@/types';
 import crypto from 'crypto';
 
+
+interface TripayTransactionResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    reference: string;
+    merchant_ref: string;
+    status: string;
+    amount: number;
+    fee: number;
+    paid_at: string | null;
+    expired_at: string;
+    [key: string]: unknown;
+  };
+}
 interface TripayCreatePaymentParams {
   userId: bigint;
   packageId: string;
@@ -294,7 +309,7 @@ export class TripayService {
     }
   }
 
-  static async checkTransaction(reference: string): Promise<any> {
+  static async checkTransaction(reference: string): Promise<TripayTransactionResponse | null> {
     try {
       const response = await axios.get(`${this.getBaseUrl()}/transaction/detail`, {
         headers: this.getHeaders(),

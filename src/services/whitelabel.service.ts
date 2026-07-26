@@ -9,6 +9,7 @@
 import { prisma } from "@/config/database";
 import { logger } from "@/utils/logger";
 import { Decimal } from "@prisma/client/runtime/library";
+import { NotFoundError, ForbiddenError, ConflictError, ValidationError } from "@/utils/app-errors";
 
 export interface WhiteLabelConfig {
   id: bigint;
@@ -37,16 +38,16 @@ export class WhiteLabelService {
     const owner = await prisma.user.findUnique({
       where: { telegramId: params.ownerId },
     });
-    if (!owner) throw new Error("Owner not found");
+    if (!owner) throw new NotFoundError("Owner");
     if (owner.tier !== "agency") {
-      throw new Error("Only agency tier can create whitelabel bots");
+      throw new ForbiddenError("Only agency tier can create whitelabel bots");
     }
 
     // Check if bot token already registered
     const existing = await prisma.whiteLabelBot.findUnique({
       where: { botToken: params.botToken },
     });
-    if (existing) throw new Error("Bot token already registered");
+    if (existing) throw new ConflictError("Bot token already registered");
 
     const bot = await prisma.whiteLabelBot.create({
       data: {
@@ -142,7 +143,7 @@ export class WhiteLabelService {
     const available = totalEarned - totalWithdrawn;
 
     if (amount > available) {
-      throw new Error(
+      throw new ValidationError(
         `Insufficient balance. Available: Rp ${available.toLocaleString()}`,
       );
     }

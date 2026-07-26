@@ -16,6 +16,17 @@ import { getOmniRouteService } from '@/services/omniroute.service';
 import { AIConfigService } from '@/services/ai-config.service';
 import { redis } from '@/config/redis';
 
+interface StoryboardScene {
+  time: string;
+  description: string;
+  text: string;
+}
+
+interface Storyboard {
+  scenes: StoryboardScene[];
+  caption: string;
+}
+
 const OMNI_IMAGE_PROMPT = `Analyze this image in detail for AI content creation purposes. Describe:
 1. Subject/product (exact appearance, materials, textures, colors)
 2. Composition and framing
@@ -709,7 +720,7 @@ Output 400-600 words total. Character descriptions MUST be detailed enough to re
   /**
    * Generate storyboard from analysis
    */
-  static async generateStoryboard(niche: string, _duration: number): Promise<any> {
+  static async generateStoryboard(niche: string, _duration: number): Promise<Storyboard> {
     const storyboardTemplates: Record<string, any> = {
       product: {
         scenes: [

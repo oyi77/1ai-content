@@ -139,18 +139,13 @@ async def test_generate_section_content():
     from services.bookshelf.agents.section_writer import generate_section_content
     from services.bookshelf.stats import GenerationStatistics
 
-    usage = MagicMock()
-    usage.prompt_tokens = 10
-    usage.completion_tokens = 5
-    usage.total_tokens = 15
-
-    client = AsyncMock()
-    client.chat.completions.create = AsyncMock(
-        return_value=AsyncStreamMock([
-            _make_chunk(text="Hello this is "),
-            _make_chunk(text="section content."),
-            _make_chunk(usage=usage),
-        ])
+    client = MagicMock()
+    client.chat.completions.create = MagicMock(
+        return_value=_make_completion(
+            "Hello this is section content.",
+            prompt_tokens=10,
+            completion_tokens=5,
+        )
     )
 
     stats, content = await generate_section_content("Introduction", book_title="Test Book", groq_client=client)
@@ -166,7 +161,6 @@ async def test_generate_section_content():
 async def test_generate_book_pipeline():
     """Test full pipeline yields progress events."""
     from services.bookshelf.engine import generate_book_pipeline
-
     title_structure_json = json.dumps({
         "title": "Test Book",
         "sections": [
@@ -174,49 +168,22 @@ async def test_generate_book_pipeline():
         ],
     })
 
-    with patch("services.bookshelf.engine.get_groq_client") as mock_get_client, \
-         patch("services.bookshelf.engine.get_async_groq_client") as mock_get_aclient, \
-         patch("services.bookshelf.agents.title_writer.get_groq_client") as mock_get1, \
-         patch("services.bookshelf.agents.structure_writer.get_groq_client") as mock_get2, \
-         patch("services.bookshelf.agents.section_writer.get_async_groq_client") as mock_get3:
+    mock_client = MagicMock()
+    mock_client.chat.completions.create.side_effect = [
+        _make_completion("Test Book Title"),
+        _make_completion(title_structure_json),
+        _make_completion("Some content."),
+    ]
 
-        mock_sync = MagicMock()
-        mock_async = AsyncMock()
+    events = []
+    async for event in generate_book_pipeline("Test subject", groq_client=mock_client):
+        events.append(event)
 
-        # Engine-level: return sync + async mocks
-        mock_get_client.return_value = mock_sync
-        mock_get_aclient.return_value = mock_async
-
-        # Title call → first return
-        mock_get1.return_value = mock_sync
-
-        # Structure call → second return
-        mock_get2.return_value = mock_sync
-
-        # Use side_effect so first create() returns title, second returns structure
-        mock_sync.chat.completions.create.side_effect = [
-            _make_completion("Test Book Title"),
-            _make_completion(title_structure_json),
-        ]
-
-        # Section: async streaming call
-        mock_async.chat.completions.create = AsyncMock(
-            return_value=AsyncStreamMock([
-                _make_chunk(text="Some content."),
-                _make_chunk(text=""),
-            ])
-        )
-        mock_get3.return_value = mock_async
-
-        events = []
-        async for event in generate_book_pipeline("Test subject"):
-            events.append(event)
 
     event_types = [e["type"] for e in events]
     assert "progress" in event_types
     assert "section_content" in event_types
     assert "complete" in event_types
-
 
 # -- Markdown Assembly Tests --
 

@@ -2,6 +2,7 @@
 import json
 import os
 from typing import AsyncGenerator, Optional
+from openai import OpenAI
 
 from services.bookshelf.openai_provider import get_groq_client
 from services.bookshelf.agents.title_writer import generate_title
@@ -22,6 +23,7 @@ async def generate_book_pipeline(
     title_model: Optional[str] = None,
     structure_model: Optional[str] = None,
     section_model: Optional[str] = None,
+    groq_client: Optional[OpenAI] = None,
 ) -> AsyncGenerator[dict, None]:
     """Full book generation pipeline: title → structure → sections.
 
@@ -33,8 +35,9 @@ async def generate_book_pipeline(
     For "section_content" type: payload = {"title": str, "content": str}
     For "complete" type: payload = {"title": str, "structure": dict, "full_markdown": str}
     """
-    use_local = os.environ.get("BOOKSHELF_LOCAL_URL") or False
-    if use_local:
+    if groq_client is not None:
+        client = groq_client
+    elif os.environ.get("BOOKSHELF_LOCAL_URL"):
         from services.bookshelf.openai_provider import get_local_client
         client = get_local_client()
         # llama-server requires exact gguf path as model name
