@@ -332,6 +332,7 @@ describe('Payment Webhook Endpoints', () => {
 
       expect(isolatedPaymentService.handleNotification).toHaveBeenCalledWith(
         expect.objectContaining({ transaction_status: 'failed' }),
+        'tripay-sig',
       );
     });
   });

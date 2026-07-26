@@ -1,12 +1,6 @@
 <style>
-  .playground-section { display: none; }
-  .playground-section.active { display: block; }
   pre { background: #000; padding: 12px; border-radius: 8px; overflow-x: auto; font-size: 12px; border: 1px solid var(--border); }
   .preview-container { min-height: 200px; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); border-radius: 12px; border: 1px dashed var(--border); }
-  .tab-bar { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 1px; }
-  .tab { padding: 10px 20px; cursor: pointer; color: var(--muted); font-size: 14px; border-bottom: 2px solid transparent; transition: all 0.2s; background: transparent; border-left: none; border-right: none; border-top: none; border-radius: 0; }
-  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-  .tab:hover:not(.active) { color: var(--text); }
   .input { width: 100%; }
   .pg-spinner { width: 24px; height: 24px; border: 3px solid rgba(168,85,247,0.2); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
 </style>
@@ -23,7 +17,7 @@
 </div>
 
 <!-- Text Playground -->
-<div id="section-text" class="playground-section active">
+<div id="section-text" class="panel active">
   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
     <div class="card">
       <h3 style="margin-bottom: 16px; font-weight: 600;">Input</h3>
@@ -51,7 +45,7 @@
 </div>
 
 <!-- Image Playground -->
-<div id="section-image" class="playground-section">
+<div id="section-image" class="panel">
   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
     <div class="card">
       <h3 style="margin-bottom: 16px; font-weight: 600;">Input</h3>
@@ -90,7 +84,7 @@
 </div>
 
 <!-- Video Playground -->
-<div id="section-video" class="playground-section">
+<div id="section-video" class="panel">
   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
     <div class="card">
       <h3 style="margin-bottom: 16px; font-weight: 600;">Input</h3>
@@ -141,7 +135,7 @@
 <script>
   function switchTab(tabId) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.playground-section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(s => s.classList.remove('active'));
 
     document.querySelector(`.tab[data-tab="${tabId}"]`).classList.add('active');
     document.getElementById(`section-${tabId}`).classList.add('active');

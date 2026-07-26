@@ -10,17 +10,13 @@
   <link rel="stylesheet" href="/public/design-system.css">
   <style>
     :root {
+      /* Public color overrides (base tokens in design-system.css) */
       --color-bg: #0a0a1a;
       --color-bg-elevated: #111127;
       --color-card: rgba(255,255,255,0.04);
       --color-card-hover: rgba(255,255,255,0.08);
       --color-border: rgba(255,255,255,0.08);
       --color-border-strong: rgba(255,255,255,0.15);
-      --color-accent: #a855f7;
-      --color-accent-dim: #7c3aed;
-      --color-accent-2: #6366f1;
-      --color-grad: linear-gradient(135deg, #a855f7, #6366f1);
-      --color-grad-hover: linear-gradient(135deg, #9333ea, #4f46e5);
       --color-green: #22c55e;
       --color-red: #ef4444;
       --color-yellow: #fbbf24;
@@ -30,21 +26,10 @@
       --color-dim: rgba(255,255,255,0.55);
       --color-muted: rgba(255,255,255,0.35);
       --sidebar-w: 240px;
-      --radius: 14px;
-      --safe-bottom: env(safe-area-inset-bottom, 0px);
-      
-      /* Legacy variable aliases (for existing HTML/CSS in web app) */
-      --bg: var(--color-bg);
+
+      /* Legacy aliases not yet in design-system.css */
       --bg2: var(--color-bg-elevated);
-      --card: var(--color-card);
-      --card-hover: var(--color-card-hover);
-      --border: var(--color-border);
-      --accent: var(--color-accent);
       --accent2: var(--color-accent-2);
-      --grad: var(--color-grad);
-      --text: var(--color-text);
-      --dim: var(--color-dim);
-      --muted: var(--color-muted);
       --danger: var(--color-red);
       --warn: var(--color-yellow);
       --ok: var(--color-green);
@@ -176,19 +161,9 @@
       outline-offset: 2px;
     }
     
-    /* Reduced motion */
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-      }
-      .generating { animation: none; }
-    }
     
     /* Version badge */
     #version-badge { z-index: 999; }
-  </style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
     a{color:inherit;text-decoration:none}

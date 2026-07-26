@@ -531,7 +531,7 @@ describe("Webhook Routes", () => {
         signature_key: body.signature,
         transaction_status: "success",
         payment_type: body.payment_method,
-      });
+      }, "");
       expect(result).toEqual({ ok: true });
       expect(mockLogger.info).toHaveBeenCalledWith(
         "Tripay webhook received:",
@@ -592,6 +592,7 @@ describe("Webhook Routes", () => {
 
       expect(mockPaymentServiceHandleNotification).toHaveBeenCalledWith(
         expect.objectContaining({ transaction_status: "success" }),
+        "",
       );
     });
 
@@ -621,6 +622,7 @@ describe("Webhook Routes", () => {
 
       expect(mockPaymentServiceHandleNotification).toHaveBeenCalledWith(
         expect.objectContaining({ transaction_status: "failed" }),
+        "",
       );
     });
 
@@ -650,6 +652,7 @@ describe("Webhook Routes", () => {
 
       expect(mockPaymentServiceHandleNotification).toHaveBeenCalledWith(
         expect.objectContaining({ transaction_status: "failed" }),
+        "",
       );
     });
 
@@ -679,6 +682,7 @@ describe("Webhook Routes", () => {
 
       expect(mockPaymentServiceHandleNotification).toHaveBeenCalledWith(
         expect.objectContaining({ transaction_status: "failed" }),
+        "",
       );
     });
 
@@ -708,6 +712,7 @@ describe("Webhook Routes", () => {
 
       expect(mockPaymentServiceHandleNotification).toHaveBeenCalledWith(
         expect.objectContaining({ transaction_status: "pending" }),
+        "",
       );
     });
 
@@ -736,6 +741,7 @@ describe("Webhook Routes", () => {
 
       expect(mockPaymentServiceHandleNotification).toHaveBeenCalledWith(
         expect.objectContaining({ status_code: "200" }),
+        "",
       );
     });
 
@@ -764,6 +770,7 @@ describe("Webhook Routes", () => {
 
       expect(mockPaymentServiceHandleNotification).toHaveBeenCalledWith(
         expect.objectContaining({ gross_amount: "0" }),
+        "",
       );
     });
 
@@ -1458,6 +1465,7 @@ describe("Webhook Routes", () => {
 
       expect(mockPaymentServiceHandleNotification).toHaveBeenCalledWith(
         expect.objectContaining({ gross_amount: "999999999" }),
+        "",
       );
       expect(result).toEqual({ ok: true });
     });

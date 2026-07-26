@@ -8,39 +8,19 @@
   <link rel="stylesheet" href="/public/design-system.css">
   <style>
     :root {
+      /* Admin color overrides (base tokens in design-system.css) */
       --color-bg: #0d0d14;
       --color-bg-elevated: #111118;
       --color-card: #1a1a24;
       --color-card-hover: rgba(255,255,255,0.08);
       --color-border: #2a2a3a;
       --color-border-strong: rgba(255,255,255,0.15);
-      --color-accent: #a855f7;
-      --color-accent-dim: #7c3aed;
-      --color-accent-glow: rgba(168,85,247,0.15);
-      --color-grad: linear-gradient(135deg, #a855f7, #6366f1);
-      --color-grad-hover: linear-gradient(135deg, #9333ea, #4f46e5);
       --color-text: #e0e0f0;
       --color-muted: #888899;
       --color-green: #4ade80;
       --color-red: #f87171;
       --color-blue: #3b82f6;
       --color-yellow: #fbbf24;
-      --radius: 14px;
-      --safe-bottom: env(safe-area-inset-bottom, 0px);
-      
-      --bg: var(--color-bg);
-      --sidebar: #111118;
-      --card: #1a1a24;
-      --border: #2a2a3a;
-      --accent: #a855f7;
-      --accent-dim: #7c3aed;
-      --grad: linear-gradient(135deg, #a855f7, #6366f1);
-      --text: #e0e0f0;
-      --muted: #888899;
-      --green: #4ade80;
-      --red: #f87171;
-      --blue: #3b82f6;
-      --yellow: #fbbf24;
     }
     
     /* Page-specific only */
@@ -49,14 +29,6 @@
       box-shadow: 0 0 0 3px rgba(168,85,247,0.15);
     }
     
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-      }
-      .generating { animation: none; }
-    }
   </style>
 </head>
 <body class="flex h-screen overflow-hidden">

@@ -1,9 +1,4 @@
 <style>
-  .ai-tabs { display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border);flex-wrap:wrap; }
-  .ai-tab { padding:10px 20px;cursor:pointer;font-size:14px;border-bottom:2px solid transparent;color:var(--muted);white-space:nowrap; }
-  .ai-tab.active { border-bottom:2px solid var(--accent);color:var(--accent); }
-  .ai-panel { display:none; }
-  .ai-panel.active { display:block; }
   .task-card { border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 16px; background: var(--bg); }
   .task-card:hover { border-color: var(--accent-dim); }
   .task-title { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
@@ -36,15 +31,15 @@
 <div class="section-sub">Configure AI providers, models, system prompts, and chat settings</div>
 
 <!-- Tab Bar -->
-<div class="ai-tabs">
-  <div class="ai-tab active" data-tab="tasks" onclick="switchAiTab('tasks')">🤖 AI Tasks</div>
-  <div class="ai-tab" data-tab="prompts" onclick="switchAiTab('prompts')">💬 System Prompts</div>
-  <div class="ai-tab" data-tab="chat" onclick="switchAiTab('chat')">⚙️ Chat Model</div>
-  <div class="ai-tab" data-tab="models" onclick="switchAiTab('models')">🔍 Model Browser</div>
+<div class="tab-bar">
+  <div class="tab active" data-tab="tasks" onclick="switchAiTab('tasks')">🤖 AI Tasks</div>
+  <div class="tab" data-tab="prompts" onclick="switchAiTab('prompts')">💬 System Prompts</div>
+  <div class="tab" data-tab="chat" onclick="switchAiTab('chat')">⚙️ Chat Model</div>
+  <div class="tab" data-tab="models" onclick="switchAiTab('models')">🔍 Model Browser</div>
 </div>
 
 <!-- ====== TAB: AI TASKS ====== -->
-<div id="ai-panel-tasks" class="ai-panel active">
+<div id="ai-panel-tasks" class="panel active">
   <div class="tab-actions">
     <button class="btn btn-primary" onclick="saveTasks()">💾 Save Tasks</button>
     <button class="btn btn-ghost" onclick="resetAll('tasks')">🔄 Reset to Defaults</button>
@@ -275,7 +270,7 @@
 </div>
 
 <!-- ====== TAB: SYSTEM PROMPTS ====== -->
-<div id="ai-panel-prompts" class="ai-panel">
+<div id="ai-panel-prompts" class="panel">
   <div class="tab-actions">
     <button class="btn btn-primary" onclick="savePrompts()">💾 Save Prompts</button>
     <button class="btn btn-ghost" onclick="resetAll('prompts')">🔄 Reset to Defaults</button>
@@ -349,7 +344,7 @@
 </div>
 
 <!-- ====== TAB: CHAT MODEL ====== -->
-<div id="ai-panel-chat" class="ai-panel">
+<div id="ai-panel-chat" class="panel">
   <div class="tab-actions">
     <button class="btn btn-primary" onclick="saveChat()">💾 Save Chat Config</button>
     <button class="btn btn-ghost" onclick="resetAll('chat')">🔄 Reset to Defaults</button>
@@ -373,7 +368,7 @@
 </div>
 
 <!-- ====== TAB: MODEL BROWSER ====== -->
-<div id="ai-panel-models" class="ai-panel">
+<div id="ai-panel-models" class="panel">
   <!-- Search + filters bar -->
   <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px;">
     <input type="text" class="input" id="model-search" placeholder="Search models, providers, families…"
@@ -461,9 +456,9 @@ function setPreset(fieldId, value) {
 
 // ===================== TAB SWITCHING =====================
 function switchAiTab(tab) {
-  document.querySelectorAll('.ai-tab').forEach(t => t.classList.remove('active'));
-  document.querySelector(`.ai-tab[data-tab="${tab}"]`).classList.add('active');
-  document.querySelectorAll('.ai-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active');
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.getElementById(`ai-panel-${tab}`).classList.add('active');
 }
 
