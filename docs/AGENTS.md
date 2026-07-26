@@ -14,6 +14,7 @@ Product documentation, system prompts, pricing schemes, workflow descriptions, a
 | `AI_System_Prompts.md` | All AI system prompts used by the bot |
 | `SaaS_Bot_Detailed_Workflows.md` | Detailed user flow documentation |
 | `SaaS_Bot_Credit_Pricing_Scheme.md` | Credit and pricing system docs |
+| `saas-frontend-migration/` | SaaS multi-tenant frontend migration plan (Vue 3 + Vite) |
 | `Detail_Affiliate_System.md` | Referral/affiliate system design |
 | `Provider_Cost_Analysis.md` | AI provider cost comparison |
 | `competitor-analysis-2026.md` | Competitor landscape analysis |
@@ -23,10 +24,7 @@ Product documentation, system prompts, pricing schemes, workflow descriptions, a
 | Directory | Purpose |
 |-----------|---------|
 | `assets/` | GIF animations and visual assets |
-
-## For AI Agents
-
-### Working In This Directory
+| `saas-frontend-migration/` | Migration plan: scope, phases, risks, architecture decisions |
 - Reference documentation — read for context, not runtime code
 - Pricing docs may be outdated vs actual `src/config/pricing.ts`
 

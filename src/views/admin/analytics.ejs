@@ -895,7 +895,8 @@ function loadSection(sec) {
 
 // ===================== CLOCK =====================
 function updateClock() {
-  document.getElementById('live-clock').textContent = new Date().toLocaleString('id-ID', { weekday:'short', day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit', second:'2-digit' });
+  const el = document.getElementById('live-clock');
+  if (el) el.textContent = new Date().toLocaleString('id-ID', { weekday:'short', day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit', second:'2-digit' });
 }
 setInterval(updateClock, 1000);
 updateClock();

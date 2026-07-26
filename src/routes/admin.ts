@@ -796,6 +796,16 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
     }
   });
 
+  // ── REDIRECTS ──
+  // /admin/analytics -> /admin/dashboard (common mistaken path)
+  server.get("/admin/analytics", async (_request, reply) => {
+    return reply.redirect("/admin/dashboard");
+  });
+  // /admin/billing -> /admin/pricing (common mistaken path)
+  server.get("/admin/billing", async (_request, reply) => {
+    return reply.redirect("/admin/pricing");
+  });
+
   // ── REGISTER PROVIDER COSTS ROUTES ──
   const { registerProviderCostRoutes } = await import("./provider-costs.js");
   registerProviderCostRoutes(server);

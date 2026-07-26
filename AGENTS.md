@@ -53,8 +53,8 @@ Do NOT add the rules repo as a git submodule. Update rules centrally, then run/s
 4. Task must match this repo domain.
 5. Run GATE.md before commit/PR.
 
-## Repo-specific conventions
 - [add conventions specific to this repo]
+- SaaS frontend migration plan: `docs/saas-frontend-migration/README.md`
 
 ## Commands
 - Dev:   `npm run dev`
