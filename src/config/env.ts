@@ -152,6 +152,9 @@ const envSchema = z.object({
   DUITKU_ENVIRONMENT: z.string().default("sandbox"),
   NOWPAYMENTS_API_KEY: z.string().optional(),
   NOWPAYMENTS_IPN_SECRET: z.string().optional(),
+  '1AI_PAYMENT_URL': z.string().default("http://localhost:3103"),
+  '1AI_PAYMENT_API_KEY': z.string().optional(),
+  '1AI_PAYMENT_WEBHOOK_SECRET': z.string().optional(),
 
   // ── AI / Chat ──
   OMNIROUTE_URL: z.string().default("http://localhost:20128/v1"),
@@ -382,6 +385,9 @@ const CONFIG_GROUPS: Record<string, { keys: string[]; sensitive: string[] }> = {
       "DUITKU_ENVIRONMENT",
       "NOWPAYMENTS_API_KEY",
       "NOWPAYMENTS_IPN_SECRET",
+      "1AI_PAYMENT_URL",
+      "1AI_PAYMENT_API_KEY",
+      "1AI_PAYMENT_WEBHOOK_SECRET",
     ],
     sensitive: [
       "MIDTRANS_SERVER_KEY",
@@ -390,6 +396,8 @@ const CONFIG_GROUPS: Record<string, { keys: string[]; sensitive: string[] }> = {
       "DUITKU_API_KEY",
       "NOWPAYMENTS_API_KEY",
       "NOWPAYMENTS_IPN_SECRET",
+      "1AI_PAYMENT_API_KEY",
+      "1AI_PAYMENT_WEBHOOK_SECRET",
     ],
   },
   "AI / Chat": {

@@ -98,9 +98,8 @@ jest.mock("@/i18n/translations", () => ({
 jest.mock("@/config/env", () => ({
   getConfig: jest.fn(),
 }));
-const mockGetConfig = jest.fn() as MockFn;
 
-const { getConfig } = jest.requireMock("@/config/env") as { getConfig: MockFn };
+const { getConfig } = jest.requireMock("@/config/env") as { getConfig: jest.Mock };
 
 // Set environment variables for tests
 process.env["1AI_PAYMENT_URL"] = "http://localhost:3100";
@@ -196,11 +195,11 @@ describe("PaymentService", () => {
     // Default bot instance to null so notification tests don't send messages
     PaymentService.setBotInstance(null as unknown as Telegraf);
     mockSecureRandomString.mockReturnValue("ABC123");
-    mockGetConfig.mockReturnValue({
-      WEBHOOK_URL: "https://test.example.com",
-    });
     (getConfig as jest.Mock).mockReturnValue({
       WEBHOOK_URL: "https://test.example.com",
+      "1AI_PAYMENT_URL": "http://localhost:3100",
+      "1AI_PAYMENT_API_KEY": "test-api-key",
+      "1AI_PAYMENT_WEBHOOK_SECRET": "test-webhook-secret",
     });
   });
 
@@ -641,14 +640,16 @@ describe("PaymentService", () => {
     });
 
     it("should return true when webhook secret is not configured (skip verification)", () => {
-      const origSecret = process.env["1AI_PAYMENT_WEBHOOK_SECRET"];
-      delete process.env["1AI_PAYMENT_WEBHOOK_SECRET"];
+      (getConfig as jest.Mock).mockReturnValue({
+        WEBHOOK_URL: "https://test.example.com",
+        "1AI_PAYMENT_URL": "http://localhost:3100",
+        "1AI_PAYMENT_API_KEY": "test-api-key",
+        // intentionally omitting 1AI_PAYMENT_WEBHOOK_SECRET to test skip-verification path
+      });
 
       const body = JSON.stringify({ order_id: "ORD-001" });
       const result = PaymentService.verifyWebhookSignature(body, "anything");
       expect(result).toBe(true);
-
-      process.env["1AI_PAYMENT_WEBHOOK_SECRET"] = origSecret;
     });
   });
 

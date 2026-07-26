@@ -42,8 +42,13 @@
     gtag('event','add_to_cart',{page:'admin_pricing',currency:'IDR',event_source:'aitradepulse_admin'});
   </script>
   <% } %>
+  <link rel="stylesheet" href="/public/design-system.css">
   <!-- ===== END TRACKING ===== -->
   <style>
+    :root {
+      --color-surface: #1e293b;
+      --color-border: #334155;
+    }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
     .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
@@ -454,8 +459,7 @@
         rows += '<tr data-key="' + key + '" data-category="provider_cost">'
           + '<td><input type="text" class="pc-key" value="' + esc(key) + '" /></td>'
           + '<td><input type="number" class="pc-cost" step="0.001" value="' + cost + '" oninput="updateCalcCost(this)" /></td>'
-          + '<td class="pc-calc" style="color:#facc15">' + creditCost.toFixed(2) + '</td>'
-          + '<td><div class="btn-group">'
+          + '<td class="pc-calc" style="color:var(--color-warning)">' + creditCost.toFixed(2) + '</td>'
           + '<button class="btn btn-primary" onclick="saveProviderCost(this)">Save</button>'
           + '<button class="btn btn-danger" onclick="deleteRow(this, \'provider_cost\')">Delete</button>'
           + '</div></td></tr>';
@@ -476,8 +480,7 @@
         '<tr data-key="" data-category="provider_cost">'
         + '<td><input type="text" class="pc-key" value="" placeholder="provider_key" /></td>'
         + '<td><input type="number" class="pc-cost" step="0.001" value="0" oninput="updateCalcCost(this)" /></td>'
-        + '<td class="pc-calc" style="color:#facc15">0.00</td>'
-        + '<td><div class="btn-group">'
+        + '<td class="pc-calc" style="color:var(--color-warning)">0.00</td>'
         + '<button class="btn btn-primary" onclick="saveProviderCost(this)">Save</button>'
         + '<button class="btn btn-danger" onclick="deleteRow(this, \'provider_cost\')">Delete</button>'
         + '</div></td></tr>'
@@ -561,7 +564,7 @@
       for (var k of keys) {
         var val = typeof uc[k] === 'object' ? (uc[k]?.value || 0) : (uc[k] || 0);
         var rec = recommendations[k];
-        var recHtml = rec ? '<span style="color:#f59e0b">≥ ' + rec.minUnits + ' units</span> ($' + (rec.apiCostUsdMax || 0).toFixed(3) + ')' : '<span style="color:#64748b">loading...</span>';
+        var recHtml = rec ? '<span style="color:var(--color-warning)">≥ ' + rec.minUnits + ' units</span> ($' + (rec.apiCostUsdMax || 0).toFixed(3) + ')' : '<span style="color:var(--color-muted)">loading...</span>';
         rows += '<tr data-key="' + k + '">'
           + '<td>' + k + '</td>'
           + '<td><input type="number" class="uc-val" value="' + val + '" step="1" min="1" style="width:80px" /></td>'
@@ -587,7 +590,7 @@
           var recCells = document.querySelectorAll('tr[data-key="' + k + '"] .uc-rec');
           var costCells = document.querySelectorAll('tr[data-key="' + k + '"] .uc-cost');
           if (recCells.length > 0) {
-            var color = rec.current < rec.minUnits ? '#ef4444' : '#22c55e';
+            var color = rec.current < rec.minUnits ? 'var(--color-danger)' : 'var(--color-success)';
             recCells[0].innerHTML = '<span style="color:' + color + '">≥ ' + rec.minUnits + ' units (' + (rec.minUnits/10).toFixed(1) + ' cr)</span>';
           }
           if (costCells.length > 0) {

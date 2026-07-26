@@ -9,8 +9,6 @@ import { prisma } from "@/config/database";
 import { UserService } from "@/services/user.service";
 import { VideoService } from "@/services/video.service";
 import { PaymentService } from "@/services/payment.service";
-import { DuitkuService } from "@/services/duitku.service";
-import { TripayService } from "@/services/tripay.service";
 import { checkTelegramHash, checkTWAHash } from "@/utils/telegram";
 import { enqueueVideoGeneration } from "@/config/queue";
 import {
@@ -799,26 +797,15 @@ export async function webRoutes(server: FastifyInstance): Promise<void> {
             .status(400)
             .send({ error: "packageId and gateway required" });
         let result: any;
-        if (gateway === "duitku") {
-          result = await DuitkuService.createTransaction({
-            userId: user.telegramId,
-            packageId,
-            username: user.username || user.firstName,
-          });
-        } else if (gateway === "tripay") {
-          result = await TripayService.createTransaction({
-            userId: user.telegramId,
-            packageId,
-            username: user.username || user.firstName,
-          });
-        } else {
-          result = await PaymentService.createTransaction({
-            userId: user.telegramId,
-            packageId,
-            username: user.username || user.firstName,
-          });
-        }
-        return result;
+        // Unified via PaymentService
+        result = await PaymentService.createTransaction({
+          userId: user.telegramId,
+          packageId,
+          username: user.username || user.firstName,
+          gateway: gateway as 'midtrans' | 'tripay' | 'duitku' | 'nowpayments',
+        });
+        // Normalize redirectUrl → paymentUrl for backward compatibility
+        return { ...result, paymentUrl: result.redirectUrl };
       } catch (error: any) {
         server.log.error({ error }, "Payment create error");
         return reply.status(500).send({ error: "Failed to create payment" });
@@ -1235,36 +1222,19 @@ td{padding:8px;border-bottom:1px solid #eee}.total{font-size:24px;font-weight:bo
       // Reuse the standard payment create flow with type=subscription
       const packageId = `sub_${planKey}_${billingCycle}`;
       let result: any;
-      if (gateway === "duitku") {
-        try {
-          result = await DuitkuService.createTransaction({
-            userId: user.telegramId,
-            packageId,
-            username: user.username || user.firstName || "Customer",
-          });
-        } catch {
-          result = null; // sub_ package not in packages list — fall through to direct tx creation below
-        }
-      } else if (gateway === "tripay") {
-        try {
-          result = await TripayService.createTransaction({
-            userId: user.telegramId,
-            packageId,
-            username: user.username || user.firstName || "Customer",
-          });
-        } catch {
-          result = null; // sub_ package not in packages list — fall through to direct tx creation below
-        }
-      } else {
+      try {
         result = await PaymentService.createTransaction({
           userId: user.telegramId,
           packageId,
           username: user.username || user.firstName || "Customer",
+          gateway: gateway as 'midtrans' | 'tripay' | 'duitku' | 'nowpayments',
         });
+      } catch {
+        result = null; // sub_ package not in packages list — falls through to 502 below
       }
 
       // If gateway doesn't natively know sub_ packages, return error instead of unpayable record
-      if (!result?.paymentUrl && !result?.payment_url) {
+      if (!result?.redirectUrl) {
         return reply
           .status(502)
           .send({ error: "Payment gateway unavailable. Please try again." });
@@ -1273,6 +1243,7 @@ td{padding:8px;border-bottom:1px solid #eee}.total{font-size:24px;font-weight:bo
       return {
         ok: true,
         ...result,
+        paymentUrl: result.redirectUrl,
         plan: planKey,
         cycle: billingCycle,
         amountIdr: price,

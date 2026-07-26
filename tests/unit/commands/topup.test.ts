@@ -49,11 +49,6 @@ jest.mock("@/services/payment.service", () => ({
   },
 }));
 
-jest.mock("@/services/duitku.service", () => ({
-  DuitkuService: {
-    createTransaction: jest.fn(),
-  },
-}));
 
 jest.mock("@/services/payment-settings.service", () => ({
   PaymentSettingsService: {
@@ -142,13 +137,11 @@ describe("Topup Command", () => {
   let ctx: ReturnType<typeof createMockContext>;
   let UserService: any;
   let PaymentService: any;
-  let DuitkuService: any;
   let PaymentSettingsService: any;
   let SubscriptionService: any;
   let NowPaymentsService: any;
   let prisma: any;
   let axios: any;
-
   beforeEach(() => {
     jest.clearAllMocks();
     ctx = createMockContext();
@@ -161,7 +154,6 @@ describe("Topup Command", () => {
     };
     UserService = require("@/services/user.service").UserService;
     PaymentService = require("@/services/payment.service").PaymentService;
-    DuitkuService = require("@/services/duitku.service").DuitkuService;
     PaymentSettingsService =
       require("@/services/payment-settings.service").PaymentSettingsService;
     SubscriptionService =
@@ -427,19 +419,21 @@ describe("Topup Command", () => {
       expect(editCall[0]).toContain("Midtrans");
     });
 
-    it("should show Duitku payment methods instead of immediate transaction", async () => {
-      DuitkuService.getPaymentMethods = (jest.fn() as any).mockResolvedValue([
-        { paymentMethod: 'BC', paymentName: 'BCA Virtual Account', paymentImage: '', totalFee: '0' },
-        { paymentMethod: 'OV', paymentName: 'OVO', paymentImage: '', totalFee: '0' },
-      ]);
+    it("should create Duitku transaction directly", async () => {
+      (PaymentService.createTransaction as jest.Mock).mockResolvedValue({
+        orderId: "ORDER-123",
+        redirectUrl: "https://duitku.example.com/pay",
+      });
 
       await handlePaymentGateway(ctx as any, "starter", "duitku");
 
-      // Should show payment method selection, not create transaction directly
-      expect(DuitkuService.createTransaction).not.toHaveBeenCalled();
+      expect(PaymentService.createTransaction).toHaveBeenCalledWith(
+        expect.objectContaining({ gateway: "duitku" }),
+      );
       expect(ctx.editMessageText).toHaveBeenCalled();
       const editCall = ctx.editMessageText.mock.calls[0];
-      expect(editCall[0]).toContain("Payment Method");
+      expect(editCall[0]).toContain("Payment Ready");
+      expect(editCall[0]).toContain("Duitku");
     });
 
     it("should show pay now and check payment buttons", async () => {
@@ -561,14 +555,14 @@ describe("Topup Command", () => {
         tier: "free",
       });
       PaymentSettingsService.getEnabledGateways.mockResolvedValue([{ id: 'duitku', gateway: 'duitku' }]);
-      DuitkuService.createTransaction.mockResolvedValue({
+      (PaymentService.createTransaction as jest.Mock).mockResolvedValue({
         orderId: "ORDER-EXTRA-5",
-        paymentUrl: "https://duitku.example.com/pay",
+        redirectUrl: "https://duitku.example.com/pay",
       });
 
       await handleTopupExtraCredit(ctx as any, 5);
 
-      expect(DuitkuService.createTransaction).toHaveBeenCalled();
+      expect(PaymentService.createTransaction).toHaveBeenCalled();
       expect(ctx.editMessageText).toHaveBeenCalled();
     });
 
@@ -578,7 +572,7 @@ describe("Topup Command", () => {
         tier: "free",
       });
       PaymentSettingsService.getEnabledGateways.mockResolvedValue([{ id: 'duitku', gateway: 'duitku' }]);
-      DuitkuService.createTransaction.mockRejectedValue(new Error("Payment error"));
+      (PaymentService.createTransaction as jest.Mock).mockRejectedValue(new Error("Payment error"));
 
       await handleTopupExtraCredit(ctx as any, 5);
 

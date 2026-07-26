@@ -9,8 +9,6 @@ import { logger } from '@/utils/logger';
 import { getConfig } from '@/config/env';
 import { UserService } from '@/services/user.service';
 import { PaymentService } from '@/services/payment.service';
-import { DuitkuService } from '@/services/duitku.service';
-import { TripayService } from '@/services/tripay.service';
 import { PaymentSettingsService } from '@/services/payment-settings.service';
 import { SubscriptionService } from '@/services/subscription.service';
 import {
@@ -176,23 +174,17 @@ export async function handlePaymentGateway(ctx: BotContext, packageId: string, g
       // Show available payment methods first
       await showDuitkuPaymentMethods(ctx, packageId);
       return;
-    } else if (gateway === 'tripay') {
-      gatewayDisplayName = 'Tripay';
-      const res = await TripayService.createTransaction({
-        userId: BigInt(user.id),
-        packageId,
-        username: user.username || user.first_name,
-      });
-      if (!res.success) throw new PaymentError('Tripay', res.error || 'Transaction error');
-      transaction = res;
-    } else {
-      gatewayDisplayName = 'Midtrans';
-      transaction = await PaymentService.createTransaction({
-        userId: BigInt(user.id),
-        packageId,
-        username: user.username || user.first_name,
-      });
     }
+
+    // All other gateways unified via PaymentService
+    const normalizedGateway = gateway === 'tripay' ? 'tripay' : 'midtrans';
+    gatewayDisplayName = gateway === 'tripay' ? 'Tripay' : 'Midtrans';
+    transaction = await PaymentService.createTransaction({
+      userId: BigInt(user.id),
+      packageId,
+      username: user.username || user.first_name,
+      gateway: normalizedGateway as 'midtrans' | 'tripay' | 'duitku' | 'nowpayments',
+    });
 
     const paymentUrl = transaction.paymentUrl || transaction.redirectUrl || '';
 
@@ -229,59 +221,32 @@ export async function handlePaymentGateway(ctx: BotContext, packageId: string, g
  */
 export async function showDuitkuPaymentMethods(ctx: BotContext, packageId: string): Promise<void> {
   try {
+    const user = ctx.from;
+    if (!user) return;
+
     const lang = await getLang(ctx);
-    const packages = await getPackagesAsync();
-    const pkg = packages.find(p => p.id === packageId);
-    if (!pkg) {
-      await ctx.editMessageText(t('topup.not_found', lang));
-      return;
-    }
+    await ctx.answerCbQuery('...').catch(() => {});
 
-    const price = pkg.priceIdr || (pkg as Record<string, unknown>).price as number || 0;
-    const methods = await DuitkuService.getPaymentMethods(price);
+    const transaction = await PaymentService.createTransaction({
+      userId: BigInt(user.id),
+      packageId,
+      username: user.username || user.first_name,
+      gateway: 'duitku',
+    });
 
-    if (methods.length === 0) {
-      // Fallback: create with default payment method and let Duitku page handle selection
-      const user = ctx.from;
-      if (!user) return;
-      const transaction = await DuitkuService.createTransaction({
-        userId: BigInt(user.id),
-        packageId,
-        username: user.username || user.first_name,
-      });
-      const paymentUrl = transaction.paymentUrl || '';
-      await ctx.editMessageText(
-        t('topup.payment_ready', lang, { orderId: transaction.orderId, method: 'Duitku' }),
-        {
-          parse_mode: 'Markdown',
-          reply_markup: {
-            inline_keyboard: [
-              [{ text: t('topup.btn_pay', lang), url: paymentUrl }],
-              [{ text: t('topup.btn_paid', lang), callback_data: `check_payment_${transaction.orderId}` }],
-              [{ text: t('btn.back', lang), callback_data: 'topup' }],
-            ],
-          },
-        }
-      );
-      return;
-    }
-
-    // Group payment methods by category
-    const methodButtons = methods.map(m => [{
-      text: `${m.paymentName}${m.totalFee && Number(m.totalFee) > 0 ? ` (+Rp ${formatIdr(Number(m.totalFee))})` : ''}`,
-      callback_data: `duitku_method_${packageId}_${m.paymentMethod}`,
-    }]);
-    methodButtons.push([{ text: t('btn.back', lang), callback_data: 'topup' }]);
+    const paymentUrl = transaction.redirectUrl || '';
 
     await ctx.editMessageText(
-      `${t('topup.select_payment_method', lang)}\n\n` +
-      `${t('topup.package_label', lang)}: *${pkg.name}*\n` +
-      `${t('topup.price_label', lang)}: ${formatPrice(price, lang)}\n` +
-      `${t('profile.credits', lang)}: ${pkg.credits + (pkg.bonus || 0)}\n\n` +
-      `${t('topup.select_method_prompt', lang)}`,
+      t('topup.payment_ready', lang, { orderId: transaction.orderId, method: 'Duitku' }),
       {
         parse_mode: 'Markdown',
-        reply_markup: { inline_keyboard: methodButtons },
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: t('topup.btn_pay', lang), url: paymentUrl }],
+            [{ text: t('topup.btn_paid', lang), callback_data: `check_payment_${transaction.orderId}` }],
+            [{ text: t('btn.back', lang), callback_data: 'topup' }],
+          ],
+        },
       }
     );
   } catch (error: any) {
@@ -301,14 +266,16 @@ export async function handleDuitkuMethodSelection(ctx: BotContext, packageId: st
     const lang = await getLang(ctx);
     await ctx.answerCbQuery('...').catch(() => {});
 
-    const transaction = await DuitkuService.createTransaction({
+    const transaction = await PaymentService.createTransaction({
       userId: BigInt(user.id),
       packageId,
-      paymentMethod,
       username: user.username || user.first_name,
+      gateway: 'duitku',
+      paymentMethod,
     });
 
-    const paymentUrl = transaction.paymentUrl || '';
+    const paymentUrl = transaction.redirectUrl || '';
+
 
     await ctx.editMessageText(
       t('topup.payment_ready', lang, { orderId: transaction.orderId, method: 'Duitku' }),
@@ -389,10 +356,11 @@ export async function handleTopupExtraCredit(ctx: BotContext, credits: number): 
       return;
     }
 
-    const gatewayRes = await DuitkuService.createTransaction({
+    const gatewayRes = await PaymentService.createTransaction({
       userId: telegramId,
       packageId: `extra_${credits}`,
       username: user.username || user.first_name,
+      gateway: 'duitku',
     });
 
     await ctx.editMessageText(
@@ -401,7 +369,7 @@ export async function handleTopupExtraCredit(ctx: BotContext, credits: number): 
         parse_mode: 'Markdown',
         reply_markup: {
           inline_keyboard: [
-            [{ text: t('topup.btn_pay', lang), url: gatewayRes.paymentUrl }],
+            [{ text: t('topup.btn_pay', lang), url: gatewayRes.redirectUrl }],
             [{ text: t('topup.btn_paid', lang), callback_data: `check_payment_${gatewayRes.orderId}` }],
             [{ text: t('btn.back', lang), callback_data: 'topup' }]
           ],

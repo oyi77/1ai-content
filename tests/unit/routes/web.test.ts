@@ -64,17 +64,6 @@ jest.mock("@/services/payment.service", () => ({
   },
 }));
 
-const mockDuitkuCreateTransaction = jest.fn();
-
-jest.mock("@/services/duitku.service", () => ({
-  DuitkuService: { createTransaction: mockDuitkuCreateTransaction },
-}));
-
-const mockTripayCreateTransaction = jest.fn();
-
-jest.mock("@/services/tripay.service", () => ({
-  TripayService: { createTransaction: mockTripayCreateTransaction },
-}));
 
 const mockPaymentSettingsGet = jest.fn();
 
@@ -892,8 +881,8 @@ describe("Web Routes", () => {
     it("should create payment with duitku gateway", async () => {
       const token = createValidToken();
       (mockFindByUuid as any).mockResolvedValue(createMockUser());
-      (mockDuitkuCreateTransaction as any).mockResolvedValue({
-        paymentUrl: "https://duitku.com/pay",
+      (mockPaymentCreateTransaction as any).mockResolvedValue({
+        redirectUrl: "https://duitku.com/pay",
       });
       const request = createMockRequest(
         { packageId: "starter", gateway: "duitku" },
@@ -901,19 +890,20 @@ describe("Web Routes", () => {
       );
       const reply = createMockReply();
       const result = await handler()(request, reply);
-      expect(mockDuitkuCreateTransaction).toHaveBeenCalledWith({
-        userId: BigInt(123456789),
-        packageId: "starter",
-        username: "testuser",
-      });
-      expect(result).toEqual({ paymentUrl: "https://duitku.com/pay" });
+      expect(mockPaymentCreateTransaction).toHaveBeenCalledWith(
+        expect.objectContaining({
+          gateway: "duitku",
+          userId: BigInt(123456789),
+          packageId: "starter",
+        }),
+      );
+      expect(result).toEqual(expect.objectContaining({ paymentUrl: "https://duitku.com/pay" }));
     });
-
     it("should create payment with tripay gateway", async () => {
       const token = createValidToken();
       (mockFindByUuid as any).mockResolvedValue(createMockUser());
-      (mockTripayCreateTransaction as any).mockResolvedValue({
-        paymentUrl: "https://tripay.com/pay",
+      (mockPaymentCreateTransaction as any).mockResolvedValue({
+        redirectUrl: "https://tripay.com/pay",
       });
       const request = createMockRequest(
         { packageId: "starter", gateway: "tripay" },
@@ -921,15 +911,16 @@ describe("Web Routes", () => {
       );
       const reply = createMockReply();
       const result = await handler()(request, reply);
-      expect(mockTripayCreateTransaction).toHaveBeenCalled();
-      expect(result).toEqual({ paymentUrl: "https://tripay.com/pay" });
+      expect(mockPaymentCreateTransaction).toHaveBeenCalledWith(
+        expect.objectContaining({ gateway: "tripay" }),
+      );
+      expect(result).toEqual(expect.objectContaining({ paymentUrl: "https://tripay.com/pay" }));
     });
-
     it("should create payment with default gateway", async () => {
       const token = createValidToken();
       (mockFindByUuid as any).mockResolvedValue(createMockUser());
       (mockPaymentCreateTransaction as any).mockResolvedValue({
-        paymentUrl: "https://default.com/pay",
+        redirectUrl: "https://default.com/pay",
       });
       const request = createMockRequest(
         { packageId: "starter", gateway: "midtrans" },
@@ -938,7 +929,7 @@ describe("Web Routes", () => {
       const reply = createMockReply();
       const result = await handler()(request, reply);
       expect(mockPaymentCreateTransaction).toHaveBeenCalled();
-      expect(result).toEqual({ paymentUrl: "https://default.com/pay" });
+      expect(result).toEqual(expect.objectContaining({ paymentUrl: "https://default.com/pay" }));
     });
 
     it("should use firstName when username is not available", async () => {

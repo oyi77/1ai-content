@@ -390,6 +390,7 @@ bot.on("callback_query", async (ctx) => {
         userId: BigInt(userId),
         packageId,
         username: user.firstName || "User",
+        gateway: 'midtrans',
       });
       if (result.redirectUrl) {
         await ctx.reply(

@@ -70,10 +70,11 @@ interface ForwardedPaymentEvent {
  * Get 1ai-payment API configuration
  */
 function get1aiPaymentConfig() {
+  const config = getConfig();
   return {
-    baseUrl: process.env['1AI_PAYMENT_URL'] || 'http://localhost:3100',
-    apiKey: process.env['1AI_PAYMENT_API_KEY'] || 'test-key',
-    webhookSecret: process.env['1AI_PAYMENT_WEBHOOK_SECRET'] || '',
+    baseUrl: config['1AI_PAYMENT_URL'],
+    apiKey: config['1AI_PAYMENT_API_KEY'] || 'test-key',
+    webhookSecret: config['1AI_PAYMENT_WEBHOOK_SECRET'] || '',
   };
 }
 
@@ -103,11 +104,9 @@ export class PaymentService {
     userId: bigint;
     packageId: string;
     username?: string;
-  }): Promise<{
-    orderId: string;
-    token: string;
-    redirectUrl: string;
-  }> {
+    gateway: 'midtrans' | 'tripay' | 'duitku' | 'nowpayments';
+    paymentMethod?: string;
+  }): Promise<{ orderId: string; token: string; redirectUrl: string }> {
     const packages = await getPackagesAsync();
     const pkg = packages.find((p) => p.id === params.packageId);
 
@@ -132,7 +131,7 @@ export class PaymentService {
         packageName: params.packageId,
         amountIdr: price,
         creditsAmount: credits,
-        gateway: 'unified', // Mark as unified gateway
+        gateway: 'unified',
         status: 'pending',
       },
     });
@@ -141,23 +140,29 @@ export class PaymentService {
       const paymentConfig = get1aiPaymentConfig();
       const callbackUrl = `${getConfig().WEBHOOK_URL}/webhook/1ai-payment`;
 
+      const requestBody: Record<string, unknown> = {
+        gateway: params.gateway,
+        amount: price,
+        currency: 'IDR',
+        project_order_id: orderId,
+        callback_url: callbackUrl,
+        metadata: {
+          userId: params.userId.toString(),
+          packageId: params.packageId,
+          credits,
+        },
+        customer: {
+          name: params.username || 'User',
+        },
+      };
+
+      if (params.paymentMethod) {
+        requestBody.payment_method = params.paymentMethod;
+      }
+
       const response = await axios.post<PaymentApiResponse>(
         `${paymentConfig.baseUrl}/api/payments`,
-        {
-          gateway: 'midtrans', // Default to Midtrans; can be extended
-          amount: price,
-          currency: 'IDR',
-          project_order_id: orderId,
-          callback_url: callbackUrl,
-          metadata: {
-            userId: params.userId.toString(),
-            packageId: params.packageId,
-            credits,
-          },
-          customer: {
-            name: params.username || 'User',
-          },
-        },
+        requestBody,
         {
           headers: {
             'X-API-Key': paymentConfig.apiKey,
@@ -181,7 +186,7 @@ export class PaymentService {
 
       return {
         orderId,
-        token: paymentData.id, // Use 1ai-payment order ID as token
+        token: paymentData.id,
         redirectUrl: paymentData.payment_url,
       };
     } catch (error) {
