@@ -1,0 +1,296 @@
+/* 1ai-content React Admin Skin — overrides design-system.css variables for admin SPA */
+
+/* Sidebar */
+.sidebar {
+  width: 260px;
+  min-width: 260px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  overflow: hidden;
+  z-index: 100;
+}
+
+.sidebar-overlay {
+  display: none;
+}
+
+/* Layout */
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.main-content {
+  flex: 1;
+  padding: 24px 32px;
+  max-width: 1200px;
+  overflow-y: auto;
+}
+
+.hamburger {
+  display: none;
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 200;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+/* Nav category */
+.nav-category {
+  display: flex;
+  align-items: center;
+  padding: 10px 20px;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: color 0.2s;
+}
+
+.nav-category:hover {
+  color: var(--text);
+}
+
+.nav-category-icon {
+  width: 20px;
+  margin-right: 8px;
+  font-size: 14px;
+}
+
+.nav-category-label {
+  flex: 1;
+}
+
+.nav-category-arrow {
+  font-size: 10px;
+  transition: transform 0.2s;
+}
+
+.nav-category-items {
+  padding: 0;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 20px 8px 48px;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 14px;
+  transition: all 0.15s;
+  gap: 6px;
+}
+
+.nav-item:hover {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.nav-item.active {
+  background: var(--bg);
+  color: var(--accent);
+  font-weight: 600;
+  border-right: 3px solid var(--accent);
+}
+
+/* Metrics grid */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.metric-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+}
+
+.metric-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.metric-label {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* Dashboard grid */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 768px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Cards */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+}
+
+.card h3 {
+  margin: 0 0 16px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* Table */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.table th,
+.table td {
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.table th {
+  font-weight: 600;
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Status dots */
+.status-dot {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.status-dot.online {
+  background: var(--color-success-light, #dcfce7);
+  color: var(--color-success, #16a34a);
+}
+
+.status-dot.degraded {
+  background: var(--color-warning-light, #fef3c7);
+  color: var(--color-warning, #d97706);
+}
+
+.status-dot.offline {
+  background: var(--color-danger-light, #fee2e2);
+  color: var(--color-danger, #dc2626);
+}
+
+/* Badges */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--bg);
+  color: var(--muted);
+}
+
+/* Provider list */
+.provider-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.provider-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+/* Niche list */
+.niche-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.niche-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+/* Loading & Error */
+.loading {
+  padding: 40px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.error-box {
+  padding: 20px;
+  background: var(--color-danger-light, #fee2e2);
+  color: var(--color-danger, #dc2626);
+  border-radius: 8px;
+  margin: 20px 0;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    left: -260px;
+    transition: left 0.25s;
+    z-index: 150;
+  }
+
+  .sidebar.open {
+    left: 0;
+  }
+
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 140;
+  }
+
+  .hamburger {
+    display: block;
+  }
+
+  .main-content {
+    padding: 16px;
+  }
+}

@@ -326,7 +326,16 @@ async function main() {
       cacheControl: true,
       maxAge: '1h',
     });
-    await app.register(webRoutes);
+
+    // React admin SPA static files (decorateReply: false — v9 only allows one sendFile decorator)
+    await app.register((await import('@fastify/static')).default, {
+      root: path.join(process.cwd(), 'admin-ui', 'dist'),
+      prefix: '/admin/react/',
+      cacheControl: true,
+      maxAge: '1h',
+      wildcard: false,
+      decorateReply: false,
+    });
     await app.register(agencyRoutes, { prefix: '/api' });
     await app.register(contentApiRoutes);
     await app.register(youtubeDashboardRoutes);
@@ -340,6 +349,16 @@ async function main() {
     }
 
     logger.info("✅ Routes registered");
+
+    // React admin SPA catch-all — serves index.html for client-side routing
+    const adminUiDist = path.join(process.cwd(), 'admin-ui', 'dist');
+    app.get('/admin/react', async (_req, reply) => {
+      return reply.sendFile('index.html', adminUiDist);
+    });
+    app.get('/admin/react/*', async (_req, reply) => {
+      return reply.sendFile('index.html', adminUiDist);
+    });
+
 
     // 404 handler
     app.setNotFoundHandler((request, reply) => {

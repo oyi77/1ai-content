@@ -8,13 +8,13 @@
   <link rel="canonical" href="https://saas.aitradepulse.com/terms">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/public/design-system.css">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
     :root {
-      --bg: #0a0a1a; --bg2: #111127; --card: rgba(255,255,255,0.04);
-      --border: rgba(255,255,255,0.08); --accent: #00d9ff; --accent2: #00ff88;
-      --grad: linear-gradient(135deg, #00d9ff, #00ff88);
-      --text: #fff; --dim: rgba(255,255,255,0.55); --red: #ff4444;
+      --bg: var(--color-bg); --bg2: var(--color-bg-elevated); --card: var(--color-card);
+      --border: var(--color-border); --accent: var(--color-accent); --accent2: var(--color-accent-2);
+      --grad: var(--color-grad);
+      --text: var(--color-text); --dim: var(--color-dim); --red: var(--color-danger);
     }
     html { scroll-behavior: smooth; }
     body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; line-height: 1.7; }
@@ -27,9 +27,9 @@
     .nav-links a:hover { color: var(--text); }
     .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border-radius: 10px; font-size: 14px; font-weight: 600; text-decoration: none; transition: all .25s; border: none; cursor: pointer; }
     .btn-primary { background: var(--grad); color: #0a0a1a; }
-    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,217,255,0.3); }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(168,85,247,0.3); }
 
-    .page-header { text-align: center; padding: 60px 20px 40px; background: radial-gradient(circle at 50% 0%, rgba(0,217,255,0.1), transparent 50%); }
+    .page-header { text-align: center; padding: 60px 20px 40px; background: radial-gradient(circle at 50% 0%, rgba(168,85,247,0.1), transparent 50%); }
     .page-header h1 { font-size: clamp(28px, 5vw, 42px); font-weight: 900; margin-bottom: 12px; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
     .page-header p { color: var(--dim); font-size: 16px; }
     .last-updated { display: inline-block; background: var(--card); border: 1px solid var(--border); padding: 8px 16px; border-radius: 20px; font-size: 13px; color: var(--dim); margin-top: 16px; }
@@ -51,7 +51,7 @@
     .section ul li::marker { color: var(--accent2); }
     .section ol li::marker { color: var(--accent); font-weight: 600; }
 
-    .highlight-box { background: rgba(0,217,255,0.05); border: 1px solid rgba(0,217,255,0.15); border-radius: 12px; padding: 20px; margin: 24px 0; }
+    .highlight-box { background: rgba(168,85,247,0.05); border: 1px solid rgba(168,85,247,0.15); border-radius: 12px; padding: 20px; margin: 24px 0; }
     .highlight-box p { color: var(--text); margin-bottom: 0; }
 
     footer { border-top: 1px solid var(--border); padding: 40px 20px; text-align: center; color: var(--dim); font-size: 14px; }

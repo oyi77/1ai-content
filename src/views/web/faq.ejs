@@ -7,13 +7,14 @@
   <meta name="description" content="Frequently asked questions about BK Vilona AI — video creation, pricing, payments, referrals, and account management.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/public/design-system.css">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     :root {
-      --bg: #0a0a1a; --bg2: #111127; --card: rgba(255,255,255,0.04);
-      --border: rgba(255,255,255,0.08); --accent: #00d9ff; --accent2: #00ff88;
-      --grad: linear-gradient(135deg, #00d9ff, #00ff88);
-      --text: #fff; --dim: rgba(255,255,255,0.55);
+      --bg: var(--color-bg); --bg2: var(--color-bg-elevated); --card: var(--color-card);
+      --border: var(--color-border); --accent: var(--color-accent); --accent2: var(--color-accent-2);
+      --grad: var(--color-grad);
+      --text: var(--color-text); --dim: var(--color-dim);
     }
     html { scroll-behavior: smooth; }
     body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; line-height: 1.6; }
@@ -24,11 +25,11 @@
     .nav-links { display: flex; gap: 20px; align-items: center; }
     .nav-links a { color: var(--dim); text-decoration: none; font-size: 14px; transition: color .2s; }
     .nav-links a:hover { color: var(--text); }
-    .btn-nav { background: rgba(0,217,255,0.12); color: #00d9ff; border: 1px solid rgba(0,217,255,0.25); padding: 6px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; text-decoration: none; transition: all .25s; }
-    .btn-nav:hover { background: rgba(0,217,255,0.2); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,217,255,0.15); }
+    .btn-nav { background: rgba(168,85,247,0.12); color: #a855f7; border: 1px solid rgba(168,85,247,0.25); padding: 6px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; text-decoration: none; transition: all .25s; }
+    .btn-nav:hover { background: rgba(168,85,247,0.2); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(168,85,247,0.15); }
 
     /* Hero */
-    .hero { text-align: center; padding: 64px 20px 48px; background: radial-gradient(circle at 50% 0%, rgba(0,217,255,0.08), transparent 50%); }
+    .hero { text-align: center; padding: 64px 20px 48px; background: radial-gradient(circle at 50% 0%, rgba(168,85,247,0.08), transparent 50%); }
     .hero h1 { font-size: clamp(28px, 4vw, 44px); font-weight: 900; line-height: 1.2; margin-bottom: 12px; }
     .hero h1 span { background: var(--grad); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
     .hero p { font-size: 16px; color: var(--dim); max-width: 520px; margin: 0 auto; }
@@ -43,8 +44,8 @@
     }
     .accordion { display: flex; flex-direction: column; gap: 8px; }
     .accordion-item { background: var(--card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; transition: border-color .2s; }
-    .accordion-item:hover { border-color: rgba(0,217,255,0.2); }
-    .accordion-item.open { border-color: rgba(0,217,255,0.3); }
+    .accordion-item:hover { border-color: rgba(168,85,247,0.2); }
+    .accordion-item.open { border-color: rgba(168,85,247,0.3); }
     .accordion-btn {
       width: 100%; display: flex; justify-content: space-between; align-items: center;
       padding: 18px 20px; background: transparent; border: none; cursor: pointer;
@@ -54,19 +55,19 @@
     .accordion-btn:hover { background: rgba(255,255,255,0.03); }
     .accordion-icon {
       flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%;
-      background: rgba(0,217,255,0.1); border: 1px solid rgba(0,217,255,0.2);
+      background: rgba(168,85,247,0.1); border: 1px solid rgba(168,85,247,0.2);
       display: flex; align-items: center; justify-content: center;
       font-size: 14px; color: var(--accent); transition: transform .25s, background .2s;
     }
-    .accordion-item.open .accordion-icon { transform: rotate(45deg); background: rgba(0,217,255,0.2); }
+    .accordion-item.open .accordion-icon { transform: rotate(45deg); background: rgba(168,85,247,0.2); }
     .accordion-body { display: none; padding: 0 20px 18px; font-size: 14px; color: var(--dim); line-height: 1.75; }
     .accordion-item.open .accordion-body { display: block; }
-    .accordion-body code { background: rgba(0,217,255,0.1); color: var(--accent); padding: 1px 6px; border-radius: 4px; font-size: 13px; }
+    .accordion-body code { background: rgba(168,85,247,0.1); color: var(--accent); padding: 1px 6px; border-radius: 4px; font-size: 13px; }
     .accordion-body ul { padding-left: 18px; margin: 8px 0; }
     .accordion-body ul li { margin-bottom: 4px; }
     .accordion-body a { color: var(--accent); text-decoration: none; }
     .accordion-body a:hover { text-decoration: underline; }
-    .highlight-box { background: rgba(0,255,136,0.06); border: 1px solid rgba(0,255,136,0.15); border-radius: 10px; padding: 12px 16px; margin-top: 10px; font-size: 13px; color: rgba(255,255,255,0.7); }
+    .highlight-box { background: rgba(168,85,247,0.06); border: 1px solid rgba(168,85,247,0.15); border-radius: 10px; padding: 12px 16px; margin-top: 10px; font-size: 13px; color: rgba(255,255,255,0.7); }
     .highlight-box strong { color: var(--accent2); }
 
     footer { border-top: 1px solid var(--border); padding: 40px 20px; text-align: center; color: var(--dim); font-size: 14px; }
