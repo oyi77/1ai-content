@@ -17,6 +17,7 @@ import fastifyView from "@fastify/view";
 import ejs from "ejs";
 import fastifyHttpProxy from "@fastify/http-proxy";
 import fastifyCookie from "@fastify/cookie";
+import fastifyFormbody from "@fastify/formbody";
 import { ApiError } from "@/utils/app-errors";
 import { logger } from "@/utils/logger";
 import { setupCommands } from "@/commands";
@@ -249,6 +250,9 @@ async function main() {
 
     // Cookie parsing/setting support (for admin auth)
     await app.register(fastifyCookie);
+
+    // Form body parsing (application/x-www-form-urlencoded) for admin login POST
+    await app.register(fastifyFormbody);
 
     // ── Correlation ID — attach to request for downstream logging ──
     app.addHook('onRequest', async (request, _reply) => {

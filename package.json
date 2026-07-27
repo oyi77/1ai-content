@@ -55,6 +55,7 @@
     "@1ai/ai-pipeline": "file:../1ai/packages/ai-pipeline",
     "@1ai/platform-adapters": "file:../1ai/packages/platform-adapters",
     "@fastify/cookie": "^11.1.2",
+    "@fastify/formbody": "^8.0.2",
     "@fastify/http-proxy": "^11.6.0",
     "@fastify/multipart": "^10.0.0",
     "@fastify/static": "^9.1.3",
