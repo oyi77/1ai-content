@@ -194,7 +194,7 @@ export class GamificationService {
       // Apply reward credit if any
       if (rewardCredit > 0) {
         await prisma.user.update({
-          where: { id: userId },
+          where: { telegramId: userId },
           data: { creditBalance: { increment: rewardCredit } },
         });
         await prisma.transaction.create({
@@ -256,7 +256,7 @@ export class GamificationService {
             newBadges.push(badge);
             if (badge.creditReward) {
               await prisma.user.update({
-                where: { id: userId },
+                where: { telegramId: userId },
                 data: { creditBalance: { increment: badge.creditReward } },
               });
               await prisma.transaction.create({
@@ -315,7 +315,7 @@ export class GamificationService {
     const hasDownline3Level = referrals.some((r: any) => r.tier === 3);
 
     // Calculate months active from user creation
-    const user = await prisma.user.findUnique({ where: { id: userId }, select: { createdAt: true } });
+    const user = await prisma.user.findUnique({ where: { telegramId: userId }, select: { createdAt: true } });
     const monthsActive = user ? Math.floor((Date.now() - new Date(user.createdAt).getTime()) / (30 * 24 * 60 * 60 * 1000)) : 0;
 
     return {
@@ -358,13 +358,12 @@ export class GamificationService {
     // Batch fetch all users in one query instead of N+1
     const userIds = leaderboard.map(e => e.userId);
     const users = await prisma.user.findMany({
-      where: { id: { in: userIds } },
-      select: { id: true, firstName: true, username: true },
+      where: { telegramId: { in: userIds } },
+      select: { telegramId: true, firstName: true, username: true },
     });
-    const userMap = new Map(users.map(u => [u.id.toString(), u]));
-
+    const userMap = new Map(users.map(u => [u.telegramId, u]));
     return leaderboard.map((entry, index) => {
-      const user = userMap.get(entry.userId.toString());
+      const user = userMap.get(entry.userId);
       return {
         rank: index + 1,
         userId: entry.userId,

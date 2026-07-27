@@ -43,7 +43,7 @@ export class WeeklyLeaderboardService {
         const entry = leaderboard[i];
         if (entry.creditReward > 0) {
           await prisma.user.update({
-            where: { id: entry.userId },
+            where: { telegramId: entry.userId },
             data: { creditBalance: { increment: entry.creditReward } },
           });
           logger.info(`[leaderboard] Awarded ${entry.creditReward} credit to user ${entry.userId} (rank ${i + 1})`);
@@ -53,7 +53,7 @@ export class WeeklyLeaderboardService {
             const medals = ['🥇', '🥈', '🥉'];
             await bot.telegram.sendMessage(
               Number(
-                (await prisma.user.findUnique({ where: { id: entry.userId }, select: { telegramId: true } }))
+                (await prisma.user.findUnique({ where: { telegramId: entry.userId }, select: { telegramId: true } }))
                   ?.telegramId || 0
               ),
               `${medals[i]} *Selamat, kamu masuk Top ${i + 1} Leaderboard Minggu Ini!*\n\n` +

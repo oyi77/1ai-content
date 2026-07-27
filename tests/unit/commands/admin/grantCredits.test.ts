@@ -153,7 +153,7 @@ describe("Admin Grant Credits Command", () => {
       await adminGrantCreditsCommand(ctx as any);
 
       expect(UserService.grantCredits).toHaveBeenCalledWith(
-        BigInt(1),
+        BigInt(111111111),
         10,
         "Bonus for referral",
       );

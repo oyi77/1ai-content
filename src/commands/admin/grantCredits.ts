@@ -68,7 +68,7 @@ export async function adminGrantCreditsCommand(ctx: BotContext): Promise<void> {
     }
 
     // Grant credits to the user
-    await UserService.grantCredits(user.id, amount, reason);
+    await UserService.grantCredits(user.telegramId, amount, reason);
     
     logger.info(`Admin ${userId} granted ${amount} credits to user ${targetUserId}. Reason: ${reason}`);
    

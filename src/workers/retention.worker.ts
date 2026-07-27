@@ -80,10 +80,10 @@ export class RetentionScheduler {
 
       for (const sub of subs) {
         if (!sub.user?.notificationsEnabled) continue;
-        if (await this.canSend(sub.user.id, 'subscription')) {
+        if (await this.canSend(sub.user.telegramId, 'subscription')) {
           const lang = sub.user.language || 'id';
           await this.sendMessage(bot, sub.user.telegramId, t(trigger.msgKey, lang, { name: sub.user.firstName }), lang);
-          await this.logSent(sub.user.id, 'subscription');
+          await this.logSent(sub.user.telegramId, 'subscription');
         }
       }
     }
@@ -118,10 +118,10 @@ export class RetentionScheduler {
       });
 
       for (const user of users) {
-        if (await this.canSend(user.id, 'deposit')) {
+        if (await this.canSend(user.telegramId, 'deposit')) {
           const lang = user.language || 'id';
           await this.sendMessage(bot, user.telegramId, t(msgKey, lang, { name: user.firstName }), lang);
-          await this.logSent(user.id, 'deposit');
+          await this.logSent(user.telegramId, 'deposit');
         }
       }
     }
@@ -156,10 +156,10 @@ export class RetentionScheduler {
       });
 
       for (const user of users) {
-        if (await this.canSend(user.id, 'free_trial')) {
+        if (await this.canSend(user.telegramId, 'free_trial')) {
           const lang = user.language || 'id';
           await this.sendMessage(bot, user.telegramId, t(msgKey, lang, { name: user.firstName }), lang);
-          await this.logSent(user.id, 'free_trial');
+          await this.logSent(user.telegramId, 'free_trial');
         }
       }
     }
@@ -191,10 +191,10 @@ export class RetentionScheduler {
       });
 
       for (const user of users) {
-        if (await this.canSend(user.id, 'inactive')) {
+        if (await this.canSend(user.telegramId, 'inactive')) {
           const lang = user.language || 'id';
           await this.sendMessage(bot, user.telegramId, t(trigger.msgKey, lang, { name: user.firstName }), lang);
-          await this.logSent(user.id, 'inactive');
+          await this.logSent(user.telegramId, 'inactive');
         }
       }
     }
@@ -228,10 +228,10 @@ export class RetentionScheduler {
       const msgKey = msgKeys[count] ?? 'retention.active_3rd_gen';
 
       for (const user of users) {
-        if (await this.canSend(user.id, 'affiliate')) {
+        if (await this.canSend(user.telegramId, 'affiliate')) {
           const lang = user.language || 'id';
           await this.sendMessage(bot, user.telegramId, t(msgKey, lang, { name: user.firstName }), lang);
-          await this.logSent(user.id, 'affiliate');
+          await this.logSent(user.telegramId, 'affiliate');
         }
       }
     }
@@ -261,10 +261,10 @@ export class RetentionScheduler {
       });
 
       for (const user of users) {
-        if (await this.canSend(user.id, 'churn')) {
+        if (await this.canSend(user.telegramId, 'churn')) {
           const lang = user.language || 'id';
           await this.sendMessage(bot, user.telegramId, t(trigger.msgKey, lang, { name: user.firstName }), lang);
-          await this.logSent(user.id, 'churn');
+          await this.logSent(user.telegramId, 'churn');
         }
       }
     }
@@ -302,11 +302,11 @@ export class RetentionScheduler {
 
     for (const { user, count } of byUser.values()) {
       if (!user?.notificationsEnabled) continue;
-      if (await this.canSend(user.id, 'video_expiry')) {
+      if (await this.canSend(user.telegramId, 'video_expiry')) {
         const lang = user.language || 'id';
         const msg = t('retention.video_expiry_warning', lang, { count: String(count) });
         await this.sendMessage(bot, user.telegramId, msg, lang);
-        await this.logSent(user.id, 'video_expiry');
+        await this.logSent(user.telegramId, 'video_expiry');
       }
     }
   }

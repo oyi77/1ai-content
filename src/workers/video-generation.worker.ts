@@ -1191,7 +1191,7 @@ async function sendVideoToUser(
 
     // Send first-video beginner tips (Sprint 3.3)
     if (dbUser) {
-      const videoCount = await prisma.video.count({ where: { userId: dbUser.id } });
+      const videoCount = await prisma.video.count({ where: { userId: dbUser.telegramId } });
       if (videoCount <= 1) {
         const tips = t('video.first_video_tips', lang);
         await telegram.sendMessage(chatId, tips, { parse_mode: 'Markdown' }).catch(() => {});
