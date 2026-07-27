@@ -149,7 +149,7 @@ export async function getTokenStats(days = 7) {
       WHERE created_at >= ${since}
       GROUP BY provider
       ORDER BY cost_usd DESC
-    ` as Promise<any[]>,
+    ` as Promise<Array<Record<string, unknown>>>,
 
     prisma.$queryRaw`
       SELECT model,
@@ -161,7 +161,7 @@ export async function getTokenStats(days = 7) {
       GROUP BY model
       ORDER BY cost_usd DESC
       LIMIT 10
-    ` as Promise<any[]>,
+    ` as Promise<Array<Record<string, unknown>>>,
 
     prisma.$queryRaw`
       SELECT service,
@@ -172,7 +172,7 @@ export async function getTokenStats(days = 7) {
       WHERE created_at >= ${since}
       GROUP BY service
       ORDER BY tokens DESC
-    ` as Promise<any[]>,
+    ` as Promise<Array<Record<string, unknown>>>,
 
     prisma.$queryRaw`
       SELECT DATE(created_at)           AS date,
@@ -183,7 +183,7 @@ export async function getTokenStats(days = 7) {
       WHERE created_at >= ${since}
       GROUP BY DATE(created_at)
       ORDER BY date DESC
-    ` as Promise<any[]>,
+    ` as Promise<Array<Record<string, unknown>>>,
 
     prisma.tokenUsage.aggregate({
       where: { createdAt: { gte: since } },

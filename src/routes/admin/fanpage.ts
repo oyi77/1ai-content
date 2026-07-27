@@ -47,32 +47,44 @@ export async function registerFanpageRoutes(server: FastifyInstance) {
 
   // ── API: Create page ───────────────────────────────────────
   server.post("/api/fanpages", async (request, reply) => {
-    const body = request.body as {
-      userId: string;
-      pageId: string;
-      pageName: string;
-      accessToken: string;
-      category?: string;
-      fanCount?: number;
-    };
+    const body = request.body as Record<string, unknown>;
+
+    // Validate required fields
+    const userId = String(body.userId ?? "");
+    const pageId = String(body.pageId ?? "");
+    const pageName = String(body.pageName ?? "");
+    const accessToken = String(body.accessToken ?? "");
+    const errors: string[] = [];
+    if (!userId) errors.push("userId");
+    if (!pageId) errors.push("pageId");
+    if (!pageName) errors.push("pageName");
+    if (!accessToken) errors.push("accessToken");
+    if (errors.length) {
+      return reply.status(400).send({ error: `Missing required fields: ${errors.join(", ")}` });
+    }
+
     // Prevent duplicate (userId, pageId)
     const existing = await prisma.fanpage.findFirst({
-      where: { userId: body.userId, pageId: body.pageId },
+      where: { userId, pageId },
     });
     if (existing) {
       return reply.status(409).send({ error: "Page already registered for this user" });
     }
-    const row = await prisma.fanpage.create({
-      data: {
-        userId: body.userId,
-        pageId: body.pageId,
-        pageName: body.pageName,
-        accessToken: body.accessToken,
-        category: body.category ?? null,
-        fanCount: body.fanCount ?? 0,
-      },
-    });
-    return formatFanpage(row);
+    try {
+      const row = await prisma.fanpage.create({
+        data: {
+          userId,
+          pageId,
+          pageName,
+          accessToken,
+          category: body.category ? String(body.category) : null,
+          fanCount: typeof body.fanCount === "number" ? body.fanCount : 0,
+        },
+      });
+      return formatFanpage(row);
+    } catch (err) {
+      return reply.status(500).send({ error: "Failed to create fanpage" });
+    }
   });
 
   // ── API: Update page ───────────────────────────────────────

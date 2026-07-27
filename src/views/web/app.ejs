@@ -415,7 +415,7 @@ async function apiFetch(path, opts = {}) {
 
 async function loadUser() {
   const u = await apiFetch('/api/user');
-  if (!u) { window.location.href='/login'; return; }
+  if (!u) { window.location.href='/admin/login'; return; }
   currentUser = u;
   document.getElementById('user-greeting').textContent = 'Selamat datang, ' + u.firstName + '!';
   document.getElementById('stat-credits').textContent = u.credits || 0;
@@ -733,7 +733,7 @@ async function deleteAccount() {
   const data = await apiFetch('/api/user', { method:'DELETE' });
   if (!data || data.error) { toast('Gagal hapus akun','err'); return; }
   localStorage.removeItem('token');
-  window.location.href = '/login';
+  window.location.href = '/admin/login';
 }
 
 // ── IMAGE GENERATION ─────────────────────────────────────
@@ -777,7 +777,7 @@ async function loadSubscriptions() {
 
 // ── INIT ──────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
-  if (!token) { window.location.href='/login'; return; }
+  if (!token) { window.location.href='/admin/login'; return; }
   document.getElementById('app').style.display = 'flex';
   document.getElementById('loading-overlay').style.display = 'none';
   await loadUser();

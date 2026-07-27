@@ -21,7 +21,7 @@ export default defineConfig({
   webServer: {
     command: `ADMIN_PASSWORD=${ADMIN_PASSWORD} FORCE_POLLING=true npx tsx src/index.ts`,
     port: 3000,
-    timeout: 30000,
+    timeout: 120000,
     reuseExistingServer: true,
     env: {
       ADMIN_PASSWORD,

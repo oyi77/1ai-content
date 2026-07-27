@@ -318,6 +318,7 @@ async function main() {
     await app.register(healthCheckRoutes);
     await app.register(webhookRoutes, { bot });
     await app.register(adminRoutes);
+    await app.register(webRoutes);
 
     // Static files (dashboard, sw.js, images)
     await app.register((await import('@fastify/static')).default, {

@@ -31,7 +31,7 @@ export interface SessionData {
     platform?: string;
     totalDuration?: number;
     scenes?: number;
-    storyboard?: Array<any>;
+    storyboard?: Array<{ scene: number; duration: number; description: string }>;
     jobId?: string;
     waitingForImage?: boolean;
     waitingForCustomPrompt?: boolean;

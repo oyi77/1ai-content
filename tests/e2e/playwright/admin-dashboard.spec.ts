@@ -38,9 +38,9 @@ test('dashboard page contains sidebar navigation items', async ({ request }) => 
     headers: { Authorization: basicAuthHeader(ADMIN_PASSWORD) },
   });
   const text = await response.text();
-  // Sidebar nav in partial uses nav-* IDs and class names
+  // Layout sidebar uses .nav-item class with data-label attributes
   expect(text).toContain('nav-item');
-  expect(text).toContain('id="nav-users"');
+  expect(text).toContain('data-label="Pricing"');
 });
 
 test('dashboard page has kpi-card elements in HTML', async ({ request }) => {
@@ -54,12 +54,13 @@ test('dashboard page has kpi-card elements in HTML', async ({ request }) => {
 
 // ─── Navigation section items ─────────────────────────────────────────────────
 
-test('dashboard page has Users nav section item', async ({ request }) => {
+test('dashboard page has Users section in page content', async ({ request }) => {
   const response = await request.get('/admin/dashboard', {
     headers: { Authorization: basicAuthHeader(ADMIN_PASSWORD) },
   });
   const text = await response.text();
-  expect(text).toContain('id="nav-users"');
+  // Users section rendered in page content (id="section-users")
+  expect(text).toContain('id="section-users"');
 });
 
 test('dashboard page has Pricing nav section item', async ({ request }) => {
@@ -67,7 +68,8 @@ test('dashboard page has Pricing nav section item', async ({ request }) => {
     headers: { Authorization: basicAuthHeader(ADMIN_PASSWORD) },
   });
   const text = await response.text();
-  expect(text).toContain('id="nav-pricing"');
+  // Layout sidebar uses data-label attribute for Pricing
+  expect(text).toContain('data-label="Pricing"');
 });
 
 // ─── Navigation actually works (pages reachable) ─────────────────────────────

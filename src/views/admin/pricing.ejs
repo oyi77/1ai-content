@@ -261,6 +261,16 @@
   <div class="toast" id="toast"></div>
 
   <script>
+    // ==================== SHARED HTML ESCAPING HELPERS ====================
+    function esc(s) {
+      if (s == null) return '';
+      var d = document.createElement('div');
+      d.textContent = String(s);
+      return d.innerHTML;
+    }
+    window.esc = esc;
+    window.escHtml = esc;
+
     var pricingData = {};
     var currentMargin = 30;
 

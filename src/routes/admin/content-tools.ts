@@ -95,23 +95,23 @@ export async function registerContentToolsRoutes(server: FastifyInstance) {
 
   // TTS Voice Generator
   server.get("/admin/tts", async (_request, reply) => {
-    return reply.view("admin/tts.ejs", { layout: "admin/layout.ejs", activePage: "tts", title: "TTS Voice Generator", ...trackingVars() });
+    return reply.view("admin/tts.ejs", { activePage: "tts", title: "TTS Voice Generator", ...trackingVars() }, { layout: "admin/layout.ejs" });
   });
   // Music Generator (Suno + MusicGen)
   server.get("/admin/music", async (_request, reply) => {
-    return reply.view("admin/music.ejs", { layout: "admin/layout.ejs", activePage: "music", title: "Music Generator", ...trackingVars() });
+    return reply.view("admin/music.ejs", { activePage: "music", title: "Music Generator", ...trackingVars() }, { layout: "admin/layout.ejs" });
   });
   // Looping Video Generator
   server.get("/admin/looping", async (_request, reply) => {
-    return reply.view("admin/looping.ejs", { layout: "admin/layout.ejs", activePage: "looping", title: "Looping Video", ...trackingVars() });
+    return reply.view("admin/looping.ejs", { activePage: "looping", title: "Looping Video", ...trackingVars() }, { layout: "admin/layout.ejs" });
   });
   // Autopilot Content Jobs
   server.get("/admin/autopilot", async (_request, reply) => {
-    return reply.view("admin/autopilot.ejs", { layout: "admin/layout.ejs", activePage: "autopilot", title: "Autopilot", ...trackingVars() });
+    return reply.view("admin/autopilot.ejs", { activePage: "autopilot", title: "Autopilot", ...trackingVars() }, { layout: "admin/layout.ejs" });
   });
   // Channel Analysis
   server.get("/admin/analyze", async (_request, reply) => {
-    return reply.view("admin/analyze.ejs", { layout: "admin/layout.ejs", activePage: "analyze", title: "Channel Analysis", ...trackingVars() });
+    return reply.view("admin/analyze.ejs", { activePage: "analyze", title: "Channel Analysis", ...trackingVars() }, { layout: "admin/layout.ejs" });
   })
 
   // ========== Bookshelf API ==========

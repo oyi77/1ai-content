@@ -742,8 +742,8 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
   });
 
   // Admin config view page
-  server.get("/admin/config", async (_request, reply) => {
-    return reply.redirect("/admin/settings#runtime");
+  server.get("/admin/config", async (request, reply) => {
+    return reply.redirect(`/admin/settings${request.url.includes('?') ? request.url.substring(request.url.indexOf('?')) : ''}#runtime`);
   });
 
   // Admin playground view page

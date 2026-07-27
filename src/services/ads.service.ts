@@ -56,7 +56,7 @@ export class AdsService {
   /**
    * Generate creative ideas
    */
-  static async generateIdeas(count: number = 20): Promise<any[]> {
+  static async generateIdeas(count: number = 20): Promise<Array<{ topic: string; hook: string }>> {
     const hooks = [
       "Rahasia {topic} yang tidak pernah dibahas",
       "Cara hemat {topic} tanpa ribet",

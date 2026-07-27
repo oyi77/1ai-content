@@ -431,7 +431,7 @@ async function generateVideoAsync(
   niche: string,
   platform: string,
   duration: number,
-  storyboard: Array<any>,
+  storyboard: Array<{ scene: number; duration: number; description: string }>,
   referenceImage?: string | null,
 ): Promise<void> {
   try {
@@ -503,7 +503,7 @@ async function generateExtendedVideoAsync(
   platform: string,
   totalDuration: number,
   scenes: number,
-  storyboard: Array<any>,
+  storyboard: Array<{ scene: number; duration: number; description: string }>,
   referenceImage?: string | null,
 ): Promise<void> {
   try {
@@ -871,9 +871,7 @@ async function sendSuccessNotification(
 
   // Build button rows dynamically based on whether the user has
   // connected social accounts.
-  const keyboard: Array<
-    Array<{ text: string; callback_data?: string; url?: string }>
-  > = [];
+  const keyboard: InlineKeyboardButton[][] = [];
 
   // Row 0: Download HD link
   keyboard.push([{ text: "⬇️ Download HD", url: downloadUrl }]);
@@ -929,7 +927,7 @@ async function sendSuccessNotification(
       {
         caption: videoCaption,
         parse_mode: "Markdown",
-        reply_markup: { inline_keyboard: keyboard as any },
+        reply_markup: { inline_keyboard: keyboard },
       },
     );
   } else if (video.videoUrl) {
@@ -938,20 +936,20 @@ async function sendSuccessNotification(
       await ctx.replyWithVideo(video.videoUrl, {
         caption: videoCaption,
         parse_mode: "Markdown",
-        reply_markup: { inline_keyboard: keyboard as any },
+        reply_markup: { inline_keyboard: keyboard },
       });
     } catch {
       // Telegram rejected the URL — send link message as final fallback
       await ctx.reply(videoCaption, {
         parse_mode: "Markdown",
-        reply_markup: { inline_keyboard: keyboard as any },
+        reply_markup: { inline_keyboard: keyboard },
       });
     }
   } else {
     // No file anywhere — send message with download link only
     await ctx.reply(videoCaption, {
       parse_mode: "Markdown",
-      reply_markup: { inline_keyboard: keyboard as any },
+      reply_markup: { inline_keyboard: keyboard },
     });
   }
 

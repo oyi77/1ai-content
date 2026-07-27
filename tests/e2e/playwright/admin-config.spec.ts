@@ -94,6 +94,7 @@ test('/api/config returns object with at least one key', async ({ request }) => 
   const response = await request.get('/api/config', {
     headers: { Authorization: basicAuthHeader(ADMIN_PASSWORD) },
   });
+  expect(response.status()).toBe(200);
   const body = await response.json();
   expect(Object.keys(body).length).toBeGreaterThan(0);
 });

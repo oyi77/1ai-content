@@ -49,6 +49,14 @@ function getBotToken(): string {
   return getConfig().BOT_TOKEN;
 }
 
+interface Testimonial {
+  stars?: number;
+  text: string;
+  name?: string;
+  role?: string;
+  avatar?: string;
+}
+
 // ─── Landing Page ───────────────────────────────────────────────────────────
 
 // ─── Backend Routes ──────────────────────────────────────────────────────────
@@ -79,7 +87,7 @@ export async function webRoutes(server: FastifyInstance): Promise<void> {
         testimonials = landingConfig.testimonials;
       } else if (typeof landingConfig.testimonials === "object") {
         const lc = landingConfig.testimonials as Record<string, unknown>;
-        testimonials = (lc[currentLang] || lc["id"] || []) as any[];
+        testimonials = (lc[currentLang] || lc["id"] || []) as Array<Testimonial>;
       }
     }
 

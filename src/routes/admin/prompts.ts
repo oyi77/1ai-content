@@ -91,7 +91,7 @@ export async function registerPromptsRoutes(server: FastifyInstance) {
       body: updatePromptBodySchema,
     },
   }, async (request, reply) => {
-    const { id } = request.params as { id: number };
+    const id = Number((request.params as { id: string }).id);
     const { title, prompt, niche } = request.body as { title?: string; prompt?: string; niche?: string };
     try {
       await prisma.savedPrompt.update({
@@ -112,7 +112,7 @@ export async function registerPromptsRoutes(server: FastifyInstance) {
   server.delete("/api/admin-prompts/:id", {
     schema: { params: promptIdParamSchema },
   }, async (request, reply) => {
-    const { id } = request.params as { id: number };
+    const id = Number((request.params as { id: string }).id);
     try {
       await prisma.savedPrompt.delete({ where: { id } });
       return { ok: true };

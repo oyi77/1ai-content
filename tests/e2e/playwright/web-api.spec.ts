@@ -17,22 +17,23 @@ test('GET /api/packages returns 200', async ({ request }) => {
   expect(response.status()).toBe(200);
 });
 
-test('GET /api/packages returns an array', async ({ request }) => {
+test('GET /api/packages returns an object with packages array', async ({ request }) => {
   const response = await request.get('/api/packages');
   const body = await response.json();
-  expect(Array.isArray(body)).toBe(true);
+  expect(typeof body).toBe('object');
+  expect(Array.isArray(body.packages)).toBe(true);
 });
 
 test('GET /api/packages returns at least one package', async ({ request }) => {
   const response = await request.get('/api/packages');
   const body = await response.json();
-  expect(body.length).toBeGreaterThan(0);
+  expect(body.packages.length).toBeGreaterThan(0);
 });
 
 test('GET /api/packages each package has id, name, and price fields', async ({ request }) => {
   const response = await request.get('/api/packages');
   const body = await response.json();
-  for (const pkg of body) {
+  for (const pkg of body.packages) {
     expect(pkg).toHaveProperty('id');
     expect(pkg).toHaveProperty('name');
     // price or priceIdr

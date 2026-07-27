@@ -236,7 +236,7 @@ export class DynamicPricingService {
     }>;
   }> {
     const recommendations = await this.getRecommendedUnitCosts();
-    const changes: Array<any> = [];
+    const changes: Array<{key: string; oldUnits: number; newUnits: number; oldPrice: number; newPrice: number}> = [];
     let updated = 0;
 
     for (const [key, recommendation] of Object.entries(recommendations)) {
@@ -247,7 +247,7 @@ export class DynamicPricingService {
 
       if (current) {
         const currentValue = current.value as Record<string, unknown>;
-        const oldUnits = currentValue.units || 0;
+        const oldUnits = (currentValue.units as number) || 0;
         const newUnits = recommendation.units;
 
         if (oldUnits !== newUnits) {

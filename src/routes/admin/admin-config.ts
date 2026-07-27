@@ -141,8 +141,8 @@ export async function registerAdminConfigRoutes(
 
   // ── System redirect ──
 
-  server.get("/admin/system", async (_request, reply) => {
-    return reply.redirect('/admin/settings');
+  server.get("/admin/system", async (request, reply) => {
+    return reply.redirect(`/admin/settings${request.url.includes('?') ? request.url.substring(request.url.indexOf('?')) : ''}`);
   });
 
   // ── Dynamic Pricing Page ──
