@@ -28,7 +28,7 @@ import { t } from '@/i18n/translations';
 import { getConfig } from '@/config/env';
 import { getCorrelationId } from '@/utils/correlation';
 import { sendAdminAlert } from '@/services/admin-alert.service';
-import type { DurationPreset, DurationPresetConfig, SceneId } from '@/config/hpas-engine';
+import type { DurationPreset, DurationPresetConfig, SceneConfig, SceneId } from '@/config/hpas-engine';
 import { getPersonaForUser, isPresetAllowedForPersona } from '@/config/personas';
 
 const execFileAsync = promisify(execFile);
@@ -70,6 +70,8 @@ async function downloadToLocal(url: string, filename: string): Promise<string | 
 type GenerateMode = 'basic' | 'smart' | 'pro';
 type GenerateAction = 'image_set' | 'video' | 'clone_style' | 'campaign';
 type Platform = 'tiktok' | 'instagram' | 'youtube' | 'square';
+type GeneratedSceneData = { sceneId: SceneId; scene: SceneConfig; prompt: string; durationSeconds: number };
+type ManualSceneData = { sceneId: string; description: string; durationSeconds: number };
 
 // ── Step 3 Handler: Product Input (photo or text) ─────────────────────────────
 
@@ -81,7 +83,7 @@ export async function handleProductInput(ctx: BotContext, message: Record<string
 
     // Extract input
     if (message.photo) {
-      const photos = message.photo as any[];
+      const photos = message.photo as Array<{ file_id: string }>;
       const largest = photos[photos.length - 1];
       const fileLink = await ctx.telegram.getFileLink(largest.file_id);
       photoUrl = fileLink.toString();
@@ -318,7 +320,7 @@ export async function executeGeneration(ctx: BotContext): Promise<void> {
       await ctx.reply(t('gen.generating_trial', lang), { parse_mode: 'Markdown' });
 
       // Generate a 15s video, then cache it as template
-      let trialScenes: any[];
+      let trialScenes: GeneratedSceneData[];
       try {
         trialScenes = await generateScenePromptsWithAI(productDesc || userNiche, 'quick', lang === 'en' ? 'en' : 'id');
       } catch {
@@ -378,7 +380,7 @@ export async function executeGeneration(ctx: BotContext): Promise<void> {
 
     // Image Set → Video Pipeline (generate 7 scene images, then queue video)
     if (action === 'image_set') {
-      let scenes: any[];
+      let scenes: GeneratedSceneData[];
       try {
         scenes = await generateScenePromptsWithAI(productDesc, 'standard', lang === 'en' ? 'en' : 'id');
       } catch {
@@ -511,7 +513,7 @@ export async function executeGeneration(ctx: BotContext): Promise<void> {
     if (action === 'video') {
       // Use manual storyboard if Pro mode provided it, otherwise auto-generate
       const useManualStoryboard = session.generateStoryboardMode === 'manual' && session.generateManualStoryboard?.length;
-      let scenes: any[];
+      let scenes: GeneratedSceneData[] | ManualSceneData[];
       if (useManualStoryboard) {
         scenes = session.generateManualStoryboard!;
       } else {
@@ -534,8 +536,8 @@ export async function executeGeneration(ctx: BotContext): Promise<void> {
       });
 
       const storyboard = useManualStoryboard
-        ? scenes.map((s, i: number) => ({ scene: i + 1, duration: s.durationSeconds, description: s.description }))
-        : scenes.map((s, i: number) => ({ scene: i + 1, duration: s.durationSeconds, description: s.prompt }));
+        ? (scenes as ManualSceneData[]).map((s, i: number) => ({ scene: i + 1, duration: s.durationSeconds, description: s.description }))
+        : (scenes as GeneratedSceneData[]).map((s, i: number) => ({ scene: i + 1, duration: s.durationSeconds, description: s.prompt }));
 
       try {
         const { job: enqueuedJob, position } = await enqueueVideoGeneration({
@@ -563,7 +565,7 @@ export async function executeGeneration(ctx: BotContext): Promise<void> {
         }
         await ctx.reply(t('gen.video_queued', lang, { position }));
       } catch {
-        generateVideoAsync(ctx, video.jobId, industry, platform, presetConfig.totalSeconds, scenes.map((s, i: number) => ({ scene: i + 1, duration: s.durationSeconds, description: useManualStoryboard ? s.description : s.prompt }))).catch(async (err) => {
+        generateVideoAsync(ctx, video.jobId, industry, platform, presetConfig.totalSeconds, scenes.map((s, i: number) => ({ scene: i + 1, duration: s.durationSeconds, description: useManualStoryboard ? (s as ManualSceneData).description : (s as GeneratedSceneData).prompt }))).catch(async (err) => {
           logger.error('Video generateVideoAsync failed:', err);
           await UserService.refundCredits(telegramId, creditCost, video.jobId, err?.message || 'fallback failure').catch(async (refundErr) => { logger.error('CRITICAL: refundCredits failed', { telegramId: telegramId.toString(), creditCost, err: refundErr }); await UserService.queueRefundRetry(telegramId, creditCost, 'generate-fallback', String(refundErr)); sendAdminAlert('critical', 'Refund Failed', { userId: telegramId.toString(), amount: creditCost, error: String(refundErr) }); });
           await ctx.telegram.sendMessage(ctx.chat!.id, t('gen.video_failed_refund', lang)).catch(() => {});
@@ -589,7 +591,7 @@ export async function executeGeneration(ctx: BotContext): Promise<void> {
       }
 
       const combinedPrompt = `${productDesc}${styleHint}`;
-      let scenes: any[];
+      let scenes: GeneratedSceneData[];
       try {
         scenes = await generateScenePromptsWithAI(combinedPrompt, 'standard', lang === 'en' ? 'en' : 'id');
       } catch {
@@ -1126,7 +1128,7 @@ export async function handleMultiImageUpload(ctx: BotContext, message: Record<st
     return;
   }
 
-  const photos = message.photo as any[];
+  const photos = message.photo as Array<{ file_id: string }>;
   const largest = photos[photos.length - 1];
   const fileLink = await ctx.telegram.getFileLink(largest.file_id);
   const url = fileLink.toString();
@@ -1345,7 +1347,7 @@ export async function showProSceneReview(
   try {
     const lang = ctx.session?.userLang || 'id';
     const industry = detectIndustry(productDescription);
-    let scenes: any[];
+    let scenes: GeneratedSceneData[];
     try {
       scenes = await generateScenePromptsWithAI(productDescription, 'standard', lang === 'en' ? 'en' : 'id');
     } catch {
