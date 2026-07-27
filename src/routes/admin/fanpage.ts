@@ -22,11 +22,7 @@ function formatFanpage(row: Record<string, unknown>) {
 export async function registerFanpageRoutes(server: FastifyInstance) {
   // ── Admin view ──────────────────────────────────────────────
   server.get("/admin/fanpage", async (_request, reply) => {
-    return reply.view(
-      "admin/fanpage.ejs",
-      { ...trackingVars(), activePage: "fanpage", title: "Fanpage Manager" },
-      { layout: "admin/layout.ejs" },
-    );
+    return reply.redirect("/admin/react/tools/fanpage");
   });
 
   // ── API: List all pages ────────────────────────────────────

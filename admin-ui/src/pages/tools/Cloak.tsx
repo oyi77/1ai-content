@@ -1,6 +1,6 @@
 import { useState, FormEvent } from "react";
-import { Input, Select, Button, Spinner } from "../components/UI";
-import { checkCloakProfile, cloakPost } from "../api/client";
+import { Input, Select, Button, Spinner } from "../../components/UI";
+import { checkCloakProfile, cloakPost } from "../../api/client";
 
 export default function Cloak() {
   const [profileId, setProfileId] = useState("");

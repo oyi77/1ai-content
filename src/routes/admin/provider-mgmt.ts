@@ -16,8 +16,9 @@ export async function registerProviderMgmtRoutes(
   verifyAdmin: (request: FastifyRequest, reply: FastifyReply) => Promise<boolean>,
 ) {
   /** GET /admin/medias — Media Gallery page */
+  /** GET /admin/medias — Redirect to React SPA */
   server.get("/admin/medias", async (_request, reply) => {
-    return reply.view("admin/medias.ejs", { ...trackingVars(), activePage: 'medias', title: 'Media Gallery' }, { layout: 'admin/layout.ejs' });
+    return reply.redirect("/admin/react/medias");
   });
 
   /** GET /admin/providers — Render providers management page */
@@ -26,12 +27,9 @@ export async function registerProviderMgmtRoutes(
   });
 
   /** GET /admin/ai-config — AI Configuration page */
+  /** GET /admin/ai-config — Redirect to React SPA */
   server.get('/admin/ai-config', async (_request, reply) => {
-    return reply.view('admin/ai-config.ejs', {
-      ...trackingVars(),
-      activePage: 'ai-config',
-      title: 'AI Configuration',
-    }, { layout: 'admin/layout.ejs' });
+    return reply.redirect('/admin/react/ai-config');
   });
 
   /** GET /api/admin/providers/all — Full provider list with health + overrides + env status */

@@ -1,6 +1,6 @@
 import { useState, FormEvent } from "react";
-import { Input, Select, Button, Spinner } from "../components/UI";
-import { fetchEngagementStats, generateReply } from "../api/client";
+import { Input, Select, Button, Spinner } from "../../components/UI";
+import { fetchEngagementStats, generateReply } from "../../api/client";
 
 export default function Engagement() {
   const [stats, setStats] = useState<Record<string, unknown> | null>(null);

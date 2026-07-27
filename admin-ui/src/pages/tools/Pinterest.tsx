@@ -1,6 +1,7 @@
 import { useState, useEffect, FormEvent } from "react";
-import { Input, Button, Spinner, Select, Toast } from "../components/UI";
-import { searchPinterest, publishToFacebook, fetchFanpages, Fanpage, PinterestResult } from "../api/client";
+import { Input, Button, Spinner, Select, Toast } from "../../components/UI";
+import { searchPinterest, publishToFacebook, fetchFanpages } from "../../api/client";
+import type { Fanpage, PinterestResult } from "../../api/client";
 
 export default function Pinterest() {
   const [query, setQuery] = useState("");
@@ -9,7 +10,7 @@ export default function Pinterest() {
   const [searching, setSearching] = useState(false);
   const [searchErr, setSearchErr] = useState("");
 
-  const [fanpages, setFanpages] = useState<Fanpage[]>([]);
+  const [fanpages, setFanpages] = useState<FanpageData[]>([]);
   const [selectedPage, setSelectedPage] = useState("");
   const [fbMessage, setFbMessage] = useState("");
   const [affiliateLink, setAffiliateLink] = useState("");

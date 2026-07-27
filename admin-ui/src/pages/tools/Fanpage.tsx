@@ -1,14 +1,14 @@
 import { useState, useEffect, FormEvent } from "react";
-import { Input, Button, Spinner, StatusBadge, Toast } from "../components/UI";
-import { fetchFanpages, createFanpage, updateFanpage, deleteFanpage, Fanpage, FanpageInput } from "../api/client";
+import { Input, Button, Spinner, StatusBadge, Toast } from "../../components/UI";
+import { fetchFanpages, createFanpage, updateFanpage, deleteFanpage, type Fanpage as FanpageData, FanpageInput } from "../../api/client";
 
 export default function Fanpage() {
-  const [pages, setPages] = useState<Fanpage[]>([]);
+  const [pages, setPages] = useState<FanpageData[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
   const [showModal, setShowModal] = useState(false);
-  const [editing, setEditing] = useState<Fanpage | null>(null);
+  const [editing, setEditing] = useState<FanpageData | null>(null);
   const [form, setForm] = useState<FanpageInput>({
     userId: "",
     pageId: "",
@@ -42,7 +42,7 @@ export default function Fanpage() {
     setShowModal(true);
   };
 
-  const openEdit = (page: Fanpage) => {
+  const openEdit = (page: FanpageData) => {
     setEditing(page);
     setForm({
       userId: page.userId,

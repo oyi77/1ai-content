@@ -1,6 +1,7 @@
 import { useState, FormEvent } from "react";
-import { Input, Select, Button, Spinner, StatusBadge } from "../components/UI";
-import { createStoryboard, StoryboardScene, STORYBOARD_IMAGE_BASE } from "../api/client";
+import { Input, Select, Button, Spinner, StatusBadge } from "../../components/UI";
+import { createStoryboard, STORYBOARD_IMAGE_BASE } from "../../api/client";
+import type { StoryboardScene } from "../../api/client";
 
 export default function Storyboard() {
   const [prompt, setPrompt] = useState("");

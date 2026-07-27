@@ -560,6 +560,7 @@ export default function AiConfigPage() {
                     <th className="text-right px-4 py-3 font-medium">Max Tokens</th>
                   </tr>
                 </thead>
+                <tbody>
                   {filteredCatalog.map((m, i) => (
                     <tr key={m.id || i} className="border-b border-border/50 hover:bg-[var(--bg2)] transition-colors">
                       <td className="px-4 py-3 text-text-primary font-medium">{m.id}</td>

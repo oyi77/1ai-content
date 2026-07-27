@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Input, Button, Spinner } from "../components/UI";
-import { searchVideo, refreshVideoCookies, regenerateVideo } from "../api/client";
+import { Input, Button, Spinner } from "../../components/UI";
+import { searchVideo, refreshVideoCookies, regenerateVideo } from "../../api/client";
 
 export default function VideoTools() {
   const [searchUrl, setSearchUrl] = useState("");

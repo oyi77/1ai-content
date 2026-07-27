@@ -141,14 +141,13 @@ export async function registerAdminConfigRoutes(
 
   // ── System redirect ──
 
-  server.get("/admin/system", async (request, reply) => {
-    return reply.redirect(`/admin/settings${request.url.includes('?') ? request.url.substring(request.url.indexOf('?')) : ''}`);
+  server.get("/admin/system", async (_request, reply) => {
+    return reply.redirect("/admin/react/system");
   });
 
   // ── Dynamic Pricing Page ──
 
-  server.get("/admin/dynamic-pricing", async (request, reply) => {
-    if (!await verifyAdmin(request, reply)) return;
-    return reply.view("admin/dynamic-pricing", { ...trackingVars(), activePage: "dynamic-pricing", title: 'Dynamic Pricing' }, { layout: 'admin/layout.ejs' });
+  server.get("/admin/dynamic-pricing", async (_request, reply) => {
+    return reply.redirect("/admin/react/dynamic-pricing");
   });
 }

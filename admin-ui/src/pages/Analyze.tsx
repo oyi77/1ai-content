@@ -358,7 +358,7 @@ export default function Analyze() {
                               >
                                 {ch.title || ch.name || `Channel ${i + 1}`}
                                 {i === subWinner && (
-                                  <br /><span className="text-xs text-[var(--accent)]">🏆 Best</span>
+                                  <><br /><span className="text-xs text-[var(--accent)]">🏆 Best</span></>
                                 )}
                               </th>
                             ))}

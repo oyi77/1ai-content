@@ -1,6 +1,7 @@
 import { useState, FormEvent } from "react";
-import { Input, Select, Button } from "../components/UI";
-import { renderAd, RenderAdResponse } from "../api/client";
+import { Input, Select, Button } from "../../components/UI";
+import { renderAd } from "../../api/client";
+import type { RenderAdResponse } from "../../api/client";
 
 export default function RenderAd() {
   const [title, setTitle] = useState("");
