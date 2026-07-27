@@ -30,7 +30,7 @@ export async function registerPromptsRoutes(server: FastifyInstance) {
   });
 
   server.get("/admin/settings", async (_request, reply) => {
-    return reply.view("admin/settings.ejs", { ...trackingVars(), activePage: 'settings', title: 'Settings' }, { layout: 'admin/layout.ejs' });
+    return reply.redirect("/admin/react/settings");
   });
 
   server.get("/admin/interceptions", async (_request, reply) => {
@@ -38,7 +38,7 @@ export async function registerPromptsRoutes(server: FastifyInstance) {
   });
 
   server.get("/admin/users", async (_request, reply) => {
-    return reply.redirect("/admin/dashboard#users");
+    return reply.redirect("/admin/react/users");
   });
 
   // API: Get all admin prompts (global, visible to all users)

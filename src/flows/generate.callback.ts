@@ -1,19 +1,13 @@
 /**
  * Generate Flow — Callback Router
  *
- * Routes inline keyboard callback data to the correct UI/input/execution handler.
+ * Routes inline keyboard callbacks to the appropriate generate-flow handler.
  * Extracted from generate.ts to break up the god object.
  */
 
 import { BotContext } from '@/types';
 import { logger } from '@/utils/logger';
-import {
-  showGenerateMode,
-  showGenerateAction,
-  showSmartPresetSelection,
-  showSmartPlatformSelection,
-  showConfirmScreen,
-} from './generate.ui';
+import { showGenerateMode, showGenerateAction, showConfirmScreen, showSmartPresetSelection, showSmartPlatformSelection } from './generate.ui';
 import { requestProductInput } from './generate.input';
 import { executeGeneration } from './generate.execution';
 import type { GenerateMode, Platform } from './generate.types';
