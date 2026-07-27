@@ -813,6 +813,22 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
   server.get("/admin/billing", async (_request, reply) => {
     return reply.redirect("/admin/pricing");
   });
+  // /admin/content -> /admin/react/content (React SPA route)
+  server.get("/admin/content", async (_request, reply) => {
+    return reply.redirect("/admin/react/content");
+  });
+  // /admin/payments -> /admin/react/payments (React SPA route)
+  server.get("/admin/payments", async (_request, reply) => {
+    return reply.redirect("/admin/react/payments");
+  });
+  // /admin/tools -> /admin/react/tools (React SPA route)
+  server.get("/admin/tools", async (_request, reply) => {
+    return reply.redirect("/admin/react/tools");
+  });
+  // /admin/broadcast -> /admin/settings#broadcast (settings tab has broadcast form)
+  server.get("/admin/broadcast", async (_request, reply) => {
+    return reply.redirect("/admin/settings#broadcast");
+  });
 
   // ── REGISTER PROVIDER COSTS ROUTES ──
   const { registerProviderCostRoutes } = await import("./provider-costs.js");
