@@ -54,7 +54,6 @@ interface SidebarCategory {
   iconKey: string;
   items: SidebarItem[];
 }
-
 const categories: SidebarCategory[] = [
   {
     label: "Overview",
@@ -73,9 +72,9 @@ const categories: SidebarCategory[] = [
       { label: "Comics", path: "/comic", type: "ejs" },
       { label: "Media Gallery", path: "/medias", type: "ejs" },
       { label: "Prompts", path: "/prompts", type: "ejs" },
-      { label: "A/B Tests", path: "/ab-tests", type: "ejs" },
-      { label: "Trending Scanner", path: "/trending", type: "ejs" },
-      { label: "Content Calendar", path: "/calendar", type: "ejs" },
+      { label: "A/B Tests", path: "/analytics/ab-tests", type: "react" },
+      { label: "Trending Scanner", path: "/analytics/trending", type: "react" },
+      { label: "Content Calendar", path: "/analytics/calendar", type: "react" },
     ],
   },
   {
@@ -83,22 +82,18 @@ const categories: SidebarCategory[] = [
     iconKey: "video",
     items: [
       { label: "Captions", path: "/captions", type: "ejs" },
-      { label: "Video Tools", path: "/video-tools", type: "ejs" },
-      { label: "Storyboard", path: "/storyboard", type: "ejs" },
-      { label: "Ad Renderer", path: "/render-ad", type: "ejs" },
-      { label: "Carousel", path: "/carousel", type: "ejs" },
+      { label: "Carousel", path: "/analytics/carousel", type: "react" },
       { label: "Looping Video", path: "/looping", type: "ejs" },
-      { label: "Re-Metadata", path: "/remeta", type: "ejs" },
-      { label: "Repurpose", path: "/repurpose", type: "ejs" },
+      { label: "Re-Metadata", path: "/analytics/remeta", type: "react" },
+      { label: "Repurpose", path: "/analytics/repurpose", type: "react" },
     ],
   },
   {
     label: "Research & AI",
     iconKey: "search",
     items: [
-      { label: "Book Research", path: "/research", type: "ejs" },
+      { label: "Book Research", path: "/analytics/research", type: "react" },
       { label: "AI Config", path: "/ai-config", type: "ejs" },
-      { label: "Pinterest Scan", path: "/pinterest", type: "ejs" },
       { label: "Playground", path: "/playground", type: "react" },
     ],
   },
@@ -117,6 +112,13 @@ const categories: SidebarCategory[] = [
     iconKey: "tool",
     items: [
       { label: "Tool Hub", path: "/tools", type: "react" },
+      { label: "CloakBrowser", path: "/tools/cloak", type: "react" },
+      { label: "Engagement", path: "/tools/engagement", type: "react" },
+      { label: "Video Tools", path: "/tools/video-tools", type: "react" },
+      { label: "Storyboard", path: "/tools/storyboard", type: "react" },
+      { label: "Ad Renderer", path: "/tools/render-ad", type: "react" },
+      { label: "Pinterest Scan", path: "/tools/pinterest", type: "react" },
+      { label: "Fanpage Manager", path: "/tools/fanpage", type: "react" },
       { label: "TTS Voice", path: "/tts", type: "ejs" },
       { label: "Music Generator", path: "/music", type: "ejs" },
       { label: "Autopilot", path: "/autopilot", type: "ejs" },
@@ -129,10 +131,7 @@ const categories: SidebarCategory[] = [
     items: [
       { label: "Settings", path: "/settings", type: "react" },
       { label: "Providers", path: "/providers", type: "ejs" },
-      { label: "CloakBrowser", path: "/cloak", type: "ejs" },
-      { label: "Engagement", path: "/engagement", type: "ejs" },
       { label: "Interceptions", path: "/interceptions", type: "ejs" },
-      { label: "Fanpage Manager", path: "/fanpage", type: "ejs" },
     ],
   },
   {
