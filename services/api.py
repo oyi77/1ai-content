@@ -768,45 +768,24 @@ async def publish_to_facebook(req: PublishToFacebookRequest):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 @app.post("/bookshelf/generate")
 async def bookshelf_generate(req: BookshelfRequest):
-    """Generate a book on a given subject using multi-agent AI pipeline."""
-    try:
-        sections_content: list[dict] = []
-        full_markdown = ""
-        final_title = ""
-        final_stats = {}
+    """Generate a book on a given subject — SSE streamed progress."""
+    async def _generate():
+        try:
+            async for event in generate_book_pipeline(
+                subject=req.subject,
+                additional_instructions=req.additional_instructions,
+                long_mode=req.long_mode,
+                title_model=req.title_model or None,
+                structure_model=req.structure_model or None,
+                section_model=req.section_model or None,
+            ):
+                yield f"data: {json.dumps(event)}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
 
-        async for event in generate_book_pipeline(
-            subject=req.subject,
-            additional_instructions=req.additional_instructions,
-            long_mode=req.long_mode,
-            title_model=req.title_model or None,
-            structure_model=req.structure_model or None,
-            section_model=req.section_model or None,
-        ):
-            if event["type"] == "error":
-                raise HTTPException(status_code=500, detail=event.get("message", "Book generation failed"))
-            elif event["type"] == "section_content":
-                sections_content.append(event.get("payload", {}))
-            elif event["type"] == "complete":
-                payload = event.get("payload", {})
-                full_markdown = payload.get("full_markdown", "")
-                final_title = payload.get("title", "")
-            if "stats" in event:
-                final_stats = event["stats"]
-
-        return {
-            "title": final_title,
-            "sections": sections_content,
-            "full_markdown": full_markdown,
-            "stats": final_stats,
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    return StreamingResponse(_generate(), media_type="text/event-stream")
 
 
 # ══════════════════════════════════════════════════════════════

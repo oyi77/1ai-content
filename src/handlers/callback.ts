@@ -24,7 +24,7 @@ import { handleAccountCallback } from "./callbacks/account";
 import { handleAvatarTalkCallbacks } from "./callbacks/avatar-talk";
 import { handleMediaIntentCallback } from "./callbacks/media-intent";
 import { handleEbookCallbacks } from "./callbacks/ebook";
-import { handleTikTokAutomationCallbacks } from "@/commands/tiktok-automation.commands";
+import { handleTikTokAutomationCallbacks } from "@/commands/tiktok-automation";
 
 /**
  * Handle callback queries
@@ -94,6 +94,7 @@ export async function callbackHandler(ctx: BotContext): Promise<void> {
     if (await handleSocialCallbacks(ctx, data)) return;
 
     // TikTok automation (carousel_*, autopilot_*, ap_create_*, cal_*, ab_*)
+    if (await handleTikTokAutomationCallbacks(ctx, data)) return;
 
     // Unknown callback
     logger.warn("Unknown callback:", data);

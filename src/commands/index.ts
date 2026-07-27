@@ -40,7 +40,7 @@ import {
 
 // Content commands (video clipper, editor, rework)
 import { ContentCommands } from "./content.commands";
-import { carouselCommand, autopilotCommand, calendarCommand, abtestCommand, repurposeCommand, regenCommand, remetaCommand } from "./tiktok-automation.commands";
+import { carouselCommand, autopilotCommand, calendarCommand, abtestCommand, repurposeCommand, regenCommand, remetaCommand } from "./tiktok-automation";
 import { connectCommand, publishCommand, scheduleCommand } from "./social-vilona.commands";
 
 // Feature-based flows

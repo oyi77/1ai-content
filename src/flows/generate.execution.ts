@@ -24,6 +24,7 @@ import { showPostDelivery } from './generate.ui';
 import type { GenerateMode, GenerateAction, Platform } from './generate.types';
 import type { DurationPreset, DurationPresetConfig } from '@/config/hpas-engine';
 import type { GeneratedSceneData, ManualSceneData } from './generate.types';
+import fs from 'fs';
 
 // ── Execution Engine ──────────────────────────────────────────────────────────
 
@@ -592,8 +593,8 @@ export async function executeGeneration(ctx: BotContext): Promise<void> {
     // Release idempotency lock
     await redis.del(lockKey).catch(err => logger.warn('Redis cleanup failed', { error: err.message }));
     // Cleanup temp reference image file
-    if (photoUrl && !photoUrl.startsWith('http') && require('fs').existsSync(photoUrl)) {
-      try { require('fs').unlinkSync(photoUrl); } catch { /* ignore */ }
+    if (photoUrl && !photoUrl.startsWith('http') && fs.existsSync(photoUrl)) {
+      try { fs.unlinkSync(photoUrl); } catch { /* ignore */ }
     }
   }
 }

@@ -308,6 +308,7 @@ async function main() {
       upstream: 'http://127.0.0.1:8767',
       prefix: '/api/py',
       rewritePrefix: '/',
+      http: {},             // Force HTTP/1.1 (Node.js native) — undici's bodyTimeout kills SSE streams
       preHandler(request, _reply, done) {
         (request as any).raw.setTimeout(180_000);
         done();
@@ -320,21 +321,21 @@ async function main() {
     await app.register(adminRoutes);
     await app.register(webRoutes);
 
-    // Static files (dashboard, sw.js, images)
-    await app.register((await import('@fastify/static')).default, {
-      root: path.join(process.cwd(), 'public'),
-      prefix: '/public/',
-      cacheControl: true,
-      maxAge: '1h',
-    });
-
-    // React admin SPA static files (decorateReply: false — v9 only allows one sendFile decorator)
+    // React admin SPA static files (registered FIRST so sendFile decorator ties to this root)
     await app.register((await import('@fastify/static')).default, {
       root: path.join(process.cwd(), 'admin-ui', 'dist'),
       prefix: '/admin/react/',
       cacheControl: true,
       maxAge: '1h',
       wildcard: false,
+    });
+
+    // Static files (dashboard, sw.js, images) — decorateReply: false since sendFile already taken
+    await app.register((await import('@fastify/static')).default, {
+      root: path.join(process.cwd(), 'public'),
+      prefix: '/public/',
+      cacheControl: true,
+      maxAge: '1h',
       decorateReply: false,
     });
     await app.register(agencyRoutes, { prefix: '/api' });
@@ -351,15 +352,18 @@ async function main() {
 
     logger.info("✅ Routes registered");
 
-    // React admin SPA catch-all — serves index.html for client-side routing
+    // React admin SPA catch-all — serves index.html for SPA routes, actual files for assets
     const adminUiDist = path.join(process.cwd(), 'admin-ui', 'dist');
     app.get('/admin/react', async (_req, reply) => {
-      return reply.sendFile('index.html', adminUiDist);
+      return reply.sendFile('index.html');
     });
-    app.get('/admin/react/*', async (_req, reply) => {
-      return reply.sendFile('index.html', adminUiDist);
+    app.get('/admin/react/*', async (request, reply) => {
+      const relPath = (new URL(request.url, 'http://localhost').pathname).replace('/admin/react/', '');
+      if (/\.[a-z0-9]+(\?|$)/i.test(relPath)) {
+        return reply.sendFile(relPath, adminUiDist);
+      }
+      return reply.sendFile('index.html');
     });
-
 
     // 404 handler
     app.setNotFoundHandler((request, reply) => {

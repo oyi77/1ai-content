@@ -358,6 +358,8 @@
     }
 
     async function saveGlobalSettings() {
+      var btn = event && event.target;
+      if (btn) btn.disabled = true;
       var margin = parseFloat(document.getElementById('global-margin').value);
       var imgCost = parseInt(document.getElementById('global-image-cost').value);
       try {
@@ -367,6 +369,9 @@
         showToast('Global settings saved');
         renderProviderCosts(pricingData.providerCosts || {});
       } catch (_) {}
+      finally {
+        if (btn) btn.disabled = false;
+      }
     }
 
     // ── Packages ──
@@ -400,18 +405,23 @@
     }
 
     async function savePackage(btn) {
-      var tr = btn.closest('tr');
-      var key = tr.querySelector('.pk-id').value.trim();
-      var val = {
-        name: tr.querySelector('.pk-name').value.trim(),
-        price: parseInt(tr.querySelector('.pk-price').value),
-        credits: parseInt(tr.querySelector('.pk-credits').value),
-        bonus: parseInt(tr.querySelector('.pk-bonus').value),
-        popular: tr.querySelector('.pk-popular').value === 'true',
-      };
-      await apiCall('POST', '/api/pricing', { category: 'package', key: key, value: val });
-      showToast('Package "' + key + '" saved');
-      tr.setAttribute('data-key', key);
+      btn.disabled = true;
+      try {
+        var tr = btn.closest('tr');
+        var key = tr.querySelector('.pk-id').value.trim();
+        var val = {
+          name: tr.querySelector('.pk-name').value.trim(),
+          price: parseInt(tr.querySelector('.pk-price').value),
+          credits: parseInt(tr.querySelector('.pk-credits').value),
+          bonus: parseInt(tr.querySelector('.pk-bonus').value),
+          popular: tr.querySelector('.pk-popular').value === 'true',
+        };
+        await apiCall('POST', '/api/pricing', { category: 'package', key: key, value: val });
+        showToast('Package "' + key + '" saved');
+        tr.setAttribute('data-key', key);
+      } finally {
+        btn.disabled = false;
+      }
     }
 
     // ── Subscriptions ──
@@ -445,18 +455,23 @@
     }
 
     async function saveSubscription(btn) {
-      var tr = btn.closest('tr');
-      var key = tr.querySelector('.sub-key').value.trim();
-      var val = {
-        name: tr.querySelector('.sub-name').value.trim(),
-        monthlyPrice: parseInt(tr.querySelector('.sub-monthly').value),
-        yearlyPrice: parseInt(tr.querySelector('.sub-yearly').value),
-        monthlyCredits: parseInt(tr.querySelector('.sub-credits').value),
-        dailyLimit: parseInt(tr.querySelector('.sub-daily').value),
-      };
-      await apiCall('POST', '/api/pricing', { category: 'subscription', key: key, value: val });
-      showToast('Subscription "' + key + '" saved');
-      tr.setAttribute('data-key', key);
+      btn.disabled = true;
+      try {
+        var tr = btn.closest('tr');
+        var key = tr.querySelector('.sub-key').value.trim();
+        var val = {
+          name: tr.querySelector('.sub-name').value.trim(),
+          monthlyPrice: parseInt(tr.querySelector('.sub-monthly').value),
+          yearlyPrice: parseInt(tr.querySelector('.sub-yearly').value),
+          monthlyCredits: parseInt(tr.querySelector('.sub-credits').value),
+          dailyLimit: parseInt(tr.querySelector('.sub-daily').value),
+        };
+        await apiCall('POST', '/api/pricing', { category: 'subscription', key: key, value: val });
+        showToast('Subscription "' + key + '" saved');
+        tr.setAttribute('data-key', key);
+      } finally {
+        btn.disabled = false;
+      }
     }
 
     // ── Provider Costs ──
@@ -496,14 +511,19 @@
         + '</div></td></tr>'
       );
     }
-
+    
     async function saveProviderCost(btn) {
-      var tr = btn.closest('tr');
-      var key = tr.querySelector('.pc-key').value.trim();
-      var cost = parseFloat(tr.querySelector('.pc-cost').value);
-      await apiCall('POST', '/api/pricing', { category: 'provider_cost', key: key, value: cost });
-      showToast('Provider cost "' + key + '" saved');
-      tr.setAttribute('data-key', key);
+      btn.disabled = true;
+      try {
+        var tr = btn.closest('tr');
+        var key = tr.querySelector('.pc-key').value.trim();
+        var cost = parseFloat(tr.querySelector('.pc-cost').value);
+        await apiCall('POST', '/api/pricing', { category: 'provider_cost', key: key, value: cost });
+        showToast('Provider cost "' + key + '" saved');
+        tr.setAttribute('data-key', key);
+      } finally {
+        btn.disabled = false;
+      }
     }
 
     // ── Video/Image Credit Costs ──
@@ -540,12 +560,17 @@
     }
 
     async function saveCostRow(btn, category) {
-      var tr = btn.closest('tr');
-      var key = tr.querySelector('.cc-key').value.trim();
-      var val = parseInt(tr.querySelector('.cc-val').value);
-      await apiCall('POST', '/api/pricing', { category: category, key: key, value: val });
-      showToast('Cost "' + key + '" saved');
-      tr.setAttribute('data-key', key);
+      btn.disabled = true;
+      try {
+        var tr = btn.closest('tr');
+        var key = tr.querySelector('.cc-key').value.trim();
+        var val = parseInt(tr.querySelector('.cc-val').value);
+        await apiCall('POST', '/api/pricing', { category: category, key: key, value: val });
+        showToast('Cost "' + key + '" saved');
+        tr.setAttribute('data-key', key);
+      } finally {
+        btn.disabled = false;
+      }
     }
 
     // ── Shared ──
@@ -621,6 +646,8 @@
     }
 
     async function saveUnitCosts() {
+      var btn = event && event.target;
+      if (btn) btn.disabled = true;
       var rows = document.querySelectorAll('#unit-costs-table tr');
       try {
         for (var row of rows) {
@@ -634,6 +661,8 @@
         loadAll();
       } catch (err) {
         showToast('Failed to save: ' + err.message, 'error');
+      } finally {
+        if (btn) btn.disabled = false;
       }
     }
 

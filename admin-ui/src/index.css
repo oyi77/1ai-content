@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  --color-surface: #111118;
+  --color-surface-elevated: #1a1a24;
+  --color-surface-hover: #22222e;
+  --color-border: #2a2a3a;
+  --color-accent: #a855f7;
+  --color-accent-hover: #9333ea;
+  --color-accent-light: rgba(168, 85, 247, 0.1);
+  --color-accent-subtle: rgba(168, 85, 247, 0.05);
+  --color-text-primary: #f1f1f1;
+  --color-text-secondary: #9ca3af;
+  --color-text-muted: #6b7280;
+  --color-danger: #ef4444;
+  --color-warning: #eab308;
+  --color-success: #22c55e;
+  --color-info: #3b82f6;
+}
+
+/*
+  Base layer styles
+*/
+@layer base {
+  body {
+    background-color: #050505;
+    color: var(--color-text-primary);
+    font-family: var(--font-sans);
+    margin: 0;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-text-muted);
+  }
+}
+
+/*
+  Utility for glass morphism panels
+*/
+@utility glass {
+  background: rgba(17, 17, 24, 0.6);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(168, 85, 247, 0.08);
+}
+
+@utility glass-strong {
+  background: rgba(17, 17, 24, 0.85);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(168, 85, 247, 0.12);
+}
+
+/*
+  Purple glow for accent elements
+*/
+@utility glow-accent {
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.15), 0 0 40px rgba(168, 85, 247, 0.05);
+}

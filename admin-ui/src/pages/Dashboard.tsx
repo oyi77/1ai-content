@@ -25,11 +25,19 @@ export default function Dashboard() {
   }, []);
 
   if (loading) {
-    return <div className="loading">Loading dashboard...</div>;
+    return (
+      <div className="text-text-muted text-center py-12">
+        Loading dashboard...
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="error-box">Failed to load: {error}</div>;
+    return (
+      <div className="bg-red-500/10 text-red-400 rounded-xl p-4">
+        Failed to load: {error}
+      </div>
+    );
   }
 
   if (!data) return null;
@@ -38,56 +46,66 @@ export default function Dashboard() {
 
   return (
     <div>
-      <h2>Dashboard</h2>
-
-      {/* Metric Cards */}
-      <div className="metrics-grid">
-        <div className="metric-card">
-          <div className="metric-value">{todayMetrics.newUsers}</div>
-          <div className="metric-label">New Users</div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-surface border border-border rounded-xl p-5">
+          <div className="text-2xl font-bold text-text-primary">
+            {todayMetrics.newUsers}
+          </div>
+          <div className="text-sm text-text-muted mt-1">New Users</div>
         </div>
-        <div className="metric-card">
-          <div className="metric-value">{todayMetrics.activeUsers}</div>
-          <div className="metric-label">Active Users</div>
+        <div className="bg-surface border border-border rounded-xl p-5">
+          <div className="text-2xl font-bold text-text-primary">
+            {todayMetrics.activeUsers}
+          </div>
+          <div className="text-sm text-text-muted mt-1">Active Users</div>
         </div>
-        <div className="metric-card">
-          <div className="metric-value">{todayMetrics.totalTransactions}</div>
-          <div className="metric-label">Transactions</div>
+        <div className="bg-surface border border-border rounded-xl p-5">
+          <div className="text-2xl font-bold text-text-primary">
+            {todayMetrics.totalTransactions}
+          </div>
+          <div className="text-sm text-text-muted mt-1">Transactions</div>
         </div>
-        <div className="metric-card">
-          <div className="metric-value">${todayMetrics.revenue}</div>
-          <div className="metric-label">Revenue</div>
+        <div className="bg-surface border border-border rounded-xl p-5">
+          <div className="text-2xl font-bold text-text-primary">
+            ${todayMetrics.revenue}
+          </div>
+          <div className="text-sm text-text-muted mt-1">Revenue</div>
         </div>
       </div>
 
-      <div className="dashboard-grid">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-6">
         {/* Active Users */}
-        <div className="card">
-          <h3>Active Users</h3>
-          <table className="table">
+        <div className="bg-surface border border-border rounded-xl p-5">
+          <h3 className="text-sm font-semibold text-text-primary uppercase tracking-wider mb-3">
+            Active Users
+          </h3>
+          <table className="w-full text-sm">
             <thead>
-              <tr>
-                <th>User</th>
-                <th>Tier</th>
-                <th>Status</th>
-                <th>Last Activity</th>
+              <tr className="text-text-muted text-xs border-b border-border">
+                <th className="text-left py-2 pr-2 font-medium">User</th>
+                <th className="text-left py-2 pr-2 font-medium">Tier</th>
+                <th className="text-left py-2 pr-2 font-medium">Status</th>
+                <th className="text-right py-2 font-medium">Last Activity</th>
               </tr>
             </thead>
             <tbody>
               {activeUsersList.map((u) => (
-                <tr key={u.id}>
-                  <td>{u.username || u.id}</td>
-                  <td>
-                    <span className={`badge badge-${u.tier}`}>{u.tier}</span>
+                <tr key={u.id} className="border-b border-border/50 text-text-secondary">
+                  <td className="py-2 pr-2">{u.username || u.id}</td>
+                  <td className="py-2 pr-2">
+                    <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-blue-500/15 text-blue-400">
+                      {u.tier}
+                    </span>
                   </td>
-                  <td>
-                    <span
-                      className={`status-dot ${u.status === "online" ? "online" : "offline"}`}
-                    >
+                  <td className="py-2 pr-2">
+                    <span className="inline-flex items-center gap-1.5 text-xs">
+                      <span className={`w-2 h-2 rounded-full ${u.status === "online" ? "bg-emerald-500" : "bg-text-muted"}`} />
                       {u.status}
                     </span>
                   </td>
-                  <td>{new Date(u.lastActivity).toLocaleString()}</td>
+                  <td className="py-2 text-right text-xs font-mono text-text-muted">
+                    {new Date(u.lastActivity).toLocaleString()}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -95,15 +113,27 @@ export default function Dashboard() {
         </div>
 
         {/* Provider Health */}
-        <div className="card">
-          <h3>Provider Health</h3>
-          <div className="provider-list">
+        <div className="bg-surface border border-border rounded-xl p-5">
+          <h3 className="text-sm font-semibold text-text-primary uppercase tracking-wider mb-3">
+            Provider Health
+          </h3>
+          <div className="space-y-1">
             {Object.entries(providerHealth).map(([name, status]) => (
-              <div key={name} className="provider-row">
+              <div
+                key={name}
+                className="flex items-center justify-between py-1.5 text-sm text-text-secondary"
+              >
                 <span>{name}</span>
-                <span
-                  className={`status-dot ${status === "online" ? "online" : status === "degraded" ? "degraded" : "offline"}`}
-                >
+                <span className="inline-flex items-center gap-1.5 text-xs">
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      status === "online"
+                        ? "bg-emerald-500"
+                        : status === "degraded"
+                          ? "bg-yellow-500"
+                          : "bg-red-500"
+                    }`}
+                  />
                   {status}
                 </span>
               </div>
@@ -112,13 +142,20 @@ export default function Dashboard() {
         </div>
 
         {/* Top Niches */}
-        <div className="card">
-          <h3>Top Niches</h3>
-          <div className="niche-list">
+        <div className="bg-surface border border-border rounded-xl p-5">
+          <h3 className="text-sm font-semibold text-text-primary uppercase tracking-wider mb-3">
+            Top Niches
+          </h3>
+          <div className="space-y-1">
             {topNiches.map((n) => (
-              <div key={n.name} className="niche-row">
+              <div
+                key={n.name}
+                className="flex items-center justify-between py-1.5 text-sm text-text-secondary"
+              >
                 <span>{n.name}</span>
-                <span className="badge">{n.count}</span>
+                <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-accent/10 text-accent">
+                  {n.count}
+                </span>
               </div>
             ))}
           </div>

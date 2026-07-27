@@ -1098,16 +1098,21 @@ function openCreditsModal(id, name) {
 }
 
 async function submitCredits() {
-  const amount = parseFloat(document.getElementById('credits-amount').value);
-  const reason = document.getElementById('credits-reason').value;
-  if (!amount || amount <= 0) { toast('Enter valid amount', 'error'); return; }
+  const btn = event?.target; if(btn) btn.disabled = true;
   try {
-    const r = await api('/api/users/' + currentCreditsUserId + '/credits', { method: 'POST', body: { amount, reason } });
-    if (!r) return;
-    toast('Credits granted! New balance: ' + r.newBalance, 'success');
-    closeModal('modal-credits');
-    loadUsers(true);
-  } catch(e) { toast('Failed: ' + e.message, 'error'); }
+    const amount = parseFloat(document.getElementById('credits-amount').value);
+    const reason = document.getElementById('credits-reason').value;
+    if (!amount || amount <= 0) { toast('Enter valid amount', 'error'); return; }
+    try {
+      const r = await api('/api/users/' + currentCreditsUserId + '/credits', { method: 'POST', body: { amount, reason } });
+      if (!r) return;
+      toast('Credits granted! New balance: ' + r.newBalance, 'success');
+      closeModal('modal-credits');
+      loadUsers(true);
+    } catch(e) { toast('Failed: ' + e.message, 'error'); }
+  } finally {
+    if(btn) btn.disabled = false;
+  }
 }
 
 function openTierModal(id, name, currentTier) {
@@ -1118,14 +1123,19 @@ function openTierModal(id, name, currentTier) {
 }
 
 async function submitTier() {
-  const tier = document.getElementById('tier-select').value;
+  const btn = event?.target; if(btn) btn.disabled = true;
   try {
-    const r = await api('/api/users/' + currentTierUserId + '/tier', { method: 'PATCH', body: { tier } });
-    if (!r) return;
-    toast('Tier changed to ' + r.tier, 'success');
-    closeModal('modal-tier');
-    loadUsers(true);
-  } catch(e) { toast('Failed: ' + e.message, 'error'); }
+    const tier = document.getElementById('tier-select').value;
+    try {
+      const r = await api('/api/users/' + currentTierUserId + '/tier', { method: 'PATCH', body: { tier } });
+      if (!r) return;
+      toast('Tier changed to ' + r.tier, 'success');
+      closeModal('modal-tier');
+      loadUsers(true);
+    } catch(e) { toast('Failed: ' + e.message, 'error'); }
+  } finally {
+    if(btn) btn.disabled = false;
+  }
 }
 
 function openBanModal(id, name, isBanned) {
@@ -1140,14 +1150,19 @@ function openBanModal(id, name, isBanned) {
 }
 
 async function submitBan() {
-  const reason = document.getElementById('ban-reason').value;
+  const btn = event?.target; if(btn) btn.disabled = true;
   try {
-    const r = await api('/api/users/' + currentBanUserId + '/ban', { method: 'POST', body: { banned: !currentBanIsBanned, reason } });
-    if (!r) return;
-    toast(r.isBanned ? 'User banned' : 'User unbanned', 'success');
-    closeModal('modal-ban');
-    loadUsers(true);
-  } catch(e) { toast('Failed: ' + e.message, 'error'); }
+    const reason = document.getElementById('ban-reason').value;
+    try {
+      const r = await api('/api/users/' + currentBanUserId + '/ban', { method: 'POST', body: { banned: !currentBanIsBanned, reason } });
+      if (!r) return;
+      toast(r.isBanned ? 'User banned' : 'User unbanned', 'success');
+      closeModal('modal-ban');
+      loadUsers(true);
+    } catch(e) { toast('Failed: ' + e.message, 'error'); }
+  } finally {
+    if(btn) btn.disabled = false;
+  }
 }
 
 // ===================== TRANSACTIONS =====================
@@ -1473,17 +1488,22 @@ async function deletePricing(cat, key) {
 }
 
 async function submitPricing() {
-  const category = document.getElementById('pricing-category').value;
-  const key = document.getElementById('pricing-key').value.trim();
-  let value = document.getElementById('pricing-value').value.trim();
-  if (!category || !key || !value) { toast('All fields required', 'error'); return; }
-  try { value = JSON.parse(value); } catch {}
+  const btn = event?.target; if(btn) btn.disabled = true;
   try {
-    await api('/api/pricing', { method: 'POST', body: { category, key, value } });
-    toast('Saved', 'success');
-    closeModal('modal-pricing');
-    loadPricingTable(currentPricingCategory);
-  } catch(e) { toast('Failed: ' + e.message, 'error'); }
+    const category = document.getElementById('pricing-category').value;
+    const key = document.getElementById('pricing-key').value.trim();
+    let value = document.getElementById('pricing-value').value.trim();
+    if (!category || !key || !value) { toast('All fields required', 'error'); return; }
+    try { value = JSON.parse(value); } catch {}
+    try {
+      await api('/api/pricing', { method: 'POST', body: { category, key, value } });
+      toast('Saved', 'success');
+      closeModal('modal-pricing');
+      loadPricingTable(currentPricingCategory);
+    } catch(e) { toast('Failed: ' + e.message, 'error'); }
+  } finally {
+    if(btn) btn.disabled = false;
+  }
 }
 
 // ===================== PROMPTS =====================
@@ -1547,21 +1567,26 @@ async function deletePrompt(id) {
 }
 
 async function submitPrompt() {
-  const id = document.getElementById('prompt-edit-id').value;
-  const niche = document.getElementById('prompt-niche').value.trim().toLowerCase();
-  const title = document.getElementById('prompt-title').value.trim();
-  const prompt = document.getElementById('prompt-text').value.trim();
-  if (!niche || !title || !prompt) { toast('All fields required', 'error'); return; }
+  const btn = event?.target; if(btn) btn.disabled = true;
   try {
-    if (id) {
-      await api('/api/admin-prompts/' + id, { method: 'PUT', body: { niche, title, prompt } });
-    } else {
-      await api('/api/admin-prompts', { method: 'POST', body: { niche, title, prompt } });
-    }
-    toast('Prompt saved', 'success');
-    closeModal('modal-prompt');
-    loadPrompts();
-  } catch(e) { toast('Failed: ' + e.message, 'error'); }
+    const id = document.getElementById('prompt-edit-id').value;
+    const niche = document.getElementById('prompt-niche').value.trim().toLowerCase();
+    const title = document.getElementById('prompt-title').value.trim();
+    const prompt = document.getElementById('prompt-text').value.trim();
+    if (!niche || !title || !prompt) { toast('All fields required', 'error'); return; }
+    try {
+      if (id) {
+        await api('/api/admin-prompts/' + id, { method: 'PUT', body: { niche, title, prompt } });
+      } else {
+        await api('/api/admin-prompts', { method: 'POST', body: { niche, title, prompt } });
+      }
+      toast('Prompt saved', 'success');
+      closeModal('modal-prompt');
+      loadPrompts();
+    } catch(e) { toast('Failed: ' + e.message, 'error'); }
+  } finally {
+    if(btn) btn.disabled = false;
+  }
 }
 
 // ===================== BROADCAST =====================
@@ -1822,29 +1847,39 @@ async function loadSettings() {
 }
 
 async function saveProviders() {
-  const video = {};
-  ST_VIDEO_KEYS.forEach(k => {
-    video[k] = {
-      priority: parseInt(document.getElementById(`st-prio_${k}`).value),
-      enabled: document.getElementById(`st-en_${k}`).checked,
-    };
-  });
-  const res = await api('/api/admin/settings/providers', { method: 'POST', body: { video } });
-  res !== null ? toast('Providers saved!') : toast('Failed to save providers', 'error');
+  const btn = event?.target; if(btn) btn.disabled = true;
+  try {
+    const video = {};
+    ST_VIDEO_KEYS.forEach(k => {
+      video[k] = {
+        priority: parseInt(document.getElementById(`st-prio_${k}`).value),
+        enabled: document.getElementById(`st-en_${k}`).checked,
+      };
+    });
+    const res = await api('/api/admin/settings/providers', { method: 'POST', body: { video } });
+    res !== null ? toast('Providers saved!') : toast('Failed to save providers', 'error');
+  } finally {
+    if(btn) btn.disabled = false;
+  }
 }
 
 async function saveLanding() {
-  const payload = {
-    headline: document.getElementById('st-lpHeadline').value,
-    subheadline: document.getElementById('st-lpSub').value,
-    ctaText: document.getElementById('st-lpCta').value,
-    heroImageUrl: document.getElementById('st-lpHeroImage').value,
-    heroVideo: (document.getElementById('st-lpHeroVideo') || {}).value || '',
-    pricingNote: (document.getElementById('st-lpPricingNote') || {}).value || '',
-    footerText: (document.getElementById('st-lpFooterText') || {}).value || '',
-  };
-  const res = await api('/api/settings/landing', { method: 'POST', body: payload });
-  res !== null ? toast('Landing page saved!') : toast('Failed to save landing page', 'error');
+  const btn = event?.target; if(btn) btn.disabled = true;
+  try {
+    const payload = {
+      headline: document.getElementById('st-lpHeadline').value,
+      subheadline: document.getElementById('st-lpSub').value,
+      ctaText: document.getElementById('st-lpCta').value,
+      heroImageUrl: document.getElementById('st-lpHeroImage').value,
+      heroVideo: (document.getElementById('st-lpHeroVideo') || {}).value || '',
+      pricingNote: (document.getElementById('st-lpPricingNote') || {}).value || '',
+      footerText: (document.getElementById('st-lpFooterText') || {}).value || '',
+    };
+    const res = await api('/api/settings/landing', { method: 'POST', body: payload });
+    res !== null ? toast('Landing page saved!') : toast('Failed to save landing page', 'error');
+  } finally {
+    if(btn) btn.disabled = false;
+  }
 }
 
 function updateExchangeRateUI(data) {
@@ -1878,25 +1913,35 @@ async function refreshLiveRate() {
 }
 
 async function saveExchangeRate() {
-  const rate = parseInt(document.getElementById('st-exchangeRate').value);
-  if (!rate || rate < 10000 || rate > 50000) { toast('Exchange rate must be between 10,000 and 50,000 IDR/USD', 'error'); return; }
-  const res = await api('/api/settings/exchange-rate', { method: 'POST', body: { rate } });
-  if (res !== null) {
-    toast('Exchange rate saved: Rp ' + rate.toLocaleString());
-    updateExchangeRateUI({ rate, source: 'manual' });
-  } else {
-    toast('Failed to save exchange rate', 'error');
+  const btn = event?.target; if(btn) btn.disabled = true;
+  try {
+    const rate = parseInt(document.getElementById('st-exchangeRate').value);
+    if (!rate || rate < 10000 || rate > 50000) { toast('Exchange rate must be between 10,000 and 50,000 IDR/USD', 'error'); return; }
+    const res = await api('/api/settings/exchange-rate', { method: 'POST', body: { rate } });
+    if (res !== null) {
+      toast('Exchange rate saved: Rp ' + rate.toLocaleString());
+      updateExchangeRateUI({ rate, source: 'manual' });
+    } else {
+      toast('Failed to save exchange rate', 'error');
+    }
+  } finally {
+    if(btn) btn.disabled = false;
   }
 }
 
 async function savePixels() {
-  const payload = {
-    fbPixelId: document.getElementById('st-fbPixel').value,
-    ga4Id: document.getElementById('st-ga4Id').value,
-    ttPixelId: document.getElementById('st-ttPixel').value,
-  };
-  const res = await api('/api/settings/pixels', { method: 'POST', body: payload });
-  res !== null ? toast('Pixel settings saved!') : toast('Failed to save pixels', 'error');
+  const btn = event?.target; if(btn) btn.disabled = true;
+  try {
+    const payload = {
+      fbPixelId: document.getElementById('st-fbPixel').value,
+      ga4Id: document.getElementById('st-ga4Id').value,
+      ttPixelId: document.getElementById('st-ttPixel').value,
+    };
+    const res = await api('/api/settings/pixels', { method: 'POST', body: payload });
+    res !== null ? toast('Pixel settings saved!') : toast('Failed to save pixels', 'error');
+  } finally {
+    if(btn) btn.disabled = false;
+  }
 }
 
 async function seedPricing() {
@@ -1911,11 +1956,16 @@ async function seedPricing() {
 }
 
 async function saveReferralRates() {
-  const sellRate = parseInt(document.getElementById('st-refSellRate').value);
-  const buyRate = parseInt(document.getElementById('st-refBuyRate').value);
-  if (!sellRate || sellRate <= 0 || !buyRate || buyRate <= 0) { toast('Rates must be positive numbers', 'error'); return; }
-  const res = await api('/api/settings/referral', { method: 'POST', body: { sellRate, buyRate } });
-  res !== null ? toast('Referral rates saved!') : toast('Failed to save rates', 'error');
+  const btn = event?.target; if(btn) btn.disabled = true;
+  try {
+    const sellRate = parseInt(document.getElementById('st-refSellRate').value);
+    const buyRate = parseInt(document.getElementById('st-refBuyRate').value);
+    if (!sellRate || sellRate <= 0 || !buyRate || buyRate <= 0) { toast('Rates must be positive numbers', 'error'); return; }
+    const res = await api('/api/settings/referral', { method: 'POST', body: { sellRate, buyRate } });
+    res !== null ? toast('Referral rates saved!') : toast('Failed to save rates', 'error');
+  } finally {
+    if(btn) btn.disabled = false;
+  }
 }
 
 // ===================== FREE TRIAL =====================
@@ -1955,24 +2005,29 @@ async function loadFreeTrial() {
 }
 
 async function saveFreeTrial() {
-  const payload = {
-    welcomeBonus: {
-      enabled: document.getElementById('ft-welcomeEnabled').checked,
-      count: parseInt(document.getElementById('ft-welcomeCount').value) || 1,
-      type: 'image_generation',
-      provider: 'google_gemini',
-    },
-    restrictions: {
-      videoGeneration: document.getElementById('ft-videoGen').checked,
-      maxVideoDuration: parseInt(document.getElementById('ft-maxDuration').value) || 15,
-      watermark: document.getElementById('ft-watermark').checked,
-      customPrompt: document.getElementById('ft-customPrompt').checked,
-      promptSource: 'library_only',
-      queuePriority: 'lowest',
-    },
-  };
-  const res = await api('/api/settings/free-trial', { method: 'POST', body: payload });
-  res !== null ? toast('Free trial settings saved!') : toast('Failed to save free trial settings', 'error');
+  const btn = event?.target; if(btn) btn.disabled = true;
+  try {
+    const payload = {
+      welcomeBonus: {
+        enabled: document.getElementById('ft-welcomeEnabled').checked,
+        count: parseInt(document.getElementById('ft-welcomeCount').value) || 1,
+        type: 'image_generation',
+        provider: 'google_gemini',
+      },
+      restrictions: {
+        videoGeneration: document.getElementById('ft-videoGen').checked,
+        maxVideoDuration: parseInt(document.getElementById('ft-maxDuration').value) || 15,
+        watermark: document.getElementById('ft-watermark').checked,
+        customPrompt: document.getElementById('ft-customPrompt').checked,
+        promptSource: 'library_only',
+        queuePriority: 'lowest',
+      },
+    };
+    const res = await api('/api/settings/free-trial', { method: 'POST', body: payload });
+    res !== null ? toast('Free trial settings saved!') : toast('Failed to save free trial settings', 'error');
+  } finally {
+    if(btn) btn.disabled = false;
+  }
 }
 
 // ===================== NICHES =====================
@@ -2017,19 +2072,24 @@ function editNiche(id, name, emoji, keywords) {
 }
 
 async function saveNiche() {
-  const id = document.getElementById('nicheId').value.trim();
-  const name = document.getElementById('nicheName').value.trim();
-  const emoji = document.getElementById('nicheEmoji').value.trim();
-  const keywords = document.getElementById('nicheKeywords').value.split(',').map(k => k.trim()).filter(Boolean);
-  if (!id || !name) { toast('ID and Name are required', 'error'); return; }
-  const res = await api('/api/niches', { method: 'POST', body: { id, name, emoji, keywords } });
-  if (res !== null) {
-    toast('Niche saved!');
-    document.getElementById('nicheId').readOnly = false;
-    document.getElementById('nicheForm').style.display = 'none';
-    loadNiches();
-  } else {
-    toast('Failed to save niche', 'error');
+  const btn = event?.target; if(btn) btn.disabled = true;
+  try {
+    const id = document.getElementById('nicheId').value.trim();
+    const name = document.getElementById('nicheName').value.trim();
+    const emoji = document.getElementById('nicheEmoji').value.trim();
+    const keywords = document.getElementById('nicheKeywords').value.split(',').map(k => k.trim()).filter(Boolean);
+    if (!id || !name) { toast('ID and Name are required', 'error'); return; }
+    const res = await api('/api/niches', { method: 'POST', body: { id, name, emoji, keywords } });
+    if (res !== null) {
+      toast('Niche saved!');
+      document.getElementById('nicheId').readOnly = false;
+      document.getElementById('nicheForm').style.display = 'none';
+      loadNiches();
+    } else {
+      toast('Failed to save niche', 'error');
+    }
+  } finally {
+    if(btn) btn.disabled = false;
   }
 }
 

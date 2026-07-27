@@ -180,11 +180,12 @@ function showAddForm() {
 }
 
 async function addPrompt() {
-  const niche = document.getElementById('new-niche').value;
-  const title = document.getElementById('new-title').value.trim();
-  const prompt = document.getElementById('new-prompt').value.trim();
-  if (!title || !prompt) { toast('Title and prompt are required', 'error'); return; }
+  const btn = event?.target; if(btn) btn.disabled = true;
   try {
+    const niche = document.getElementById('new-niche').value;
+    const title = document.getElementById('new-title').value.trim();
+    const prompt = document.getElementById('new-prompt').value.trim();
+    if (!title || !prompt) { toast('Title and prompt are required', 'error'); return; }
     const r = await fetch('/api/admin-prompts', {
       method: 'POST',
       credentials: 'include',
@@ -199,6 +200,8 @@ async function addPrompt() {
     loadPrompts();
   } catch (e) {
     toast('Failed to save: ' + e.message, 'error');
+  } finally {
+    if(btn) btn.disabled = false;
   }
 }
 
@@ -213,12 +216,13 @@ function openEdit(id) {
 }
 
 async function saveEdit() {
-  const id = document.getElementById('edit-id').value;
-  const niche = document.getElementById('edit-niche').value;
-  const title = document.getElementById('edit-title').value.trim();
-  const prompt = document.getElementById('edit-prompt').value.trim();
-  if (!title || !prompt) { toast('Title and prompt are required', 'error'); return; }
+  const btn = event?.target; if(btn) btn.disabled = true;
   try {
+    const id = document.getElementById('edit-id').value;
+    const niche = document.getElementById('edit-niche').value;
+    const title = document.getElementById('edit-title').value.trim();
+    const prompt = document.getElementById('edit-prompt').value.trim();
+    if (!title || !prompt) { toast('Title and prompt are required', 'error'); return; }
     const r = await fetch('/api/admin-prompts/' + id, {
       method: 'PUT',
       credentials: 'include',
@@ -231,6 +235,8 @@ async function saveEdit() {
     loadPrompts();
   } catch (e) {
     toast('Failed to update: ' + e.message, 'error');
+  } finally {
+    if(btn) btn.disabled = false;
   }
 }
 

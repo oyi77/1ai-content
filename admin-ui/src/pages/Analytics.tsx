@@ -13,75 +13,95 @@ export default function Analytics() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="page-loading">Loading analytics…</div>;
-  if (error) return <div className="page-error">{error}</div>;
-  if (!data) return <div className="page-empty">No data</div>;
+  if (loading)
+    return (
+      <div className="text-text-muted text-center py-12">
+        Loading analytics…
+      </div>
+    );
+  if (error)
+    return (
+      <div className="bg-red-500/10 text-red-400 rounded-xl p-4">{error}</div>
+    );
+  if (!data)
+    return (
+      <div className="text-text-muted text-center py-12">No data</div>
+    );
 
   return (
-    <div className="page">
-      <h1>Analytics</h1>
-
-      <section className="card-grid">
-        <div className="card">
-          <h3>Today's Metrics</h3>
-          <dl className="metrics-list">
-            <dt>New Users</dt>
-            <dd>{data.todayMetrics.newUsers}</dd>
-            <dt>Active Users (24h)</dt>
-            <dd>{data.todayMetrics.activeUsers}</dd>
-            <dt>Transactions</dt>
-            <dd>{data.todayMetrics.totalTransactions}</dd>
-            <dt>Revenue</dt>
-            <dd>${data.todayMetrics.revenue}</dd>
-            <dt>Credits Used</dt>
-            <dd>{data.todayMetrics.creditsUsed}</dd>
-          </dl>
+    <div>
+      {/* Today's Metrics */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+        <div className="bg-surface border border-border rounded-xl p-4">
+          <div className="text-xs text-text-muted mb-1 uppercase tracking-wider">
+            New Users
+          </div>
+          <div className="text-xl font-bold text-text-primary">
+            {data.todayMetrics.newUsers}
+          </div>
         </div>
+        <div className="bg-surface border border-border rounded-xl p-4">
+          <div className="text-xs text-text-muted mb-1 uppercase tracking-wider">
+            Active Users
+          </div>
+          <div className="text-xl font-bold text-text-primary">
+            {data.todayMetrics.activeUsers}
+          </div>
+        </div>
+        <div className="bg-surface border border-border rounded-xl p-4">
+          <div className="text-xs text-text-muted mb-1 uppercase tracking-wider">
+            Transactions
+          </div>
+          <div className="text-xl font-bold text-text-primary">
+            {data.todayMetrics.totalTransactions}
+          </div>
+        </div>
+        <div className="bg-surface border border-border rounded-xl p-4">
+          <div className="text-xs text-text-muted mb-1 uppercase tracking-wider">
+            Revenue
+          </div>
+          <div className="text-xl font-bold text-text-primary">
+            ${data.todayMetrics.revenue}
+          </div>
+        </div>
+        <div className="bg-surface border border-border rounded-xl p-4">
+          <div className="text-xs text-text-muted mb-1 uppercase tracking-wider">
+            Credits Used
+          </div>
+          <div className="text-xl font-bold text-text-primary">
+            {data.todayMetrics.creditsUsed}
+          </div>
+        </div>
+      </div>
 
-        <div className="card">
-          <h3>Top Niches</h3>
+      {/* Top Niches & Provider Health */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        {/* Top Niches */}
+        <div className="bg-surface border border-border rounded-xl p-5">
+          <h3 className="text-sm font-semibold text-text-primary uppercase tracking-wider mb-3">
+            Top Niches
+          </h3>
           {data.topNiches.length === 0 ? (
-            <p className="empty-state">No niche data</p>
+            <p className="text-text-muted text-sm text-center py-8">
+              No niche data
+            </p>
           ) : (
-            <table className="data-table">
+            <table className="w-full text-sm">
               <thead>
-                <tr>
-                  <th>Niche</th>
-                  <th>Videos</th>
+                <tr className="text-text-muted text-xs border-b border-border">
+                  <th className="text-left py-2 font-medium">Niche</th>
+                  <th className="text-right py-2 font-medium">Videos</th>
                 </tr>
               </thead>
               <tbody>
                 {data.topNiches.map((n) => (
-                  <tr key={n.name}>
-                    <td>{n.name}</td>
-                    <td>{n.count}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-
-        <div className="card">
-          <h3>Provider Health</h3>
-          {Object.keys(data.providerHealth).length === 0 ? (
-            <p className="empty-state">No providers</p>
-          ) : (
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Provider</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(data.providerHealth).map(([provider, status]) => (
-                  <tr key={provider}>
-                    <td>{provider}</td>
-                    <td>
-                      <span className={`badge badge-${status === "online" ? "green" : status === "degraded" ? "yellow" : "red"}`}>
-                        {status}
-                      </span>
+                  <tr
+                    key={n.name}
+                    className="border-b border-border/50 text-text-secondary"
+                  >
+                    <td className="py-2">{n.name}</td>
+                    <td className="py-2 text-right font-mono text-xs">
+                      {n.count}
                     </td>
                   </tr>
                 ))}
@@ -89,32 +109,87 @@ export default function Analytics() {
             </table>
           )}
         </div>
-      </section>
 
-      <section className="card">
-        <h3>Recent Errors</h3>
+        {/* Provider Health */}
+        <div className="bg-surface border border-border rounded-xl p-5">
+          <h3 className="text-sm font-semibold text-text-primary uppercase tracking-wider mb-3">
+            Provider Health
+          </h3>
+          {Object.keys(data.providerHealth).length === 0 ? (
+            <p className="text-text-muted text-sm text-center py-8">
+              No providers
+            </p>
+          ) : (
+            <div className="space-y-1">
+              {Object.entries(data.providerHealth).map(
+                ([provider, status]) => (
+                  <div
+                    key={provider}
+                    className="flex items-center justify-between py-1.5 text-sm text-text-secondary"
+                  >
+                    <span>{provider}</span>
+                    <span className="inline-flex items-center gap-1.5 text-xs">
+                      <span
+                        className={`w-2 h-2 rounded-full ${
+                          status === "online"
+                            ? "bg-emerald-500"
+                            : status === "degraded"
+                              ? "bg-yellow-500"
+                              : "bg-red-500"
+                        }`}
+                      />
+                      {status}
+                    </span>
+                  </div>
+                ),
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Recent Errors */}
+      <div className="bg-surface border border-border rounded-xl p-5">
+        <h3 className="text-sm font-semibold text-text-primary uppercase tracking-wider mb-3">
+          Recent Errors
+        </h3>
         {data.recentErrors.length === 0 ? (
-          <p className="empty-state">No recent errors</p>
+          <p className="text-text-muted text-sm text-center py-8">
+            No recent errors
+          </p>
         ) : (
-          <table className="data-table">
+          <table className="w-full text-sm">
             <thead>
-              <tr>
-                <th>ID</th>
-                <th>Message</th>
-                <th>Source</th>
-                <th>Time</th>
-                <th>Severity</th>
+              <tr className="text-text-muted text-xs border-b border-border">
+                <th className="text-left py-2 pr-2 font-medium">ID</th>
+                <th className="text-left py-2 pr-2 font-medium">Message</th>
+                <th className="text-left py-2 pr-2 font-medium">Source</th>
+                <th className="text-left py-2 pr-2 font-medium">Time</th>
+                <th className="text-right py-2 font-medium">Severity</th>
               </tr>
             </thead>
             <tbody>
               {data.recentErrors.map((e) => (
-                <tr key={e.id}>
-                  <td className="cell-mono">{e.id.slice(0, 12)}</td>
-                  <td>{e.message}</td>
-                  <td>{e.source}</td>
-                  <td>{new Date(e.timestamp).toLocaleString()}</td>
-                  <td>
-                    <span className={`badge badge-${e.severity === "error" ? "red" : "yellow"}`}>
+                <tr
+                  key={e.id}
+                  className="border-b border-border/50 text-text-secondary"
+                >
+                  <td className="py-2 pr-2 font-mono text-xs">
+                    {e.id.slice(0, 12)}
+                  </td>
+                  <td className="py-2 pr-2">{e.message}</td>
+                  <td className="py-2 pr-2 text-text-muted">{e.source}</td>
+                  <td className="py-2 pr-2 text-xs text-text-muted">
+                    {new Date(e.timestamp).toLocaleString()}
+                  </td>
+                  <td className="py-2 text-right">
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full ${
+                        e.severity === "error"
+                          ? "bg-red-500/15 text-red-400"
+                          : "bg-yellow-500/15 text-yellow-400"
+                      }`}
+                    >
                       {e.severity}
                     </span>
                   </td>
@@ -123,7 +198,7 @@ export default function Analytics() {
             </tbody>
           </table>
         )}
-      </section>
+      </div>
     </div>
   );
 }

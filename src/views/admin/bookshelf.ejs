@@ -129,11 +129,15 @@ async function generateBook() {
   const progMsg = document.getElementById('bk-progress-msg');
   const progBar = document.getElementById('bk-progress-bar');
   progSection.style.display = 'block';
-  progMsg.textContent = 'Generating book...';
+  progMsg.textContent = 'Starting...';
   progBar.style.width = '0%';
 
   document.getElementById('bk-result').style.display = 'none';
   document.getElementById('bk-error').style.display = 'none';
+
+  let sections = [];
+  lastBookData = null;
+  bkSectionHtml = '';
 
   try {
     const body = {
@@ -148,35 +152,109 @@ async function generateBook() {
     if (sModel) body.structure_model = sModel;
     if (cModel) body.section_model = cModel;
 
-    // This is a blocking POST — can take 30-60s
     const r = await fetch(`${PY_API}/bookshelf/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
 
-    progSection.style.display = 'none';
-    btn.textContent = '📚 Generate Book';
-    btn.disabled = false;
-
     if (!r.ok) {
-      const err = await r.json().catch(() => ({ detail: `HTTP ${r.status}` }));
-      document.getElementById('bk-error').style.display = 'block';
-      document.getElementById('bk-error-msg').textContent = err.detail || 'Unknown error';
-      return showToast('❌ Generation failed', 'error');
+      const errText = await r.text().catch(() => 'Unknown error');
+      throw new Error(errText || `HTTP ${r.status}`);
     }
 
-    const data = await r.json();
-  lastBookData = { ...data, subject };
-    renderBook(data);
-    showToast(`✅ "${data.title || 'Book'}" generated!`);
+    if (!r.body) throw new Error('Response has no body stream');
+
+    const reader = r.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const jsonStr = line.slice(6).trim();
+        if (!jsonStr) continue;
+
+        try {
+          const event = JSON.parse(jsonStr);
+          handleBookEvent(event, btn, progMsg, progBar);
+        } catch (_e) { /* skip unparseable */ }
+      }
+    }
   } catch (e) {
     progSection.style.display = 'none';
     btn.textContent = '📚 Generate Book';
     btn.disabled = false;
     document.getElementById('bk-error').style.display = 'block';
     document.getElementById('bk-error-msg').textContent = e.message;
-    showToast('❌ ' + e.message, 'error');
+    return showToast('❌ ' + e.message, 'error');
+  }
+}
+
+let _bkSections = [];
+let _bkTitle = '';
+let _bkMarkdown = '';
+let _bkStats = {};
+
+function handleBookEvent(event, btn, progMsg, progBar) {
+  const type = event.type || '';
+
+  if (type === 'error') {
+    progMsg.textContent = event.message || 'Error';
+    btn.textContent = '📚 Generate Book';
+    btn.disabled = false;
+    document.getElementById('bk-error').style.display = 'block';
+    document.getElementById('bk-error-msg').textContent = event.message || 'Unknown error';
+    return;
+  }
+
+  if (type === 'progress') {
+    progMsg.textContent = event.message || event.phase || 'Working...';
+    if (event.current && event.total) {
+      progBar.style.width = Math.min(100, (event.current / event.total) * 100) + '%';
+    }
+    if (event.title) _bkTitle = event.title;
+    return;
+  }
+
+  if (type === 'section_content') {
+    const payload = event.payload || {};
+    _bkSections.push({ title: payload.title || '', content: payload.content || '' });
+    progMsg.textContent = `Received section: ${payload.title || ''}`;
+    if (event.current && event.total) {
+      progBar.style.width = Math.min(100, (event.current / event.total) * 100) + '%';
+    }
+    return;
+  }
+
+  if (type === 'complete') {
+    const payload = event.payload || {};
+    _bkTitle = payload.title || _bkTitle;
+    _bkMarkdown = payload.full_markdown || '';
+    _bkStats = event.stats || {};
+
+    document.getElementById('bk-progress-section').style.display = 'none';
+    document.getElementById('bk-result').style.display = 'block';
+
+    btn.textContent = '📚 Generate Book';
+    btn.disabled = false;
+
+    const finalData = {
+      title: _bkTitle,
+      sections: _bkSections,
+      full_markdown: _bkMarkdown,
+      stats: _bkStats,
+    };
+    lastBookData = { ...finalData, subject: document.getElementById('bk-subject').value.trim() };
+    renderBook(finalData);
+    showToast(`✅ "${_bkTitle || 'Book'}" generated!`);
   }
 }
 

@@ -12,7 +12,7 @@ from services.bookshelf.tools.markdown import assemble_markdown
 from services.bookshelf.stats import GenerationStatistics
 
 
-LOCAL_MODEL_ID = "qwen3:4b"
+LOCAL_MODEL_ID = os.environ.get("BOOKSHELF_LOCAL_MODEL", "qwen3:8b")
 
 async def generate_book_pipeline(
     subject: str,
@@ -35,15 +35,15 @@ async def generate_book_pipeline(
     For "section_content" type: payload = {"title": str, "content": str}
     For "complete" type: payload = {"title": str, "structure": dict, "full_markdown": str}
     """
+    if groq_client is not None or os.environ.get("BOOKSHELF_LOCAL_URL"):
+        title_model = title_model or LOCAL_MODEL_ID
+        structure_model = structure_model or LOCAL_MODEL_ID
+        section_model = section_model or LOCAL_MODEL_ID
     if groq_client is not None:
         client = groq_client
     elif os.environ.get("BOOKSHELF_LOCAL_URL"):
         from services.bookshelf.openai_provider import get_local_client
         client = get_local_client()
-        # llama-server requires exact gguf path as model name
-        title_model = title_model or LOCAL_MODEL_ID
-        structure_model = structure_model or LOCAL_MODEL_ID
-        section_model = section_model or LOCAL_MODEL_ID
     else:
         client = get_groq_client()
 

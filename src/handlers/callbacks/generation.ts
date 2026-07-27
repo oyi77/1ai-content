@@ -1,5 +1,6 @@
 import { BotContext } from "@/types";
 import { t } from "@/i18n/translations";
+import type { DurationPreset } from "@/config/hpas-engine";
 import {
   handleDurationSelection,
   handleNicheSelection,
@@ -79,7 +80,7 @@ export async function handleGenerationCallbacks(ctx: BotContext, data: string): 
     const { showGenerateAction } = await import("../../flows/generate.js");
     const mode = data.replace("mode_", "") as "basic" | "smart" | "pro";
     if (ctx.session) ctx.session.generateMode = mode;
-    await showGenerateAction(ctx);
+    await showGenerateAction(ctx, mode);
     return true;
   }
 
@@ -113,7 +114,7 @@ export async function handleGenerationCallbacks(ctx: BotContext, data: string): 
     }
 
     const { showSmartPlatformSelection } = await import("../../flows/generate.js");
-    await showSmartPlatformSelection(ctx);
+    await showSmartPlatformSelection(ctx, preset as DurationPreset);
     return true;
   }
 

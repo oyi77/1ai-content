@@ -40,26 +40,28 @@ const TOOLS: ToolItem[] = [
 
 export default function Tools() {
   return (
-    <div className="page">
-      <h1>Tools</h1>
-      <p className="page-subtitle">Utility tools and configurations</p>
+    <div>
+      <p className="text-text-muted text-sm mb-6">
+        Utility tools and configurations
+      </p>
 
-      <section className="card-grid">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
         {TOOLS.map((tool) => (
           <a
             key={tool.name}
             href={tool.path}
-            className="card"
-            style={{ textDecoration: "none" }}
+            className="block bg-surface border border-border rounded-xl p-5 hover:border-accent/30 hover:bg-surface-hover transition-all group"
           >
-            <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>
-              {tool.icon}
-            </div>
-            <h3>{tool.name}</h3>
-            <p style={{ color: "#666", margin: 0 }}>{tool.description}</p>
+            <div className="text-2xl mb-3">{tool.icon}</div>
+            <h3 className="text-sm font-semibold text-text-primary group-hover:text-accent transition-colors">
+              {tool.name}
+            </h3>
+            <p className="text-xs text-text-muted mt-1">
+              {tool.description}
+            </p>
           </a>
         ))}
-      </section>
+      </div>
     </div>
   );
 }

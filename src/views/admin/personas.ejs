@@ -145,17 +145,18 @@ document.querySelectorAll('[id^="all-niches-"]').forEach(function(cb) {
 });
 
 async function savePersona(id) {
-  const allNiches = document.getElementById('all-niches-' + id).checked;
-  const nicheInputs = document.querySelectorAll('input[name="niche-' + id + '"]:checked');
-  const presetInputs = document.querySelectorAll('input[name="preset-' + id + '"]:checked');
-  const multiplier = parseFloat(document.getElementById('multiplier-' + id).value) || 1.0;
-
-  const allowedNiches = allNiches ? 'ALL' : Array.from(nicheInputs).map(i => i.value);
-  const allowedPresets = Array.from(presetInputs).map(i => i.value);
-
-  const payload = { id, allowedNiches, allowedPresets, priceMultiplier: multiplier };
-
+  const btn = event?.target; if (btn) btn.disabled = true;
   try {
+    const allNiches = document.getElementById('all-niches-' + id).checked;
+    const nicheInputs = document.querySelectorAll('input[name="niche-' + id + '"]:checked');
+    const presetInputs = document.querySelectorAll('input[name="preset-' + id + '"]:checked');
+    const multiplier = parseFloat(document.getElementById('multiplier-' + id).value) || 1.0;
+
+    const allowedNiches = allNiches ? 'ALL' : Array.from(nicheInputs).map(i => i.value);
+    const allowedPresets = Array.from(presetInputs).map(i => i.value);
+
+    const payload = { id, allowedNiches, allowedPresets, priceMultiplier: multiplier };
+
     const res = await fetch('/api/personas', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -169,6 +170,8 @@ async function savePersona(id) {
     updateDisplayRow(id, allowedNiches, allowedPresets, multiplier);
   } catch (e) {
     showToast(e.message, 'error');
+  } finally {
+    if (btn) btn.disabled = false;
   }
 }
 

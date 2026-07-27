@@ -12,7 +12,15 @@ Fastify HTTP route handlers for the admin dashboard, webhooks, health checks, an
 |------|-------------|
 | `admin.ts` | Admin dashboard + API endpoints. Auth: Basic auth, cookie `admin_token`, or `?token=` query param vs `ADMIN_PASSWORD` |
 | `health.ts` | Health check endpoint for monitoring |
-| `web.ts` | Public web app routes, landing page, user API (`/app`, `/api/user`) |
+| `web.ts` | Public web app routes — aggregator for 8 sub-modules in `web/` (was previously a 1423-line god object) |
+| `web/pages.ts` | Landing page, FAQ, TOS, Privacy, static files, PWA manifest, payment finish page |
+| `web/auth.ts` | `POST /auth/telegram` — Telegram login widget / Mini App auth |
+| `web/user.ts` | `/api/user` CRUD, `/api/user/videos`, `/api/user/history`, `/api/video/:jobId` |
+| `web/content.ts` | `/api/storyboard`, `/api/video/create`, `/api/video/analyze`, `/api/image/generate`, `/api/image/describe`, `/video/:jobId/download` |
+| `web/finance.ts` | `/api/packages`, `/api/payment/create`, `/api/my/transactions`, `/api/user/p2p-transfer`, `/api/referral`, `/api/subscriptions` |
+| `web/chat.ts` | `/api/chat/landing` — landing page AI chat widget |
+| `web/aliases.ts` | `/api/v1/*` redirects for backward compatibility |
+| `web/middleware.ts` | Shared `getUser()` helper for JWT/API-key auth |
 
 ## For AI Agents
 

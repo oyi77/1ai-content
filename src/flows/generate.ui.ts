@@ -97,7 +97,7 @@ export async function showGenerateMode(ctx: BotContext): Promise<void> {
 
 // ── Step 2: Action Selection ──────────────────────────────────────────────────
 
-export async function showGenerateAction(ctx: BotContext): Promise<void> {
+export async function showGenerateAction(ctx: BotContext, mode: GenerateMode): Promise<void> {
   try {
     if (ctx.callbackQuery) await ctx.answerCbQuery().catch(() => {});
 
@@ -119,8 +119,11 @@ export async function showGenerateAction(ctx: BotContext): Promise<void> {
       }
     }
 
-    const mode = ctx.session?.generateMode as GenerateMode || 'basic';
     const modeLabel = mode === 'basic' ? '⚡ Basic' : mode === 'smart' ? '🎯 Smart' : '👑 Pro';
+
+    if (ctx.session) {
+      ctx.session.generateMode = mode;
+    }
 
     // Fix 2.6: Dynamic credit costs
     const { getUnitCostAsync } = await import('../config/pricing.js');
@@ -408,11 +411,9 @@ export async function showSmartPresetSelection(ctx: BotContext): Promise<void> {
 
 // ── Smart Mode: Platform Selection ───────────────────────────────────────────
 
-export async function showSmartPlatformSelection(ctx: BotContext): Promise<void> {
+export async function showSmartPlatformSelection(ctx: BotContext, preset: DurationPreset): Promise<void> {
   try {
     if (ctx.callbackQuery) await ctx.answerCbQuery().catch(() => {});
-
-    const preset = ctx.session?.generatePreset as DurationPreset || 'standard';
 
     if (ctx.session) {
       ctx.session.generatePreset = preset;
