@@ -78,7 +78,8 @@ export async function handleGenerationCallbacks(ctx: BotContext, data: string): 
   if (data.startsWith("mode_")) {
     const { showGenerateAction } = await import("../../flows/generate.js");
     const mode = data.replace("mode_", "") as "basic" | "smart" | "pro";
-    await showGenerateAction(ctx, mode);
+    if (ctx.session) ctx.session.generateMode = mode;
+    await showGenerateAction(ctx);
     return true;
   }
 
@@ -112,8 +113,7 @@ export async function handleGenerationCallbacks(ctx: BotContext, data: string): 
     }
 
     const { showSmartPlatformSelection } = await import("../../flows/generate.js");
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Telegraf preset type
-    await showSmartPlatformSelection(ctx, preset as any);
+    await showSmartPlatformSelection(ctx);
     return true;
   }
 
