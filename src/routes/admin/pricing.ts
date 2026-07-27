@@ -166,6 +166,6 @@ export async function registerPricingRoutes(server: FastifyInstance) {
   });
 
   server.get("/admin/pricing", async (_request, reply) => {
-    return reply.view("admin/pricing.ejs", trackingVars());
+    return reply.redirect("/admin/react/pricing");
   });
 }

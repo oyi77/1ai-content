@@ -99,7 +99,7 @@ const categories: SidebarCategory[] = [
       { label: "Book Research", path: "/research", type: "ejs" },
       { label: "AI Config", path: "/ai-config", type: "ejs" },
       { label: "Pinterest Scan", path: "/pinterest", type: "ejs" },
-      { label: "Playground", path: "/playground", type: "ejs" },
+      { label: "Playground", path: "/playground", type: "react" },
     ],
   },
   {
@@ -107,7 +107,7 @@ const categories: SidebarCategory[] = [
     iconKey: "dollar",
     items: [
       { label: "Payments", path: "/payments", type: "react" },
-      { label: "Pricing", path: "/pricing", type: "ejs" },
+      { label: "Pricing", path: "/pricing", type: "react" },
       { label: "Dynamic Pricing", path: "/dynamic-pricing", type: "ejs" },
       { label: "Broadcast", path: "/broadcast", type: "ejs" },
     ],

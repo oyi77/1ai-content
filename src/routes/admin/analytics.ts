@@ -6,6 +6,7 @@ import { PROVIDER_CONFIG } from "@/config/providers";
 import { getQueueStats } from "@/config/queue";
 import { trackingVars } from "./shared";
 
+export async function registerAnalyticsRoutes(server: FastifyInstance) {
   server.get("/admin/dashboard", async (_request, reply) => {
     return reply.redirect("/admin/react/dashboard");
   });

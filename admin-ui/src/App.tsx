@@ -7,7 +7,8 @@ import Users from "./pages/Users";
 import Payments from "./pages/Payments";
 import Tools from "./pages/Tools";
 import Settings from "./pages/Settings";
-
+import Pricing from "./pages/Pricing";
+import Playground from "./pages/Playground";
 export default function App() {
   return (
     <BrowserRouter basename="/admin/react">
@@ -21,6 +22,8 @@ export default function App() {
           <Route path="/payments" element={<Payments />} />
           <Route path="/tools" element={<Tools />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/playground" element={<Playground />} />
         </Route>
       </Routes>
     </BrowserRouter>

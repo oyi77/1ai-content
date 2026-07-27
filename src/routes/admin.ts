@@ -746,19 +746,6 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
     return reply.redirect(`/admin/settings${request.url.includes('?') ? request.url.substring(request.url.indexOf('?')) : ''}#runtime`);
   });
 
-  // Admin playground view page
-  server.get("/admin/playground", async (_request, reply) => {
-    const omni = getOmniRouteService();
-    const models = await omni.listModels().catch(() => []);
-    return reply.view("admin/playground.ejs", {
-      ...trackingVars(),
-      activePage: 'playground',
-      title: 'Model Playground',
-      omniModels: models,
-      videoProviders: Object.keys(PROVIDER_CONFIG.video),
-      imageProviders: Object.keys(PROVIDER_CONFIG.image),
-    }, { layout: 'admin/layout.ejs' });
-  });
 
   // API: Get payment settings
   server.get("/api/payment-settings", async () => {
@@ -824,6 +811,10 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
   // /admin/tools -> /admin/react/tools (React SPA route)
   server.get("/admin/tools", async (_request, reply) => {
     return reply.redirect("/admin/react/tools");
+  });
+  // /admin/playground -> /admin/react/playground (React SPA route)
+  server.get("/admin/playground", async (_request, reply) => {
+    return reply.redirect("/admin/react/playground");
   });
   // /admin/broadcast -> /admin/settings#broadcast (settings tab has broadcast form)
   server.get("/admin/broadcast", async (_request, reply) => {
