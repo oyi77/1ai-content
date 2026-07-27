@@ -1,4 +1,4 @@
-import { FastifyInstance } from "fastify";
+import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { redis } from "@/config/redis";
 import { getConfig } from "@/config/env";
 import { ProviderSettingsService } from "@/services/provider-settings.service";
@@ -13,7 +13,7 @@ const providerOverrideSchema = zodToJsonSchema(z.record(z.string(), z.unknown())
 
 export async function registerProviderMgmtRoutes(
   server: FastifyInstance,
-  verifyAdmin: (request: any, reply: any) => Promise<boolean>,
+  verifyAdmin: (request: FastifyRequest, reply: FastifyReply) => Promise<boolean>,
 ) {
   /** GET /admin/medias — Media Gallery page */
   server.get("/admin/medias", async (_request, reply) => {
@@ -130,8 +130,8 @@ export async function registerProviderMgmtRoutes(
     try {
       const balances = await ProviderBalanceService.fetchAllBalances();
       return { balances };
-    } catch (err: any) {
-      return { balances: [], error: err.message };
+    } catch (err) {
+      return { balances: [], error: (err as Error).message };
     }
   });
 
@@ -140,8 +140,8 @@ export async function registerProviderMgmtRoutes(
     try {
       const models = await ProviderBalanceService.fetchAllModels();
       return { models };
-    } catch (err: any) {
-      return { models: [], error: err.message };
+    } catch (err) {
+      return { models: [], error: (err as Error).message };
     }
   });
 
@@ -166,8 +166,8 @@ export async function registerProviderMgmtRoutes(
       );
 
       return { success: true, message: `Circuit breaker for ${key} reset` };
-    } catch (err: any) {
-      return reply.status(500).send({ error: err.message });
+    } catch (err) {
+      return reply.status(500).send({ error: (err as Error).message });
     }
   });
 
@@ -177,8 +177,8 @@ export async function registerProviderMgmtRoutes(
     try {
       const result = await ProviderBalanceService.testProvider(key);
       return result;
-    } catch (err: any) {
-      return reply.status(500).send({ success: false, error: err.message });
+    } catch (err) {
+      return reply.status(500).send({ success: false, error: (err as Error).message });
     }
   });
 

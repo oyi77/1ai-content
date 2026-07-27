@@ -62,8 +62,8 @@ export function getSharedAIPipeline(): AIPipeline | null {
       try {
         _pipeline = new AIPipeline(cfg);
         logger.info('[SharedAIPipeline] Initialised', { mode: cfg.mode, url: cfg.mode === 'hub' ? cfg.hubUrl : cfg.directUrl });
-      } catch (err: any) {
-        logger.warn(`[SharedAIPipeline] Init failed: ${err.message}`);
+      } catch (err) {
+        logger.warn(`[SharedAIPipeline] Init failed: ${(err as Error).message}`);
       }
     }
   }
@@ -93,8 +93,8 @@ export async function pipelineGenerate(
     });
     logger.info('[SharedAIPipeline] Generate succeeded', { model: result.model });
     return result;
-  } catch (err: any) {
-    logger.debug(`[SharedAIPipeline] Generate failed: ${err.message}`);
+  } catch (err) {
+    logger.debug(`[SharedAIPipeline] Generate failed: ${(err as Error).message}`);
     return null;
   }
 }

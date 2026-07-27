@@ -124,9 +124,9 @@ export class P2pService {
 
             logger.info(`P2P Transfer: ${senderId} sent ${amount} credits to ${recipientId} (fee: ${fee})`);
             return { success: true };
-        } catch (error: any) {
-            logger.error(`P2P Transfer failed: ${error.message}`);
-            return { success: false, error: error.message };
+        } catch (error) {
+            logger.error(`P2P Transfer failed: ${(error as Error).message}`);
+            return { success: false, error: (error as Error).message };
         }
     }
 }

@@ -84,8 +84,8 @@ export class QualityCheckService {
 
       const result = await this.analyzeFrame(framePath, expectedNiche, expectedDuration, hasReferenceImage);
       return result;
-    } catch (error: any) {
-      logger.error('[QualityCheck] Quality check failed, defaulting to pass:', error.message);
+    } catch (error) {
+      logger.error('[QualityCheck] Quality check failed, defaulting to pass:', (error as Error).message);
       return defaultResult;
     } finally {
       // Clean up extracted frame
@@ -128,8 +128,8 @@ export class QualityCheckService {
 
       logger.warn('[QualityCheck] Frame extraction produced empty file');
       return null;
-    } catch (error: any) {
-      logger.error('[QualityCheck] FFmpeg frame extraction failed:', error.message);
+    } catch (error) {
+      logger.error('[QualityCheck] FFmpeg frame extraction failed:', (error as Error).message);
       return null;
     }
   }

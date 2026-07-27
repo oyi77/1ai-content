@@ -64,8 +64,8 @@ export class PostAutomationService {
       if (adapterResult !== null) {
         return adapterResult;
       }
-    } catch (err: any) {
-      logger.warn('Shared adapter getAccounts failed, falling back:', err.message);
+    } catch (err) {
+      logger.warn('Shared adapter getAccounts failed, falling back:', (err as Error).message);
     }
 
     // Fallback: Direct API call
@@ -80,8 +80,8 @@ export class PostAutomationService {
       );
 
       return response.data.data || [];
-    } catch (error: any) {
-      logger.error('Failed to fetch PostBridge accounts:', error.response?.data || error.message);
+    } catch (error) {
+      logger.error('Failed to fetch PostBridge accounts:', (error as any).response?.data || (error as Error).message);
       return [];
     }
   }
@@ -181,8 +181,8 @@ export class PostAutomationService {
       );
 
       return response.data.media_id || response.data.id;
-    } catch (error: any) {
-      logger.error('Failed to upload media to PostBridge:', error.response?.data || error.message);
+    } catch (error) {
+      logger.error('Failed to upload media to PostBridge:', (error as any).response?.data || (error as Error).message);
       throw new ValidationError('Failed to upload media', 'media');
     }
   }
@@ -200,7 +200,7 @@ export class PostAutomationService {
         scheduledAt: params.scheduledAt,
       });
       if (adapterResult !== null) {
-        return adapterResult.map((r: any) => ({
+        return adapterResult.map(r => ({
           success: r.success,
           postId: r.postId,
           postUrl: r.postUrl,
@@ -208,8 +208,8 @@ export class PostAutomationService {
           error: r.error,
         }));
       }
-    } catch (err: any) {
-      logger.warn('Shared platform-adapters publish failed, falling back:', err.message);
+    } catch (err) {
+      logger.warn('Shared platform-adapters publish failed, falling back:', (err as Error).message);
     }
 
     // Fallback: Existing direct PostBridge API implementation
@@ -239,7 +239,7 @@ export class PostAutomationService {
     // Publish to each selected platform
     for (const account of selectedAccounts) {
       try {
-        const postData: any = {
+        const postData: Record<string, unknown> = {
           caption: params.caption,
           media: [mediaId],
           social_accounts: [parseInt(account.accountId)],
@@ -270,13 +270,13 @@ export class PostAutomationService {
 
         logger.info(`Published to ${account.platform} for user ${params.userId}`);
 
-      } catch (error: any) {
-        logger.error(`Failed to publish to ${account.platform}:`, error.response?.data || error.message);
+      } catch (error) {
+        logger.error(`Failed to publish to ${account.platform}:`, (error as any).response?.data || (error as Error).message);
         
         results.push({
           success: false,
           platform: account.platform,
-          error: error.response?.data?.message || error.message,
+          error: (error as any).response?.data?.message || (error as Error).message,
         });
       }
     }

@@ -340,10 +340,10 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
 
       await job.retry();
       return { success: true, jobId, action: "retry" };
-    } catch (error: any) {
+    } catch (error) {
       return reply
         .status(500)
-        .send({ error: `Failed to retry job: ${error.message}` });
+        .send({ error: `Failed to retry job: ${(error as Error).message}` });
     }
   });
 
@@ -374,10 +374,10 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
         olderThanHours,
         queue: queueName || "video",
       };
-    } catch (error: any) {
+    } catch (error) {
       return reply
         .status(500)
-        .send({ error: `Failed to clean queue: ${error.message}` });
+        .send({ error: `Failed to clean queue: ${(error as Error).message}` });
     }
   });
 
@@ -427,7 +427,7 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
     );
     const offset = Math.max(0, parseInt(query.offset || "0") || 0);
 
-    const where: any = {};
+    const where: Record<string, unknown> = {};
     if (query.isBanned === "true") where.isBanned = true;
     else if (query.isBanned === "false") where.isBanned = false;
     if (query.tier) where.tier = query.tier.toLowerCase();
@@ -469,7 +469,7 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
       }
 
       return user;
-    } catch (error: any) {
+    } catch (error) {
       return reply.status(400).send({ error: "Invalid user ID" });
     }
   });
@@ -504,7 +504,7 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
             },
           },
         })
-        .catch((err: any) =>
+        .catch(err =>
           server.log.warn(
             { err },
             "Failed to create admin grant transaction record",
@@ -512,7 +512,7 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
         );
 
       return { success: true, newBalance: user.creditBalance };
-    } catch (error: any) {
+    } catch (error) {
       return reply.status(404).send({ error: "User not found or invalid ID" });
     }
   });
@@ -537,7 +537,7 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
       try {
         const { InterceptService } = await import("../services/intercept.service.js");
         await InterceptService.invalidateCache(telegramId);
-      } catch (err: any) {
+      } catch (err) {
         request.log.warn(
           { err, telegramId: telegramId.toString() },
           "Failed to invalidate intercept cache after ban toggle",
@@ -545,7 +545,7 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
       }
 
       return { success: true, isBanned: user.isBanned };
-    } catch (error: any) {
+    } catch (error) {
       return reply.status(404).send({ error: "User not found or invalid ID" });
     }
   });
@@ -563,7 +563,7 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
     );
     const offset = Math.max(0, parseInt(query.offset || "0") || 0);
 
-    const where: any = {};
+    const where: Record<string, unknown> = {};
     if (query.status) {
       where.status = query.status;
     }
@@ -693,7 +693,7 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
       200,
     );
 
-    const where: any = {};
+    const where: Record<string, unknown> = {};
     if (query.status) {
       where.status = query.status;
     }
@@ -709,7 +709,7 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
       },
     });
 
-    return videos.map((v: any) => ({
+    return videos.map(v => ({
       id: Number(v.id),
       jobId: v.jobId,
       title: v.title,
@@ -799,8 +799,8 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
       }
 
       return { error: "Unknown action" };
-    } catch (error: any) {
-      return reply.status(400).send({ error: error.message });
+    } catch (error) {
+      return reply.status(400).send({ error: (error as Error).message });
     }
   });
 

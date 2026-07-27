@@ -11,7 +11,7 @@ import { trackingVars } from "./shared";
 /**
  * Format Fanpage row for API response (clean up BigInt serialization).
  */
-function formatFanpage(row: any) {
+function formatFanpage(row: Record<string, unknown>) {
   return {
     ...row,
     id: Number(row.id),

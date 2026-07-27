@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyRequest } from "fastify";
+import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { prisma } from "@/config/database";
 import { validate, idParamSchema, tierBodySchema } from "@/utils/validation";
 
@@ -29,7 +29,7 @@ export async function registerUserMgmtRoutes(server: FastifyInstance) {
   });
 
   // Change User Tier
-  server.patch("/api/users/:id/tier", { preHandler: validate({ params: idParamSchema, body: tierBodySchema }) }, async (request: any, reply: any) => {
+  server.patch("/api/users/:id/tier", { preHandler: validate({ params: idParamSchema, body: tierBodySchema }) }, async (request: FastifyRequest, reply: FastifyReply) => {
     const { id } = request.params as { id: string };
     const { tier } = request.body as { tier: string };
     const validTiers = ["free", "basic", "lite", "pro", "agency"];
@@ -41,7 +41,7 @@ export async function registerUserMgmtRoutes(server: FastifyInstance) {
         data: { tier: tier.toLowerCase() },
       });
       return { success: true, tier: user.tier };
-    } catch (error: any) {
+    } catch (error) {
       return reply.status(404).send({ error: "User not found or invalid ID" });
     }
   });

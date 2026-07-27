@@ -137,7 +137,7 @@ export abstract class PaymentGatewayBase {
   /** Standardized error logging for gateway failures */
   protected logGatewayError(operation: string, error: unknown, context?: Record<string, unknown>): void {
     logger.error(`[${this.gatewayName}] ${operation} failed:`, {
-      error: error instanceof Error ? error.message : String(error),
+      error: error instanceof Error ? (error as Error).message : String(error),
       ...context,
     });
   }
@@ -156,10 +156,10 @@ export abstract class PaymentGatewayBase {
       // Subclass-specific HTTP call is expected to be made here, but to keep
       // the base class HTTP-agnostic, we delegate to a hook. Default: throw.
       throw new PaymentError(this.gatewayName, 'createTransaction() not implemented. Override in subclass.');
-    } catch (error: any) {
+    } catch (error) {
       if (error instanceof PaymentError) throw error;
       this.logGatewayError('createTransaction', error, { orderId: order.orderId });
-      throw new PaymentError(this.gatewayName, `Transaction creation failed: ${error.message}`);
+      throw new PaymentError(this.gatewayName, `Transaction creation failed: ${(error as Error).message}`);
     }
   }
 

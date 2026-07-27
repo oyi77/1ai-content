@@ -8,10 +8,11 @@ import { timingSafeCompare } from './crypto';
  * @param botToken Your Bot Token
  * @returns boolean True if verification success
  */
-export function checkTelegramHash(data: any, botToken: string): boolean {
+export function checkTelegramHash(data: Record<string, unknown>, botToken: string): boolean {
   if (!data || !data.hash) return false;
 
   const { hash, ...userData } = data;
+  if (typeof hash !== "string") return false;
   
   // Sort keys alphabetically
   const dataCheckArr = Object.keys(userData)

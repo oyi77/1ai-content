@@ -54,8 +54,8 @@ export async function sendCommand(ctx: BotContext): Promise<void> {
                 }
             }
         );
-    } catch (error: any) {
+    } catch (error) {
         const lang4 = ctx.from?.language_code || 'id';
-        await ctx.reply(t('social.transfer_failed', lang4, { error: error.message }));
+        await ctx.reply(t('social.transfer_failed', lang4, { error: (error as Error).message }));
     }
 }

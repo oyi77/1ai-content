@@ -101,15 +101,15 @@ async function generateStoryboardWithLLM(
     if (!arrMatch) return null;
     const parsed = JSON.parse(arrMatch[0]);
     if (!Array.isArray(parsed) || parsed.length === 0) return null;
-    return parsed.map((s: any, idx: number) => ({
+    return parsed.map((s, idx: number) => ({
       scene: s.scene ?? idx + 1,
       duration: s.duration ?? 5,
       type: s.type ?? 'scene',
       description: s.description ?? '',
       prompt: s.prompt ?? '',
     }));
-  } catch (err: any) {
-    logger.warn(`[VideoLifecycleService] generateStoryboardWithLLM parse failed: ${err.message}`);
+  } catch (err) {
+    logger.warn(`[VideoLifecycleService] generateStoryboardWithLLM parse failed: ${(err as Error).message}`);
     return null;
   }
 }
@@ -307,11 +307,11 @@ export class VideoLifecycleService {
         });
         logger.error(`Video job failed: ${jobId} - ${result.error}`);
       }
-    } catch (error: any) {
+    } catch (error) {
       logger.error(`Video job error: ${jobId}`, error);
       await prisma.video.update({
         where: { jobId },
-        data: { status: 'failed', errorMessage: error.message },
+        data: { status: 'failed', errorMessage: (error as Error).message },
       });
     }
   }

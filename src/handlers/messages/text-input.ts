@@ -144,11 +144,11 @@ export async function handleWaitingAccountId(ctx: BotContext): Promise<boolean> 
         },
       },
     );
-  } catch (error: any) {
+  } catch (error) {
     logger.error("Failed to connect account:", error);
     const cfLang = ctx.session?.userLang || "id";
     await ctx.reply(
-      t("msg.connect_failed", cfLang, { error: error.message || "Unknown error" }),
+      t("msg.connect_failed", cfLang, { error: (error as Error).message || "Unknown error" }),
     );
   }
 
@@ -171,17 +171,17 @@ export async function handleEbookStates(ctx: BotContext): Promise<boolean> {
 
   if (state === "EBOOK_IDEA") {
     const { handleEbookIdea } = await import("@/commands/ebook.js");
-    await handleEbookIdea(ctx, message);
+    await handleEbookIdea(ctx, message as unknown as Record<string, unknown>);
     return true;
   }
   if (state === "EBOOK_TITLE") {
     const { handleEbookTitle } = await import("@/commands/ebook.js");
-    await handleEbookTitle(ctx, message);
+    await handleEbookTitle(ctx, message as unknown as Record<string, unknown>);
     return true;
   }
   if (state === "EBOOK_CHAPTERS") {
     const { handleEbookChapters } = await import("@/commands/ebook.js");
-    await handleEbookChapters(ctx, message);
+    await handleEbookChapters(ctx, message as unknown as Record<string, unknown>);
     return true;
   }
   return false;

@@ -130,18 +130,18 @@ export class TripayService {
         success: false,
         error: data.message || 'Failed to create payment',
       };
-    } catch (error: any) {
-      logger.error('Tripay create transaction error:', error.response?.data || error.message);
+    } catch (error) {
+      logger.error('Tripay create transaction error:', (error as any).response?.data || (error as Error).message);
       return {
         success: false,
-        error: error.response?.data?.message || error.message,
+        error: (error as any).response?.data?.message || (error as Error).message,
       };
     }
   }
 
-  static async handleCallback(callbackData: any): Promise<{ success: boolean; message: string }> {
+  static async handleCallback(callbackData: Record<string, unknown>): Promise<{ success: boolean; message: string }> {
     try {
-      const { merchant_ref, status } = callbackData;
+      const { merchant_ref = '', status } = callbackData as { merchant_ref?: string; status?: string };
       
       const transaction = await prisma.transaction.findUnique({
         where: { orderId: merchant_ref },
@@ -192,7 +192,7 @@ export class TripayService {
           const credits = Number(transaction.creditsAmount) || 0;
           const plans = await getSubscriptionPlansAsync();
           const plan = plans[transaction.packageName ?? ''];
-          const userUpdateData: any = { creditBalance: { increment: credits } };
+          const userUpdateData: Record<string, unknown> = { creditBalance: { increment: credits } };
           if (plan && plan.tier) {
             userUpdateData.tier = plan.tier;
           }
@@ -303,9 +303,9 @@ export class TripayService {
       }
 
       return { success: true, message: 'Callback processed' };
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Tripay callback error:', error);
-      return { success: false, message: error.message };
+      return { success: false, message: (error as Error).message };
     }
   }
 
@@ -317,7 +317,7 @@ export class TripayService {
       });
 
       return response.data;
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Tripay check transaction error:', error);
       return null;
     }

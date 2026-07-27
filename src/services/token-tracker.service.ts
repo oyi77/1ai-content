@@ -128,9 +128,9 @@ export async function trackTokens(input: TrackTokensInput): Promise<void> {
         costIdr: finalCost.idr,
       },
     });
-  } catch (e: any) {
+  } catch (e) {
     // Non-fatal — never break main flow
-    logger.warn("TokenTracker: failed to save usage:", e.message);
+    logger.warn("TokenTracker: failed to save usage:", (e as Error).message);
   }
 }
 

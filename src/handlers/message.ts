@@ -32,6 +32,7 @@ import {
   handleCloneEditDescWaiting,
   handleCloneVideoWaiting,
 } from "./messages/image-gen";
+import type { UserFreeTrial } from "@/config/free-trial";
 import { routeMenuButton, detectVideoIntent } from "./messages/menu-router";
 import { tryAIChat } from "./messages/ai-chat";
 
@@ -123,9 +124,9 @@ export async function executeImageGeneration(
   const isLibraryPrompt = selectedPrompt === description;
 
   if (!user || Number(user.creditBalance) < estimatedCost) {
-    if (isLibraryPrompt && canUseDailyFree(user)) {
+    if (isLibraryPrompt && canUseDailyFree(user as UserFreeTrial)) {
       useFreeSlot = 'daily';
-    } else if (isLibraryPrompt && canUseWelcomeBonus(user)) {
+    } else if (isLibraryPrompt && canUseWelcomeBonus(user as UserFreeTrial)) {
       useFreeSlot = 'welcome';
     } else {
       const lang = ctx.session?.userLang || 'id';
@@ -285,7 +286,7 @@ export async function executeImageGeneration(
           },
         );
       }
-    } catch (error: any) {
+    } catch (error) {
       logger.error("Image generation error:", error);
       await telegram.sendMessage(chatId, t('msg.image_analyze_failed', ctx.session?.userLang || 'id'));
     }

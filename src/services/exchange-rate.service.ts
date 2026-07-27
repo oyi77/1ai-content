@@ -34,8 +34,8 @@ export class ExchangeRateService {
         return rate;
       }
       logger.warn(`[ExchangeRate] Frankfurter returned out-of-range rate: ${rate}`);
-    } catch (err: any) {
-      logger.warn(`[ExchangeRate] Live fetch failed: ${err.message}`);
+    } catch (err) {
+      logger.warn(`[ExchangeRate] Live fetch failed: ${(err as Error).message}`);
     }
     return null;
   }

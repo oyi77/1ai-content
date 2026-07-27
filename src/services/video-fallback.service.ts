@@ -246,7 +246,7 @@ export async function generateVideoWithFallback(
           );
           return result;
         }
-      } catch (error: any) {
+      } catch (error) {
         await CircuitBreaker.recordFailure(provider.key).catch((err) =>
           logger.warn("Circuit breaker update failed", { error: err.message }),
         );
@@ -255,9 +255,9 @@ export async function generateVideoWithFallback(
         );
         providerErrors.push({
           name: provider.name,
-          error: error.message?.slice(0, 80) || "unknown",
+          error: (error as Error).message?.slice(0, 80) || "unknown",
         });
-        logger.warn(`${provider.name} failed: ${error.message}`);
+        logger.warn(`${provider.name} failed: ${(error as Error).message}`);
       }
     } else {
       // Provider can't do the full duration → auto-split into multi-scene
@@ -378,7 +378,7 @@ export async function generateVideoWithFallback(
           error: "multi-scene concatenation failed",
         });
         logger.warn(`${provider.name} multi-scene failed`);
-      } catch (error: any) {
+      } catch (error) {
         await CircuitBreaker.recordFailure(provider.key).catch((err) =>
           logger.warn("Circuit breaker update failed", { error: err.message }),
         );
@@ -387,9 +387,9 @@ export async function generateVideoWithFallback(
         );
         providerErrors.push({
           name: provider.name,
-          error: error.message?.slice(0, 80) || "unknown",
+          error: (error as Error).message?.slice(0, 80) || "unknown",
         });
-        logger.warn(`${provider.name} multi-scene error: ${error.message}`);
+        logger.warn(`${provider.name} multi-scene error: ${(error as Error).message}`);
       }
     }
   }

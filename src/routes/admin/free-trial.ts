@@ -4,7 +4,7 @@
  * Extracted from routes/admin.ts as part of the Phase 3.2 refactor
  * (REFACTORING_AUDIT.md §3.2). Handles GET/POST for free trial config.
  */
-import { FastifyInstance } from "fastify";
+import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { prisma } from "@/config/database";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
@@ -15,7 +15,7 @@ const freeTrialBodySchema = zodToJsonSchema(z.object({
   credits: z.number().int().min(0).optional(),
 }), "freeTrialBody");
 
-type AdminVerifier = (request: any, reply: any) => Promise<boolean>;
+type AdminVerifier = (request: FastifyRequest, reply: FastifyReply) => Promise<boolean>;
 
 export async function registerFreeTrialRoutes(server: FastifyInstance, verifyAdmin: AdminVerifier) {
   // Get free trial config

@@ -81,11 +81,11 @@ export async function adminGrantCreditsCommand(ctx: BotContext): Promise<void> {
       'The user has been notified.',
       { parse_mode: 'Markdown' }
     );
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Error granting credits:', error);
     await ctx.reply(
       '❌ *Error Granting Credits*\n\n' +
-      `Failed to grant credits: ${error.message || 'Unknown error'}`,
+      `Failed to grant credits: ${(error as Error).message || 'Unknown error'}`,
       { parse_mode: 'Markdown' }
     );
   }
@@ -160,8 +160,8 @@ export async function adminDeductCreditsCommand(ctx: BotContext): Promise<void> 
       `Reason: ${reason}`,
       { parse_mode: 'Markdown' }
     );
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Error deducting credits:', error);
-    await ctx.reply(`❌ Failed to deduct credits: ${error.message || 'Unknown'}`);
+    await ctx.reply(`❌ Failed to deduct credits: ${(error as Error).message || 'Unknown'}`);
   }
 }

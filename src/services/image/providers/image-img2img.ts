@@ -240,8 +240,8 @@ export async function generateViaEvoLinkImg2Img(
   for (const model of models) {
     try {
       return await evolinkImageGenerate(model, prompt, imageUrl);
-    } catch (err: any) {
-      logger.warn(`EvoLink ${model} failed: ${err.message}`);
+    } catch (err) {
+      logger.warn(`EvoLink ${model} failed: ${(err as Error).message}`);
     }
   }
   throw new AllProvidersFailedError("EvoLink img2img");

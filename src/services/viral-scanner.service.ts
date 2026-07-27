@@ -38,7 +38,7 @@ export interface ScanOptions {
 }
 
 export class ViralScannerService {
-  private cache: Map<string, { data: any; expiry: number }> = new Map();
+  private cache: Map<string, { data: unknown; expiry: number }> = new Map();
   private cacheTTL = 3600000; // 1 hour
 
   /**
@@ -57,7 +57,7 @@ export class ViralScannerService {
     logger.info(`Scanning viral videos: platform=${platform}, niche=${niche}`);
 
     const cacheKey = `viral:${platform}:${niche}:${minViews}:${maxAge}`;
-    const cached = this.getFromCache(cacheKey);
+    const cached = this.getFromCache(cacheKey) as ViralVideo[] | null;
     if (cached) return cached;
 
     let videos: ViralVideo[] = [];
@@ -96,7 +96,7 @@ export class ViralScannerService {
 
       this.setCache(cacheKey, videos);
       return videos;
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Viral scan failed:', error);
       return [];
     }
@@ -109,7 +109,7 @@ export class ViralScannerService {
     logger.info(`Getting trending topics for ${platform}`);
 
     const cacheKey = `trending:${platform}`;
-    const cached = this.getFromCache(cacheKey);
+    const cached = this.getFromCache(cacheKey) as TrendingTopic[] | null;
     if (cached) return cached;
 
     const topics: TrendingTopic[] = [];
@@ -175,7 +175,7 @@ export class ViralScannerService {
 
       this.setCache(cacheKey, topics);
       return topics;
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Trending topics failed:', error);
       return [];
     }
@@ -217,7 +217,7 @@ export class ViralScannerService {
           };
         })
         .sort((a, b) => b.viralityScore - a.viralityScore);
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Competitor scan failed:', error);
       return [];
     }
@@ -356,17 +356,17 @@ export class ViralScannerService {
   /**
    * Calculate virality score (0-100)
    */
-  private calculateViralityScore(video: any): number {
-    const views = video.view_count || 0;
-    const likes = video.like_count || 0;
-    const comments = video.comment_count || 0;
-    const duration = video.duration || 0;
+  private calculateViralityScore(video: Record<string, unknown>): number {
+    const views = (video.view_count as number) || 0;
+    const likes = (video.like_count as number) || 0;
+    const comments = (video.comment_count as number) || 0;
+    const duration = (video.duration as number) || 0;
 
     // Weight factors
     const viewScore = Math.min(views / 1000000, 40); // max 40 points for 1M+ views
     const engagementRate = views > 0 ? (likes + comments) / views : 0;
     const engagementScore = Math.min(engagementRate * 1000, 30); // max 30 points
-    const recencyScore = this.getRecencyScore(video.upload_date || '');
+    const recencyScore = this.getRecencyScore((video.upload_date as string) || '');
     const durationScore = duration >= 15 && duration <= 60 ? 20 : 10; // sweet spot: 15-60s
 
     return Math.min(
@@ -425,7 +425,7 @@ export class ViralScannerService {
     return date.toISOString().split('T')[0].replace(/-/g, '');
   }
 
-  private getFromCache(key: string): any {
+  private getFromCache(key: string): unknown {
     const entry = this.cache.get(key);
     if (entry && entry.expiry > Date.now()) {
       return entry.data;
@@ -434,7 +434,7 @@ export class ViralScannerService {
     return null;
   }
 
-  private setCache(key: string, data: any) {
+  private setCache(key: string, data: unknown) {
     this.cache.set(key, {
       data,
       expiry: Date.now() + this.cacheTTL,

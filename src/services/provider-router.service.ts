@@ -33,7 +33,7 @@ export interface VideoProvider {
   name: string;
   enabled: boolean;
   supportsRefImage: boolean;
-  generate: (params: any) => Promise<any>;
+  generate: (params: Record<string, unknown>) => Promise<string>;
 }
 
 export class ProviderRouter {

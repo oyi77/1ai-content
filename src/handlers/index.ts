@@ -75,9 +75,9 @@ export function setupHandlers(bot: Telegraf<BotContext>): void {
             paidAt: new Date(),
           },
         });
-      } catch (e: any) {
-        if (e?.code === 'P2002') {
-          const target: string[] = e?.meta?.target ?? [];
+      } catch (e) {
+        if ((e as {code: string})?.code === 'P2002') {
+          const target: string[] = (e as any)?.meta?.target ?? [];
           const isDuplicate = target.includes('order_id') || target.includes('gateway_transaction_id');
           if (!isDuplicate) throw e;
           logger.warn(`Stars duplicate payment ignored: ${payment.telegram_payment_charge_id}`);

@@ -88,7 +88,7 @@ const REDIS_KEY_CHAT = 'admin:ai_config:chat';
 
 const VALID_PROVIDERS: LLMProvider[] = ['groq', 'gemini', 'omniroute', 'builtin', 'custom'];
 
-function validateProviders(obj: any, path = ''): void {
+function validateProviders(obj: unknown, path = ''): void {
   if (obj && typeof obj === 'object') {
     for (const [k, v] of Object.entries(obj)) {
       if (k === 'provider' && typeof v === 'string' && !VALID_PROVIDERS.includes(v as LLMProvider)) {

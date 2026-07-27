@@ -383,11 +383,11 @@ export class RetentionScheduler {
           ],
         },
       });
-    } catch (err: any) {
-      if (err.message?.includes('bot was blocked')) {
+    } catch (err) {
+      if ((err as Error).message?.includes('bot was blocked')) {
         logger.debug(`[retention] User ${telegramId} blocked bot`);
       } else {
-        logger.error(`[retention] Failed to send to ${telegramId}:`, err.message);
+        logger.error(`[retention] Failed to send to ${telegramId}:`, (err as Error).message);
       }
     }
   }

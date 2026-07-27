@@ -11,14 +11,14 @@ export async function registerSystemHealthRoutes(server: FastifyInstance) {
     try {
       await prisma.$queryRaw`SELECT 1`;
       checks.database = { status: "ok" };
-    } catch (e: any) {
-      checks.database = { status: "error", message: e.message };
+    } catch (e) {
+      checks.database = { status: "error", message: (e as Error).message };
     }
     try {
       await redis.ping();
       checks.redis = { status: "ok" };
-    } catch (e: any) {
-      checks.redis = { status: "error", message: e.message };
+    } catch (e) {
+      checks.redis = { status: "error", message: (e as Error).message };
     }
     try {
       const token = getConfig().BOT_TOKEN;
@@ -32,11 +32,11 @@ export async function registerSystemHealthRoutes(server: FastifyInstance) {
           lastError: data.result?.last_error_message,
         };
       }
-    } catch (e: any) {
-      checks.webhook = { status: "error", message: e.message };
+    } catch (e) {
+      checks.webhook = { status: "error", message: (e as Error).message };
     }
     return {
-      status: Object.values(checks).every((c: any) => c.status === "ok") ? "healthy" : "degraded",
+      status: Object.values(checks).every(c => c.status === "ok") ? "healthy" : "degraded",
       checks,
       environment: getConfig().NODE_ENV,
       version: "3.0.0",

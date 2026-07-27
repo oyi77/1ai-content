@@ -495,11 +495,11 @@ export class ImageGenerationService {
           );
           return result;
         }
-      } catch (error: any) {
+      } catch (error) {
         await CircuitBreaker.recordFailure(provider.key).catch((err) =>
           logger.warn("Circuit breaker update failed", { error: err.message }),
         );
-        logger.warn(`🖼️ ${provider.name} failed (${mode}): ${error.message}`);
+        logger.warn(`🖼️ ${provider.name} failed (${mode}): ${(error as Error).message}`);
       }
     }
 

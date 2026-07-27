@@ -416,7 +416,7 @@ export async function handlePromptsCallback(ctx: BotContext, data: string): Prom
           logger.error('replyWithPhoto failed after credit deduction:', sendErr);
           if (bonusType === "credit") {
             await UserService.refundCredits(telegramId, 0.2, `prompt-img-${prompt.id}`, 'sendPhoto failed')
-              .catch((err: any) => logger.error('CRITICAL: prompt image refund failed', err));
+              .catch(err => logger.error('CRITICAL: prompt image refund failed', err));
           }
           await ctx.reply(t('cb.video_process_failed_refund', lang2));
         }

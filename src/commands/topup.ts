@@ -167,7 +167,7 @@ export async function handlePaymentGateway(ctx: BotContext, packageId: string, g
     const lang = await getLang(ctx);
     await ctx.answerCbQuery('...').catch(() => {});
 
-    let transaction: any;
+    let transaction: Record<string, unknown>;
     let gatewayDisplayName = 'Payment Gateway';
 
     if (gateway === 'duitku') {
@@ -186,10 +186,10 @@ export async function handlePaymentGateway(ctx: BotContext, packageId: string, g
       gateway: normalizedGateway as 'midtrans' | 'tripay' | 'duitku' | 'nowpayments',
     });
 
-    const paymentUrl = transaction.paymentUrl || transaction.redirectUrl || '';
+    const paymentUrl = (transaction.paymentUrl as string) || (transaction.redirectUrl as string) || '';
 
     await ctx.editMessageText(
-      t('topup.payment_ready', lang, { orderId: transaction.orderId, method: gatewayDisplayName }),
+      t('topup.payment_ready', lang, { orderId: transaction.orderId as string, method: gatewayDisplayName }),
       {
         parse_mode: 'Markdown',
         reply_markup: {
@@ -210,7 +210,7 @@ export async function handlePaymentGateway(ctx: BotContext, packageId: string, g
         },
       }
     );
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Error handling payment gateway:', error);
     try { await ctx.editMessageText(t('topup.create_failed', await getLang(ctx))); } catch { try { await ctx.reply(t('topup.create_failed', 'id')); } catch { /* ignore */ } }
   }
@@ -249,7 +249,7 @@ export async function showDuitkuPaymentMethods(ctx: BotContext, packageId: strin
         },
       }
     );
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Error showing Duitku payment methods:', error);
     try { await ctx.editMessageText(t('topup.create_failed', await getLang(ctx))); } catch { try { await ctx.reply(t('topup.create_failed', 'id')); } catch { /* ignore */ } }
   }
@@ -290,7 +290,7 @@ export async function handleDuitkuMethodSelection(ctx: BotContext, packageId: st
         },
       }
     );
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Error creating Duitku payment:', error);
     try { await ctx.editMessageText(t('topup.create_failed', await getLang(ctx))); } catch { try { await ctx.reply(t('topup.create_failed', 'id')); } catch { /* ignore */ } }
   }
@@ -350,7 +350,7 @@ export async function handleTopupExtraCredit(ctx: BotContext, credits: number): 
       await ctx.editMessageText(t('topup.no_gateway_available', lang));
       return;
     }
-    const duitkuEnabled = gateways.some((g: any) => g.id === 'duitku' || g.gateway === 'duitku');
+    const duitkuEnabled = gateways.some(g => g.id === 'duitku');
     if (!duitkuEnabled) {
       await ctx.editMessageText(t('topup.gateway_unavailable', lang));
       return;

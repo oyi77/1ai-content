@@ -136,14 +136,14 @@ async function tryGroq(metaPrompt: string, modelOverride?: string): Promise<stri
         promptTokens: response.data?.usage?.prompt_tokens || 0,
         completionTokens: response.data?.usage?.completion_tokens || 0,
       }).catch((err) =>
-        logger.warn("Prompt optimizer tracking failed", { error: err.message }),
+        logger.warn("Prompt optimizer tracking failed", { error: (err as Error).message }),
       );
       logger.info("[AIPromptOptimizer] Groq succeeded");
       return content.trim();
     }
     return null;
-  } catch (err: any) {
-    logger.debug(`[AIPromptOptimizer] Groq failed: ${err.message}`);
+  } catch (err) {
+    logger.debug(`[AIPromptOptimizer] Groq failed: ${(err as Error).message}`);
     return null;
   }
 }
@@ -178,7 +178,7 @@ async function tryGemini(metaPrompt: string, modelOverride?: string): Promise<st
           completionTokens: usage.candidatesTokenCount || 0,
         }).catch((err) =>
           logger.warn("Prompt optimizer tracking failed", {
-            error: err.message,
+            error: (err as Error).message,
           }),
         );
       }
@@ -186,8 +186,8 @@ async function tryGemini(metaPrompt: string, modelOverride?: string): Promise<st
       return text.trim();
     }
     return null;
-  } catch (err: any) {
-    logger.debug(`[AIPromptOptimizer] Gemini failed: ${err.message}`);
+  } catch (err) {
+    logger.debug(`[AIPromptOptimizer] Gemini failed: ${(err as Error).message}`);
     return null;
   }
 }
@@ -229,7 +229,7 @@ async function tryOmniRoute(metaPrompt: string, modelOverride?: string): Promise
           completionTokens: usage.completion_tokens || 0,
         }).catch((err) =>
           logger.warn("Prompt optimizer tracking failed", {
-            error: err.message,
+            error: (err as Error).message,
           }),
         );
       }
@@ -237,8 +237,8 @@ async function tryOmniRoute(metaPrompt: string, modelOverride?: string): Promise
       return content.trim();
     }
     return null;
-  } catch (err: any) {
-    logger.debug(`[AIPromptOptimizer] OmniRoute failed: ${err.message}`);
+  } catch (err) {
+    logger.debug(`[AIPromptOptimizer] OmniRoute failed: ${(err as Error).message}`);
     return null;
   }
 }
@@ -286,7 +286,7 @@ export class AIPromptOptimizer {
           service: 'prompt_optimizer',
           promptTokens: pipelineResult.usage.promptTokens,
           completionTokens: pipelineResult.usage.completionTokens,
-        }).catch((err) => logger.warn('Prompt optimizer tracking failed', { error: err.message }));
+        }).catch((err) => logger.warn('Prompt optimizer tracking failed', { error: (err as Error).message }));
         logger.info('[AIPromptOptimizer] Shared pipeline succeeded', { model: pipelineResult.model });
         await saveToCache(cacheKey, text);
         return text;
@@ -330,8 +330,8 @@ export class AIPromptOptimizer {
       // enrichment has already been applied by the caller)
       logger.info("[AIPromptOptimizer] All LLMs failed, using original prompt");
       return rawPrompt;
-    } catch (err: any) {
-      logger.warn(`[AIPromptOptimizer] Unexpected error: ${err.message}`);
+    } catch (err) {
+      logger.warn(`[AIPromptOptimizer] Unexpected error: ${(err as Error).message}`);
       return rawPrompt;
     }
   }

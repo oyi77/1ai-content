@@ -99,8 +99,8 @@ export async function validateUrlWithDns(input: string): Promise<string> {
     if (address === '169.254.169.254') {
       throw new ValidationError(`Hostname ${hostname} resolves to cloud metadata endpoint`, 'hostname');
     }
-  } catch (err: any) {
-    if (err.message.includes('resolves to')) throw err;
+  } catch (err) {
+    if ((err as Error).message.includes('resolves to')) throw err;
     // DNS lookup failure — allow (may be transient), static check already passed
   }
 

@@ -13,7 +13,7 @@ export async function registerTokenUsageRoutes(server: FastifyInstance) {
       provider?: string;
       service?: string;
     };
-    const where: any = {};
+    const where: Record<string, unknown> = {};
     if (provider) where.provider = provider;
     if (service) where.service = service;
     return prisma.tokenUsage.findMany({

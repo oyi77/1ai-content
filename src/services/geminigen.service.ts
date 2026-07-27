@@ -117,9 +117,9 @@ export async function generateVideo(params: VideoGenerationParams): Promise<Vide
     }
 
     return { success: false, error: result.error || 'Video generation failed', jobId: uuid };
-  } catch (error: any) {
-    logger.error('Video generation failed:', error.response?.data || error.message);
-    return { success: false, error: error.response?.data?.detail?.error_message || error.message };
+  } catch (error) {
+    logger.error('Video generation failed:', (error as any).response?.data || (error as Error).message);
+    return { success: false, error: (error as any).response?.data?.detail?.error_message || (error as Error).message };
   }
 }
 
@@ -144,8 +144,8 @@ async function pollForCompletion(uuid: string, maxAttempts = 60): Promise<VideoG
       }
 
       await new Promise(resolve => setTimeout(resolve, 5000));
-    } catch (error: any) {
-      logger.error(`Poll attempt ${i + 1} failed:`, error.message);
+    } catch (error) {
+      logger.error(`Poll attempt ${i + 1} failed:`, (error as Error).message);
     }
   }
 
@@ -248,9 +248,9 @@ export async function generateExtend(params: VideoExtendParams): Promise<VideoGe
     }
 
     return { success: false, error: result.error || 'Video extend failed', jobId: uuid };
-  } catch (error: any) {
-    logger.error('Video extend failed:', error.response?.data || error.message);
-    return { success: false, error: error.response?.data?.detail?.error_message || error.message };
+  } catch (error) {
+    logger.error('Video extend failed:', (error as any).response?.data || (error as Error).message);
+    return { success: false, error: (error as any).response?.data?.detail?.error_message || (error as Error).message };
   }
 }
 
@@ -306,8 +306,8 @@ async function extractLastFrameFromHistory(refHistory: string): Promise<string |
       await new Promise(resolve => setTimeout(resolve, 2000));
     }
     return null;
-  } catch (error: any) {
-    logger.error('Failed to extract reference frame:', error.message);
+  } catch (error) {
+    logger.error('Failed to extract reference frame:', (error as Error).message);
     return null;
   }
 }

@@ -4,7 +4,7 @@
  * Extracted from routes/admin.ts as part of the Phase 3.2 refactor
  * (REFACTORING_AUDIT.md §3.2). Handles GET/POST/DELETE for niche configs.
  */
-import { FastifyInstance } from "fastify";
+import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { prisma } from "@/config/database";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
@@ -23,7 +23,7 @@ const nicheParamSchema = zodToJsonSchema(z.object({
   id: z.string().min(1).max(64),
 }), "nicheParam");
 
-type AdminVerifier = (request: any, reply: any) => Promise<boolean>;
+type AdminVerifier = (request: FastifyRequest, reply: FastifyReply) => Promise<boolean>;
 
 export async function registerNicheRoutes(server: FastifyInstance, verifyAdmin: AdminVerifier) {
   // List all niches

@@ -28,7 +28,7 @@ import { t } from '@/i18n/translations';
 import { getConfig } from '@/config/env';
 import { getCorrelationId } from '@/utils/correlation';
 import { sendAdminAlert } from '@/services/admin-alert.service';
-import type { DurationPreset } from '@/config/hpas-engine';
+import type { DurationPreset, DurationPresetConfig, SceneId } from '@/config/hpas-engine';
 import { getPersonaForUser, isPresetAllowedForPersona } from '@/config/personas';
 
 const execFileAsync = promisify(execFile);
@@ -73,7 +73,7 @@ type Platform = 'tiktok' | 'instagram' | 'youtube' | 'square';
 
 // ── Step 3 Handler: Product Input (photo or text) ─────────────────────────────
 
-export async function handleProductInput(ctx: BotContext, message: any): Promise<void> {
+export async function handleProductInput(ctx: BotContext, message: Record<string, unknown>): Promise<void> {
   try {
     const action = ctx.session?.generateAction as GenerateAction || 'video';
     let productDesc = '';
@@ -81,7 +81,8 @@ export async function handleProductInput(ctx: BotContext, message: any): Promise
 
     // Extract input
     if (message.photo) {
-      const largest = message.photo[message.photo.length - 1];
+      const photos = message.photo as any[];
+      const largest = photos[photos.length - 1];
       const fileLink = await ctx.telegram.getFileLink(largest.file_id);
       photoUrl = fileLink.toString();
 
@@ -90,11 +91,14 @@ export async function handleProductInput(ctx: BotContext, message: any): Promise
 
       const analysis = await ContentAnalysisService.extractPrompt(photoUrl, 'image');
       productDesc = analysis.success && analysis.prompt ? analysis.prompt : t('gen.photo_fallback_desc', ctx.session?.userLang || 'id');
-    } else if (message.text && !message.text.startsWith('/')) {
-      productDesc = message.text;
     } else {
-      await ctx.reply(t('gen.send_photo_or_text', ctx.session?.userLang || 'id'));
-      return;
+      const text = message.text as string;
+      if (text && !text.startsWith('/')) {
+        productDesc = text;
+      } else {
+        await ctx.reply(t('gen.send_photo_or_text', ctx.session?.userLang || 'id'));
+        return;
+      }
     }
 
     // Save to session
@@ -192,7 +196,7 @@ export async function executeGeneration(ctx: BotContext): Promise<void> {
   }
 
   const presetConfig = preset === 'custom' && session.customPresetConfig
-    ? session.customPresetConfig as typeof DURATION_PRESETS['standard']
+    ? session.customPresetConfig as unknown as DurationPresetConfig
     : DURATION_PRESETS[preset];
   const industry = detectIndustry(productDesc);
 
@@ -314,13 +318,13 @@ export async function executeGeneration(ctx: BotContext): Promise<void> {
       await ctx.reply(t('gen.generating_trial', lang), { parse_mode: 'Markdown' });
 
       // Generate a 15s video, then cache it as template
-      let trialScenes;
+      let trialScenes: any[];
       try {
         trialScenes = await generateScenePromptsWithAI(productDesc || userNiche, 'quick', lang === 'en' ? 'en' : 'id');
       } catch {
         trialScenes = generateVideoScenePrompts(industry, productDesc || userNiche, 'quick', (lang === 'en' ? 'en' : 'id'));
       }
-      const trialStoryboard = trialScenes.map((s: any, i: number) => ({ scene: i + 1, duration: s.durationSeconds, description: s.prompt }));
+      const trialStoryboard = trialScenes.map((s, i: number) => ({ scene: i + 1, duration: s.durationSeconds, description: s.prompt }));
 
       try {
         const { VideoService: TrialVS } = await import('../services/video.service.js');
@@ -374,7 +378,7 @@ export async function executeGeneration(ctx: BotContext): Promise<void> {
 
     // Image Set → Video Pipeline (generate 7 scene images, then queue video)
     if (action === 'image_set') {
-      let scenes;
+      let scenes: any[];
       try {
         scenes = await generateScenePromptsWithAI(productDesc, 'standard', lang === 'en' ? 'en' : 'id');
       } catch {
@@ -439,7 +443,7 @@ export async function executeGeneration(ctx: BotContext): Promise<void> {
 
       const storyboard = scenes.map((s, i) => ({ scene: i + 1, duration: s.durationSeconds, description: s.prompt }));
 
-      let imageSetJob: any;
+      let imageSetJob: unknown;
       try {
         const enqueueResult = await enqueueVideoGeneration({
           jobId: video.jobId,
@@ -462,7 +466,7 @@ export async function executeGeneration(ctx: BotContext): Promise<void> {
         try {
           await UserService.deductCredits(telegramId, creditCost);
         } catch (deductErr) {
-          if (imageSetJob) await imageSetJob.remove().catch(() => {});
+          if (imageSetJob) await (imageSetJob as any).remove().catch(() => {});
           throw deductErr;
         }
         const position = enqueueResult.position;
@@ -507,7 +511,7 @@ export async function executeGeneration(ctx: BotContext): Promise<void> {
     if (action === 'video') {
       // Use manual storyboard if Pro mode provided it, otherwise auto-generate
       const useManualStoryboard = session.generateStoryboardMode === 'manual' && session.generateManualStoryboard?.length;
-      let scenes;
+      let scenes: any[];
       if (useManualStoryboard) {
         scenes = session.generateManualStoryboard!;
       } else {
@@ -530,8 +534,8 @@ export async function executeGeneration(ctx: BotContext): Promise<void> {
       });
 
       const storyboard = useManualStoryboard
-        ? scenes.map((s: any, i: number) => ({ scene: i + 1, duration: s.durationSeconds, description: s.description }))
-        : scenes.map((s: any, i: number) => ({ scene: i + 1, duration: s.durationSeconds, description: s.prompt }));
+        ? scenes.map((s, i: number) => ({ scene: i + 1, duration: s.durationSeconds, description: s.description }))
+        : scenes.map((s, i: number) => ({ scene: i + 1, duration: s.durationSeconds, description: s.prompt }));
 
       try {
         const { job: enqueuedJob, position } = await enqueueVideoGeneration({
@@ -559,7 +563,7 @@ export async function executeGeneration(ctx: BotContext): Promise<void> {
         }
         await ctx.reply(t('gen.video_queued', lang, { position }));
       } catch {
-        generateVideoAsync(ctx, video.jobId, industry, platform, presetConfig.totalSeconds, scenes.map((s: any, i: number) => ({ scene: i + 1, duration: s.durationSeconds, description: useManualStoryboard ? s.description : s.prompt }))).catch(async (err) => {
+        generateVideoAsync(ctx, video.jobId, industry, platform, presetConfig.totalSeconds, scenes.map((s, i: number) => ({ scene: i + 1, duration: s.durationSeconds, description: useManualStoryboard ? s.description : s.prompt }))).catch(async (err) => {
           logger.error('Video generateVideoAsync failed:', err);
           await UserService.refundCredits(telegramId, creditCost, video.jobId, err?.message || 'fallback failure').catch(async (refundErr) => { logger.error('CRITICAL: refundCredits failed', { telegramId: telegramId.toString(), creditCost, err: refundErr }); await UserService.queueRefundRetry(telegramId, creditCost, 'generate-fallback', String(refundErr)); sendAdminAlert('critical', 'Refund Failed', { userId: telegramId.toString(), amount: creditCost, error: String(refundErr) }); });
           await ctx.telegram.sendMessage(ctx.chat!.id, t('gen.video_failed_refund', lang)).catch(() => {});
@@ -585,7 +589,7 @@ export async function executeGeneration(ctx: BotContext): Promise<void> {
       }
 
       const combinedPrompt = `${productDesc}${styleHint}`;
-      let scenes;
+      let scenes: any[];
       try {
         scenes = await generateScenePromptsWithAI(combinedPrompt, 'standard', lang === 'en' ? 'en' : 'id');
       } catch {
@@ -602,7 +606,7 @@ export async function executeGeneration(ctx: BotContext): Promise<void> {
         title: `Clone Style — ${new Date().toLocaleDateString('id-ID')}`,
       });
 
-      let cloneJob: any;
+      let cloneJob: unknown;
       try {
         const cloneEnqueueResult = await enqueueVideoGeneration({
           jobId: video2.jobId,
@@ -624,7 +628,7 @@ export async function executeGeneration(ctx: BotContext): Promise<void> {
         try {
           await UserService.deductCredits(telegramId, creditCost);
         } catch (deductErr) {
-          if (cloneJob) await cloneJob.remove().catch(() => {});
+          if (cloneJob) await (cloneJob as any).remove().catch(() => {});
           throw deductErr;
         }
         const position = cloneEnqueueResult.position;
@@ -668,7 +672,7 @@ export async function executeGeneration(ctx: BotContext): Promise<void> {
           title: `Campaign ${campSize} Scene — ${productDesc.slice(0, 40)}`,
         });
 
-        let campaignJob: any;
+        let campaignJob: unknown;
         try {
           const enqueueResult2 = await enqueueVideoGeneration({
             jobId: vid.jobId,
@@ -690,7 +694,7 @@ export async function executeGeneration(ctx: BotContext): Promise<void> {
           try {
             await UserService.deductCredits(telegramId, creditCost);
           } catch (deductErr) {
-            if (campaignJob) await campaignJob.remove().catch(() => {});
+            if (campaignJob) await (campaignJob as any).remove().catch(() => {});
             throw deductErr;
           }
           const position = enqueueResult2.position;
@@ -1116,13 +1120,14 @@ export async function showProImageUpload(ctx: BotContext): Promise<void> {
 }
 
 /** Handle multi-image upload in Pro mode */
-export async function handleMultiImageUpload(ctx: BotContext, message: any): Promise<void> {
+export async function handleMultiImageUpload(ctx: BotContext, message: Record<string, unknown>): Promise<void> {
   if (!message.photo) {
     await ctx.reply(t('msg.send_photo_or_skip', ctx.session?.userLang || 'id'));
     return;
   }
 
-  const largest = message.photo[message.photo.length - 1];
+  const photos = message.photo as any[];
+  const largest = photos[photos.length - 1];
   const fileLink = await ctx.telegram.getFileLink(largest.file_id);
   const url = fileLink.toString();
   const lang = ctx.session?.userLang || 'id';
@@ -1196,9 +1201,9 @@ export async function showProStoryboardEditor(ctx: BotContext, sceneIndex: numbe
   await ctx.reply(t('gen.storyboard_edit_scene', lang, { n: sceneIndex + 1, name: sceneName }), { parse_mode: 'Markdown' });
 }
 
+export async function handleStoryboardEdit(ctx: BotContext, message: Record<string, unknown>): Promise<void> {
 /** Handle storyboard scene text input */
-export async function handleStoryboardEdit(ctx: BotContext, message: any): Promise<void> {
-  const text = message.text?.trim();
+  const text = (message.text as string)?.trim();
   if (!text) return;
 
   const sceneIndex = (ctx.session?.stateData as any)?.storyboardEditIndex ?? 0;
@@ -1249,9 +1254,9 @@ export async function showProTranscriptChoice(ctx: BotContext): Promise<void> {
   }
 }
 
+export async function handleTranscriptInput(ctx: BotContext, message: Record<string, unknown>): Promise<void> {
 /** Handle manual transcript input */
-export async function handleTranscriptInput(ctx: BotContext, message: any): Promise<void> {
-  const text = message.text?.trim();
+  const text = (message.text as string)?.trim();
   if (!text) return;
 
   const lang = ctx.session?.userLang || 'id';
@@ -1340,7 +1345,7 @@ export async function showProSceneReview(
   try {
     const lang = ctx.session?.userLang || 'id';
     const industry = detectIndustry(productDescription);
-    let scenes;
+    let scenes: any[];
     try {
       scenes = await generateScenePromptsWithAI(productDescription, 'standard', lang === 'en' ? 'en' : 'id');
     } catch {
@@ -1352,7 +1357,7 @@ export async function showProSceneReview(
     }
 
     const sceneList = scenes
-      .map((s, i) => `${i + 1}. *${HPAS_SCENES[s.sceneId].nameId}* (${s.durationSeconds}s)\n   ${s.prompt.slice(0, 200)}${s.prompt.length > 200 ? '...' : ''}`)
+      .map((s, i) => `${i + 1}. *${HPAS_SCENES[s.sceneId as SceneId].nameId}* (${s.durationSeconds}s)\n   ${s.prompt.slice(0, 200)}${s.prompt.length > 200 ? '...' : ''}`)
       .join('\n\n');
 
     const text = t('gen.pro_scene_review', lang, { industry, scenes: sceneList });
@@ -1361,7 +1366,7 @@ export async function showProSceneReview(
       parse_mode: 'Markdown',
       reply_markup: {
         inline_keyboard: [
-          ...scenes.map((s, i) => [{ text: `✏️ Edit Scene ${i + 1}: ${HPAS_SCENES[s.sceneId].nameId}`, callback_data: `edit_scene_${s.sceneId}` }]),
+          ...scenes.map((s, i) => [{ text: `✏️ Edit Scene ${i + 1}: ${HPAS_SCENES[s.sceneId as SceneId].nameId}`, callback_data: `edit_scene_${s.sceneId}` }]),
           [{ text: t('gen.btn_pro_continue', lang), callback_data: 'pro_select_duration' }],
           [{ text: t('btn.back', lang), callback_data: 'action_video' }],
           [{ text: t('btn.main_menu', lang), callback_data: 'main_menu' }],
@@ -1387,7 +1392,7 @@ export async function showConfirmScreen(ctx: BotContext): Promise<void> {
     const productDesc = session.generateProductDesc as string || '';
 
     const presetConfig = preset === 'custom' && session.customPresetConfig
-      ? session.customPresetConfig as typeof DURATION_PRESETS['standard']
+      ? session.customPresetConfig as unknown as DurationPresetConfig
       : DURATION_PRESETS[preset];
     const industry = detectIndustry(productDesc);
 

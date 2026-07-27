@@ -202,8 +202,8 @@ export class ContentAnalysisService {
           } catch (err) { logger.debug("Non-fatal error:", err); }
           return result;
         }
-      } catch (err: any) {
-        logger.warn(`Vision provider ${cfg.provider}/${cfg.model} failed: ${err.message}`);
+      } catch (err) {
+        logger.warn(`Vision provider ${cfg.provider}/${cfg.model} failed: ${(err as Error).message}`);
       }
     }
 
@@ -303,7 +303,7 @@ Output 400-600 words total. Character descriptions MUST be detailed enough to re
       const usageMeta = response.data?.usageMetadata;
       const promptTokens = usageMeta?.promptTokenCount || (mediaType === 'video' ? 3000 : 2000);
       const completionTokens = usageMeta?.candidatesTokenCount || (mediaType === 'video' ? 2000 : 1500);
-      trackTokens({ provider: 'gemini-direct', model: model || 'gemini-2.5-flash', service: 'content_analysis', promptTokens, completionTokens }).catch(err => logger.warn('Token tracking failed', { error: err.message }));
+      trackTokens({ provider: 'gemini-direct', model: model || 'gemini-2.5-flash', service: 'content_analysis', promptTokens, completionTokens }).catch(err => logger.warn('Token tracking failed', { error: (err as Error).message }));
       return parseGeminiResponse(generatedText);
     }
 
@@ -343,8 +343,8 @@ Output 400-600 words total. Character descriptions MUST be detailed enough to re
           return parseGeminiResponse(result.content);
         }
         logger.warn(`OmniRoute analyzeImageUrl returned empty: ${result.error}`);
-      } catch (urlErr: any) {
-        logger.warn(`OmniRoute analyzeImageUrl failed: ${urlErr.message}, trying base64`);
+      } catch (urlErr) {
+        logger.warn(`OmniRoute analyzeImageUrl failed: ${(urlErr as Error).message}, trying base64`);
       }
     }
 
@@ -507,7 +507,7 @@ Output 400-600 words total. Character descriptions MUST be detailed enough to re
 
       // Track clone video analysis cost
       const cloneVideoMeta = response.data?.usageMetadata;
-      trackTokens({ provider: 'gemini-direct', model: 'gemini-2.5-flash', service: 'clone_video', promptTokens: cloneVideoMeta?.promptTokenCount || 3000, completionTokens: cloneVideoMeta?.candidatesTokenCount || 2500 }).catch(err => logger.warn('Token tracking failed', { error: err.message }));
+      trackTokens({ provider: 'gemini-direct', model: 'gemini-2.5-flash', service: 'clone_video', promptTokens: cloneVideoMeta?.promptTokenCount || 3000, completionTokens: cloneVideoMeta?.candidatesTokenCount || 2500 }).catch(err => logger.warn('Token tracking failed', { error: (err as Error).message }));
 
       const result = parseGeminiResponse(generatedText);
 
@@ -519,8 +519,8 @@ Output 400-600 words total. Character descriptions MUST be detailed enough to re
 
       return result;
 
-    } catch (error: any) {
-      logger.warn(`Video cloning via Gemini failed: ${error.message}, trying OmniRoute`);
+    } catch (error) {
+      logger.warn(`Video cloning via Gemini failed: ${(error as Error).message}, trying OmniRoute`);
       return ContentAnalysisService._extractViaOmniRoute(sourceUrl, 'video');
     }
   }
@@ -585,12 +585,12 @@ Output 400-600 words total. Character descriptions MUST be detailed enough to re
 
       // Track clone image analysis cost
       const cloneImgMeta = response.data?.usageMetadata;
-      trackTokens({ provider: 'gemini-direct', model: 'gemini-2.5-flash', service: 'clone_image', promptTokens: cloneImgMeta?.promptTokenCount || 2000, completionTokens: cloneImgMeta?.candidatesTokenCount || 1500 }).catch(err => logger.warn('Token tracking failed', { error: err.message }));
+      trackTokens({ provider: 'gemini-direct', model: 'gemini-2.5-flash', service: 'clone_image', promptTokens: cloneImgMeta?.promptTokenCount || 2000, completionTokens: cloneImgMeta?.candidatesTokenCount || 1500 }).catch(err => logger.warn('Token tracking failed', { error: (err as Error).message }));
 
       return parseGeminiResponse(generatedText);
 
-    } catch (error: any) {
-      logger.warn(`Image cloning via Gemini failed: ${error.message}, trying OmniRoute`);
+    } catch (error) {
+      logger.warn(`Image cloning via Gemini failed: ${(error as Error).message}, trying OmniRoute`);
       return ContentAnalysisService._extractViaOmniRoute(sourceUrl, 'image');
     }
   }

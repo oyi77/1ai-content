@@ -131,9 +131,9 @@ export class AudioVOService {
 
       logger.info(`🎙️ TTS generated: ${subtitleBlocks.length} subtitle blocks, ${duration.toFixed(1)}s`);
       return { success: true, audioPath, vttPath, subtitleBlocks, duration };
-    } catch (error: any) {
-      logger.error('TTS generation failed:', error.message);
-      return { success: false, error: error.message };
+    } catch (error) {
+      logger.error('TTS generation failed:', (error as Error).message);
+      return { success: false, error: (error as Error).message };
     }
   }
 
@@ -186,9 +186,9 @@ export class AudioVOService {
 
       logger.info(`🎵 Audio merged: ${output}`);
       return { success: true, outputPath: output };
-    } catch (error: any) {
-      logger.error('Audio merge failed:', error.message);
-      return { success: false, error: error.message };
+    } catch (error) {
+      logger.error('Audio merge failed:', (error as Error).message);
+      return { success: false, error: (error as Error).message };
     }
   }
 
@@ -226,9 +226,9 @@ export class AudioVOService {
 
       logger.info(`📝 Subtitles burned: ${output}`);
       return { success: true, outputPath: output };
-    } catch (error: any) {
-      logger.error('Subtitle burn failed:', error.message);
-      return { success: false, error: error.message };
+    } catch (error) {
+      logger.error('Subtitle burn failed:', (error as Error).message);
+      return { success: false, error: (error as Error).message };
     }
   }
 
@@ -287,9 +287,9 @@ export class AudioVOService {
       }
 
       return { success: true, outputPath: merge.outputPath };
-    } catch (error: any) {
-      logger.error('Full VO pipeline failed:', error.message);
-      return { success: false, error: error.message };
+    } catch (error) {
+      logger.error('Full VO pipeline failed:', (error as Error).message);
+      return { success: false, error: (error as Error).message };
     }
   }
 }

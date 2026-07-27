@@ -51,7 +51,7 @@ export default async function testRoutes(fastify: FastifyInstance) {
 
   fastify.post('/api/test/simulate-event', async (request, reply) => {
     try {
-      const { event, message, data } = request.body as { event: string; message: string; data: any };
+      const { event, message, data } = request.body as { event: string; message: string; data: Record<string, unknown> };
       await InterceptService.logEvent(BigInt(MOCK_USER_ID), event, message, data);
       return reply.send({ success: true, message: 'Event simulated.' });
     } catch (error) {

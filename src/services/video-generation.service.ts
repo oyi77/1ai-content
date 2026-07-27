@@ -7,6 +7,7 @@
  * 3. Demo mode (fallback for testing)
  */
 
+import type { Video } from "@prisma/client";
 import { logger } from "@/utils/logger";
 import { getConfig } from "@/config/env";
 import axios from "axios";
@@ -146,8 +147,8 @@ export async function generateVideo(
       }
 
       logger.warn(`❌ GeminiGen failed: ${result.error}`);
-    } catch (error: any) {
-      logger.warn(`❌ GeminiGen error: ${error.message}`);
+    } catch (error) {
+      logger.warn(`❌ GeminiGen error: ${(error as Error).message}`);
     }
   }
 
@@ -202,8 +203,8 @@ export async function generateVideo(
             logger.info(
               `✅ ${provider.name} quality check passed (score: ${qualityResult.score})`,
             );
-          } catch (qcError: any) {
-            logger.warn(`Quality check error, proceeding: ${qcError.message}`);
+          } catch (qcError) {
+            logger.warn(`Quality check error, proceeding: ${(qcError as Error).message}`);
           }
         }
 
@@ -212,9 +213,9 @@ export async function generateVideo(
 
       await CircuitBreaker.recordFailure(providerKey);
       logger.warn(`❌ ${provider.name} failed: ${result.error}`);
-    } catch (error: any) {
+    } catch (error) {
       await CircuitBreaker.recordFailure(providerKey);
-      logger.warn(`❌ ${provider.name} error: ${error.message}`);
+      logger.warn(`❌ ${provider.name} error: ${(error as Error).message}`);
     }
   }
 
@@ -286,10 +287,10 @@ async function generateWithGeminiGen(
     // Poll for completion
     const result = await pollGeminiGen(uuid, 60);
     return result;
-  } catch (error: any) {
+  } catch (error) {
     return {
       success: false,
-      error: error.message,
+      error: (error as Error).message,
     };
   }
 }
@@ -328,10 +329,10 @@ async function generateWithByteplus(
     // Poll for completion
     const result = await pollByteplus(id, 60);
     return result;
-  } catch (error: any) {
+  } catch (error) {
     return {
       success: false,
-      error: error.message,
+      error: (error as Error).message,
     };
   }
 }
@@ -378,12 +379,12 @@ async function pollGeminiGen(
         `⏳ GeminiGen still processing... (attempt ${attempt + 1}/${maxAttempts})`,
       );
       await new Promise((r) => setTimeout(r, 2000)); // Wait 2s before retry
-    } catch (error: any) {
-      logger.error(`Error polling GeminiGen: ${error.message}`);
+    } catch (error) {
+      logger.error(`Error polling GeminiGen: ${(error as Error).message}`);
       if (attempt === maxAttempts - 1) {
         return {
           success: false,
-          error: `Polling failed: ${error.message}`,
+          error: `Polling failed: ${(error as Error).message}`,
         };
       }
       await new Promise((r) => setTimeout(r, 2000));
@@ -438,12 +439,12 @@ async function pollByteplus(
         `⏳ BytePlus still processing... (attempt ${attempt + 1}/${maxAttempts})`,
       );
       await new Promise((r) => setTimeout(r, 2000));
-    } catch (error: any) {
-      logger.error(`Error polling BytePlus: ${error.message}`);
+    } catch (error) {
+      logger.error(`Error polling BytePlus: ${(error as Error).message}`);
       if (attempt === maxAttempts - 1) {
         return {
           success: false,
-          error: `Polling failed: ${error.message}`,
+          error: `Polling failed: ${(error as Error).message}`,
         };
       }
       await new Promise((r) => setTimeout(r, 2000));
@@ -556,8 +557,8 @@ export async function generatePromptFromNicheAsync(
       logger.info(`[VideoGeneration] LLM prompt generation succeeded for niche=${niche}`);
       return result.trim();
     }
-  } catch (err: any) {
-    logger.warn(`[VideoGeneration] LLM prompt generation failed, using template: ${err.message}`);
+  } catch (err) {
+    logger.warn(`[VideoGeneration] LLM prompt generation failed, using template: ${(err as Error).message}`);
   }
 
   return templateResult;
@@ -748,12 +749,11 @@ export function getCreditCost(duration: number): number {
 /**
  * Process video job — called by video.service.ts for queued jobs
  */
-export async function processVideoJob(
-  video: any,
+export async function processVideoJob(video: Video,
 ): Promise<VideoGenerationResult> {
   logger.info(`Processing video job: ${video.jobId}`);
   return generateVideo({
-    prompt: video.prompt,
+    prompt: video.title ?? '',
     duration: video.duration,
     niche: video.niche,
     styles: video.styles,

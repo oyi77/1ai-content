@@ -389,7 +389,7 @@ export function getNicheConfig(key: string): NicheConfig | undefined {
 }
 
 // Cache for 5 minutes
-let nicheCache: any[] | null = null;
+let nicheCache: typeof NICHE_LIST | null = null;
 let nicheCacheTime = 0;
 const NICHE_CACHE_TTL = 5 * 60 * 1000;
 
@@ -403,7 +403,7 @@ export async function getNichesAsync(): Promise<typeof NICHE_LIST> {
       where: { category: 'niche' },
     });
     if (dbNiches.length > 0) {
-      const parsed = dbNiches.map((n: any) => ({
+      const parsed = dbNiches.map(n => ({
         id: n.key,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Prisma JSON field spread
         ...((typeof n.value === 'string' ? JSON.parse(n.value) : n.value) as any),

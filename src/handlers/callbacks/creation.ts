@@ -158,12 +158,12 @@ export async function handleLegacyCreationCallback(ctx: BotContext, data: string
               telegramId,
               template.creditCost,
               actualJobId,
-              error.message,
+              (error as Error).message,
             );
             const rfLang = ctx.session?.userLang || 'id';
             await ctx.telegram.sendMessage(
               ctx.chat!.id,
-              t('creation.credits_refunded', rfLang, { jobId: actualJobId, error: error.message }),
+              t('creation.credits_refunded', rfLang, { jobId: actualJobId, error: (error as Error).message }),
               { parse_mode: "Markdown" },
             );
           });
@@ -187,14 +187,14 @@ export async function handleLegacyCreationCallback(ctx: BotContext, data: string
           ctx.session.videoCreationNew = undefined;
           ctx.session.state = "DASHBOARD";
         }
-      } catch (error: any) {
+      } catch (error) {
         logger.error("Video generation failed:", error);
         // Credits are only deducted after createJob succeeds, so only refund
         // if this error was thrown after the deduction point (i.e. actualJobId exists).
         // If createJob itself threw, no credits were charged — no refund needed.
         const efLang = ctx.session?.userLang || 'id';
         await ctx.reply(
-          t('creation.generation_failed_refund', efLang, { error: error.message }),
+          t('creation.generation_failed_refund', efLang, { error: (error as Error).message }),
           { parse_mode: "Markdown" },
         );
       }

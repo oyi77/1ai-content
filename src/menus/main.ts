@@ -10,6 +10,7 @@ import { logger } from '@/utils/logger';
 import { getConfig } from '@/config/env';
 import { UserService } from '@/services/user.service';
 import { t } from '@/i18n/translations';
+import type { InlineKeyboardButton } from '@telegraf/types/markup';
 
 export async function showMainMenu(ctx: BotContext, isEdit = false): Promise<void> {
   try {
@@ -34,7 +35,7 @@ export async function showMainMenu(ctx: BotContext, isEdit = false): Promise<voi
       `${credEmoji} ${t('menu.credits_label', lang)}: *${credBal}*\n\n` +
       `${t('menu.today_question', lang)}`;
 
-    const rows: any[][] = [
+    const rows: InlineKeyboardButton[][] = [
       [{ text: t('menu.btn_prompts', lang), callback_data: 'back_prompts' }],
       [
         { text: t('menu.btn_trending', lang), callback_data: 'prompts_trending' },

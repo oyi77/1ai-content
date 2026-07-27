@@ -78,7 +78,7 @@ export interface SessionData {
   }>;
   generatePhotoUrl?: string;
   generateLastImageUrl?: string; // URL of last generated image for "Make Video" flow
-  customPresetConfig?: any; // DurationPresetConfig for custom durations
+  customPresetConfig?: Record<string, unknown>; // DurationPresetConfig for custom durations
   cloneRefUrl?: string;
   userLang?: string; // Cached user language for i18n (set during generation flows)
   userMode?: string; // Cached user persona/mode (set during /create and generation flows)

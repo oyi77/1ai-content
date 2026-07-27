@@ -103,7 +103,7 @@ Respond with ONLY the JSON, no other text.`;
       // Track Gemini Vision API cost
       const usageMeta = response.data?.usageMetadata;
       if (usageMeta) {
-        trackTokens({ provider: 'gemini-direct', model, service: 'watermark_detection', promptTokens: usageMeta.promptTokenCount || 0, completionTokens: usageMeta.candidatesTokenCount || 0 }).catch(err => logger.warn('Token tracking failed', { error: err.message }));
+        trackTokens({ provider: 'gemini-direct', model, service: 'watermark_detection', promptTokens: usageMeta.promptTokenCount || 0, completionTokens: usageMeta.candidatesTokenCount || 0 }).catch(err => logger.warn('Token tracking failed', { error: (err as Error).message }));
       }
 
       // Parse JSON from response (handle markdown code blocks)
@@ -116,8 +116,8 @@ Respond with ONLY the JSON, no other text.`;
         regions: Array.isArray(result.regions) ? result.regions : [],
         confidence: result.confidence || 0,
       };
-    } catch (err: any) {
-      logger.warn(`Watermark detection failed: ${err.message}`);
+    } catch (err) {
+      logger.warn(`Watermark detection failed: ${(err as Error).message}`);
       return { hasWatermark: false, regions: [], confidence: 0 };
     }
   }
@@ -232,8 +232,8 @@ Respond with ONLY the JSON, no other text.`;
       }
 
       return cleanedPath;
-    } catch (err: any) {
-      logger.warn(`Watermark clean failed: ${err.message}`);
+    } catch (err) {
+      logger.warn(`Watermark clean failed: ${(err as Error).message}`);
       return null;
     }
   }
@@ -265,8 +265,8 @@ Respond with ONLY the JSON, no other text.`;
 
       logger.info(`🔍 Watermark detected in video, removing ${detection.regions.length} region(s)...`);
       return this.removeFromVideo(videoPath, detection.regions);
-    } catch (err: any) {
-      logger.warn(`Video watermark clean failed: ${err.message}`);
+    } catch (err) {
+      logger.warn(`Video watermark clean failed: ${(err as Error).message}`);
       return videoPath;
     }
   }
@@ -308,7 +308,7 @@ Respond with ONLY the JSON, no other text.`;
       // Track Gemini Vision API cost
       const usageMeta2 = response.data?.usageMetadata;
       if (usageMeta2) {
-        trackTokens({ provider: 'gemini-direct', model, service: 'watermark_clean', promptTokens: usageMeta2.promptTokenCount || 0, completionTokens: usageMeta2.candidatesTokenCount || 0 }).catch(err => logger.warn('Token tracking failed', { error: err.message }));
+        trackTokens({ provider: 'gemini-direct', model, service: 'watermark_clean', promptTokens: usageMeta2.promptTokenCount || 0, completionTokens: usageMeta2.candidatesTokenCount || 0 }).catch(err => logger.warn('Token tracking failed', { error: (err as Error).message }));
       }
 
       const jsonStr = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();

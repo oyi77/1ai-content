@@ -69,7 +69,7 @@ export async function registerPricingRoutes(server: FastifyInstance) {
       await PaymentSettingsService.getAllPricingByCategory("unit_cost");
 
     const videoCosts = Object.values(providerCosts)
-      .map((v: any) => v?.costUsd || v || 0)
+      .map(v => (v as { costUsd?: number })?.costUsd || Number(v) || 0)
       .filter((c: number) => c > 0);
     const avgVideoSceneCostUsd =
       videoCosts.length > 0

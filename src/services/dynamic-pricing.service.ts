@@ -195,7 +195,7 @@ export class DynamicPricingService {
     });
 
     for (const current of currentCosts) {
-      const dbCost = dbCosts.find((c: any) => c.key === current.providerKey);
+      const dbCost = dbCosts.find(c => c.key === current.providerKey);
       if (!dbCost) continue;
 
       const dbCostValue = dbCost.value as Record<string, unknown>;

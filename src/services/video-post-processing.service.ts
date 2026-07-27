@@ -157,8 +157,8 @@ async function getClipDuration(filePath: string): Promise<number> {
       throw new ProviderError('FFprobe', `Invalid duration: ${stdout.trim()}`);
     }
     return duration;
-  } catch (err: any) {
-    logger.warn(`ffprobe duration failed for ${filePath}: ${err.message}`);
+  } catch (err) {
+    logger.warn(`ffprobe duration failed for ${filePath}: ${(err as Error).message}`);
     return 5; // Conservative fallback: assume 5s clip
   }
 }
@@ -229,8 +229,8 @@ export class VideoPostProcessing {
       }
       refWidth = w;
       refHeight = h;
-    } catch (err: any) {
-      logger.warn(`Failed to probe reference resolution, skipping normalization: ${err.message}`);
+    } catch (err) {
+      logger.warn(`Failed to probe reference resolution, skipping normalization: ${(err as Error).message}`);
       return [...inputPaths];
     }
 
@@ -268,8 +268,8 @@ export class VideoPostProcessing {
           logger.warn(`Normalization failed for clip ${i}, using original`);
           normalized.push(inputPaths[i]);
         }
-      } catch (err: any) {
-        logger.warn(`Resolution normalization failed for clip ${i}: ${err.message}, using original`);
+      } catch (err) {
+        logger.warn(`Resolution normalization failed for clip ${i}: ${(err as Error).message}, using original`);
         normalized.push(inputPaths[i]);
       }
     }
@@ -358,8 +358,8 @@ export class VideoPostProcessing {
 
       try {
         await exec(cmd, { timeout: 300000 });
-      } catch (err: any) {
-        logger.error(`FFmpeg xfade concatenation failed: ${err.message}`);
+      } catch (err) {
+        logger.error(`FFmpeg xfade concatenation failed: ${(err as Error).message}`);
         logger.warn('Falling back to simple concat (no transitions)...');
         await VideoPostProcessing.simpleConcatenate(normalizedPaths, outputPath);
       }
@@ -449,8 +449,8 @@ export class VideoPostProcessing {
         `-c:a copy -c:v libx264 -preset fast -crf 18 "${outputPath}"`,
         { timeout: 120000 }
       );
-    } catch (err: any) {
-      logger.error(`Text overlay failed: ${err.message}`);
+    } catch (err) {
+      logger.error(`Text overlay failed: ${(err as Error).message}`);
       // Fallback: copy without text
       fs.copyFileSync(videoPath, outputPath);
     }
@@ -480,8 +480,8 @@ export class VideoPostProcessing {
       }
 
       logger.info(`Color grade applied (${niche}): ${grade}`);
-    } catch (err: any) {
-      logger.error(`Color grading failed: ${err.message}`);
+    } catch (err) {
+      logger.error(`Color grading failed: ${(err as Error).message}`);
       // Fallback: copy original
       fs.copyFileSync(videoPath, outputPath);
     }
@@ -562,8 +562,8 @@ export class VideoPostProcessing {
           fs.copyFileSync(currentPath, outputPath);
         }
       }
-    } catch (err: any) {
-      logger.error(`Post-processing pipeline failed: ${err.message}`);
+    } catch (err) {
+      logger.error(`Post-processing pipeline failed: ${(err as Error).message}`);
       // Ultimate fallback: copy original to output
       if (videoPath !== outputPath) {
         fs.copyFileSync(videoPath, outputPath);

@@ -20,8 +20,8 @@ export async function registerLandingConfigRoutes(server: FastifyInstance) {
       const body = request.body as Record<string, unknown>;
       await redis.set("admin:landing_config", JSON.stringify(body));
       return { success: true };
-    } catch (error: any) {
-      logger.error(`Failed to update landing config: ${error?.message || error}`);
+    } catch (error) {
+      logger.error(`Failed to update landing config: ${(error as Error)?.message || error}`);
       return reply.status(500).send({ error: "Failed to update config" });
     }
   });

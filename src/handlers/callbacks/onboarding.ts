@@ -50,9 +50,9 @@ export async function handleOnboardingCallbacks(ctx: BotContext, data: string): 
       } else {
         await ctx.editMessageText(t('cb.transfer_failed', lang, { error: result.error ?? '' }), { parse_mode: "Markdown" });
       }
-    } catch (error: any) {
+    } catch (error) {
       const lang = ctx.session?.userLang || 'id';
-      await ctx.editMessageText(t('cb.transfer_error', lang, { error: error.message }), { parse_mode: "Markdown" });
+      await ctx.editMessageText(t('cb.transfer_error', lang, { error: (error as Error).message }), { parse_mode: "Markdown" });
     }
     return true;
   }

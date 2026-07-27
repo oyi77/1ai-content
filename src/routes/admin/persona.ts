@@ -1,4 +1,4 @@
-import { FastifyInstance } from "fastify";
+import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { prisma } from "@/config/database";
 import { PaymentSettingsService } from "@/services/payment-settings.service";
 import { validate } from "@/utils/validation";
@@ -7,7 +7,7 @@ import { trackingVars } from "./shared";
 
 export async function registerPersonaRoutes(
   server: FastifyInstance,
-  verifyAdmin: (request: any, reply: any) => Promise<boolean>,
+  verifyAdmin: (request: FastifyRequest, reply: FastifyReply) => Promise<boolean>,
 ) {
   server.get('/api/personas', async (request, reply) => {
     if (!await verifyAdmin(request, reply)) return;

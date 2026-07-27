@@ -111,7 +111,7 @@ export async function handleDisassemble(ctx: BotContext): Promise<void> {
         { parse_mode: "Markdown" },
       );
     }
-  } catch (error: any) {
+  } catch (error) {
     logger.error("Disassemble failed:", error);
     const dbUser2 = ctx.from ? await UserService.findByTelegramId(BigInt(ctx.from.id)).catch(() => null) : null;
     const lang2 = dbUser2?.language || 'id';
@@ -241,9 +241,9 @@ export async function handleVideoCreationImage(
 
     try {
       await execFile('wget', ['-q', '-O', imagePath, primaryImageUrl]);
-    } catch (wgetErr: any) {
-      logger.error("wget failed downloading reference image:", wgetErr.message);
-      throw new ProviderError("video-uploader", `Failed to download reference image: ${wgetErr.message}`);
+    } catch (wgetErr) {
+      logger.error("wget failed downloading reference image:", (wgetErr as Error).message);
+      throw new ProviderError("video-uploader", `Failed to download reference image: ${(wgetErr as Error).message}`);
     }
 
     if (!fs.existsSync(imagePath) || fs.statSync(imagePath).size === 0) {
@@ -330,7 +330,7 @@ export async function handleVideoCreationImage(
       }
 
       if (enrichmentText) {
-        enrichedStoryboard = storyboard.map((scene: any) => ({
+        enrichedStoryboard = storyboard.map(scene => ({
           ...scene,
           description: `${scene.description}. ${enrichmentText}`,
         }));
@@ -379,10 +379,10 @@ export async function handleVideoCreationImage(
       await ctx.reply(
         `Video queued! Position: #${position}. You'll be notified when ready.`,
       );
-    } catch (enqueueErr: any) {
+    } catch (enqueueErr) {
       logger.warn(
         "Queue enqueue failed, falling back to direct async:",
-        enqueueErr.message,
+        (enqueueErr as Error).message,
       );
       if (scenes === 1) {
         generateVideoAsync(
@@ -411,7 +411,7 @@ export async function handleVideoCreationImage(
         );
       }
     }
-  } catch (error: any) {
+  } catch (error) {
     logger.error("handleVideoCreationImage error:", error);
 
     if (creditsDeducted && jobId) {
@@ -420,12 +420,12 @@ export async function handleVideoCreationImage(
           telegramId,
           creditCost,
           jobId,
-          error.message || "Image upload failed",
+          (error as Error).message || "Image upload failed",
         );
         await VideoService.updateStatus(
           jobId,
           "failed",
-          error.message || "Image upload failed",
+          (error as Error).message || "Image upload failed",
         );
       } catch (refundErr) {
         logger.error("Failed to refund credits after image error:", refundErr);
@@ -436,7 +436,7 @@ export async function handleVideoCreationImage(
       ctx.session.videoCreation.waitingForImage = false;
     }
 
-    const userMessage = actionableError(error.message || String(error));
+    const userMessage = actionableError((error as Error).message || String(error));
     await ctx.reply(
       `${userMessage}\n\n` +
       `${creditsDeducted ? "Credits have been refunded." : ""}\n\n` +
@@ -520,10 +520,10 @@ export async function handleSkipImageReference(ctx: BotContext): Promise<void> {
     await ctx.reply(
       `Video queued! Position: #${position}. You'll be notified when ready.`,
     );
-  } catch (enqueueErr: any) {
+  } catch (enqueueErr) {
     logger.warn(
       "Queue enqueue failed, falling back to direct async:",
-      enqueueErr.message,
+      (enqueueErr as Error).message,
     );
     if (scenes === 1) {
       generateVideoAsync(

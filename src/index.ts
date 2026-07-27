@@ -97,7 +97,7 @@ async function main() {
         initConfig(); // re-parse process.env so getConfig() picks up DB overrides
         logger.info(`[API Keys] Loaded ${apiKeyOverrides.length} DB overrides into process.env`);
       }
-    } catch (e: any) { logger.warn('[API Keys] Could not load DB overrides:', e.message); }
+    } catch (e) { logger.warn('[API Keys] Could not load DB overrides:', (e as Error).message); }
     logger.info("✅ Pricing config ready");
 
     // Initialize Redis
@@ -377,8 +377,8 @@ async function main() {
     app.setErrorHandler((error, request, reply) => {
       if (error instanceof ApiError) {
         return reply.status(error.statusCode).send({
-          error: error.code,
-          message: error.message,
+          error: (error as {code: string}).code,
+          message: (error as Error).message,
         });
       }
       app.log.error(error);
@@ -420,8 +420,8 @@ async function main() {
           new Promise((_, reject) => setTimeout(() => reject(new Error("setWebhook timeout 10s")), 10000)),
         ]);
         logger.info(`🤖 Bot webhook set: ${fullUrl}`);
-      } catch (webhookErr: any) {
-        logger.warn(`⚠️ Failed to set Telegram webhook (${webhookErr.message}) — continuing without webhook`);
+      } catch (webhookErr) {
+        logger.warn(`⚠️ Failed to set Telegram webhook (${(webhookErr as Error).message}) — continuing without webhook`);
       }
     } else {
       if (forcePolling) {
@@ -440,7 +440,7 @@ async function main() {
 
         await bot.launch();
         logger.info("✅ Bot polling started successfully");
-      } catch (error: any) {
+      } catch (error) {
         logger.error("❌ Bot launch failed:", error);
         logger.warn(
           "Bot will continue without polling - check Telegram API conflicts",
@@ -479,8 +479,8 @@ async function main() {
       }
     };
 
-    process.on("unhandledRejection", (reason: any) => {
-      const msg = reason?.message || String(reason);
+    process.on("unhandledRejection", (reason: unknown) => {
+      const msg = (reason as { message?: string })?.message || String(reason);
       logger.error("unhandledRejection:", msg);
       if (!msg.includes("Bot is not running") && !msg.includes("SIGTERM")) {
         sendAdminAlert(`Unhandled rejection:\n\`${msg.slice(0, 300)}\``);

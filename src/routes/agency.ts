@@ -87,8 +87,8 @@ export async function agencyRoutes(server: FastifyInstance): Promise<void> {
       }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 
       return reply.status(201).send({ key: rawKey, id: result.id, name: result.name });
-    } catch (err: any) {
-      if (err?.message === 'MAX_KEYS') {
+    } catch (err) {
+      if ((err as Error)?.message === 'MAX_KEYS') {
         return reply.status(400).send({ error: 'Maximum 5 active API keys allowed' });
       }
       server.log.error({ err }, 'Failed to create API key');

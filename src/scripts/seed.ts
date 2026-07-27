@@ -124,7 +124,7 @@ export async function runSeeder() {
     logger.info(
       "[SEEDER] Successfully seeded default admin:landing_config with multi-language testimonials.",
     );
-  } catch (error: any) {
+  } catch (error) {
     logger.error("[SEEDER] Failed to run seeder:", error);
   }
 }

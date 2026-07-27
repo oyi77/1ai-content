@@ -31,7 +31,7 @@ export async function handleCustomDurationV3(ctx: BotContext, text: string): Pro
 
   if (ctx.session) {
     ctx.session.generatePreset = "custom";
-    ctx.session.customPresetConfig = presetConfig;
+    ctx.session.customPresetConfig = presetConfig as unknown as Record<string, unknown>;
     ctx.session.state = "DASHBOARD";
   }
 

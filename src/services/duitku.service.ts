@@ -59,8 +59,8 @@ export class DuitkuService {
 
       const methods: DuitkuPaymentMethod[] = response.data?.paymentFee || [];
       return methods.filter(m => m.paymentMethod && m.paymentName);
-    } catch (error: any) {
-      logger.error('Duitku getPaymentMethods error:', error.response?.data || error.message);
+    } catch (error) {
+      logger.error('Duitku getPaymentMethods error:', (error as any).response?.data || (error as Error).message);
       return [];
     }
   }
@@ -126,8 +126,8 @@ export class DuitkuService {
       logger.info(`Duitku transaction created: ${orderId}, ref: ${data.reference}`);
 
       return { orderId, paymentUrl: data.paymentUrl, vaNumber: data.vaNumber };
-    } catch (error: any) {
-      logger.error('Duitku API error:', error.response?.data || error.message);
+    } catch (error) {
+      logger.error('Duitku API error:', (error as any).response?.data || (error as Error).message);
       throw new ApiError('Duitku', 'Failed to create payment');
     }
   }
@@ -195,7 +195,7 @@ export class DuitkuService {
         const credits = Number(transaction.creditsAmount) || 0;
         const plans = await getSubscriptionPlansAsync();
         const plan = plans[transaction.packageName ?? ''];
-        const userUpdateData: any = { creditBalance: { increment: credits } };
+        const userUpdateData: Record<string, unknown> = { creditBalance: { increment: credits } };
         if (plan && plan.tier) {
           userUpdateData.tier = plan.tier; // Only set tier for subscription packages
         }

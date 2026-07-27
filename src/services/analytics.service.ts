@@ -26,7 +26,7 @@ interface TrackingEvent {
     content_name?: string;
     content_type?: string;
     content_id?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 
@@ -246,8 +246,8 @@ export class AnalyticsService {
       );
 
       logger.debug(`✅ GA4 tracked: ${event.event_name}`);
-    } catch (error: any) {
-      logger.warn(`⚠️ GA4 tracking failed: ${error.message}`);
+    } catch (error) {
+      logger.warn(`⚠️ GA4 tracking failed: ${(error as Error).message}`);
     }
   }
 
@@ -261,7 +261,7 @@ export class AnalyticsService {
     }
 
     try {
-      const userData: any = {
+      const userData: Record<string, unknown> = {
         ...(event.user_id && { uid: this.hashPII(event.user_id) }),
         ...(event.email && { em: this.hashPII(event.email) }),
         ...(event.phone && { ph: this.hashPII(event.phone) }),
@@ -309,8 +309,8 @@ export class AnalyticsService {
       );
 
       logger.debug(`✅ Meta CAPI tracked: ${event.event_name}`);
-    } catch (error: any) {
-      logger.warn(`⚠️ Meta CAPI tracking failed: ${error.message}`);
+    } catch (error) {
+      logger.warn(`⚠️ Meta CAPI tracking failed: ${(error as Error).message}`);
     }
   }
 
@@ -324,7 +324,7 @@ export class AnalyticsService {
     }
 
     try {
-      const userData: any = {
+      const userData: Record<string, unknown> = {
         ...(event.user_id && { external_id: this.hashPII(event.user_id) }),
         ...(event.email && { email: this.hashPII(event.email) }),
         ...(event.phone && { phone_number: this.hashPII(event.phone) }),
@@ -374,8 +374,8 @@ export class AnalyticsService {
       );
 
       logger.debug(`✅ TikTok tracked: ${event.event_name}`);
-    } catch (error: any) {
-      logger.warn(`⚠️ TikTok tracking failed: ${error.message}`);
+    } catch (error) {
+      logger.warn(`⚠️ TikTok tracking failed: ${(error as Error).message}`);
     }
   }
 }

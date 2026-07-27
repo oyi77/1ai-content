@@ -162,13 +162,13 @@ export class CustomProviderService {
       timeout: 10000,
     });
 
-    const raw: any[] = Array.isArray(response.data)
+    const raw: Record<string, unknown>[] = Array.isArray(response.data)
       ? response.data
       : Array.isArray(response.data?.data)
         ? response.data.data
         : [];
 
-    const models: CustomProviderModel[] = raw.map((m: any) => {
+    const models: CustomProviderModel[] = raw.map((m: Record<string, any>) => {
       const modelId: string = m.id || m.name || String(m);
       const heuristics = applyModelHeuristics(modelId);
       return {
@@ -229,7 +229,7 @@ export class CustomProviderService {
   static async makeRequest(
     id: string,
     model: string,
-    messages: any[],
+    messages: Record<string, unknown>[],
     options?: { maxTokens?: number; temperature?: number; systemPrompt?: string },
   ): Promise<string> {
     const provider = await CustomProviderService.getById(id);

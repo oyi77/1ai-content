@@ -11,6 +11,7 @@ import {
   promptsCommand,
 } from "@/commands/prompts";
 import { t } from "@/i18n/translations";
+import type { InlineKeyboardButton } from '@telegraf/types/markup';
 
 export async function handleNavigationCallbacks(ctx: BotContext, data: string): Promise<boolean> {
   // ── UNIVERSAL NOOP ──────────────────────────────────────────────────────────
@@ -46,7 +47,7 @@ export async function handleNavigationCallbacks(ctx: BotContext, data: string): 
     const credBal = dbUser ? Number(dbUser.creditBalance) : 0;
     const credEmoji = credBal === 0 ? "⚠️" : credBal < 3 ? "🟡" : "🟢";
 
-    const rows: any[][] = [
+    const rows: InlineKeyboardButton[][] = [
       [{ text: t('btn.browse_prompts', lang), callback_data: "back_prompts" }],
       [
         { text: t('btn.trending', lang), callback_data: "prompts_trending" },

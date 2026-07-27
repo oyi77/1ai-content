@@ -5,6 +5,7 @@
  */
 
 import { BotContext } from "@/types";
+import type { InlineKeyboardButton } from '@telegraf/types/markup';
 import { logger } from "@/utils/logger";
 import { UserService } from "@/services/user.service";
 import { VideoService } from "@/services/video.service";
@@ -109,8 +110,8 @@ export async function handleDurationSelection(
           lastName: user.last_name,
         });
         await ctx.reply(`👋 Welcome to BK Vilona!`);
-      } catch (err: any) {
-        if (err?.code === 'P2002') {
+      } catch (err) {
+        if ((err as {code: string})?.code === 'P2002') {
           // Created concurrently by another handler — fetch the existing record
           dbUser = await UserService.findByTelegramId(BigInt(user.id));
         } else {
@@ -241,8 +242,7 @@ export async function handleNicheSelection(
       ? await UserService.findByTelegramId(BigInt(ctx.from.id.toString()))
       : null;
     const lang = getUserLang(dbUser);
-
-    const styleButtons: any[][] = (
+    const styleButtons: InlineKeyboardButton[][] = (
       nicheConfig.styles as readonly string[]
     ).flatMap((s) => {
       if (!s || typeof s !== "string") return [];
@@ -551,8 +551,14 @@ async function generateExtendedVideoAsync(
       }
 
       // Scene 1: use multi-provider fallback chain
-      // Scene 2+: use GeminiGen extend (only provider that supports scene chaining)
-      let result: any;
+      type GenerationResult = {
+        success: boolean;
+        videoUrl?: string;
+        thumbnailUrl?: string;
+        jobId?: string;
+        error?: string;
+      };
+      let result: GenerationResult;
       if (i === 0) {
         result = await generateVideoWithFallback({
           prompt,
@@ -569,9 +575,9 @@ async function generateExtendedVideoAsync(
             prompt,
             refHistory: lastUuid,
           });
-        } catch (extendErr: any) {
+        } catch (extendErr) {
           logger.warn(
-            `🎬 Scene ${i + 1} extend failed, falling back to standalone: ${extendErr.message}`,
+            `🎬 Scene ${i + 1} extend failed, falling back to standalone: ${(extendErr as Error).message}`,
           );
           result = await generateVideoWithFallback({
             prompt,

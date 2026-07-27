@@ -76,16 +76,16 @@ export class VideoClipperService {
         likeCount: info.like_count || 0,
         uploadDate: info.upload_date || '',
         description: (info.description || '').slice(0, 500),
-        formats: (info.formats || []).slice(0, 10).map((f: any) => ({
+        formats: (info.formats || []).slice(0, 10).map((f: Record<string, unknown>) => ({
           formatId: f.format_id,
           ext: f.ext,
           resolution: f.resolution || 'audio only',
           filesize: f.filesize || 0,
         })),
       };
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Failed to get video info:', error);
-      throw new ProviderError('VideoClipper', `Cannot fetch video info: ${error.message}`);
+      throw new ProviderError('VideoClipper', `Cannot fetch video info: ${(error as Error).message}`);
     }
   }
 
@@ -125,9 +125,9 @@ export class VideoClipperService {
       await execFileAsync('yt-dlp', args, { timeout: 300000 }); // 5 min timeout
       logger.info(`Download complete: ${outputFile}`);
       return outputFile;
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Download failed:', error);
-      throw new ProviderError('VideoClipper', `Download failed: ${error.message}`);
+      throw new ProviderError('VideoClipper', `Download failed: ${(error as Error).message}`);
     }
   }
 
@@ -141,8 +141,8 @@ export class VideoClipperService {
       try {
         const path = await this.downloadClip({ url, ...options });
         results.push(path);
-      } catch (error: any) {
-        logger.warn(`Failed to download ${url}: ${error.message}`);
+      } catch (error) {
+        logger.warn(`Failed to download ${url}: ${(error as Error).message}`);
       }
     }
 
@@ -171,8 +171,8 @@ export class VideoClipperService {
     try {
       await execFileAsync('yt-dlp', args, { timeout: 180000 });
       return outputFile;
-    } catch (error: any) {
-      throw new ProviderError('VideoClipper', `Audio extraction failed: ${error.message}`);
+    } catch (error) {
+      throw new ProviderError('VideoClipper', `Audio extraction failed: ${(error as Error).message}`);
     }
   }
 
@@ -208,7 +208,7 @@ export class VideoClipperService {
           formats: [],
         };
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Search failed:', error);
       return [];
     }

@@ -1,4 +1,4 @@
-import { FastifyInstance } from "fastify";
+import { FastifyInstance, FastifyRequest } from "fastify";
 import { prisma } from "@/config/database";
 import { redis } from "@/config/redis";
 import { getConfig } from "@/config/env";
@@ -65,7 +65,7 @@ export async function registerV3Routes(server: FastifyInstance) {
     try {
       await retentionQueue.add("run_checks", { type });
       return { queued: true, type };
-    } catch (error: any) {
+    } catch (error) {
       return reply
         .status(500)
         .send({ error: "Failed to queue retention check" });
@@ -75,16 +75,16 @@ export async function registerV3Routes(server: FastifyInstance) {
   // ── v3.0 User Gamification ──
 
   /** GET /api/v3/users/:id/gamification */
-  server.get("/api/v3/users/:id/gamification", async (request: any, reply) => {
+server.get("/api/v3/users/:id/gamification", async (request: FastifyRequest, reply) => {
     try {
-      const userId = BigInt(request.params.id);
+      const userId = BigInt((request.params as { id: string }).id);
       const [summary, streak, badges] = await Promise.all([
         GamificationService.getUserGamificationSummary(userId),
         prisma.userStreak.findUnique({ where: { userId } }),
         prisma.userBadge.findMany({ where: { userId } }),
       ]);
       return { summary, streak, badges };
-    } catch (error: any) {
+    } catch (error) {
       return reply.status(404).send({ error: "User not found or invalid ID" });
     }
   });
@@ -165,7 +165,7 @@ export async function registerV3Routes(server: FastifyInstance) {
           subscriber.disconnect();
         } catch { /* already disconnected */ }
       });
-    } catch (error: any) {
+    } catch (error) {
       reply.raw.write(
         `data: ${JSON.stringify({ type: "error", message: "SSE connection failed" })}\n\n`,
       );

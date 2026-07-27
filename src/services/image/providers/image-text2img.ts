@@ -239,8 +239,8 @@ export async function generateViaLaoZhangGptImage(
             mode: "text2img",
           };
       }
-    } catch (err: any) {
-      logger.warn(`LaoZhang ${model} failed: ${err.response?.status || err.message}`);
+    } catch (err) {
+      logger.warn(`LaoZhang ${model} failed: ${(err as any).response?.status || (err as Error).message}`);
     }
   }
   throw new AllProvidersFailedError("LaoZhang text2img");

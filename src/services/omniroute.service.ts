@@ -250,8 +250,8 @@ export class OmniRouteService {
       this.conversationHistory.set(userId, history);
 
       return { success: true, content, model: usedModel };
-    } catch (error: any) {
-      const errMsg = error.response?.data?.error?.message || error.message || 'Unknown error';
+    } catch (error) {
+      const errMsg = (error as any).response?.data?.(error as Error)?.message || (error as Error).message || 'Unknown error';
       logger.error('OmniRoute chat error:', errMsg);
       return { success: false, error: errMsg };
     }
@@ -273,7 +273,7 @@ export class OmniRouteService {
   async listModels(): Promise<string[]> {
     try {
       const response = await this.client.get('/models', { timeout: 10000 });
-      return (response.data?.data || []).map((m: any) => m.id).slice(0, 30);
+      return (response.data?.data || []).map((m: { id: string }) => m.id).slice(0, 30);
     } catch {
       return [];
     }
@@ -303,8 +303,8 @@ export class OmniRouteService {
       const content = response.data?.choices?.[0]?.message?.content || '';
       if (!content) return { success: false, error: 'Empty response from vision model' };
       return { success: true, content, model: response.data?.model || DEFAULT_MODEL };
-    } catch (error: any) {
-      const errMsg = error.response?.data?.error?.message || error.message || 'Unknown error';
+    } catch (error) {
+      const errMsg = (error as any).response?.data?.(error as Error)?.message || (error as Error).message || 'Unknown error';
       logger.error('OmniRoute analyzeImageUrl error:', errMsg);
       return { success: false, error: errMsg };
     }
@@ -344,8 +344,8 @@ export class OmniRouteService {
       }
 
       return { success: true, content, model: usedModel };
-    } catch (error: any) {
-      const errMsg = error.response?.data?.error?.message || error.message || 'Unknown error';
+    } catch (error) {
+      const errMsg = (error as any).response?.data?.(error as Error)?.message || (error as Error).message || 'Unknown error';
       logger.error('OmniRoute analyzeImage error:', errMsg);
       return { success: false, error: errMsg };
     }

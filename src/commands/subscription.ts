@@ -3,6 +3,7 @@ import { logger } from '@/utils/logger';
 import { getConfig } from '@/config/env';
 import { UserService } from '@/services/user.service';
 import { SubscriptionService } from '@/services/subscription.service';
+import { User } from '@prisma/client';
 import { t } from '@/i18n/translations';
 import {
   SUBSCRIPTION_PLANS,
@@ -177,7 +178,7 @@ export async function handleSubscriptionPurchase(
     );
   } catch (error) {
     logger.error('Error creating subscription payment:', error);
-    let dbUser2: any = null;
+    let dbUser2: User | null = null;
     try { if (ctx.from) dbUser2 = await UserService.findByTelegramId(BigInt(ctx.from.id)); } catch { /* ignore */ }
     const lang2 = dbUser2?.language || 'id';
     try { await ctx.editMessageText(t('sub.payment_create_failed', lang2)); } catch { try { await ctx.reply(t('sub.payment_create_failed', lang2)); } catch { /* ignore */ } }
@@ -192,14 +193,14 @@ export async function handleCancelSubscription(ctx: BotContext): Promise<void> {
     await ctx.answerCbQuery('...').catch(() => {});
     await SubscriptionService.cancelSubscription(BigInt(user.id));
 
-    let dbUser: any = null;
+    let dbUser: User | null = null;
     try { if (ctx.from) dbUser = await UserService.findByTelegramId(BigInt(ctx.from.id)); } catch { /* ignore */ }
     const lang = dbUser?.language || ctx.from?.language_code || 'id';
     const cancelMsg = t('sub.cancelled', lang);
     try { await ctx.editMessageText(cancelMsg, { parse_mode: 'Markdown' }); } catch { try { await ctx.reply(cancelMsg, { parse_mode: 'Markdown' }); } catch { /* ignore */ } }
   } catch (error) {
     logger.error('Error cancelling subscription:', error);
-    let dbUser3: any = null;
+    let dbUser3: User | null = null;
     try { if (ctx.from) dbUser3 = await UserService.findByTelegramId(BigInt(ctx.from.id)); } catch { /* ignore */ }
     const lang3 = dbUser3?.language || 'id';
     try { await ctx.editMessageText(t('sub.cancel_failed', lang3)); } catch { try { await ctx.reply(t('sub.cancel_failed', lang3)); } catch { /* ignore */ } }

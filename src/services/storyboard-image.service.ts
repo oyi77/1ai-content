@@ -76,9 +76,9 @@ async function generateSceneImage(
       logger.warn(
         `[StoryboardImageService] Scene ${scene.scene} attempt ${attempt + 1}/${MAX_RETRIES} failed: ${result.error || "unknown"}`,
       );
-    } catch (err: any) {
+    } catch (err) {
       logger.warn(
-        `[StoryboardImageService] Scene ${scene.scene} attempt ${attempt + 1}/${MAX_RETRIES} threw: ${err.message}`,
+        `[StoryboardImageService] Scene ${scene.scene} attempt ${attempt + 1}/${MAX_RETRIES} threw: ${(err as Error).message}`,
       );
     }
 

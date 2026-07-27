@@ -1,4 +1,4 @@
-import { FastifyInstance } from "fastify";
+import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { AdminConfigService } from "@/services/admin-config.service";
 import { prisma } from "@/config/database";
 import { initConfig } from "@/config/env";
@@ -58,7 +58,7 @@ function maskKey(v: string): string {
 
 export async function registerAdminConfigRoutes(
   server: FastifyInstance,
-  verifyAdmin: (request: any, reply: any) => Promise<boolean>,
+  verifyAdmin: (request: FastifyRequest, reply: FastifyReply) => Promise<boolean>,
 ) {
   // ── Runtime Config (categories: provider, ai_param, timeout, etc.) ──
 

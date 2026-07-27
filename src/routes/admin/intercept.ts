@@ -26,8 +26,8 @@ export function registerInterceptRoutes(server: FastifyInstance, verifyAdmin: Ad
       });
       await InterceptService.invalidateCache(BigInt(telegramId));
       return { success: true };
-    } catch (error: any) {
-      if (error.code === 'P2025') {
+    } catch (error) {
+      if ((error as {code: string}).code === 'P2025') {
         return reply.status(404).send({ error: "User not found" });
       }
       if (error instanceof SyntaxError) {
@@ -47,7 +47,7 @@ export function registerInterceptRoutes(server: FastifyInstance, verifyAdmin: Ad
       const { InterceptService } = await import("../../services/intercept.service.js");
       const events = await InterceptService.getRecentEvents(BigInt(telegramId), 100);
       return events.map(e => ({ ...e, id: e.id.toString(), userId: e.userId.toString() }));
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Failed to get intercept events:', error);
       return reply.status(500).send({ error: "Failed to retrieve events" });
     }
@@ -141,9 +141,9 @@ export function registerInterceptRoutes(server: FastifyInstance, verifyAdmin: Ad
       const mediaType = imageExts.includes(ext) ? 'image' : 'video';
 
       return { success: true, url: publicUrl, mediaType, filename };
-    } catch (err: any) {
+    } catch (err) {
       logger.error('Upload error:', err);
-      return reply.status(500).send({ error: err.message });
+      return reply.status(500).send({ error: (err as Error).message });
     }
   });
 
@@ -159,7 +159,7 @@ export function registerInterceptRoutes(server: FastifyInstance, verifyAdmin: Ad
       const { InterceptService } = await import("../../services/intercept.service.js");
       await InterceptService.deliverMedia(jobId, mediaUrl, mediaType || "video");
       return { success: true };
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Failed to deliver media:', error);
       return reply.status(500).send({ error: "Failed to deliver media" });
     }

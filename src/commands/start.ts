@@ -143,8 +143,8 @@ export async function startCommand(ctx: BotContext): Promise<void> {
     const msg = ctx.message as { text?: string } | undefined;
     const startPayload = msg?.text?.split(" ")[1];
 
-    const utmParams: any = {};
-    const attributionParams: any = {};
+    const utmParams: Record<string, unknown> = {};
+    const attributionParams: Record<string, unknown> = {};
 
     if (startPayload) {
       try {

@@ -116,8 +116,8 @@ export class NowPaymentsService {
   /**
    * Handle NOWPayments IPN webhook callback
    */
-  static async handleWebhook(body: any): Promise<{ success: boolean; message: string }> {
-    const { payment_status, order_id, payment_id } = body;
+  static async handleWebhook(body: Record<string, unknown>): Promise<{ success: boolean; message: string }> {
+    const { payment_status, order_id, payment_id } = body as { payment_status: string; order_id: string; payment_id: string };
 
     logger.info(`NOWPayments webhook: order=${order_id} status=${payment_status} payment_id=${payment_id}`);
 
@@ -162,7 +162,7 @@ export class NowPaymentsService {
         // Determine and update user tier — only change tier for subscription packages
         const plans = await getSubscriptionPlansAsync();
         const plan = plans[transaction.packageName ?? ''];
-        const userUpdateData: any = { creditBalance: { increment: credits } };
+        const userUpdateData: Record<string, unknown> = { creditBalance: { increment: credits } };
         if (plan && plan.tier) {
           userUpdateData.tier = plan.tier; // Only set tier for subscription packages
         }

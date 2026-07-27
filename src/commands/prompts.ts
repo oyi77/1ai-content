@@ -9,6 +9,8 @@ import { UserService } from "@/services/user.service";
 import { SavedPromptService } from "@/services/saved-prompt.service";
 import { prisma } from "@/config/database";
 import { canUseDailyFree, getNextDailyFreeReset } from "@/config/free-trial";
+import type { InlineKeyboardButton } from '@telegraf/types/markup';
+import { SavedPrompt } from '@prisma/client';
 import { t } from "@/i18n/translations";
 
 // ─── PROMPT LIBRARY DATA ────────────────────────────────────────────────────
@@ -557,8 +559,8 @@ export async function showNichePrompts(
 
   // Load user's saved prompts + admin prompts for this niche
   const telegramId = ctx.from?.id;
-  let savedPrompts: any[] = [];
-  let adminPrompts: any[] = [];
+  let savedPrompts: unknown[] = [];
+  let adminPrompts: SavedPrompt[] = [];
   try {
     // Admin prompts (userId=0) — global, added via admin panel
     adminPrompts = await prisma.savedPrompt.findMany({
@@ -591,7 +593,7 @@ export async function showNichePrompts(
   msg += `────────────────────────────────────────────\n\n`;
   msg += `Berikut prompt terbaik untuk niche ${niche.label}:\n\n`;
 
-  const rows: any[][] = [];
+  const rows: InlineKeyboardButton[][] = [];
   let rowNum = 1;
 
   // My saved prompts (user-specific)
@@ -607,7 +609,7 @@ export async function showNichePrompts(
   // Admin prompts (from admin panel) — appear first, unlimited
   if (hasAdmin) {
     msg += `⭐ **Dari Admin:**\n`;
-    adminPrompts.forEach((p: any) => {
+    adminPrompts.forEach(p => {
       msg += `**${rowNum}. ${p.title}**\n`;
       msg += `\`${p.prompt.slice(0, 100)}${p.prompt.length > 100 ? "..." : ""}\`\n\n`;
       rows.push([
@@ -986,7 +988,7 @@ export async function trendingCommand(ctx: BotContext): Promise<void> {
     msg += `Diupdate setiap hari berdasarkan penggunaan real user!\n\n`;
     msg += `─────────────────────────────────────\n\n`;
 
-    const buttons: any[][] = [];
+    const buttons: InlineKeyboardButton[][] = [];
 
     TRENDING_PROMPTS.forEach((t, i) => {
       const niche = PROMPT_LIBRARY[t.niche];
@@ -1153,7 +1155,7 @@ export async function showMyPrompts(
       msg += `📊 Dipakai ${p.usageCount}x\n\n`;
     });
 
-    const rows: any[][] = saved.map((p, i) => [
+    const rows: InlineKeyboardButton[][] = saved.map((p, i) => [
       { text: `${i + 1}. ${p.title}`, callback_data: `use_saved_${p.id}` },
       { text: "🗑️", callback_data: `del_saved_${p.id}_${nicheKey}` },
     ]);

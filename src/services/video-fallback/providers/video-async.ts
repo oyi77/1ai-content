@@ -135,7 +135,7 @@ async function generateViaFalai(params: VideoFallbackParams): Promise<VideoFallb
   const hasRefImage = !!(params.referenceImage && fs.existsSync(params.referenceImage));
   const model = hasRefImage ? "fal-ai/kling-video/v1.6/standard/image-to-video" : "fal-ai/kling-video/v1.6/standard/text-to-video";
 
-  const payload: any = {
+  const payload: Record<string, unknown> = {
     prompt: params.prompt,
     duration: "5",
     aspect_ratio: mapAspectRatioSimple(params.aspectRatio),
@@ -184,7 +184,7 @@ async function generateViaFalai(params: VideoFallbackParams): Promise<VideoFallb
 }
 
 async function generateViaSiliconFlow(params: VideoFallbackParams): Promise<VideoFallbackResult> {
-  const payload: any = {
+  const payload: Record<string, unknown> = {
     model: "Wan-AI/Wan2.1-T2V-14B",
     prompt: params.prompt,
     image_size: params.aspectRatio === "9:16" ? "480x832" : params.aspectRatio === "1:1" ? "640x640" : "832x480",
@@ -261,7 +261,7 @@ async function generateViaXAI(params: VideoFallbackParams): Promise<VideoFallbac
 }
 
 async function generateViaEvoLink(params: VideoFallbackParams): Promise<VideoFallbackResult> {
-  const body: any = {
+  const body: Record<string, unknown> = {
     model: "wan2.5-text-to-video",
     prompt: params.prompt,
     duration: params.duration,
@@ -317,7 +317,7 @@ async function generateViaEvoLink(params: VideoFallbackParams): Promise<VideoFal
 
 async function generateViaHypereal(params: VideoFallbackParams): Promise<VideoFallbackResult> {
   const model = params.referenceImage ? "kling-3-0-std-i2v" : "kling-3-0-std-t2v";
-  const input: any = { prompt: params.prompt };
+  const input: Record<string, unknown> = { prompt: params.prompt };
 
   if (params.referenceImage && fs.existsSync(params.referenceImage)) {
     const imgBase64 = readRefImageBase64(params.referenceImage);
@@ -391,7 +391,7 @@ async function generateViaByteplus(params: VideoFallbackParams): Promise<VideoFa
 
 async function generateViaKie(params: VideoFallbackParams): Promise<VideoFallbackResult> {
   const kieDuration = params.duration >= 8 ? (params.duration >= 10 ? 10 : 8) : 5;
-  const body: any = { prompt: params.prompt, duration: kieDuration, quality: "720p", waterMark: "kie.ai" };
+  const body: Record<string, unknown> = { prompt: params.prompt, duration: kieDuration, quality: "720p", waterMark: "kie.ai" };
 
   if (params.referenceImage && fs.existsSync(params.referenceImage)) {
     const imgBase64 = readRefImageBase64(params.referenceImage);
@@ -441,7 +441,7 @@ async function generateViaKie(params: VideoFallbackParams): Promise<VideoFallbac
 }
 
 async function generateViaPiAPI(params: VideoFallbackParams): Promise<VideoFallbackResult> {
-  const input: any = {
+  const input: Record<string, unknown> = {
     prompt: params.prompt,
     duration: Math.min(5, params.duration),
     aspect_ratio: mapAspectRatioSimple(params.aspectRatio),

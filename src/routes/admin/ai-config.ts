@@ -1,4 +1,4 @@
-import { FastifyInstance } from "fastify";
+import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { AITaskSettingsService } from "@/services/ai-task-settings.service";
 import { AIConfigService } from "@/services/ai-config.service";
 import { CustomProviderService } from "@/services/custom-provider.service";
@@ -24,7 +24,7 @@ const customProviderTestBodySchema = zodToJsonSchema(z.object({ model: z.string(
 
 export async function registerAIConfigRoutes(
   server: FastifyInstance,
-  verifyAdmin: (request: any, reply: any) => Promise<boolean>,
+  verifyAdmin: (request: FastifyRequest, reply: FastifyReply) => Promise<boolean>,
 ) {
   // ── AI Task Settings ──
 
@@ -159,8 +159,8 @@ export async function registerAIConfigRoutes(
     try {
       const balance = await CustomProviderService.checkBalance(id);
       return reply.send({ success: true, balance });
-    } catch (err: any) {
-      return reply.status(400).send({ success: false, error: err.message });
+    } catch (err) {
+      return reply.status(400).send({ success: false, error: (err as Error).message });
     }
   });
 
@@ -226,7 +226,24 @@ export async function registerAIConfigRoutes(
       return hasKey(fallbackKey);
     };
 
-    const models: any[] = [];
+
+interface ModelEntry {
+  id: string;
+  name: string;
+  provider: string;
+  providerName: string;
+  family: string;
+  vision: boolean;
+  reasoning: boolean;
+  toolCall: boolean;
+  openWeights: boolean;
+  inputModalities: string[];
+  outputModalities: string[];
+  contextWindow: number | null;
+  outputLimit: number | null;
+  releaseDate: string | null;
+}
+    const models: ModelEntry[] = [];
     for (const [providerId, providerData] of Object.entries(raw)) {
       if (!providerData || typeof providerData !== 'object') continue;
       if (!isProviderActive(providerId)) continue;
@@ -242,10 +259,10 @@ export async function registerAIConfigRoutes(
         const limits = m.limit as Record<string, number> | undefined;
         models.push({
           id: modelId,
-          name: m.name || modelId,
+          name: (m.name as string) || modelId,
           provider: providerId,
           providerName,
-          family: m.family || '',
+          family: (m.family as string) || '',
           vision: !!m.attachment,
           reasoning: !!m.reasoning,
           toolCall: !!m.tool_call,
@@ -254,20 +271,18 @@ export async function registerAIConfigRoutes(
           outputModalities: modalities?.output || ['text'],
           contextWindow: limits?.context || null,
           outputLimit: limits?.output || null,
-          releaseDate: m.release_date || null,
+          releaseDate: (m.release_date as string) || null,
         });
       }
     }
 
-    models.sort((a, b) => {
+    models.sort((a: ModelEntry, b: ModelEntry) => {
       if (a.vision !== b.vision) return a.vision ? -1 : 1;
       return a.provider.localeCompare(b.provider);
     });
 
-    const result = { models, total: models.length, visionCount: models.filter(m => m.vision).length };
-
+    const result = { models, total: models.length, visionCount: models.filter((m: ModelEntry) => m.vision).length };
     try { await redis.set(CACHE_KEY, JSON.stringify(result), 'EX', CACHE_TTL); } catch { /* non-fatal */ }
-
     return reply.send(result);
   });
 
@@ -355,8 +370,8 @@ You are an expert system administrator and architect for this platform. Give spe
         const content = geminiRes.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
         if (!content) return reply.status(500).send({ error: "Gemini returned empty response" });
         return { reply: content, model: geminiModel };
-      } catch (err: any) {
-        return reply.status(500).send({ error: `Gemini error: ${err.message}` });
+      } catch (err) {
+        return reply.status(500).send({ error: `Gemini error: ${(err as Error).message}` });
       }
     }
 
@@ -381,8 +396,8 @@ You are an expert system administrator and architect for this platform. Give spe
         );
         const geminiContent = geminiRes.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
         if (geminiContent) return { reply: geminiContent, model: 'gemini-2.0-flash (fallback)' };
-      } catch (fallbackErr: any) {
-        logger.warn('Gemini fallback also failed:', fallbackErr.message);
+      } catch (fallbackErr) {
+        logger.warn('Gemini fallback also failed:', (fallbackErr as Error).message);
       }
       return reply.status(500).send({ error: "AI is temporarily unavailable. Check OMNIROUTE_API_KEY or GEMINI_API_KEY." });
     }

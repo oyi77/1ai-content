@@ -27,7 +27,7 @@ export async function handleGenerationCallbacks(ctx: BotContext, data: string): 
     if (lastImageUrl) {
       try {
         const axios = (await import('axios')).default;
-        const headRes = await axios.head(lastImageUrl, { timeout: 5000 }).catch(async (err: any) => {
+        const headRes = await axios.head(lastImageUrl, { timeout: 5000 }).catch(async (err) => {
           // Some CDNs return 405 on HEAD but work fine on GET — treat as valid
           if (err?.response?.status === 405) return { status: 405 };
           throw err;

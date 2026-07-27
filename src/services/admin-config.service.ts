@@ -7,13 +7,14 @@
  */
 
 import { prisma } from "@/config/database";
+import type { InputJsonValue } from '@prisma/client/runtime/library';
 import { logger } from "@/utils/logger";
 import { PROVIDER_CONFIG } from "@/config/providers";
 
 const CACHE_TTL_MS = 60_000;
 
 interface CacheEntry {
-  value: any;
+  value: unknown;
   expiresAt: number;
 }
 
@@ -52,13 +53,13 @@ export class AdminConfigService {
   static async set(
     category: string,
     key: string,
-    value: any,
+    value: unknown,
     updatedBy?: bigint,
   ): Promise<void> {
     await prisma.pricingConfig.upsert({
       where: { category_key: { category, key } },
-      update: { value, updatedBy: updatedBy ?? null },
-      create: { category, key, value, updatedBy: updatedBy ?? null },
+      update: { value: value as InputJsonValue, updatedBy: updatedBy ?? null },
+      create: { category, key, value: value as InputJsonValue, updatedBy: updatedBy ?? null },
     });
     const cacheKey = `${category}:${key}`;
     AdminConfigService.cache.delete(cacheKey);
@@ -94,7 +95,7 @@ export class AdminConfigService {
   // ── Default seeding ────────────────────────────────────────────────────────
 
   static async initializeDefaults(): Promise<void> {
-    const defaults: Array<{ category: string; key: string; value: any }> = [];
+    const defaults: Array<{ category: string; key: string; value: unknown }> = [];
 
     // Provider config — seed from static PROVIDER_CONFIG
     for (const [name, cfg] of Object.entries(PROVIDER_CONFIG.video)) {
@@ -236,7 +237,7 @@ export class AdminConfigService {
         await prisma.pricingConfig.upsert({
           where: { category_key: { category, key } },
           update: {}, // never overwrite existing
-          create: { category, key, value },
+          create: { category, key, value: value as InputJsonValue },
         });
         seeded++;
       } catch (err) {

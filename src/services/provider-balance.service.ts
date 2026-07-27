@@ -159,13 +159,13 @@ export class ProviderBalanceService {
         );
       } catch (err) { logger.debug("Cache write failed:", err); }
       return result;
-    } catch (err: any) {
+    } catch (err) {
       return {
         provider: providerKey,
         balance: null,
         currency: "",
         status: "error",
-        error: (err.message || "").slice(0, 100),
+        error: ((err as Error).message || "").slice(0, 100),
       };
     }
   }
@@ -225,7 +225,7 @@ export class ProviderBalanceService {
         timeout: 10000,
       });
       const models = (resp.data?.data || [])
-        .map((m: any) => m.id)
+        .map((m: { id: string }) => m.id)
         .filter(Boolean);
       try {
         await redis.set(
@@ -265,11 +265,11 @@ export class ProviderBalanceService {
         latencyMs,
         error: result.error || "Unknown error",
       };
-    } catch (err: any) {
+    } catch (err) {
       return {
         success: false,
         latencyMs: Date.now() - start,
-        error: err.message,
+        error: (err as Error).message,
       };
     }
   }

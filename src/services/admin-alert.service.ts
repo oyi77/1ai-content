@@ -57,7 +57,7 @@ export function sendAdminAlert(
 
   telegramInstance
     .sendMessage(ALERT_CHAT_ID, message, { parse_mode: 'Markdown' })
-    .catch((err: any) => {
+    .catch(err => {
       logger.warn(`Admin alert delivery failed: ${err.message}`);
     });
 }

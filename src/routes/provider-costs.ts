@@ -23,7 +23,7 @@ export function registerProviderCostRoutes(server: FastifyInstance): void {
       });
 
       const costsWithTimestamp = costs.map(cost => {
-        const dbCost = dbCosts.find((c: any) => c.key === cost.providerKey);
+        const dbCost = dbCosts.find(c => c.key === cost.providerKey);
         return {
           ...cost,
           lastUpdated: dbCost?.updatedAt || null,
@@ -43,9 +43,9 @@ export function registerProviderCostRoutes(server: FastifyInstance): void {
           static: costs.filter(c => c.source === 'static').length,
         },
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error("Failed to fetch provider costs:", error);
-      return reply.status(500).send({ error: error.message });
+      return reply.status(500).send({ error: (error as Error).message });
     }
   });
 
@@ -73,9 +73,9 @@ export function registerProviderCostRoutes(server: FastifyInstance): void {
         cost,
         message: `Cost refreshed for ${key}`,
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error(`Failed to refresh provider cost ${request.params.key}:`, error);
-      return reply.status(500).send({ error: error.message });
+      return reply.status(500).send({ error: (error as Error).message });
     }
   });
 
@@ -100,9 +100,9 @@ export function registerProviderCostRoutes(server: FastifyInstance): void {
         cost: costUsd,
         message: `Provider cost updated for ${key}`,
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error(`Failed to set provider cost ${key}:`, error);
-      return reply.status(500).send({ error: error.message });
+      return reply.status(500).send({ error: (error as Error).message });
     }
   });
 
@@ -121,9 +121,9 @@ export function registerProviderCostRoutes(server: FastifyInstance): void {
           oldest: history[0],
         },
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error(`Failed to fetch cost history for ${key}:`, error);
-      return reply.status(500).send({ error: error.message });
+      return reply.status(500).send({ error: (error as Error).message });
     }
   });
 
@@ -137,9 +137,9 @@ export function registerProviderCostRoutes(server: FastifyInstance): void {
         synced,
         message: `Synced ${synced} provider costs from config`,
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error("Failed to sync provider costs:", error);
-      return reply.status(500).send({ error: error.message });
+      return reply.status(500).send({ error: (error as Error).message });
     }
   });
 
@@ -154,15 +154,21 @@ export function registerProviderCostRoutes(server: FastifyInstance): void {
       });
 
       const currentCostsMap = Object.fromEntries(
-        currentCosts.map((c: any) => [c.key, c.value])
+        currentCosts.map(c => [c.key, c.value])
       );
+
+      const getCostEntry = (key: string): { units?: number } | undefined => {
+        const v = currentCostsMap[key];
+        if (v && typeof v === 'object' && !Array.isArray(v)) return v as { units?: number };
+        return undefined;
+      };
 
       const withComparison = Object.entries(recommendations).map(([key, rec]) => ({
         ...rec,
         key,
-        currentUnits: (currentCostsMap[key]?.units || 0),
-        difference: rec.units - (currentCostsMap[key]?.units || 0),
-        needsUpdate: rec.units !== (currentCostsMap[key]?.units || 0),
+        currentUnits: (getCostEntry(key)?.units || 0),
+        difference: rec.units - (getCostEntry(key)?.units || 0),
+        needsUpdate: rec.units !== (getCostEntry(key)?.units || 0),
       }));
 
       return reply.send({
@@ -172,9 +178,9 @@ export function registerProviderCostRoutes(server: FastifyInstance): void {
           needsUpdate: withComparison.filter(r => r.needsUpdate).length,
         },
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error("Failed to calculate pricing recommendations:", error);
-      return reply.status(500).send({ error: error.message });
+      return reply.status(500).send({ error: (error as Error).message });
     }
   });
 
@@ -188,9 +194,9 @@ export function registerProviderCostRoutes(server: FastifyInstance): void {
         ...result,
         message: `Recalculated ${result.updated} unit costs`,
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error("Failed to recalculate prices:", error);
-      return reply.status(500).send({ error: error.message });
+      return reply.status(500).send({ error: (error as Error).message });
     }
   });
 
@@ -207,9 +213,9 @@ export function registerProviderCostRoutes(server: FastifyInstance): void {
           ? `${drift.driftedProviders.length} providers have significant cost changes`
           : "All provider costs are within threshold",
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error("Failed to check price drift:", error);
-      return reply.status(500).send({ error: error.message });
+      return reply.status(500).send({ error: (error as Error).message });
     }
   });
 
@@ -236,9 +242,9 @@ export function registerProviderCostRoutes(server: FastifyInstance): void {
         ...calculation,
         input: { providerKey, units: parseInt(units) },
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error("Failed to simulate pricing:", error);
-      return reply.status(500).send({ error: error.message });
+      return reply.status(500).send({ error: (error as Error).message });
     }
   });
 }

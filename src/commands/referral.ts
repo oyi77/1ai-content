@@ -58,7 +58,7 @@ export async function referralCommand(ctx: BotContext): Promise<void> {
     };
 
     await ctx.reply(msg, { reply_markup: markup });
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Error in referral command:', error);
     await ctx.reply(t('referral.load_failed', 'id'));
   }

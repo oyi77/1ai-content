@@ -5,6 +5,7 @@ import { prisma } from "@/config/database";
 import { UserService } from "@/services/user.service";
 import { PaymentSettingsService } from "@/services/payment-settings.service";
 import { t } from "@/i18n/translations";
+import type { InlineKeyboardButton } from '@telegraf/types/markup';
 
 export async function handleReferralCallbacks(ctx: BotContext, data: string): Promise<boolean> {
   if (data === 'referral_explain') {
@@ -123,7 +124,7 @@ export async function handleReferralCallbacks(ctx: BotContext, data: string): Pr
         });
       }
 
-      const buttons: any[][] = [];
+      const buttons: InlineKeyboardButton[][] = [];
       if (creditsCanConvert > 0) {
         buttons.push([{ text: t('cb2.convert_to_credits_btn', lang, { credits: creditsCanConvert }), callback_data: "referral_convert_credits" }]);
         buttons.push([{ text: t('cb2.sell_to_admin_btn', lang, { amount: (available / 2).toLocaleString("id-ID") }), callback_data: "referral_sell_admin" }]);

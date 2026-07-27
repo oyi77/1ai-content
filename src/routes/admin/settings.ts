@@ -226,8 +226,8 @@ export async function registerSettingsRoutes(server: FastifyInstance) {
       }),
     ]);
 
-    let dailyRevenue: any[] = [];
-    let dailyCosts: any[] = [];
+    let dailyRevenue: unknown[] = [];
+    let dailyCosts: unknown[] = [];
     try {
       dailyRevenue = await prisma.$queryRaw`
         SELECT DATE(created_at) as date,
@@ -258,10 +258,13 @@ export async function registerSettingsRoutes(server: FastifyInstance) {
     const currentRate = getConfig().USD_TO_IDR_RATE || 16000;
     const totalCostIdr = Math.round(totalCostUsd * currentRate);
 
-    const fixedDailyCosts = dailyCosts.map((d: any) => ({
-      ...d,
-      cost_idr: Math.round((d.cost_usd || 0) * currentRate),
-    }));
+    const fixedDailyCosts = dailyCosts.map((d) => {
+      const dc = d as Record<string, unknown>;
+      return {
+        ...dc,
+        cost_idr: Math.round(((dc.cost_usd as number) || 0) * currentRate),
+      };
+    });
 
     return {
       period: days,

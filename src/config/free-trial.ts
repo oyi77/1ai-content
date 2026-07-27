@@ -34,11 +34,11 @@ export interface UserFreeTrial {
   selectedNiche: string | null;
 }
 
-export function canUseWelcomeBonus(user: any): boolean {
+export function canUseWelcomeBonus(user: UserFreeTrial): boolean {
   return !user.welcomeBonusUsed;
 }
 
-export function canUseDailyFree(user: any): boolean {
+export function canUseDailyFree(user: UserFreeTrial): boolean {
   if (!FREE_TRIAL_CONFIG.dailyFree.enabled) return false;
   // If no reset time is set but daily free was already used, deny access
   if (!user.dailyFreeResetAt) return !user.dailyFreeUsed;

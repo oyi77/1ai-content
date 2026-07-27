@@ -166,8 +166,8 @@ export class VideoAnalysisService {
         if (!fs.existsSync(tempPath) || fs.statSync(tempPath).size === 0) {
           throw new ValidationError('Downloaded file is empty', 'downloadedFile');
         }
-      } catch (err: any) {
-        logger.warn(`[VideoAnalysis] Download failed: ${err.message}`);
+      } catch (err) {
+        logger.warn(`[VideoAnalysis] Download failed: ${(err as Error).message}`);
         if (!getConfig().GEMINI_API_KEY) return buildFallbackResult(videoUrl);
         // Try to proceed with Gemini using the original URL directly
         return VideoAnalysisService._analyzeViaUrl(videoUrl);
@@ -181,8 +181,8 @@ export class VideoAnalysisService {
         ], { timeout: 15_000 });
         const parsed = parseFloat(stdout.trim());
         if (!isNaN(parsed)) totalDuration = Math.round(parsed);
-      } catch (err: any) {
-        logger.warn(`[VideoAnalysis] ffprobe failed: ${err.message}`);
+      } catch (err) {
+        logger.warn(`[VideoAnalysis] ffprobe failed: ${(err as Error).message}`);
       }
 
       // ── 3. Extract frames (1 per 5s, max 8) ───────────────────────────────
@@ -198,8 +198,8 @@ export class VideoAnalysisService {
           .slice(0, 8)
           .map(f => path.join(framesDir, f));
         keyFramePaths.push(...files);
-      } catch (err: any) {
-        logger.warn(`[VideoAnalysis] ffmpeg frame extraction failed: ${err.message}`);
+      } catch (err) {
+        logger.warn(`[VideoAnalysis] ffmpeg frame extraction failed: ${(err as Error).message}`);
       }
 
       // ── 4. Gemini analysis ─────────────────────────────────────────────────
@@ -309,8 +309,8 @@ Break the video into 1 scene per ~5 seconds (max 8 scenes total). Make each prom
       });
       responseText =
         response.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    } catch (err: any) {
-      logger.warn(`[VideoAnalysis] Gemini API failed (${err.message}), using config-driven fallback chain`);
+    } catch (err) {
+      logger.warn(`[VideoAnalysis] Gemini API failed (${(err as Error).message}), using config-driven fallback chain`);
       return VideoAnalysisService._analyzeViaFallbackChain(keyFramePaths, originalUrl);
     }
 
@@ -321,7 +321,7 @@ Break the video into 1 scene per ~5 seconds (max 8 scenes total). Make each prom
 
       const storyboard: AnalyzedScene[] = (parsed.storyboard || [])
         .slice(0, 8)
-        .map((s: any, idx: number) => ({
+        .map((s: Record<string, unknown>, idx: number) => ({
           scene: s.scene ?? idx + 1,
           startTime: s.startTime ?? 0,
           duration: s.duration ?? 5,
@@ -341,8 +341,8 @@ Break the video into 1 scene per ~5 seconds (max 8 scenes total). Make each prom
         transcript: parsed.transcript || '',
         storyboard,
       };
-    } catch (parseErr: any) {
-      logger.warn(`[VideoAnalysis] JSON parse failed: ${parseErr.message}`);
+    } catch (parseErr) {
+      logger.warn(`[VideoAnalysis] JSON parse failed: ${(parseErr as Error).message}`);
       // Regex fallback
       const match = responseText.match(/\{[\s\S]*\}/);
       if (match) {
@@ -350,7 +350,7 @@ Break the video into 1 scene per ~5 seconds (max 8 scenes total). Make each prom
           const parsed = JSON.parse(match[0]);
           const storyboard: AnalyzedScene[] = (parsed.storyboard || [])
             .slice(0, 8)
-            .map((s: any, idx: number) => ({
+            .map((s: Record<string, unknown>, idx: number) => ({
               scene: s.scene ?? idx + 1,
               startTime: s.startTime ?? 0,
               duration: s.duration ?? 5,
@@ -404,7 +404,7 @@ Break the video into 1 scene per ~5 seconds (max 8 scenes total). Make each prom
       const parsed = JSON.parse(jsonStr);
       const storyboard: AnalyzedScene[] = (parsed.storyboard || [])
         .slice(0, 8)
-        .map((s: any, idx: number) => ({
+        .map((s: Record<string, unknown>, idx: number) => ({
           scene: s.scene ?? idx + 1,
           startTime: s.startTime ?? 0,
           duration: s.duration ?? 5,
@@ -440,8 +440,8 @@ Break the video into 1 scene per ~5 seconds (max 8 scenes total). Make each prom
       try {
         const result = await VideoAnalysisService._analyzeViaProvider(cfg.provider, cfg.model, keyFramePaths, videoUrl);
         if (result.success) return result;
-      } catch (err: any) {
-        logger.warn(`[VideoAnalysis] Fallback provider ${cfg.provider}/${cfg.model} failed: ${err.message}`);
+      } catch (err) {
+        logger.warn(`[VideoAnalysis] Fallback provider ${cfg.provider}/${cfg.model} failed: ${(err as Error).message}`);
       }
     }
 
@@ -498,7 +498,7 @@ Break the video into 1 scene per ~5 seconds (max 8 scenes total). Make each prom
           const parsed = JSON.parse(jsonStr);
           const storyboard: AnalyzedScene[] = (parsed.storyboard || [])
             .slice(0, 8)
-            .map((s: any, idx: number) => ({
+            .map((s: Record<string, unknown>, idx: number) => ({
               scene: s.scene ?? idx + 1,
               startTime: s.startTime ?? 0,
               duration: s.duration ?? 5,
@@ -518,8 +518,8 @@ Break the video into 1 scene per ~5 seconds (max 8 scenes total). Make each prom
               keyFramePaths,
             };
           }
-        } catch (frameErr: any) {
-          logger.warn(`[VideoAnalysis] OmniRoute frame analysis failed: ${frameErr.message}`);
+        } catch (frameErr) {
+          logger.warn(`[VideoAnalysis] OmniRoute frame analysis failed: ${(frameErr as Error).message}`);
         }
       }
     }
@@ -532,7 +532,7 @@ Break the video into 1 scene per ~5 seconds (max 8 scenes total). Make each prom
         const jsonStr = extractJSON(result.content);
         const parsed = JSON.parse(jsonStr);
         const storyboard: AnalyzedScene[] = (parsed.storyboard || [])
-          .map((s: any, idx: number) => ({
+          .map((s: Record<string, unknown>, idx: number) => ({
             scene: s.scene ?? idx + 1,
             startTime: s.startTime ?? 0,
             duration: s.duration ?? 5,
@@ -544,8 +544,8 @@ Break the video into 1 scene per ~5 seconds (max 8 scenes total). Make each prom
           return { success: true, niche: parsed.niche || 'general', style: parsed.style || '', totalDuration: 15, transcript: '', storyboard, keyFramePaths };
         }
       }
-    } catch (textErr: any) {
-      logger.warn(`[VideoAnalysis] OmniRoute text fallback failed: ${textErr.message}`);
+    } catch (textErr) {
+      logger.warn(`[VideoAnalysis] OmniRoute text fallback failed: ${(textErr as Error).message}`);
     }
 
     logger.warn('[VideoAnalysis] OmniRoute analysis failed, trying Groq vision fallback');
@@ -597,7 +597,7 @@ Break the video into 1 scene per ~5 seconds (max 8 scenes total). Make each prom
 
         const jsonStr = extractJSON(content);
         const parsed = JSON.parse(jsonStr);
-        const storyboard: AnalyzedScene[] = (parsed.storyboard || []).slice(0, 8).map((s: any, idx: number) => ({
+        const storyboard: AnalyzedScene[] = (parsed.storyboard || []).slice(0, 8).map((s: Record<string, unknown>, idx: number) => ({
           scene: s.scene ?? idx + 1,
           startTime: s.startTime ?? 0,
           duration: s.duration ?? 5,
@@ -617,8 +617,8 @@ Break the video into 1 scene per ~5 seconds (max 8 scenes total). Make each prom
             keyFramePaths,
           };
         }
-      } catch (err: any) {
-        logger.warn(`[VideoAnalysis] Groq vision frame failed: ${err.message}`);
+      } catch (err) {
+        logger.warn(`[VideoAnalysis] Groq vision frame failed: ${(err as Error).message}`);
       }
     }
 

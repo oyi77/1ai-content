@@ -91,16 +91,16 @@ export async function handleEbookCreate(ctx: BotContext): Promise<void> {
  */
 export async function handleEbookIdea(
   ctx: BotContext,
-  message: any
+  message: Record<string, unknown>
 ): Promise<void> {
   const lang = ctx.session?.userLang || "id";
 
-  if (!message.text || message.text.length < 10) {
+  if (!message.text || (message.text as string).length < 10) {
     await ctx.reply("❌ Ide terlalu pendek. Minimal 10 karakter.");
     return;
   }
 
-  ctx.session!.ebookIdea = message.text;
+  ctx.session!.ebookIdea = message.text as string;
   ctx.session!.state = "EBOOK_TITLE";
 
   await ctx.reply(
@@ -111,16 +111,16 @@ export async function handleEbookIdea(
 }
 
 /**
- * Handle title input
+ * Handle ebook title input
  */
 export async function handleEbookTitle(
   ctx: BotContext,
-  message: any
+  message: Record<string, unknown>
 ): Promise<void> {
   const lang = ctx.session?.userLang || "id";
 
   const title =
-    message.text === "auto" ? undefined : message.text;
+    (message.text as string) === "auto" ? undefined : message.text as string;
 
   ctx.session!.ebookTitle = title;
   ctx.session!.state = "EBOOK_CHAPTERS";
@@ -136,15 +136,15 @@ export async function handleEbookTitle(
 }
 
 /**
- * Handle chapter count input
+ * Handle ebook chapters input
  */
 export async function handleEbookChapters(
   ctx: BotContext,
-  message: any
+  message: Record<string, unknown>
 ): Promise<void> {
   const lang = ctx.session?.userLang || "id";
 
-  const chapters = parseInt(message.text);
+  const chapters = parseInt(message.text as string);
   if (isNaN(chapters) || chapters < 3 || chapters > 50) {
     await ctx.reply("❌ Jumlah chapter harus 3-50.");
     return;

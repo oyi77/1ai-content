@@ -3,7 +3,7 @@
  *
  * Credit/balance management and refund processing
  */
-
+import { Telegram } from 'telegraf';
 import { prisma } from '@/config/database';
 import { logger } from '@/utils/logger';
 import { redis } from '@/config/redis';
@@ -227,7 +227,7 @@ export class UserCreditsService {
    * Preserves purchased credits, zeros out subscription credits.
    * Notifies users via Telegram.
    */
-  static async expireStaleCredits(telegram?: any): Promise<number> {
+  static async expireStaleCredits(telegram?: Telegram): Promise<number> {
     const now = new Date();
     const expired = await prisma.user.findMany({
       where: {

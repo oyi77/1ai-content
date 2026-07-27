@@ -16,6 +16,7 @@ import { sendAdminAlert } from '@/services/admin-alert.service';
 import { VideoService } from '@/services/video.service';
 import { UserService } from '@/services/user.service';
 import { GeminiGenService } from '@/services/geminigen.service';
+import type { VideoFallbackResult } from "@/services/video-fallback.service";
 import { generateVideoWithFallback } from '@/services/video-fallback.service';
 import { getVideoCreditCostAsync } from '@/config/pricing';
 import { actionableError } from '@/utils/errors';
@@ -176,8 +177,8 @@ async function generateVOScript(
   try {
     const script = await generateVOScriptWithAI(niche, storyboard, language, totalDuration);
     if (script && script.length > 20) return script;
-  } catch (err: any) {
-    logger.warn('AI VO script generation failed, using template fallback:', err.message);
+  } catch (err) {
+    logger.warn('AI VO script generation failed, using template fallback:', (err as Error).message);
   }
 
   // Template fallback
@@ -279,7 +280,7 @@ Requirements:
   const usageMeta = response.data?.usageMetadata;
   if (usageMeta) {
     const { trackTokens } = await import('../services/token-tracker.service.js');
-    trackTokens({ provider: 'gemini-direct', model: geminiModel, service: 'vo_script_generation', promptTokens: usageMeta.promptTokenCount || 0, completionTokens: usageMeta.candidatesTokenCount || 0 }).catch(err => logger.warn('Token tracking failed', { error: err.message }));
+    trackTokens({ provider: 'gemini-direct', model: geminiModel, service: 'vo_script_generation', promptTokens: usageMeta.promptTokenCount || 0, completionTokens: usageMeta.candidatesTokenCount || 0 }).catch(err => logger.warn('Token tracking failed', { error: (err as Error).message }));
   }
 
   return text.trim();
@@ -395,8 +396,8 @@ async function applyVOPipeline(
 
     // Neither VO nor subtitles enabled
     return videoPath;
-  } catch (err: any) {
-    logger.error(`VO pipeline error for ${jobId}: ${err.message}. Delivering raw video.`);
+  } catch (err) {
+    logger.error(`VO pipeline error for ${jobId}: ${(err as Error).message}. Delivering raw video.`);
     await telegram.sendMessage(chatId, t('worker.vo_failed', options.language || 'id')).catch(() => {});
     return videoPath;
   }
@@ -538,8 +539,8 @@ async function processSingleScene(
     } else {
       logger.info(`[QualityCheck] Video ${jobId} passed with score ${qcResult.score}/10`);
     }
-  } catch (qcErr: any) {
-    logger.warn(`[QualityCheck] Quality check error for ${jobId}, delivering as-is:`, qcErr.message);
+  } catch (qcErr) {
+    logger.warn(`[QualityCheck] Quality check error for ${jobId}, delivering as-is:`, (qcErr as Error).message);
   }
 
   // Apply Voice Over pipeline (if enabled)
@@ -617,14 +618,14 @@ async function processExtendedScenes(
   const sceneVideos: string[] = new Array(scenes).fill('');
 
   // Helper: generate a single scene with 1 retry on failure
-  async function generateSceneWithRetry(sceneIndex: number, useExtend: boolean, lastUuidRef: string | null): Promise<{ result: any; scenePath: string }> {
+  async function generateSceneWithRetry(sceneIndex: number, useExtend: boolean, lastUuidRef: string | null): Promise<{ result: VideoFallbackResult | import("@/services/geminigen.service").VideoGenerationResult; scenePath: string }> {
     const scene = storyboard[sceneIndex];
     const scenePath = path.join(VIDEO_DIR, `${jobId}_scene_${sceneIndex + 1}.mp4`);
     const prompt = buildPrompt(scene.description, platform, scene.duration, customPrompt);
 
     logger.info(`Generating scene ${sceneIndex + 1}/${scenes} for job ${jobId}: ${scene.description}`);
 
-    let result: any;
+    let result: VideoFallbackResult | import("@/services/geminigen.service").VideoGenerationResult;
 
     // Use per-scene generated image as reference if available (from image_set flow)
     const sceneRef = job.data.userImages?.find(u => u.sceneIndex === sceneIndex)?.url || referenceImage;
@@ -642,8 +643,8 @@ async function processExtendedScenes(
     } else if (useExtend && lastUuidRef) {
       try {
         result = await GeminiGenService.generateExtend({ prompt, refHistory: lastUuidRef });
-      } catch (extendErr: any) {
-        logger.warn(`Scene ${sceneIndex + 1} extend failed, falling back to standalone: ${extendErr.message}`);
+      } catch (extendErr) {
+        logger.warn(`Scene ${sceneIndex + 1} extend failed, falling back to standalone: ${(extendErr as Error).message}`);
         result = await generateVideoWithFallback({
           prompt,
           duration: scene.duration,
@@ -701,7 +702,7 @@ async function processExtendedScenes(
     await VideoService.updateProgress(jobId, progress);
     const percent = Math.round((1 / scenes) * 100);
     await notifyProgress(telegram, chatId, `\ud83c\udfac Scene 1/${scenes} complete (${percent}%)`);
-  } catch (err: any) {
+  } catch (err) {
     cancelTimeout();
     // Check if already refunded (prevent double refund on BullMQ retry)
     const existingVideo = await VideoService.getByJobId(jobId);
@@ -710,16 +711,16 @@ async function processExtendedScenes(
       return;
     }
     const creditCost = job.data.creditCost ?? await getVideoCreditCostAsync(duration);
-    await VideoService.updateStatus(jobId, 'failed', err.message);
+    await VideoService.updateStatus(jobId, 'failed', (err as Error).message);
     // Atomic lock to prevent double-refund on BullMQ retry
     const refundLockKey = `refund-lock:${jobId}`;
     const lockAcquired = await redis.set(refundLockKey, '1', 'EX', 3600, 'NX');
     if (!lockAcquired) {
       logger.warn(`Refund lock already held for job ${jobId} — skipping duplicate refund`);
     } else {
-      await UserService.refundCredits(telegramId, creditCost, jobId, err.message);
+      await UserService.refundCredits(telegramId, creditCost, jobId, (err as Error).message);
     }
-    const sceneUserMessage = actionableError(err.message, { jobId });
+    const sceneUserMessage = actionableError((err as Error).message, { jobId });
     await telegram.sendMessage(
       chatId,
       `Video generation failed (scene 1)\n\nJob ID: ${jobId}\n${sceneUserMessage}\n\nCredits refunded.`,
@@ -732,7 +733,7 @@ async function processExtendedScenes(
   const BATCH_SIZE = 3;
   for (let batchStart = 1; batchStart < scenes; batchStart += BATCH_SIZE) {
     const batchEnd = Math.min(batchStart + BATCH_SIZE, scenes);
-    const batchPromises: Promise<{ sceneIndex: number; result: any; scenePath: string }>[] = [];
+    const batchPromises: Promise<{ sceneIndex: number; result: VideoFallbackResult | import("@/services/geminigen.service").VideoGenerationResult; scenePath: string }>[] = [];
 
     for (let i = batchStart; i < batchEnd; i++) {
       batchPromises.push(
@@ -849,8 +850,8 @@ async function processExtendedScenes(
       colorGrade: true,
     });
     logger.info(`Post-processing complete for job ${jobId}`);
-  } catch (ppErr: any) {
-    logger.warn(`Post-processing failed for job ${jobId}, using raw concat: ${ppErr.message}`);
+  } catch (ppErr) {
+    logger.warn(`Post-processing failed for job ${jobId}, using raw concat: ${(ppErr as Error).message}`);
     // Fallback: use raw concatenated video
     if (fs.existsSync(rawConcatPath)) {
       fs.copyFileSync(rawConcatPath, finalPath);
@@ -879,8 +880,8 @@ async function processExtendedScenes(
     } else {
       logger.info(`[QualityCheck] Multi-scene video ${jobId} passed with score ${qcResult.score}/10`);
     }
-  } catch (qcErr: any) {
-    logger.warn(`[QualityCheck] Quality check error for multi-scene ${jobId}:`, qcErr.message);
+  } catch (qcErr) {
+    logger.warn(`[QualityCheck] Quality check error for multi-scene ${jobId}:`, (qcErr as Error).message);
   }
 
   // Apply Voice Over pipeline (if enabled)
@@ -1102,8 +1103,8 @@ async function handleCampaignJobComplete(
     }
   } finally {
     // Cleanup Redis
-    await redis.del(urlsKey).catch(err => logger.warn('Redis cleanup failed', { error: err.message }));
-    await redis.del(mergeKey).catch(err => logger.warn('Redis cleanup failed', { error: err.message }));
+    await redis.del(urlsKey).catch(err => logger.warn('Redis cleanup failed', { error: (err as Error).message }));
+    await redis.del(mergeKey).catch(err => logger.warn('Redis cleanup failed', { error: (err as Error).message }));
   }
 }
 
@@ -1217,7 +1218,7 @@ async function sendVideoToUser(
         logger.warn(`Failed to generate caption for job ${jobId}:`, captionErr);
       }
     }
-  } catch (sendErr: any) {
+  } catch (sendErr) {
     logger.error(`Failed to send video notification for job ${jobId}:`, sendErr);
   }
 }
@@ -1306,7 +1307,7 @@ export function startVideoWorker(bot: { telegram: Telegram }): Worker<VideoGener
           await processExtendedScenes(job, telegram);
         }
         logger.info(`Video job ${job.id} completed successfully`);
-      } catch (error: any) {
+      } catch (error) {
         logger.error(`Video job ${job.id} failed with unhandled error:`, error);
 
         // Last-resort refund and notification
@@ -1318,16 +1319,16 @@ export function startVideoWorker(bot: { telegram: Telegram }): Worker<VideoGener
           } else {
             const telegramId = BigInt(job.data.userId);
             const creditCost = job.data.creditCost ?? await getVideoCreditCostAsync(job.data.duration);
-            await VideoService.updateStatus(job.data.jobId, 'failed', error.message);
+            await VideoService.updateStatus(job.data.jobId, 'failed', (error as Error).message);
             // Atomic lock to prevent double-refund on BullMQ retry
             const refundLockKey = `refund-lock:${job.data.jobId}`;
             const lockAcquired = await redis.set(refundLockKey, '1', 'EX', 3600, 'NX');
             if (!lockAcquired) {
               logger.warn(`Refund lock already held for job ${job.data.jobId} — skipping duplicate refund`);
             } else {
-              await UserService.refundCredits(telegramId, creditCost, job.data.jobId, error.message);
+              await UserService.refundCredits(telegramId, creditCost, job.data.jobId, (error as Error).message);
             }
-            const workerUserMessage = actionableError(error.message, { jobId: job.data.jobId });
+            const workerUserMessage = actionableError((error as Error).message, { jobId: job.data.jobId });
             await telegram.sendMessage(
               job.data.chatId,
               `Video generation failed\n\nJob ID: ${job.data.jobId}\n${workerUserMessage}\n\nCredits refunded.`,
@@ -1353,13 +1354,13 @@ export function startVideoWorker(bot: { telegram: Telegram }): Worker<VideoGener
   workerInstance.on('failed', (job, err) => {
     logger.error(`Video worker: job ${job?.id} failed:`, err);
     sendAdminAlert('critical', 'Video Generation Failed', {
-      jobId: job?.id, error: err?.message?.slice(0, 300),
+      jobId: job?.id, error: (err as Error)?.message?.slice(0, 300),
     });
   });
 
   workerInstance.on('error', (err) => {
     logger.error('Video worker error:', err);
-    sendAdminAlert('warning', 'Video Worker Error', { error: err?.message?.slice(0, 300) });
+    sendAdminAlert('warning', 'Video Worker Error', { error: (err as Error)?.message?.slice(0, 300) });
   });
 
   logger.info('Video generation worker started (concurrency: 3)');

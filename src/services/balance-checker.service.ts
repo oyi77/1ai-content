@@ -70,9 +70,9 @@ async function httpGet(
 async function httpPost(
   url: string,
   apiKey: string,
-  body: any,
+  body: Record<string, unknown>,
   timeout = 8000,
-): Promise<any> {
+): Promise<unknown> {
   const res = await axios.post(url, body, {
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -156,8 +156,9 @@ const runwareStrategy: BalanceStrategyEntry = {
   name: 'Runware',
   async check(baseUrl, apiKey) {
     const base = baseUrl.replace(/\/v\d+\/?$/, '');
-    const data = await httpPost(`${base}/v2`, apiKey, [{ taskType: 'authentication', apiKey }]);
-    const auth = (data?.data ?? []).find((d: any) => d.taskType === 'authentication');
+    const data = (await httpPost(`${base}/v2`, apiKey, { items: [{ taskType: 'authentication', apiKey }] })) as Record<string, unknown>;
+    const items = (Array.isArray(data?.data) ? data.data : []) as Record<string, unknown>[];
+    const auth = items.find((d) => d.taskType === 'authentication');
     return {
       success: true,
       balance: safe('creditsBalance', auth?.creditsBalance),
@@ -555,17 +556,26 @@ const genericOpenAIStrategy: BalanceStrategyEntry = {
   name: 'Generic/OpenAI-compat',
   async check(baseUrl, apiKey) {
     const candidates = [
-      { path: '/balance', parse: (d: any) => d?.balance ?? d?.data?.balance ?? d?.total_available },
-      { path: '/dashboard/billing/credit_grants', parse: (d: any) => {
-          const g = d?.grants?.data?.[0];
+      { path: '/balance', parse: (d: Record<string, unknown>) => {
+          const data = d?.data as Record<string, unknown> | undefined;
+          return (d?.balance as number) ?? (data?.balance as number) ?? (d?.total_available as number);
+        }},
+      { path: '/dashboard/billing/credit_grants', parse: (d: Record<string, unknown>) => {
+          const grants = d?.grants as Record<string, unknown> | undefined;
+          const grantData = grants?.data;
+          const g = Array.isArray(grantData) ? (grantData[0] as Record<string, unknown>) : undefined;
           if (!g) return undefined;
           const a = Number(g.amount ?? 0);
           const u = Number(g.used ?? 0);
           return isNaN(a) ? undefined : a - u;
         }},
-      { path: '/dashboard/billing/subscription', parse: (d: any) => d?.soft_limit_usd ?? d?.hard_limit_usd },
-      { path: '/user/info', parse: (d: any) => d?.data?.balance ?? d?.balance },
-      { path: '/account', parse: (d: any) => d?.data?.balance ?? d?.balance ?? d?.credits?.remaining },
+      { path: '/dashboard/billing/subscription', parse: (d: Record<string, unknown>) => (d?.soft_limit_usd as number) ?? (d?.hard_limit_usd as number) },
+      { path: '/user/info', parse: (d: Record<string, unknown>) => ((d?.data as Record<string, unknown> | undefined)?.balance as number) ?? (d?.balance as number) },
+      { path: '/account', parse: (d: Record<string, unknown>) => {
+          const data = d?.data as Record<string, unknown> | undefined;
+          const credits = d?.credits as Record<string, unknown> | undefined;
+          return (data?.balance as number) ?? (d?.balance as number) ?? (credits?.remaining as number);
+        }},
     ];
 
     for (const { path, parse } of candidates) {

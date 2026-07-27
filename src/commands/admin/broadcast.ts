@@ -92,7 +92,7 @@ export async function adminBroadcastCommand(ctx: BotContext): Promise<void> {
     let users;
     if (filters.tier || filters.region || filters.activeSince) {
       // Build where clause for filtered users
-      const whereClause: any = {};
+      const whereClause: Record<string, unknown> = {};
       
       if (filters.tier) {
         whereClause.tier = filters.tier;
@@ -158,11 +158,11 @@ export async function adminBroadcastCommand(ctx: BotContext): Promise<void> {
       'Users will receive this message via Telegram.',
       { parse_mode: 'Markdown' }
     );
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Error broadcasting message:', error);
     await ctx.reply(
       '❌ *Error Broadcasting Message*\n\n' +
-      `Failed to broadcast message: ${error.message || 'Unknown error'}`,
+      `Failed to broadcast message: ${(error as Error).message || 'Unknown error'}`,
       { parse_mode: 'Markdown' }
     );
   }

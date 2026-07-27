@@ -312,7 +312,7 @@ export class GamificationService {
 
     const totalGenerates = streak?.totalGenerates || 0;
     const referralCount = referrals.filter((r) => r.tier === 1).length;
-    const hasDownline3Level = referrals.some((r: any) => r.tier === 3);
+    const hasDownline3Level = referrals.some(r => r.tier === 3);
 
     // Calculate months active from user creation
     const user = await prisma.user.findUnique({ where: { telegramId: userId }, select: { createdAt: true } });
@@ -416,7 +416,7 @@ export class GamificationService {
       : '🔥 Streak: Belum mulai';
 
     const badgeText = badges.length > 0
-      ? `🎖️ Badge: ${badges.map((b: any) => BADGES[b.badgeId]?.emoji || '?').join(' ')} (${badges.length} badge)`
+      ? `🎖️ Badge: ${badges.map(b => BADGES[b.badgeId]?.emoji || '?').join(' ')} (${badges.length} badge)`
       : '🎖️ Badge: Belum ada';
 
     return `${streakText}\n${badgeText}`;

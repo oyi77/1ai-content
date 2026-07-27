@@ -25,7 +25,7 @@ interface ProviderCost {
     model?: string;
     region?: string;
     currency?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 
@@ -276,7 +276,7 @@ export class ProviderCostTrackerService {
     providerKey: string,
     units: number,
     marginPercent?: number
-  ): Promise<{ price: number; costUsd: number; margin: number; breakdown: any }> {
+  ): Promise<{ price: number; costUsd: number; margin: number; breakdown: Record<string, unknown> }> {
     const cost = await this.getProviderCost(providerKey);
     const costUsd = cost?.costUsd || 0;
     const margin = marginPercent ?? await PaymentSettingsService.getMarginPercent();

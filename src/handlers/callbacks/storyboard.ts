@@ -78,7 +78,7 @@ export async function handleStoryboardCallbacks(
       });
 
       // Build storyboard for video generation worker
-      const storyboard = sbData.scenes.map((s: any, i: number) => ({
+      const storyboard = sbData.scenes.map((s: Record<string, unknown>, i: number) => ({
         scene: i + 1,
         duration: s.duration,
         description: s.description,

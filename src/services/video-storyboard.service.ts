@@ -173,15 +173,15 @@ async function generateStoryboardWithLLM(
     if (!arrMatch) return null;
     const parsed = JSON.parse(arrMatch[0]);
     if (!Array.isArray(parsed) || parsed.length === 0) return null;
-    return parsed.map((s: any, idx: number) => ({
+    return parsed.map((s, idx: number) => ({
       scene: s.scene ?? idx + 1,
       duration: s.duration ?? 5,
       type: s.type ?? 'scene',
       description: s.description ?? '',
       prompt: s.prompt ?? '',
     }));
-  } catch (err: any) {
-    logger.warn(`[VideoStoryboardService] generateStoryboardWithLLM parse failed: ${err.message}`);
+  } catch (err) {
+    logger.warn(`[VideoStoryboardService] generateStoryboardWithLLM parse failed: ${(err as Error).message}`);
     return null;
   }
 }
@@ -287,8 +287,8 @@ Visual style: Cinematic, high quality, engaging transitions.
           scenes = llmScenes;
         }
       }
-    } catch (err: any) {
-      logger.warn(`[VideoStoryboardService] Storyboard LLM failed, using template: ${err.message}`);
+    } catch (err) {
+      logger.warn(`[VideoStoryboardService] Storyboard LLM failed, using template: ${(err as Error).message}`);
     }
 
     // Generate caption
@@ -447,8 +447,8 @@ Visual style: Cinematic, high quality, engaging transitions.
         return `${params.productDescription}\n\n${generatedCaption}`;
       }
       return generatedCaption;
-    } catch (err: any) {
-      logger.warn(`Gemini caption generation failed for lang=${lang}: ${err.message}, falling back to English`);
+    } catch (err) {
+      logger.warn(`Gemini caption generation failed for lang=${lang}: ${(err as Error).message}, falling back to English`);
       // Fall back to English captions
       const nicheCaptions = captionsEn[params.niche] || captionsEn.services;
       const baseCaption = nicheCaptions[Math.floor(Math.random() * nicheCaptions.length)];

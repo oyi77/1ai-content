@@ -5,6 +5,7 @@
  */
 
 import { prisma } from "@/config/database";
+import type { InputJsonValue } from '@prisma/client/runtime/library';
 import { logger } from "@/utils/logger";
 import { ValidationError } from '@/utils/app-errors';
 
@@ -177,18 +178,18 @@ export class PaymentSettingsService {
 
   private static pricingCache = new Map<
     string,
-    { value: any; expiresAt: number }
+    { value: unknown; expiresAt: number }
   >();
   private static CACHE_TTL = 60000; // 60 seconds
 
-  private static getCached(cacheKey: string): any | null {
+  private static getCached(cacheKey: string): unknown | null {
     const entry = this.pricingCache.get(cacheKey);
     if (entry && Date.now() < entry.expiresAt) return entry.value;
     this.pricingCache.delete(cacheKey);
     return null;
   }
 
-  private static setCache(cacheKey: string, value: any): void {
+  private static setCache(cacheKey: string, value: unknown): void {
     this.pricingCache.set(cacheKey, {
       value,
       expiresAt: Date.now() + this.CACHE_TTL,
@@ -218,7 +219,7 @@ export class PaymentSettingsService {
   static async setPricingConfig(
     category: string,
     key: string,
-    value: any,
+    value: unknown,
     updatedBy?: bigint,
   ): Promise<void> {
     const existing = await prisma.pricingConfig.findUnique({
@@ -232,7 +233,7 @@ export class PaymentSettingsService {
           entityType: "pricing_config",
           entityId: `${category}:${key}`,
           oldValue: JSON.parse(JSON.stringify(existing.value)),
-          newValue: value,
+          newValue: value as InputJsonValue,
           userId: updatedBy || null,
         },
       });
@@ -240,8 +241,8 @@ export class PaymentSettingsService {
 
     await prisma.pricingConfig.upsert({
       where: { category_key: { category, key } },
-      update: { value, updatedBy },
-      create: { category, key, value, updatedBy },
+      update: { value: value as InputJsonValue, updatedBy },
+      create: { category, key, value: value as InputJsonValue, updatedBy },
     });
 
     this.pricingCache.delete(`${category}:${key}`);
@@ -338,10 +339,10 @@ export class PaymentSettingsService {
     const { PACKAGES, SUBSCRIPTION_PLANS, UNIT_COSTS } =
       await import("../config/pricing.js");
 
-    const upsert = async (category: string, key: string, value: any) => {
+    const upsert = async (category: string, key: string, value: unknown) => {
       await prisma.pricingConfig.upsert({
         where: { category_key: { category, key } },
-        create: { category, key, value },
+        create: { category, key, value: value as InputJsonValue },
         update: {}, // Don't overwrite admin changes — only create if missing
       });
     };

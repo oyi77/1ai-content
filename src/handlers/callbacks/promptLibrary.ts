@@ -1,4 +1,5 @@
 import { BotContext } from "@/types";
+import type { InlineKeyboardButton } from '@telegraf/types/markup';
 import { UserService } from "@/services/user.service";
 import { SavedPromptService } from "@/services/saved-prompt.service";
 import {
@@ -41,10 +42,10 @@ export async function handlePromptLibraryCallbacks(ctx: BotContext, data: string
       const TP = TRENDING_PROMPTS;
       const PL = PROMPT_LIBRARY;
       let msg = t('cb.trending_header', lang) + '\n\n';
-      const buttons: any[][] = [];
-      TP.forEach((tp: any, i: number) => {
+      const buttons: InlineKeyboardButton[][] = [];
+      TP.forEach((tp, i: number) => {
         const niche = PL[tp.niche];
-        const p = niche.prompts.find((x: any) => x.id === tp.promptId)!;
+        const p = niche.prompts.find(x => x.id === tp.promptId)!;
         msg += `*#${i + 1}* ${niche.emoji} ${p.title} — ⭐${p.successRate}% | 📈+${tp.usageChange}%\n\n`;
         buttons.push([
           {
@@ -280,7 +281,7 @@ export async function handlePromptLibraryCallbacks(ctx: BotContext, data: string
     const dayOfWeek = new Date().getDay();
     const mystery = MP[dayOfWeek % MP.length];
     const niche = PL2[mystery.niche];
-    const p = niche?.prompts.find((x: any) => x.id === mystery.promptId);
+    const p = niche?.prompts.find(x => x.id === mystery.promptId);
     if (p) {
       const lang = ctx.session?.userLang || 'id';
       const msg = t('cb2.mystery_prompt_box', lang, {

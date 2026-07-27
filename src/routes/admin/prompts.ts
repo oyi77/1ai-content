@@ -57,7 +57,7 @@ export async function registerPromptsRoutes(server: FastifyInstance) {
         { createdAt: "desc" },
       ],
     });
-    return prompts.map((p: any) => ({
+    return prompts.map(p => ({
       id: p.id,
       niche: p.niche,
       title: p.title,

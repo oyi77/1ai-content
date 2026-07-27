@@ -1,3 +1,10 @@
+import { prisma } from "@/config/database";
+import { redis } from "@/config/redis";
+import { getConfig } from "@/config/env";
+import { ExchangeRateService } from "@/services/exchange-rate.service";
+import { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
+import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 /**
  * Admin System Settings Routes
  *
@@ -5,13 +12,6 @@
  * (REFACTORING_AUDIT.md §3.2). Handles system-level config:
  * exchange rate, pixel tracking IDs.
  */
-import { FastifyInstance } from "fastify";
-import { prisma } from "@/config/database";
-import { redis } from "@/config/redis";
-import { getConfig } from "@/config/env";
-import { ExchangeRateService } from "@/services/exchange-rate.service";
-import { z } from "zod";
-import { zodToJsonSchema } from "zod-to-json-schema";
 
 const exchangeRateBodySchema = zodToJsonSchema(z.object({
   rate: z.string().refine((v) => {
@@ -26,7 +26,7 @@ const pixelConfigBodySchema = zodToJsonSchema(z.object({
   ttPixelId: z.string().regex(/^[a-zA-Z0-9_-]*$/).optional().default(""),
 }), "pixelConfigBody");
 
-type AdminVerifier = (request: any, reply: any) => Promise<boolean>;
+type AdminVerifier = (request: FastifyRequest, reply: FastifyReply) => Promise<boolean>;
 
 export async function registerSystemSettingsRoutes(server: FastifyInstance, verifyAdmin: AdminVerifier) {
   // GET /api/settings/exchange-rate

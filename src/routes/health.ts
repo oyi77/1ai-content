@@ -44,8 +44,8 @@ export async function healthCheckRoutes(server: FastifyInstance): Promise<void> 
         service: 'database',
         timestamp: new Date().toISOString(),
       };
-    } catch (error: any) {
-      server.log.error('Database health check failed: %s', error?.message || error);
+    } catch (error) {
+      server.log.error('Database health check failed: %s', (error as Error)?.message || error);
       return {
         status: 'unhealthy',
         service: 'database',
@@ -64,8 +64,8 @@ export async function healthCheckRoutes(server: FastifyInstance): Promise<void> 
         service: 'redis',
         timestamp: new Date().toISOString(),
       };
-    } catch (error: any) {
-      server.log.error('Redis health check failed: %s', error?.message || error);
+    } catch (error) {
+      server.log.error('Redis health check failed: %s', (error as Error)?.message || error);
       return {
         status: 'unhealthy',
         service: 'redis',
@@ -85,8 +85,8 @@ export async function healthCheckRoutes(server: FastifyInstance): Promise<void> 
         stats,
         timestamp: new Date().toISOString(),
       };
-    } catch (error: any) {
-      server.log.error('Queue health check failed: %s', error?.message || error);
+    } catch (error) {
+      server.log.error('Queue health check failed: %s', (error as Error)?.message || error);
       return {
         status: 'unhealthy',
         service: 'queue',

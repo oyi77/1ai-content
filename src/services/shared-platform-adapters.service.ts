@@ -17,8 +17,8 @@ async function getAdapter() {
       hubApiKey: config.OMNIROUTE_API_KEY,
     });
     return adapterInstance;
-  } catch (err: any) {
-    logger.warn('Shared platform-adapters not available, using fallback:', err.message);
+  } catch (err) {
+    logger.warn('Shared platform-adapters not available, using fallback:', (err as Error).message);
     return null;
   }
 }
@@ -28,8 +28,8 @@ export async function getPostBridgeAccountsViaAdapter() {
   if (!adapter) return null;
   try {
     return await adapter.getAccounts();
-  } catch (err: any) {
-    logger.warn('Adapter getAccounts failed:', err.message);
+  } catch (err) {
+    logger.warn('Adapter getAccounts failed:', (err as Error).message);
     return null;
   }
 }
@@ -44,8 +44,8 @@ export async function publishViaAdapter(params: {
   if (!adapter) return null;
   try {
     return await adapter.publishToMultiple(params);
-  } catch (err: any) {
-    logger.warn('Adapter publishToMultiple failed:', err.message);
+  } catch (err) {
+    logger.warn('Adapter publishToMultiple failed:', (err as Error).message);
     return null;
   }
 }

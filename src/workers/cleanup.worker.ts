@@ -82,8 +82,8 @@ async function cleanupLocalFiles(): Promise<{ filesDeleted: number; freedBytes: 
       freedBytes += stat.size;
       fs.unlinkSync(filePath);
       filesDeleted++;
-    } catch (err: any) {
-      logger.warn(`[Cleanup] Failed to process file ${file}:`, err.message);
+    } catch (err) {
+      logger.warn(`[Cleanup] Failed to process file ${file}:`, (err as Error).message);
     }
   }
 

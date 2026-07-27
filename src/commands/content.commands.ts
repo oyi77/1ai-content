@@ -3,6 +3,7 @@ import { Message, Update } from 'telegraf/types';
 import { videoClipperService } from '@/services/video-clipper.service';
 import { videoEditorService } from '@/services/video-editor.service';
 import { contentReworkService } from '@/services/content-rework.service';
+import type { ReworkOptions } from "@/services/content-rework.service";
 import { viralScannerService } from '@/services/viral-scanner.service';
 import { logger } from '@/utils/logger';
 
@@ -57,9 +58,9 @@ export class ContentCommands {
       response += `\n💡 *Tip:* Reply with a number (1-${videos.length}) to download and rework that video.`;
 
       await ctx.reply(response, { parse_mode: 'Markdown' });
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Viral scan error:', error);
-      await ctx.reply(`❌ Error: ${error.message}`);
+      await ctx.reply(`❌ Error: ${(error as Error).message}`);
     }
   }
 
@@ -115,9 +116,9 @@ export class ContentCommands {
       await ctx.replyWithVideo({ source: videoPath }, {
         caption: `✅ Downloaded: ${info.title}`,
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Clip error:', error);
-      await ctx.reply(`❌ Error: ${error.message}`);
+      await ctx.reply(`❌ Error: ${(error as Error).message}`);
     }
   }
 
@@ -210,9 +211,9 @@ export class ContentCommands {
       await ctx.replyWithVideo({ source: outputPath }, {
         caption: `✅ Applied: ${action}`,
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Edit error:', error);
-      await ctx.reply(`❌ Error: ${error.message}`);
+      await ctx.reply(`❌ Error: ${(error as Error).message}`);
     }
   }
 
@@ -263,7 +264,7 @@ export class ContentCommands {
       await writeFile(videoPath, Buffer.from(buffer));
 
       // Parse options
-      const reworkOptions: any = {
+      const reworkOptions: ReworkOptions = {
         inputPath: videoPath,
         mirror: options.includes('mirror'),
         cropPercent: options.includes('crop') ? 5 : 0,
@@ -284,9 +285,9 @@ export class ContentCommands {
       await ctx.replyWithVideo({ source: outputPath }, {
         caption: `✅ Content reworked!\n\n📊 Copyright risk: ${risk.riskLevel}\n${risk.issues.length > 0 ? '⚠️ ' + risk.issues.join(', ') : '✅ No issues detected'}`,
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Rework error:', error);
-      await ctx.reply(`❌ Error: ${error.message}`);
+      await ctx.reply(`❌ Error: ${(error as Error).message}`);
     }
   }
 
@@ -319,9 +320,9 @@ export class ContentCommands {
       response += `\n💡 Use \`/viral [topic]\` to see viral videos for a specific topic.`;
 
       await ctx.reply(response, { parse_mode: 'Markdown' });
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Trending error:', error);
-      await ctx.reply(`❌ Error: ${error.message}`);
+      await ctx.reply(`❌ Error: ${(error as Error).message}`);
     }
   }
 
@@ -368,9 +369,9 @@ export class ContentCommands {
       response += `\n💡 Reply with a number to download and rework that video.`;
 
       await ctx.reply(response, { parse_mode: 'Markdown' });
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Scrape error:', error);
-      await ctx.reply(`❌ Error: ${error.message}`);
+      await ctx.reply(`❌ Error: ${(error as Error).message}`);
     }
   }
 }

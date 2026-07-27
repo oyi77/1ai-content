@@ -331,8 +331,8 @@ export class ContentReworkService {
       try {
         const output = await this.reworkContent({ inputPath, ...options });
         results.push(output);
-      } catch (error: any) {
-        logger.error(`Failed to rework ${inputPath}: ${error.message}`);
+      } catch (error) {
+        logger.error(`Failed to rework ${inputPath}: ${(error as Error).message}`);
       }
     }
 
