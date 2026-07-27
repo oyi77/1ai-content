@@ -32,12 +32,8 @@ export async function registerPersonaRoutes(
     return { success: true };
   });
 
-  server.get('/admin/personas', async (request, reply) => {
-    if (!await verifyAdmin(request, reply)) return;
-    const { getPersonasAsync } = await import('../../config/personas.js');
-    const { NICHE_IDS } = await import('../../config/niches.js');
-    const personas = await getPersonasAsync();
-    return reply.view('admin/personas', { personas, nicheIds: NICHE_IDS, ...trackingVars(), activePage: 'personas', title: 'Persona Management' }, { layout: 'admin/layout.ejs' });
+  server.get('/admin/personas', async (_request, reply) => {
+    return reply.redirect('/admin/react/personas');
   });
 
   server.post("/api/admin/welcome-message", { preHandler: validate({ body: welcomeMessageSchema }) }, async (request, reply) => {

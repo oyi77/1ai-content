@@ -26,7 +26,7 @@ const promptIdParamSchema = zodToJsonSchema(z.object({
 
 export async function registerPromptsRoutes(server: FastifyInstance) {
   server.get("/admin/prompts", async (_request, reply) => {
-    return reply.view("admin/prompts.ejs", { ...trackingVars(), activePage: 'prompts', title: 'Prompt Management' }, { layout: 'admin/layout.ejs' });
+    return reply.redirect("/admin/react/prompts");
   });
 
   server.get("/admin/settings", async (_request, reply) => {
@@ -34,7 +34,7 @@ export async function registerPromptsRoutes(server: FastifyInstance) {
   });
 
   server.get("/admin/interceptions", async (_request, reply) => {
-    return reply.view("admin/interceptions.ejs", { ...trackingVars(), activePage: 'interceptions', title: 'Live Interceptions' }, { layout: 'admin/layout.ejs' });
+    return reply.redirect("/admin/react/interceptions");
   });
 
   server.get("/admin/users", async (_request, reply) => {

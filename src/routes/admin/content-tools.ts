@@ -5,65 +5,37 @@ import { trackingVars } from "./shared";
 export async function registerContentToolsRoutes(server: FastifyInstance) {
   // Captions manager
   server.get("/admin/captions", async (_request, reply) => {
-    return reply.view(
-      "admin/captions.ejs",
-      { ...trackingVars(), activePage: "captions", title: "Captions Manager" },
-      { layout: "admin/layout.ejs" },
-    );
+    return reply.redirect("/admin/react/captions");
   });
 
   // CloakBrowser manager
   server.get("/admin/cloak", async (_request, reply) => {
-    return reply.view(
-      "admin/cloak.ejs",
-      { ...trackingVars(), activePage: "cloak", title: "CloakBrowser Manager" },
-      { layout: "admin/layout.ejs" },
-    );
+    return reply.redirect("/admin/react/tools/cloak");
   });
 
   // Engagement manager
   server.get("/admin/engagement", async (_request, reply) => {
-    return reply.view(
-      "admin/engagement.ejs",
-      { ...trackingVars(), activePage: "engagement", title: "Engagement Manager" },
-      { layout: "admin/layout.ejs" },
-    );
+    return reply.redirect("/admin/react/tools/engagement");
   });
 
   // Video tools
   server.get("/admin/video-tools", async (_request, reply) => {
-    return reply.view(
-      "admin/video-tools.ejs",
-      { ...trackingVars(), activePage: "video-tools", title: "Video Tools" },
-      { layout: "admin/layout.ejs" },
-    );
+    return reply.redirect("/admin/react/tools/video-tools");
   });
 
   // Ad renderer
   server.get("/admin/render-ad", async (_request, reply) => {
-    return reply.view(
-      "admin/render-ad.ejs",
-      { ...trackingVars(), activePage: "render-ad", title: "Ad Renderer" },
-      { layout: "admin/layout.ejs" },
-    );
+    return reply.redirect("/admin/react/tools/render-ad");
   });
 
   // Storyboard creator
   server.get("/admin/storyboard", async (_request, reply) => {
-    return reply.view(
-      "admin/storyboard.ejs",
-      { ...trackingVars(), activePage: "storyboard", title: "Storyboard Creator" },
-      { layout: "admin/layout.ejs" },
-    );
+    return reply.redirect("/admin/react/tools/storyboard");
   });
 
   // Pinterest → Facebook pipeline
   server.get("/admin/pinterest", async (_request, reply) => {
-    return reply.view(
-      "admin/pinterest.ejs",
-      { ...trackingVars(), activePage: "pinterest", title: "Pinterest → Facebook" },
-      { layout: "admin/layout.ejs" },
-    );
+    return reply.redirect("/admin/react/tools/pinterest");
   });
 
   // Bookshelf AI Book Generator
@@ -95,23 +67,23 @@ export async function registerContentToolsRoutes(server: FastifyInstance) {
 
   // TTS Voice Generator
   server.get("/admin/tts", async (_request, reply) => {
-    return reply.view("admin/tts.ejs", { activePage: "tts", title: "TTS Voice Generator", ...trackingVars() }, { layout: "admin/layout.ejs" });
+    return reply.redirect("/admin/react/tts");
   });
   // Music Generator (Suno + MusicGen)
   server.get("/admin/music", async (_request, reply) => {
-    return reply.view("admin/music.ejs", { activePage: "music", title: "Music Generator", ...trackingVars() }, { layout: "admin/layout.ejs" });
+    return reply.redirect("/admin/react/music");
   });
   // Looping Video Generator
   server.get("/admin/looping", async (_request, reply) => {
-    return reply.view("admin/looping.ejs", { activePage: "looping", title: "Looping Video", ...trackingVars() }, { layout: "admin/layout.ejs" });
+    return reply.redirect("/admin/react/looping");
   });
   // Autopilot Content Jobs
   server.get("/admin/autopilot", async (_request, reply) => {
-    return reply.view("admin/autopilot.ejs", { activePage: "autopilot", title: "Autopilot", ...trackingVars() }, { layout: "admin/layout.ejs" });
+    return reply.redirect("/admin/react/autopilot");
   });
   // Channel Analysis
   server.get("/admin/analyze", async (_request, reply) => {
-    return reply.view("admin/analyze.ejs", { activePage: "analyze", title: "Channel Analysis", ...trackingVars() }, { layout: "admin/layout.ejs" });
+    return reply.redirect("/admin/react/analyze");
   })
 
   // ========== Bookshelf API ==========

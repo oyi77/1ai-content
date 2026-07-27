@@ -7,27 +7,69 @@ interface ToolItem {
 
 const TOOLS: ToolItem[] = [
   {
+    name: "TTS Voice",
+    description: "Generate text-to-speech audio",
+    path: "/admin/react/tts",
+    icon: "🗣️",
+  },
+  {
+    name: "Music Generator",
+    description: "Generate AI music tracks",
+    path: "/admin/react/music",
+    icon: "🎵",
+  },
+  {
+    name: "CloakBrowser",
+    description: "Manage CloakBrowser profiles and posting",
+    path: "/admin/react/tools/cloak",
+    icon: "🕶️",
+  },
+  {
+    name: "Engagement",
+    description: "Track social engagement metrics",
+    path: "/admin/react/tools/engagement",
+    icon: "📊",
+  },
+  {
+    name: "Video Tools",
+    description: "Video processing and editing tools",
+    path: "/admin/react/tools/video-tools",
+    icon: "🎬",
+  },
+  {
+    name: "Storyboard",
+    description: "Create storyboards from video content",
+    path: "/admin/react/tools/storyboard",
+    icon: "📋",
+  },
+  {
+    name: "Fanpage Manager",
+    description: "Manage Facebook fan pages",
+    path: "/admin/react/tools/fanpage",
+    icon: "📱",
+  },
+  {
+    name: "Pinterest Scan",
+    description: "Search and browse Pinterest content",
+    path: "/admin/react/tools/pinterest",
+    icon: "📌",
+  },
+  {
+    name: "Ad Renderer",
+    description: "Render ad creatives",
+    path: "/admin/react/tools/render-ad",
+    icon: "🖼️",
+  },
+  {
     name: "Prompts",
     description: "Manage AI prompt templates",
     path: "/admin/react/prompts",
     icon: "🤖",
   },
   {
-    name: "Medias",
-    description: "Browse and manage media uploads",
-    path: "/admin/react/medias",
-    icon: "🎬",
-  },
-  {
-    name: "Trending",
-    description: "View trending content research data",
-    path: "/admin/react/trending",
-    icon: "🔥",
-  },
-  {
     name: "Playground",
     description: "Test AI model interactions",
-    path: "/admin/playground",
+    path: "/admin/react/playground",
     icon: "🧪",
   },
   {

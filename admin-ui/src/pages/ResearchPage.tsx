@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { Input, Select, Button, Spinner, Toast } from "../components/UI";
+import { Input, Select, Button, Toast } from "../components/UI";
 import { researchTopics, generateBookBrief, type ResearchTopicsResponse, type BookBriefResponse } from "../api/client";
 
 const LANG_OPTIONS = [
@@ -112,7 +112,7 @@ export default function ResearchPage() {
   const [genRunning, setGenRunning] = useState(false);
   const [genProgress, setGenProgress] = useState<string[]>([]);
   const [genSections, setGenSections] = useState<BookSection[]>([]);
-  const [genComplete, setGenComplete] = useState<{ word_count?: number } | null>(null);
+  const [genComplete, setGenComplete] = useState<{ sections?: BookSection[]; content?: string; word_count?: number } | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   // Toast
@@ -200,7 +200,7 @@ export default function ResearchPage() {
           setGenProgress((p) => [...p, (payload.message as string) || ""]);
           break;
         case "complete":
-          setGenComplete(payload as { word_count?: number });
+          setGenComplete(payload as { sections?: BookSection[]; content?: string; word_count?: number });
           setGenProgress((p) => [...p, `Complete${payload.word_count ? ` ~${payload.word_count} words` : ""}`]);
           if (payload.sections) {
             setGenSections(payload.sections as BookSection[]);

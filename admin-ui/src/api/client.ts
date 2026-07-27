@@ -953,3 +953,470 @@ export async function deleteFanpage(id: number): Promise<void> {
   const res = await fetch(`${API_BASE}/api/fanpages/${id}`, { method: "DELETE" });
   if (!res.ok) throw new Error(`DELETE /api/fanpages/${id} failed: ${res.status}`);
 }
+// ── Config / Env Config API ──
+
+export interface EnvConfigEntry {
+  value: string;
+  group: string;
+  sensitive: boolean;
+}
+
+export async function fetchEnvConfig(): Promise<Record<string, EnvConfigEntry>> {
+  return fetchJson<Record<string, EnvConfigEntry>>("/api/config");
+}
+
+// ── Runtime Config API ──
+
+export interface ApiKeyEntry {
+  key: string;
+  label: string;
+  masked: string;
+  hasValue: boolean;
+  source: "db" | "env" | "none";
+}
+
+export async function fetchRuntimeConfig(): Promise<Record<string, Record<string, unknown>>> {
+  return fetchJson<Record<string, Record<string, unknown>>>("/api/admin-config");
+}
+
+export async function updateRuntimeConfig(category: string, key: string, value: unknown): Promise<{ ok: boolean }> {
+  const res = await fetch(`/api/admin-config/${encodeURIComponent(category)}/${encodeURIComponent(key)}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ value }),
+  });
+  if (!res.ok) throw new Error(`PUT config failed: ${res.status}`);
+  return res.json();
+}
+
+export async function resetRuntimeConfig(category: string, key: string): Promise<{ ok: boolean }> {
+  const res = await fetch(`/api/admin-config/${encodeURIComponent(category)}/${encodeURIComponent(key)}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error(`DELETE config failed: ${res.status}`);
+  return res.json();
+}
+
+export async function fetchApiKeys(): Promise<ApiKeyEntry[]> {
+  return fetchJson<ApiKeyEntry[]>("/api/admin/api-keys");
+}
+
+export async function updateApiKey(name: string, value: string): Promise<{ ok: boolean }> {
+  return postJson<{ ok: boolean }>(`/api/admin/api-keys/${encodeURIComponent(name)}`, { value });
+}
+
+export async function deleteApiKey(name: string): Promise<{ ok: boolean }> {
+  const res = await fetch(`/api/admin/api-keys/${encodeURIComponent(name)}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error(`DELETE api-key failed: ${res.status}`);
+  return res.json();
+}
+
+
+// ── Persona API ──
+
+export interface Persona {
+  id: string;
+  name: string;
+  emoji: string;
+  allowedNiches: string[] | "ALL";
+  allowedPresets: string[];
+  priceMultiplier: number;
+}
+
+export async function fetchPersonas(): Promise<Persona[]> {
+  return fetchJson<Persona[]>("/api/personas");
+}
+
+export async function savePersona(body: {
+  id: string;
+  allowedNiches?: string[] | "ALL";
+  allowedPresets?: string[];
+  priceMultiplier?: number;
+}): Promise<{ success: boolean }> {
+  return postJson<{ success: boolean }>("/api/personas", body);
+}
+
+export async function saveWelcomeMessage(message: string): Promise<{ success: boolean }> {
+  return postJson<{ success: boolean }>("/api/admin/welcome-message", { message });
+}
+// ── System Health API ──
+
+export interface HealthCheck {
+  status: string;
+  message?: string;
+  url?: string;
+  pendingUpdates?: number;
+  lastError?: string;
+}
+
+export interface SystemHealthResponse {
+  status: "healthy" | "degraded";
+  checks: Record<string, HealthCheck>;
+  environment: string;
+  version: string;
+  uptime: number;
+}
+
+export interface TokenStatsResponse {
+  [key: string]: unknown;
+}
+
+export async function fetchSystemHealth(): Promise<SystemHealthResponse> {
+  return fetchJson<SystemHealthResponse>("/api/system/health");
+}
+
+export async function fetchTokenStats(days: number = 7): Promise<TokenStatsResponse> {
+  return fetchJson<TokenStatsResponse>(`/api/token-stats?days=${days}`);
+}
+
+
+// ── Media Gallery API ──
+
+export interface MediaVideo {
+  id: number;
+  title: string;
+  niche: string;
+  platform: string;
+  status: string;
+  thumbnailUrl?: string;
+  videoUrl?: string;
+  duration?: number;
+  creditsUsed?: number;
+  createdAt: string;
+  finalProvider?: string;
+  downloadUrl?: string;
+  errorMessage?: string;
+  storyboard?: Record<string, unknown>;
+}
+
+export interface MediaBook {
+  id: number;
+  title: string;
+  subject: string;
+  sections: Record<string, unknown>[];
+  stats: { total_tokens?: number; total_cost?: number; total_time?: number; total_prompts?: number };
+  fullMarkdown?: string;
+  createdAt: string;
+}
+
+export interface MediaComic {
+  id: number;
+  title: string;
+  coverPath?: string;
+  format?: string;
+  language?: string;
+  numEpisodes?: number;
+  totalPages?: number;
+  stats: { total_tokens?: number; total_time?: number };
+  createdAt: string;
+  script?: string | Record<string, unknown>;
+  outputDir?: string;
+}
+
+export interface MediaMovie {
+  id: number;
+  title: string;
+  coverPath?: string;
+  genre?: string;
+  numScenes?: number;
+  duration?: number;
+  stats: { total_tokens?: number; total_time?: number };
+  createdAt: string;
+  script?: string | Record<string, unknown>;
+  videoPath?: string;
+  outputDir?: string;
+}
+
+export async function fetchVideos(options?: { limit?: number; status?: string }): Promise<MediaVideo[]> {
+  const params = new URLSearchParams();
+  if (options?.limit) params.set("limit", String(options.limit));
+  if (options?.status) params.set("status", options.status);
+  return fetchJson<MediaVideo[]>(`/api/videos?${params}`);
+}
+
+export async function fetchBooks(): Promise<MediaBook[]> {
+  return fetchJson<MediaBook[]>("/api/books");
+}
+
+export async function fetchBookDetail(id: number): Promise<MediaBook> {
+  return fetchJson<MediaBook>(`/api/books/${id}`);
+}
+
+export async function fetchComics(): Promise<MediaComic[]> {
+  return fetchJson<MediaComic[]>("/api/comics");
+}
+
+export async function fetchComicDetail(id: number): Promise<MediaComic> {
+  return fetchJson<MediaComic>(`/api/comics/${id}`);
+}
+
+export async function fetchMovies(): Promise<MediaMovie[]> {
+  return fetchJson<MediaMovie[]>("/api/movies");
+}
+
+export async function fetchMovieDetail(id: number): Promise<MediaMovie> {
+  return fetchJson<MediaMovie>(`/api/movies/${id}`);
+}
+
+// ── AI Config API ──
+
+export interface CustomProvider {
+  id: string;
+  name: string;
+  baseUrl: string;
+  apiKey?: string;
+  models?: string[];
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CustomProviderUpdate {
+  name?: string;
+  baseUrl?: string;
+  apiKey?: string;
+  models?: string[];
+}
+
+export interface AIConfigResponse {
+  tasks?: Record<string, unknown>[];
+  prompts?: Record<string, unknown>[];
+  chat?: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
+export interface AITaskSettings {
+  [key: string]: unknown;
+}
+
+export interface CustomProviderTestResult {
+  success?: boolean;
+  error?: string;
+  response?: unknown;
+}
+
+export interface FetchModelsResult {
+  ok: boolean;
+  count: number;
+  models: string[];
+}
+
+export interface CheckBalanceResult {
+  success: boolean;
+  balance?: string;
+  error?: string;
+}
+
+export async function fetchAIConfig(): Promise<AIConfigResponse> {
+  return fetchJson<AIConfigResponse>("/api/admin/ai-config");
+}
+
+export async function updateAITasksConfig(data: unknown): Promise<{ ok: boolean }> {
+  return postJson<{ ok: boolean }>("/api/admin/ai-config/tasks", data);
+}
+
+export async function updateAIPromptsConfig(data: unknown): Promise<{ ok: boolean }> {
+  return postJson<{ ok: boolean }>("/api/admin/ai-config/prompts", data);
+}
+
+export async function updateAIChatConfig(data: unknown): Promise<{ ok: boolean }> {
+  return postJson<{ ok: boolean }>("/api/admin/ai-config/chat", data);
+}
+
+export async function resetAIConfig(): Promise<{ ok: boolean }> {
+  return postJson<{ ok: boolean }>("/api/admin/ai-config/reset", {});
+}
+
+export async function fetchAITaskSettings(): Promise<AITaskSettings> {
+  return fetchJson<AITaskSettings>("/api/admin/ai-tasks/settings");
+}
+
+export async function updateAITaskSettings(data: unknown): Promise<{ ok: boolean }> {
+  return postJson<{ ok: boolean }>("/api/admin/ai-tasks/settings", data);
+}
+
+export async function fetchCustomProviders(): Promise<CustomProvider[]> {
+  return fetchJson<CustomProvider[]>("/api/admin/custom-providers");
+}
+
+export async function createCustomProvider(data: CustomProviderUpdate): Promise<CustomProvider> {
+  return postJson<CustomProvider>("/api/admin/custom-providers", data);
+}
+
+export async function updateCustomProvider(id: string, data: CustomProviderUpdate): Promise<CustomProvider> {
+  return postJson<CustomProvider>(`/api/admin/custom-providers/${encodeURIComponent(id)}`, data);
+}
+
+export async function deleteCustomProvider(id: string): Promise<{ ok: boolean }> {
+  return postJson<{ ok: boolean }>(`/api/admin/custom-providers/${encodeURIComponent(id)}`, {});
+}
+
+export async function fetchCustomProviderModels(id: string): Promise<FetchModelsResult> {
+  return postJson<FetchModelsResult>(`/api/admin/custom-providers/${encodeURIComponent(id)}/fetch-models`, {});
+}
+
+export async function testCustomProvider(id: string, model?: string): Promise<CustomProviderTestResult> {
+  return postJson<CustomProviderTestResult>(`/api/admin/custom-providers/${encodeURIComponent(id)}/test`, { model });
+}
+
+export async function checkCustomProviderBalance(id: string): Promise<CheckBalanceResult> {
+  return postJson<CheckBalanceResult>(`/api/admin/custom-providers/${encodeURIComponent(id)}/check-balance`, {});
+}
+
+export interface ModelsCatalogEntry {
+  id: string;
+  name: string;
+  provider: string;
+  providerName: string;
+  family: string;
+  vision: boolean;
+  reasoning: boolean;
+  toolCall: boolean;
+  openWeights: boolean;
+  inputModalities: string[];
+  outputModalities: string[];
+  contextWindow: number | null;
+  outputLimit: number | null;
+  releaseDate: string | null;
+}
+
+export interface ModelsCatalogResponse {
+  models: ModelsCatalogEntry[];
+  total: number;
+  visionCount: number;
+}
+
+export async function fetchModelsCatalog(): Promise<ModelsCatalogResponse> {
+  return fetchJson<ModelsCatalogResponse>("/api/admin/models-catalog");
+}
+
+export async function testAiChatCompletion(message: string, model?: string): Promise<{ reply: string; model: string }> {
+  return postJson<{ reply: string; model: string }>("/api/admin/ai-chat", { message, model });
+}
+
+// ── Admin Prompts API ──
+
+export interface AdminPromptItem {
+  id: number;
+  niche: string;
+  title: string;
+  prompt: string;
+  successRate: number;
+  createdAt: string;
+}
+
+export async function fetchAdminPrompts(niche?: string): Promise<AdminPromptItem[]> {
+  const qs = niche ? `?niche=${encodeURIComponent(niche)}` : "";
+  return fetchJson<AdminPromptItem[]>(`/api/admin-prompts${qs}`);
+}
+
+export async function createAdminPrompt(body: { niche: string; title: string; prompt: string }): Promise<{ ok: boolean; id: number }> {
+  return postJson("/api/admin-prompts", body);
+}
+
+export async function updateAdminPrompt(id: number, body: { title?: string; prompt?: string; niche?: string }): Promise<{ ok: boolean }> {
+  const res = await fetch(`${API_BASE}/api/admin-prompts/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`PUT /api/admin-prompts/${id} failed: ${res.status}`);
+  return res.json();
+}
+
+export async function deleteAdminPrompt(id: number): Promise<{ ok: boolean }> {
+  const res = await fetch(`${API_BASE}/api/admin-prompts/${id}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error(`DELETE /api/admin-prompts/${id} failed: ${res.status}`);
+  return res.json();
+}
+
+// ── Intercept API ──
+
+export interface InterceptedUser {
+  telegramId: string;
+  firstName: string | null;
+  username: string | null;
+  tier: string | null;
+  updatedAt: string;
+}
+
+export interface InterceptEvent {
+  id: string;
+  userId: string;
+  eventType: string;
+  content?: string;
+  metadata?: Record<string, unknown>;
+  createdAt: string;
+}
+
+export interface ToggleInterceptResponse {
+  success: boolean;
+  error?: string;
+}
+
+export interface DeliverMediaResponse {
+  success: boolean;
+  error?: string;
+}
+
+export interface UploadResponse {
+  success: boolean;
+  url?: string;
+  mediaType?: string;
+  filename?: string;
+  error?: string;
+}
+
+export async function toggleIntercept(telegramId: string, enabled: boolean): Promise<ToggleInterceptResponse> {
+  return postJson("/api/intercept/toggle", { telegramId, enabled });
+}
+
+export async function fetchInterceptedUsers(): Promise<InterceptedUser[]> {
+  return fetchJson<InterceptedUser[]>("/api/intercept/users");
+}
+
+export async function fetchInterceptEvents(telegramId: string): Promise<InterceptEvent[]> {
+  return fetchJson<InterceptEvent[]>(`/api/intercept/events/${encodeURIComponent(telegramId)}`);
+}
+
+export async function deliverInterceptMedia(body: { jobId: string; mediaUrl: string; mediaType: string }): Promise<DeliverMediaResponse> {
+  return postJson("/api/intercept/deliver", body);
+}
+
+export async function uploadInterceptFile(file: File): Promise<UploadResponse> {
+  const formData = new FormData();
+  formData.append("file", file);
+  const res = await fetch(`${API_BASE}/api/intercept/upload`, {
+    method: "POST",
+    credentials: "include",
+    body: formData,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: `Upload failed: ${res.status}` }));
+    return { success: false, error: err.error };
+  }
+  return res.json();
+}
+
+export interface SearchUserResult {
+  telegramId: string;
+  username: string | null;
+  firstName: string | null;
+  tier: string | null;
+  creditBalance: number;
+  isBanned: boolean;
+  createdAt: string;
+  lastActivityAt: string | null;
+}
+
+export async function searchUsers(query: string): Promise<SearchUserResult[]> {
+  return fetchJson<SearchUserResult[]>(`/api/users/search?q=${encodeURIComponent(query)}&limit=10`);
+}
