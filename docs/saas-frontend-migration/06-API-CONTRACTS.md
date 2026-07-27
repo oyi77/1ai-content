@@ -1,387 +1,241 @@
 # API Contracts
 
-> All endpoint shapes for every page. Agents MUST reference this when building React pages.
-> Current: Endpoints verified from backend route files.
+> All endpoint shapes for every page. **VERIFIED against actual route files** in `src/routes/`.
+> Last verified: 2026-07-28
 
 ---
 
 ## Generic Conventions
 
-| Convention | Standard |
-|-----------|----------|
-| Auth | Cookie `admin_token` for admin, JWT `Bearer` for customer |
-| Errors | `{ error: string }` with `4xx` / `5xx` status codes |
-| Rate limit | `{ error: "Rate limit: ..." }` with `429` |
-| Success (POST/PUT/DELETE) | `{ ok: true }` or `{ success: true }` (inconsistent — handle both) |
-| IDs | UUID format (string) |
-| Dates | ISO 8601 strings |
+| Convention | Value |
+|-----------|-------|
+| Base URLs | **Admin:** `/api/*`, **Customer:** `/api/*` |
+| Auth | Admin: Cookie `admin_token` or Basic auth. Customer: JWT in `Authorization: Bearer` header or API key `?apikey=` query |
+| Response format | JSON (unless EJS template) |
+| Error format | `{ error: string }` with HTTP 4xx/5xx |
+| Pagination | `{ items: [...], total: number, page: number }` (when applicable) |
 
 ---
 
-## A. Admin API Endpoints
+## A — Admin CRUD Endpoints
 
-### A1. Dashboard
-
-```
-GET /api/admin/dashboard
-→ {
-    totalUsers: number
-    totalVideos: number
-    totalTransactions: number
-    activeUsers: number
-    usersGrowth?: { value: number; percentage: number }
-    videosGrowth?: { value: number; percentage: number }
-    revenueGrowth?: { value: number; percentage: number }
-    // current: returns AnalyticsData shape from dashboard-api.ts
-  }
-```
-
-### A2. Fanpages
-
-```
-GET /api/fanpages
-→ Fanpage[] where Fanpage {
-    id: string
-    pageName: string
-    pageId: string
-    fanCount: number
-    isActive: boolean
-    accessToken: string | null
-    createdAt: string
-    updatedAt: string
-  }
-
-POST /api/fanpages
-→ { id: string, pageName: string, pageId: string }  // created record
-Body: { pageName: string, pageId: string, accessToken?: string }
-
-PUT /api/fanpages/:id
-→ { ok: true }
-Body: { pageName?: string, pageId?: string, accessToken?: string, isActive?: boolean }
-Note: fanpage.ts uses PUT not PATCH
-
-DELETE /api/fanpages/:id
-→ { ok: true }
+### A1: `/api/admin/dashboard`
+- **File:** `dashboard-api.ts`
+- **Method:** `GET`
+- **Response shape:**
+```json
+{
+  "todayMetrics": {
+    "newUsers": "<number>",
+    "activeUsers": "<number>",
+    "totalTransactions": "<number>",
+    "revenue": "<string (USD)>",
+    "creditsUsed": "<number>"
+  },
+  "activeUsersList": [
+    { "id": "<string>", "username": "<string>", "tier": "<string>", "status": "online|offline", "lastActivity": "<ISO date>" }
+  ],
+  "providerHealth": {
+    "<provider_key>": "online|degraded|offline"
+  },
+  "topNiches": [
+    { "name": "<string>", "count": "<number>" }
+  ],
+  "recentErrors": [
+    { "id": "<string>", "message": "<string>", "source": "<string>", "timestamp": "<ISO date>", "severity": "error" }
+  ]
+}
 ```
 
-### A3. Prompts
+### A2: `/api/admin-prompts`
+- **File:** `prompts.ts`
+- **Methods:** `GET`, `POST`, `PUT /:id`, `DELETE /:id`
+- **Response:** `Prompt[]` array or single Prompt object
+- **Prompt shape:** `{ id, name, systemPrompt, userPrompt, niche, provider, providerModel, sortOrder, isActive, createdAt, updatedAt }`
 
-```
-GET /api/admin-prompts
-→ AdminPrompt[] where AdminPrompt {
-    id: number
-    prompt: string
-    category: string
-    params: any
-    isActive: boolean
-    createdAt: string
-  }
+### A3: `/api/intercept/toggle`
+- **File:** `intercept.ts:17`
+- **Method:** `POST`
+- **Body:** `{ type: string, enabled: boolean, username?: string }`
+- **Response:** `{ success: true }`
 
-POST /api/admin-prompts
-→ { ok: true }
-Body: { prompt: string, category: string, params?: any, isActive?: boolean }
+### A4: `/api/intercept/upload`
+- **File:** `intercept.ts:113`
+- **Method:** `POST`
+- **Body:** multipart form (file upload)
+- **Response:** `{ message: string }`
 
-PUT /api/admin-prompts/:id  (id is number, not UUID)
-→ { ok: true }
-Body: { prompt?: string, category?: string, params?: any, isActive?: boolean }
+### A5: `/api/intercept/deliver`
+- **File:** `intercept.ts:151`
+- **Method:** `POST`
+- **Body:** `{ type: string, username: string, text: string }`
+- **Response:** `{ success: true, result?: unknown }`
 
-DELETE /api/admin-prompts/:id
-→ { ok: true }
-```
-
-### A4. Pricing
-
-```
-GET /api/pricing/:category
-→ PricingConfig[] where PricingConfig {
-    id: number
-    category: string    // "package" | "subscription" | "video_credit" | "image_credit" | "provider_cost" | "global" | "unit_cost"
-    key: string
-    value: string
-    createdAt: string
-  }
-Params: category (string path param)
-
-POST /api/pricing
-→ { success: true }
-Body: { category: string, key: string, value: string }
-
-DELETE /api/pricing
-→ { success: true }
-Body: { category: string, key: string }
-
-GET /api/pricing-overview
-→ {
-    packages: PricingConfig[]
-    subscriptions: PricingConfig[]
-    videoCosts: PricingConfig[]
-    imageCosts: PricingConfig[]
-    providerCosts: PricingConfig[]
-    global: PricingConfig[]
-    unitCosts: PricingConfig[]
-  }
-
-GET /api/pricing-recommendation
-→ {
-    avgVideoSceneCostUsd: number
-    maxVideoSceneCostUsd: number
-    avgVideoCostIdr: number
-    videoCreditUnitCost: number
-    unitCost: number
-    margin: number
-    recommendedPricePerVideo: number
-    currentPricePerVideo: number
-    videoCostBreakdown: Array<{ provider: string; costUsd: number; costIdr: number }>
-  }
+### A6: `/api/fanpages`
+- **File:** `fanpage.ts` (verified against code at lines 33-175)
+- **Methods:**
+  - `GET /api/fanpages` — list all fanpages
+  - `POST /api/fanpages` — create fanpage (see body below)
+  - `GET /api/fanpages/:id` — get single fanpage
+- **POST body:** `{ userId: string, pageId: string, pageName: string, accessToken: string, category?: string, fanCount?: number }`
+- **Fanpage response shape:**
+```json
+{
+  "id": "<number>",
+  "userId": "<string>",
+  "pageId": "<string>",
+  "pageName": "<string>",
+  "accessToken": "<string>",
+  "category": "<string | null>",
+  "fanCount": "<number>",
+  "isActive": "<boolean>",
+  "createdAt": "<ISO date>",
+  "updatedAt": "<ISO date>"
+}
 ```
 
-### A5. Fanpage Interception
+### A7: `/api/medias` (Media Gallery)
+- **File:** `provider-mgmt.ts`
+- **Methods:** `GET`, `POST`, `DELETE` (verify exact methods from provider-mgmt.ts)
 
-```
-GET /api/interceptions
-→ Interception[] where Interception {
-    id: number
-    pageId: string
-    fanpageName?: string
-    interceptType: string
-    status: string
-    interceptUrl?: string
-    uploadUrl?: string
-    createdAt: string
-  }
-
-> Note: Data is fetched from Prisma, shape may vary. Check interception service for exact type.
-
-GET /api/intercept/toggle
-POST /api/intercept/upload
-POST /api/intercept/deliver
-→ { success: boolean } or { ok: true }
+### A8: `/api/pricing`
+- **File:** `pricing.ts`
+- **Methods:** `GET`, `POST`
+- **Response:** `{ packages: SubscriptionPlan[], unitCosts: { ... }, config: {...} }`
+- **Full response shape:**
+```json
+{
+  "packages": [{ "name": "<string>", "monthlyIdr": "<number>", "yearlyIdr": "<number>", "monthlyCredits": "<number>", "dailyLimit": "<number>", "features": "<string[]>" }],
+  "unitCosts": { "VIDEO_15S": "<number>", "VIDEO_30S": "<number>", ... },
+  "usdToIdr": "<number>",
+  "targetMarginPercent": "<number>",
+  "recommendations": "{ ... }"
+}
 ```
 
-### A6. AI Config
+### A9-A15: TTS, Music, Looping, Autopilot, Analyze, Calendar, Trending
+- **Files:** `content-tools.ts`, `analytics.ts`
+- Verify exact endpoints from these files before implementing. Most follow GET/POST pattern with view-only renders.
 
-```
-GET /api/admin/ai-tasks/settings
-→ AITaskSettings  (full settings object)
+### A16: `/api/settings/:key`
+- **File:** `settings.ts`
+- **Methods:** `GET /api/settings/:key`, `PUT /api/settings/:key`
+- **Response:** `{ value: unknown }`
 
-POST /api/admin/ai-tasks/settings
-→ { ok: true }
-Body: any partial settings object
+### A17: `/api/niches`
+- **File:** `niches.ts`
+- **Methods:** `GET`, `POST`, `PUT /:id`, `DELETE /:id`
+- **Response:** `Niche[]`
 
-GET /api/admin/ai-config
-→ AIConfig (full config from AIConfigService.getFullConfig())
+### A18: `/api/personas`
+- **File:** `persona.ts`
+- **Methods:** `GET`, `POST`, `PUT /:id`, `DELETE /:id`
+- **Response:** `Persona[]`
 
-POST /api/admin/ai-config/tasks
-→ { ok: true }
+### A19: `/api/books`
+- **File:** `content-tools.ts:119-162`
+- **Methods:**
+  - `POST /api/books` — `{ title, full_markdown, subject?, sections?, stats? }` → 201 + `Book`
+  - `GET /api/books` — all books
+  - `GET /api/books/:id` — single book by numeric id
+- **Book shape:** `{ id, title, subject, fullMarkdown, sections?, stats?, createdAt, updatedAt }`
 
-POST /api/admin/ai-config/prompts
-→ { ok: true }
+### A20: `/api/comics`
+- **File:** `content-tools.ts:166-200`
+- **Methods:**
+  - `POST /api/comics` — `{ title, prompt, format?, language?, script?, num_episodes?, total_pages?, output_dir?, cover_path?, stats? }` → 201 + `Comic`
+  - `GET /api/comics` — all comics
+  - `GET /api/comics/:id` — single comic by numeric id
+- **Comic shape:** `{ id, title, format, language, prompt, script, numEpisodes, totalPages, outputDir, coverPath, stats, createdAt, updatedAt }`
 
-POST /api/admin/ai-config/chat
-→ { ok: true }
-
-POST /api/admin/ai-config/reset
-→ { ok: true }
-```
-
-### A7. Custom Providers
-
-```
-GET /api/admin/custom-providers
-→ CustomProvider[] where CustomProvider {
-    id: string (UUID)
-    name: string
-    provider: string
-    apiKey: string (masked)
-    baseUrl: string
-    models: string[]
-    isActive: boolean
-    createdAt: string
-  }
-
-POST /api/admin/custom-providers
-→ CustomProvider (created record)
-Body: { name: string, provider: string, apiKey: string, baseUrl: string, models?: string[] }
-
-PUT /api/admin/custom-providers/:id
-→ CustomProvider (updated record)
-
-DELETE /api/admin/custom-providers/:id
-→ { ok: true }
-
-POST /api/admin/custom-providers/:id/fetch-models
-→ { ok: true, count: number, models: string[] }
-
-POST /api/admin/custom-providers/:id/test
-→ { success: boolean } or test result
-
-POST /api/admin/custom-providers/:id/check-balance
-→ { success: true, balance: number } | { success: false, error: string }
-```
-
-### A8. Models Catalog
-
-```
-GET /api/admin/models-catalog
-→ {
-    models: ModelEntry[]
-    total: number
-    visionCount: number
-  }
-  where ModelEntry {
-    id: string
-    name: string
-    provider: string
-    providerName: string
-    family: string
-    vision: boolean
-    reasoning: boolean
-    toolCall: boolean
-    openWeights: boolean
-    inputModalities: string[]
-    outputModalities: string[]
-    contextWindow: number | null
-    outputLimit: number | null
-    releaseDate: string | null
-  }
-  Note: Cached in Redis for 1 hour. Returns 400+ models.
-```
-
-### A9. AI Chat (Admin Playground)
-
-```
-POST /api/admin/ai-chat
-→ { reply: string, model: string }
-Body: { message: string, model?: string }
-Headers: Cookie: admin_token=...
-Note: Rate-limited to 10 messages/minute/IP
-```
-
-### A10. Books / Comics / Movies
-
-```
-GET /api/books
-→ Book[] where Book { id: string, title: string, ... }
-
-POST /api/books
-→ Book (created record)
-Body: { title: string, content?: string, ... }
-
-GET /api/books/:id
-→ Book (single record)
-
---- Comics & Movies follow same pattern ---
-
-GET /api/comics
-POST /api/comics
-GET /api/comics/:id
-
-GET /api/movies
-POST /api/movies
-GET /api/movies/:id
-```
-
-### A11. Admin Config (System Settings)
-
-```
-GET /api/admin/env           → { keys: Array<{ name: string, value: string (masked) }> }
-GET /api/admin/env/:name     → { name: string, value: string (masked) }
-PUT /api/admin/env/:name     → { ok: true }
-Body: { value: string }
-
-GET /api/admin/env/expose    → { keys: Array<{ name: string, value: string }> }  (unmasked)
-
-GET /api/admin/config/:category/:key  → { value: unknown }
-PUT /api/admin/config/:category/:key  → { ok: true }
-Body: { value: unknown }
-```
-**Categories:** `provider`, `ai_param`, `timeout`, `retry`, `queue`, `retention`, `rate_limit`, `hpas`
+### A21: `/api/movies`
+- **File:** `content-tools.ts` (around line 200+)
+- **Methods:** `POST /api/movies`, `GET /api/movies`, `GET /api/movies/:id`
+- Verify exact body/response shapes from content-tools.ts
 
 ---
 
-## B. Customer API Endpoints
+## B — Customer API Endpoints
 
-### B1. Auth
+### B1: `/api/user`
+- **File:** `web/user.ts:20`
+- **Method:** `GET`
+- **Auth:** JWT or API key
+- **Response:** `User` object
 
-```
-POST /auth/telegram
-→ { token: string, user: User }
-Body: { id: number, first_name: string, username?: string, photo_url?: string, auth_date: number, hash: string }
-```
+### B2: `/api/user/videos`
+- **File:** `web/user.ts:90`
+- **Method:** `GET`
+- **Response:** `{ videos: Video[], total: number }`
 
-### B2. User
+### B3: `/api/user/history`
+- **File:** `web/user.ts:119`
+- **Method:** `GET`
+- **Response:** `{ history: HistoryEntry[] }`
 
-```
-GET /api/user
-→ User { id: number, telegramId: number, name: string, credits: number, role: string, subscriptionTier: string, referralCode: string }
+### B4: `/api/packages`
+- **File:** `web/finance.ts:27`
+- **Method:** `GET`
+- **Response:** `Package[]` — all credit packages
 
-PUT /api/user
-→ { ok: true, credits?: number }
-Body: { name?: string, language?: string, notifications?: boolean }
-```
+### B5: `/api/payment/create`
+- **File:** `web/finance.ts:53`
+- **Method:** `POST`
+- **Body:** `{ plan: string, gateway: string }`
+- **Response:** `{ ok: boolean, redirectUrl: string, paymentUrl: string, plan, cycle, amountIdr }`
 
-### B3. Video
+### B6: `/api/subscriptions`
+- **File:** `web/finance.ts:261`
+- **Method:** `GET`
+- **Response:** SubscriptionPlan[]
 
-```
-POST /api/video/create
-→ { jobId: string, status: string }
-Body: { niche: string, style: string, duration: number, script: string, ... }
+### B7: `/api/referral`
+- **File:** `web/finance.ts:157`
+- **Method:** `GET`
+- **Response:** `{ code: string, earnings: number, referrals: Referral[] }`
 
-GET /api/user/videos
-→ Video[] where Video { id: string, title: string, status: string, jobId: string, createdAt: string, thumbnail?: string }
-Query: cursor?, limit? (default 20)
+### B8: `/api/user/p2p-transfer`
+- **File:** `web/finance.ts:120`
+- **Method:** `POST`
+- **Body:** `{ to: string, amount: number }`
 
-GET /api/video/:jobId
-→ Video (full detail)
-```
+### B9: `/api/storyboard`
+- **File:** `web/content.ts:33`
+- **Method:** `POST`
+- **Body:** `{ niche: string, duration: string }`
 
-### B4. Billing
+### B10: `/api/video/create`
+- **File:** `web/content.ts:67`
+- **Method:** `POST`
+- **Body:** `{ niche, style, type, productImage?, prompt?, customPrompt? }`
+- **Response:** `{ jobId, status: "queued" }`
 
-```
-GET /api/packages
-→ Package[] where Package { id: string, name: string, price: number, credits: number, isActive: boolean }
+### B11: `/api/video/analyze`
+- **File:** `web/content.ts:140`
+- **Method:** `POST`
 
-POST /api/payment/create
-→ { paymentUrl: string, transactionId: string }
-Body: { packageId: string, gateway: "tripay" | "duitku" | "midtrans" }
+### B12: `/api/image/generate`
+- **File:** `web/content.ts:169`
+- **Method:** `POST`
+- **Body:** `{ prompt, niche }`
+- **Response:** `{ images: string[] }`
 
-GET /api/my/transactions
-→ Transaction[] where Transaction { id: string, amount: number, status: string, gateway: string, createdAt: string }
-
-GET /api/subscriptions
-→ Subscription[] where Subscription { id: string, plan: string, status: string, expiresAt: string }
-```
-
-### B5. Referral
-
-```
-GET /api/referral
-→ { code: string, count: number, earnings: number }
-
-POST /api/user/p2p-transfer
-→ { ok: true, newBalance: number }
-Body: { telegramId: number, amount: number }
-```
+### B13: `/auth/telegram`
+- **File:** `web/auth.ts`
+- **Method:** `POST`
+- **Body:** `{ id, first_name, username, auth_date, hash }`
+- **Response:** `{ token: string, user: User }`
 
 ---
 
-## C. No-API Pages (Static / Client-Side Only)
+## C — Landing Page Data
 
-These pages have no backend API — implement as client-side static UI:
+### C1: `/api/landing-config`
+- **File:** `landing-config.ts`
+- **Methods:** `GET`, `POST`
+- **Source:** Redis key `admin:landing_config`
+- **GET Response shape:** `{ headline, subheadline, heroImageUrl, ogImageUrl, testimonials?, videoDuration?, ... }`
 
-| Page | Implementation |
-|------|---------------|
-| Captions | Local state only |
-| CloakBrowser | Local state only |
-| Engagement | Local state only |
-| Trending | Local state only (or scrape) |
-| Calendar | Local state only |
-| A/B Tests | Local state or add API |
-| Video Tools | Tool grid (static) |
-| Repurpose | Static UI |
-| Research | Static content |
-| Medias | Local file grid |
-| Looping | Form UI (static) |
-| Remeta | Form UI (static) |
-| TTS | Static form UI |
-| Music | Static form + audio playback |
+### C2: Templates passed to landing page
+- **File:** `web/pages.ts:52` (EJS render)
+- **Data shape:** `{ landingConfig, testimonials, packages, currentLang, botUsername, siteUrl, fbPixelId, ga4Id, ttPixelId, ogImageUrl }`
