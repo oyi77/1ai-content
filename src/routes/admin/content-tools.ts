@@ -40,29 +40,15 @@ export async function registerContentToolsRoutes(server: FastifyInstance) {
 
   // Bookshelf AI Book Generator
   server.get("/admin/bookshelf", async (_request, reply) => {
-    return reply.view(
-      "admin/bookshelf.ejs",
-      { ...trackingVars(), activePage: "bookshelf", title: "AI Book Generator" },
-      { layout: "admin/layout.ejs" },
-    );
+    return reply.redirect("/admin/react/bookshelf");
   });
-
   // Comic/Manga/Manhwa Generator
   server.get("/admin/comic", async (_request, reply) => {
-    return reply.view(
-      "admin/comic.ejs",
-      { ...trackingVars(), activePage: "comic", title: "Comic Generator" },
-      { layout: "admin/layout.ejs" },
-    );
+    return reply.redirect("/admin/react/comic");
   });
-
   // Movie / Short-Film Generator
   server.get("/admin/movie", async (_request, reply) => {
-    return reply.view(
-      "admin/movie.ejs",
-      { ...trackingVars(), activePage: "movie", title: "Movie Generator" },
-      { layout: "admin/layout.ejs" },
-    );
+    return reply.redirect("/admin/react/movie");
   });
 
   // TTS Voice Generator
@@ -190,6 +176,16 @@ export async function registerContentToolsRoutes(server: FastifyInstance) {
     return reply.send(comic);
   });
 
+  // Delete a comic
+  server.delete<{ Params: { id: string } }>(
+    "/api/comics/:id",
+    async (request, reply) => {
+      const { id } = request.params;
+      await prisma.comic.delete({ where: { id: Number(id) } });
+      return reply.send({ success: true });
+    },
+  );
+
   // ========== Movie API ==========
 
   // Save a generated movie
@@ -249,6 +245,35 @@ export async function registerContentToolsRoutes(server: FastifyInstance) {
       return reply.status(404).send({ error: "Movie not found" });
     }
     return reply.send(movie);
+  });
+  // Delete a book
+  server.delete<{ Params: { id: string } }>("/api/books/:id", async (request, reply) => {
+    const { id } = request.params;
+    const book = await prisma.book.findUnique({
+      where: { id: Number(id) },
+    });
+    if (!book) {
+      return reply.status(404).send({ error: "Book not found" });
+    }
+    await prisma.book.delete({
+      where: { id: Number(id) },
+    });
+    return reply.send({ success: true });
+  });
+
+  // Delete a movie
+  server.delete<{ Params: { id: string } }>("/api/movies/:id", async (request, reply) => {
+    const { id } = request.params;
+    const movie = await prisma.movie.findUnique({
+      where: { id: Number(id) },
+    });
+    if (!movie) {
+      return reply.status(404).send({ error: "Movie not found" });
+    }
+    await prisma.movie.delete({
+      where: { id: Number(id) },
+    });
+    return reply.send({ success: true });
   });
 }
 

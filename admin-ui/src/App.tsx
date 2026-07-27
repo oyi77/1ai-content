@@ -24,6 +24,9 @@ import ConfigPage from "./pages/ConfigPage";
 import SystemPage from "./pages/SystemPage";
 import InterceptionsPage from "./pages/InterceptionsPage";
 import AiConfigPage from "./pages/AiConfigPage";
+import BookshelfPage from "./pages/BookshelfPage";
+import MoviePage from "./pages/MoviePage";
+import ProvidersPage from "./pages/ProvidersPage";
 /* content audio */
 import Tts from "./pages/Tts";
 import Music from "./pages/Music";
@@ -38,6 +41,7 @@ import VideoTools from "./pages/tools/VideoTools";
 import Storyboard from "./pages/tools/Storyboard";
 import RenderAd from "./pages/tools/RenderAd";
 import Pinterest from "./pages/tools/Pinterest";
+import ComicPage from "./pages/ComicPage";
 import Fanpage from "./pages/tools/Fanpage";
 export default function App() {
   return (
@@ -69,9 +73,13 @@ export default function App() {
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/medias" element={<MediasPage />} />
           <Route path="/ai-config" element={<AiConfigPage />} />
+          <Route path="/comic" element={<ComicPage />} />
           <Route path="/playground" element={<Playground />} />
           <Route path="/tts" element={<Tts />} />
           <Route path="/music" element={<Music />} />
+          <Route path="/bookshelf" element={<BookshelfPage />} />
+          <Route path="/movie" element={<MoviePage />} />
+          <Route path="/providers" element={<ProvidersPage />} />
           <Route path="/captions" element={<Captions />} />
           <Route path="/analyze" element={<Analyze />} />
           <Route path="/looping" element={<Looping />} />

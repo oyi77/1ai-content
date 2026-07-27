@@ -23,7 +23,7 @@ export async function registerProviderMgmtRoutes(
 
   /** GET /admin/providers — Render providers management page */
   server.get("/admin/providers", async (_request, reply) => {
-    return reply.view("admin/providers.ejs", { ...trackingVars(), activePage: 'providers', title: 'Provider Management' }, { layout: 'admin/layout.ejs' });
+    return reply.redirect("/admin/react/providers");
   });
 
   /** GET /admin/ai-config — AI Configuration page */

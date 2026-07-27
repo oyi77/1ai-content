@@ -68,9 +68,10 @@ const categories: SidebarCategory[] = [
     iconKey: "file",
     items: [
       { label: "Content Library", path: "/content", type: "react" },
-      { label: "Bookshelf", path: "/bookshelf", type: "ejs" },
-      { label: "Comics", path: "/comic", type: "ejs" },
+      { label: "Bookshelf", path: "/bookshelf", type: "react" },
+      { label: "Comics", path: "/comic", type: "react" },
       { label: "Media Gallery", path: "/medias", type: "react" },
+      { label: "Movies", path: "/movie", type: "react" },
       { label: "Prompts", path: "/prompts", type: "react" },
       { label: "A/B Tests", path: "/analytics/ab-tests", type: "react" },
       { label: "Trending Scanner", path: "/analytics/trending", type: "react" },
@@ -134,7 +135,7 @@ const categories: SidebarCategory[] = [
       { label: "Config", path: "/config", type: "react" },
       { label: "System Health", path: "/system", type: "react" },
       { label: "Interceptions", path: "/interceptions", type: "react" },
-      { label: "Providers", path: "/providers", type: "ejs" },
+      { label: "Providers", path: "/providers", type: "react" },
     ],
   },
   {
