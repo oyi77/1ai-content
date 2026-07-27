@@ -9,8 +9,7 @@ export default function Pinterest() {
   const [results, setResults] = useState<PinterestResult[]>([]);
   const [searching, setSearching] = useState(false);
   const [searchErr, setSearchErr] = useState("");
-
-  const [fanpages, setFanpages] = useState<FanpageData[]>([]);
+  const [fanpages, setFanpages] = useState<Fanpage[]>([]);
   const [selectedPage, setSelectedPage] = useState("");
   const [fbMessage, setFbMessage] = useState("");
   const [affiliateLink, setAffiliateLink] = useState("");
