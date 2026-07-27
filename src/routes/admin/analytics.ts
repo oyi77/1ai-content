@@ -13,37 +13,37 @@ export async function registerAnalyticsRoutes(server: FastifyInstance) {
 
   // Calendar page
   server.get("/admin/calendar", async (_request, reply) => {
-    return reply.view("admin/calendar.ejs", { ...trackingVars(), activePage: 'calendar', title: 'Content Calendar' }, { layout: 'admin/layout.ejs' });
+    return reply.redirect("/admin/react/analytics/calendar");
   });
 
   // Trending scanner page
   server.get("/admin/trending", async (_request, reply) => {
-    return reply.view("admin/trending.ejs", { ...trackingVars(), activePage: 'trending', title: 'Trending Scanner' }, { layout: 'admin/layout.ejs' });
+    return reply.redirect("/admin/react/analytics/trending");
   });
 
   // A/B Tests page
   server.get("/admin/ab-tests", async (_request, reply) => {
-    return reply.view("admin/ab-tests.ejs", { ...trackingVars(), activePage: 'ab-tests', title: 'A/B Tests' }, { layout: 'admin/layout.ejs' });
+    return reply.redirect("/admin/react/analytics/ab-tests");
   });
 
   // Carousel page
   server.get("/admin/carousel", async (_request, reply) => {
-    return reply.view("admin/carousel.ejs", { ...trackingVars(), activePage: 'carousel', title: 'Carousel Generator' }, { layout: 'admin/layout.ejs' });
+    return reply.redirect("/admin/react/analytics/carousel");
   });
 
   // Re-Metadata page
   server.get("/admin/remeta", async (_request, reply) => {
-    return reply.view("admin/remeta.ejs", { ...trackingVars(), activePage: 'remeta', title: 'Re-Metadata Engine' }, { layout: 'admin/layout.ejs' });
+    return reply.redirect("/admin/react/analytics/remeta");
   });
 
   // Repurpose page
   server.get("/admin/repurpose", async (_request, reply) => {
-    return reply.view("admin/repurpose.ejs", { ...trackingVars(), activePage: 'repurpose', title: 'Content Repurpose' }, { layout: 'admin/layout.ejs' });
+    return reply.redirect("/admin/react/analytics/repurpose");
   });
 
   // Research page
   server.get("/admin/research", async (_request, reply) => {
-    return reply.view("admin/research.ejs", { ...trackingVars(), activePage: 'research', title: 'Book Research' }, { layout: 'admin/layout.ejs' });
+    return reply.redirect("/admin/react/analytics/research");
   });
 
 

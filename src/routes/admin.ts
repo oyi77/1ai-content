@@ -194,7 +194,6 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
       url === "/admin/video-tools" ||
       url === "/admin/render-ad" ||
       url === "/admin/storyboard" ||
-      url === "/admin/pinterest" ||
       url === "/admin/fanpage" ||
       url === "/admin/research" ||
       url === "/admin/analyze" ||
@@ -206,6 +205,12 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
       url === "/admin/comic" ||
       url === "/admin/movie" ||
       url === "/admin/medias" ||
+      url === "/admin/calendar" ||
+      url === "/admin/trending" ||
+      url === "/admin/ab-tests" ||
+      url === "/admin/carousel" ||
+      url === "/admin/remeta" ||
+      url === "/admin/repurpose" ||
       url.startsWith("/api/fanpages") ||
       url.startsWith("/api/token-usage") ||
       url.startsWith("/api/profit-report") ||
