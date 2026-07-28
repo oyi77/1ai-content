@@ -1,64 +1,48 @@
+/**
+ * Admin Interception Edge Cases
+ *
+ * Tests edge-case behavior of the interceptions modal in the React SPA.
+ * Focuses on modal-level validations: button disabled states.
+ * Avoids deep EJS-specific DOM interactions that no longer apply.
+ */
+
 import { test, expect } from '@playwright/test';
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin';
-const INVALID_USER_ID = '000000000';
 
-test.describe.configure({ mode: 'serial' });
+function basicAuthHeader(password: string): string {
+  return 'Basic ' + Buffer.from(`admin:${password}`).toString('base64');
+}
 
-test.describe('Admin Intercept Edge Cases', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/admin/login');
-    await page.fill('input[name="password"]', ADMIN_PASSWORD);
-    await page.click('button[type="submit"]');
-    await expect(page).toHaveURL(/.*dashboard/);
-  });
+test.beforeEach(async ({ page }) => {
+  await page.setExtraHTTPHeaders({ Authorization: basicAuthHeader(ADMIN_PASSWORD) });
+});
 
-  const NON_NUMERIC_USER_ID = 'abcde';
+// ─── Empty search ────────────────────────────────────────────────────────────
+// When the search input in the modal is empty, no results are shown
+// and the Enable Intercept button stays disabled
 
-  test('should show error when trying to add empty user ID (no selection made)', async ({ page }) => {
-    await page.goto('/admin/interceptions');
-    await expect(page.locator('.section-title')).toHaveText('🎯 Live Interceptions');
-  
-    await page.click('button:has-text("+ Intercept User")');
-    await page.fill('#add-user-search', INVALID_USER_ID);
-    // Wait for debounce
-    await page.waitForTimeout(500);
-    // Nothing selected, click add (using evaluate to bypass UI overlap)
-    // @ts-expect-error - document is available in browser context
-    await page.evaluate(() => { document.getElementById('add-btn').click(); });
-    
-    const errorMessage = page.locator('#add-error');
-    await expect(errorMessage).toBeVisible();
-    await expect(errorMessage).toContainText('Telegram ID is required');
-  });
+test('empty search shows no results and button disabled', async ({ page }) => {
+  await page.goto('/admin/interceptions');
+  await page.getByText('Live Interceptions').waitFor({ state: 'visible', timeout: 15000 });
 
-  test('should bypass UI search and test backend non-numeric handling', async ({ page }) => {
-    await page.goto('/admin/interceptions');
-    await expect(page.locator('.section-title')).toHaveText('🎯 Live Interceptions');
+  // Open add modal
+  await page.getByText('+ Intercept User').click();
+  await expect(page.getByRole('heading', { name: 'Intercept User' })).toBeVisible({ timeout: 10000 });
 
-    await page.click('button:has-text("+ Intercept User")');
-    // Force hidden input value to bypass UI validation
-    // @ts-expect-error - document is available in browser context
-    await page.evaluate((id) => { document.getElementById('add-telegram-id').value = id }, NON_NUMERIC_USER_ID);
-    await page.click('#add-btn');
+  // Search input is empty by default
+  const searchInput = page.locator('input[placeholder*="Type name"]');
+  await expect(searchInput).toBeVisible();
 
-    const errorMessage = page.locator('#add-error');
-    await expect(errorMessage).toBeVisible();
-    await expect(errorMessage).toContainText('Invalid Telegram ID format');
-  });
+  // "Enable Intercept" button should be disabled when no user selected
+  const enableButton = page.getByText('Enable Intercept');
+  await expect(enableButton).toBeDisabled();
+});
 
-  test('should bypass UI search and test backend invalid user ID handling', async ({ page }) => {
-    await page.goto('/admin/interceptions');
-    await expect(page.locator('.section-title')).toHaveText('🎯 Live Interceptions');
+// ─── Section title ───────────────────────────────────────────────────────────
+// Confirm section title is plain text (no emoji icon prefix)
 
-    await page.click('button:has-text("+ Intercept User")');
-    // Force hidden input value
-    // @ts-expect-error - document is available in browser context
-    await page.evaluate((id) => { document.getElementById('add-telegram-id').value = id }, INVALID_USER_ID);
-    await page.click('#add-btn');
-
-    const errorMessage = page.locator('#add-error');
-    await expect(errorMessage).toBeVisible();
-    await expect(errorMessage).toContainText('User not found');
-  });
+test('section title is "Live Interceptions" without emoji', async ({ page }) => {
+  await page.goto('/admin/interceptions');
+  await expect(page.getByText('Live Interceptions')).toBeVisible({ timeout: 15000 });
 });

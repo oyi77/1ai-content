@@ -11,7 +11,7 @@ export default defineConfig({
   timeout: 30000,
   retries: 1,
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: 'http://localhost:3002',
     headless: true,
     // Expose ADMIN_PASSWORD to all test files via playwright test env
   },
@@ -20,7 +20,7 @@ export default defineConfig({
   // We achieve this by having tests read process.env.ADMIN_PASSWORD directly.
   webServer: {
     command: `ADMIN_PASSWORD=${ADMIN_PASSWORD} FORCE_POLLING=true npx tsx src/index.ts`,
-    port: 3000,
+    port: 3002,
     timeout: 120000,
     reuseExistingServer: true,
     env: {

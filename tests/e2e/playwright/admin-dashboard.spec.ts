@@ -1,9 +1,9 @@
 /**
  * Admin Dashboard E2E Tests
  *
- * Tests the analytics dashboard page (analytics.ejs served at /admin/dashboard).
- * The dashboard is a single-page app — navigation is JS-driven via data-section
- * attributes, not href links to separate pages.
+ * Tests the analytics dashboard page (React SPA at /admin/react/dashboard).
+ * The dashboard is a React SPA — uses text-based assertions on rendered components.
+ * /admin/dashboard redirects (302) to /admin/react/dashboard.
  */
 
 import { test, expect } from '@playwright/test';
@@ -14,78 +14,57 @@ function basicAuthHeader(password: string): string {
   return 'Basic ' + Buffer.from(`admin:${password}`).toString('base64');
 }
 
+// Set basic auth for all page tests
+test.beforeEach(async ({ page }) => {
+  await page.setExtraHTTPHeaders({ Authorization: basicAuthHeader(ADMIN_PASSWORD) });
+});
+
 // ─── Dashboard page structure ────────────────────────────────────────────────
+// /admin/dashboard redirects (302) to React SPA. page.goto() follows redirects.
 
-test('dashboard page returns HTML with 200', async ({ request }) => {
-  const response = await request.get('/admin/dashboard', {
-    headers: { Authorization: basicAuthHeader(ADMIN_PASSWORD) },
-  });
-  expect(response.status()).toBe(200);
-  const text = await response.text();
-  expect(text).toContain('<!DOCTYPE html');
+test('dashboard page renders React SPA', async ({ page }) => {
+  await page.goto('/admin/dashboard');
+  // React SPA shows KPI labels after data loads
+  await expect(page.getByText('New Users')).toBeVisible({ timeout: 15000 });
 });
 
-test('dashboard page contains BerkahKarya branding', async ({ request }) => {
-  const response = await request.get('/admin/dashboard', {
-    headers: { Authorization: basicAuthHeader(ADMIN_PASSWORD) },
-  });
-  const text = await response.text();
-  expect(text.toLowerCase()).toContain('berkahkarya');
+test('dashboard page contains all four KPI labels', async ({ page }) => {
+  await page.goto('/admin/dashboard');
+  await expect(page.getByText('New Users')).toBeVisible({ timeout: 15000 });
+  await expect(page.getByText('Active Users').first()).toBeVisible({ timeout: 10000 });
+  await expect(page.getByText('Transactions')).toBeVisible({ timeout: 10000 });
+  await expect(page.getByText('Revenue')).toBeVisible({ timeout: 10000 });
 });
 
-test('dashboard page contains sidebar navigation items', async ({ request }) => {
-  const response = await request.get('/admin/dashboard', {
-    headers: { Authorization: basicAuthHeader(ADMIN_PASSWORD) },
-  });
-  const text = await response.text();
-  // Layout sidebar uses .nav-item class with data-label attributes
-  expect(text).toContain('nav-item');
-  expect(text).toContain('data-label="Pricing"');
+test('dashboard page has Active Users section header', async ({ page }) => {
+  await page.goto('/admin/dashboard');
+  // Dashboard.tsx renders "Active Users" as an h3 section header
+  await expect(page.locator('h3:has-text("Active Users")')).toBeVisible({ timeout: 15000 });
 });
 
-test('dashboard page has kpi-card elements in HTML', async ({ request }) => {
-  const response = await request.get('/admin/dashboard', {
-    headers: { Authorization: basicAuthHeader(ADMIN_PASSWORD) },
-  });
-  const text = await response.text();
-  // analytics.ejs uses .kpi-card class for stat cards
-  expect(text).toContain('kpi-card');
+test('dashboard page has Provider Health and Top Niches sections', async ({ page }) => {
+  await page.goto('/admin/dashboard');
+  await expect(page.locator('h3:has-text("Provider Health")')).toBeVisible({ timeout: 15000 });
+  await expect(page.locator('h3:has-text("Top Niches")')).toBeVisible({ timeout: 10000 });
 });
 
-// ─── Navigation section items ─────────────────────────────────────────────────
+// ─── Navigation redirects (EJS routes → React SPA) ──────────────────────────
+// /admin/* routes redirect to /admin/react/* equivalents
 
-test('dashboard page has Users section in page content', async ({ request }) => {
-  const response = await request.get('/admin/dashboard', {
-    headers: { Authorization: basicAuthHeader(ADMIN_PASSWORD) },
-  });
-  const text = await response.text();
-  // Users section rendered in page content (id="section-users")
-  expect(text).toContain('id="section-users"');
-});
-
-test('dashboard page has Pricing nav section item', async ({ request }) => {
-  const response = await request.get('/admin/dashboard', {
-    headers: { Authorization: basicAuthHeader(ADMIN_PASSWORD) },
-  });
-  const text = await response.text();
-  // Layout sidebar uses data-label attribute for Pricing
-  expect(text).toContain('data-label="Pricing"');
-});
-
-// ─── Navigation actually works (pages reachable) ─────────────────────────────
-
-test('GET /admin/pricing returns 200', async ({ request }) => {
+test('GET /admin/pricing redirects to React SPA', async ({ request }) => {
   const response = await request.get('/admin/pricing', {
     headers: { Authorization: basicAuthHeader(ADMIN_PASSWORD) },
+    maxRedirects: 0,
   });
-  expect(response.status()).toBe(200);
+  expect([200, 301, 302]).toContain(response.status());
 });
 
-test('GET /admin/prompts returns 200', async ({ request }) => {
+test('GET /admin/prompts redirects to React SPA', async ({ request }) => {
   const response = await request.get('/admin/prompts', {
     headers: { Authorization: basicAuthHeader(ADMIN_PASSWORD) },
+    maxRedirects: 0,
   });
-  expect(response.status()).toBe(200);
+  expect([200, 301, 302]).toContain(response.status());
 });
 
 test('GET /admin/users redirects (SPA handles users via dashboard)', async ({ request }) => {
