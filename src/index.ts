@@ -372,7 +372,7 @@ async function main() {
       if (/\.[a-z0-9]+(\?|$)/i.test(relPath)) {
         return reply.sendFile(relPath, customerUiDist);
       }
-      return reply.sendFile('index.html');
+      return reply.sendFile('index.html', customerUiDist);
     });
 
     // 404 handler
