@@ -141,4 +141,103 @@ export class UserCrudService {
       },
     });
   }
-}
+    // ── Email Auth ────────────────────────────────────────────────────────
+
+    /**
+     * Find user by email
+     */
+    static async findByEmail(email: string): Promise<User | null> {
+      return prisma.user.findUnique({ where: { email } });
+    }
+
+    /**
+     * Find user by verification token
+     */
+    static async findByVerificationToken(token: string): Promise<User | null> {
+      return prisma.user.findFirst({ where: { verificationToken: token } });
+    }
+
+    /**
+     * Find user by password reset token
+     */
+    static async findByPasswordResetToken(token: string): Promise<User | null> {
+      return prisma.user.findFirst({ where: { passwordResetToken: token } });
+    }
+
+    /**
+     * Create an email-only user with a synthetic telegramId
+     */
+    static async createEmailUser(data: {
+      email: string;
+      passwordHash: string;
+      firstName: string;
+      lastName?: string;
+      verificationToken: string;
+      language?: string;
+    }): Promise<User> {
+      const { generateSyntheticId } = await import("@/utils/id-generator.js");
+      const { UserReferralService } = await import("./user-referral.service.js");
+      const telegramId = generateSyntheticId();
+      const referralCode = await UserReferralService.generateReferralCode(data.firstName);
+
+      const user = await prisma.user.create({
+        data: {
+          telegramId,
+          email: data.email,
+          passwordHash: data.passwordHash,
+          verificationToken: data.verificationToken,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          tier: 'free',
+          creditBalance: 0,
+          welcomeBonusUsed: false,
+          dailyFreeUsed: false,
+          referralCode,
+          language: data.language || 'id',
+          notificationsEnabled: true,
+        },
+      });
+      logger.info(`Created email-only user: ${user.uuid} (${data.email})`);
+      return user;
+    }
+
+    /**
+     * Mark a user's email as verified
+     */
+    static async verifyEmail(email: string): Promise<User> {
+      return prisma.user.update({
+        where: { email },
+        data: {
+          emailVerifiedAt: new Date(),
+          verificationToken: null,
+        },
+      });
+    }
+
+    /**
+     * Set password reset token for a user
+     */
+    static async setPasswordResetToken(email: string, token: string, expiresAt: Date): Promise<User> {
+      return prisma.user.update({
+        where: { email },
+        data: {
+          passwordResetToken: token,
+          passwordResetExpiresAt: expiresAt,
+        },
+      });
+    }
+
+    /**
+     * Reset password (clear reset token, update hash)
+     */
+    static async resetPassword(email: string, passwordHash: string): Promise<User> {
+      return prisma.user.update({
+        where: { email },
+        data: {
+          passwordHash,
+          passwordResetToken: null,
+          passwordResetExpiresAt: null,
+        },
+      });
+    }
+  }

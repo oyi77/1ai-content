@@ -2,7 +2,9 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from "
 
 interface User {
   id: number;
-  telegramId: string;
+  telegramId: string | null;
+  email: string | null;
+  emailVerified: boolean;
   username: string | null;
   name: string;
   credits: number;

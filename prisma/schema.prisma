@@ -81,6 +81,13 @@ model User {
   firstName   String  @map("first_name") @db.VarChar(64)
   lastName    String? @map("last_name") @db.VarChar(64)
   phoneNumber String? @map("phone_number") @db.VarChar(20)
+  // Email Auth
+  email               String?   @unique @map("email") @db.VarChar(255)
+  passwordHash        String?   @map("password_hash")
+  emailVerifiedAt     DateTime? @map("email_verified_at")
+  verificationToken   String?   @unique @map("verification_token")
+  passwordResetToken  String?   @map("password_reset_token")
+  passwordResetExpiresAt DateTime? @map("password_reset_expires_at")
 
   // Tier & Credits
   tier                String    @default("free") @db.VarChar(16)

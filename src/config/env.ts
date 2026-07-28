@@ -18,6 +18,7 @@ const envSchema = z.object({
   REDIS_URL: z.string().default("redis://localhost:6379"),
   ADMIN_PASSWORD: z.string().min(1, "ADMIN_PASSWORD is required"),
   JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
+  JWT_EMAIL_EXPIRES_IN: z.string().default("7d"),
 
   // ── Core (optional with defaults) ──
   NODE_ENV: z
