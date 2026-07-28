@@ -3,8 +3,8 @@ import { defineConfig } from '@playwright/test';
 // When reuseExistingServer is true, Playwright won't restart the server, so
 // the webServer.env block is ignored. We read ADMIN_PASSWORD from the outer
 // process env so the test fixtures match whatever the running server has.
-// Default matches the application default (ADMIN_PASSWORD unset → "admin").
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin';
+// Default matches .env ADMIN_PASSWORD value.
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 
 export default defineConfig({
   testDir: './tests/e2e/playwright',

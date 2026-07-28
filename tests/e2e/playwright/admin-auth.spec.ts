@@ -85,7 +85,7 @@ test('dashboard is accessible with valid admin_token cookie via Basic auth', asy
   // Should return 200 (HTML page)
   expect(response.status()).toBe(200);
   const text = await response.text();
-  expect(text).toContain('<!DOCTYPE html');
+  expect(text).toContain('<!doctype html');
 });
 
 test('dashboard is accessible with valid admin_token cookie', async ({ request }) => {
