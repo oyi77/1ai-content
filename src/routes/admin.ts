@@ -4,8 +4,9 @@
  * Serves a web UI for bot management
  */
 
-import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
+import path from "path";
 import crypto from "crypto";
+import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { timingSafeCompare } from "@/utils/crypto";
 import { prisma } from "@/config/database";
 import { getQueueStats, addNotificationJob, videoQueue } from "@/config/queue";
@@ -806,6 +807,18 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
   // /admin/broadcast -> /admin/settings#broadcast (settings tab has broadcast form)
   server.get("/admin/broadcast", async (_request, reply) => {
     return reply.redirect("/admin/settings#broadcast");
+  });
+
+  // ── REACT ADMIN SPA CATCH-ALL ──
+  // Serves index.html for SPA routes (auth-checked via the onRequest hook above).
+  // Static assets (*.js, *.css) are NOT in the isAdminRoute list so they bypass auth.
+  const adminUiDist = path.join(process.cwd(), "admin-ui", "dist");
+  server.get("/admin/*", async (request, reply) => {
+    const relPath = new URL(request.url, "http://localhost").pathname.replace("/admin/", "");
+    if (/\.[a-z0-9]+(\?|$)/i.test(relPath)) {
+      return reply.sendFile(relPath, adminUiDist);
+    }
+    return reply.sendFile("index.html");
   });
 
   // ── REGISTER PROVIDER COSTS ROUTES ──

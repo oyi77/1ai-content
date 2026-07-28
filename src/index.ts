@@ -365,16 +365,6 @@ async function main() {
     }
     logger.info("✅ Routes registered");
 
-    // React admin SPA catch-all — serves index.html for SPA routes, actual files for assets
-    const adminUiDist = path.join(process.cwd(), 'admin-ui', 'dist');
-    app.get('/admin/*', async (request, reply) => {
-      const relPath = (new URL(request.url, 'http://localhost').pathname).replace('/admin/', '');
-      if (/\.[a-z0-9]+(\?|$)/i.test(relPath)) {
-        return reply.sendFile(relPath, adminUiDist);
-      }
-      return reply.sendFile('index.html');
-    });
-
     // Customer SPA catch-all
     const customerUiDist = path.join(process.cwd(), 'customer-ui', 'dist');
     app.get('/app/*', async (request, reply) => {
