@@ -10,14 +10,14 @@ import subprocess
 from typing import Optional
 from pathlib import Path
 
-# Path to the remotion-ads project
-REMOTION_DIR = Path(__file__).parent.parent.parent / "remotion-ads"
+
+# Allow override via env var for flexibility; default to project-relative path
+_DEFAULT_REMOTION_DIR = Path(__file__).resolve().parent.parent.parent / "remotion-ads"
+REMOTION_DIR = Path(os.environ.get("REMOTION_ADS_DIR", str(_DEFAULT_REMOTION_DIR)))
 RENDER_SCRIPT = REMOTION_DIR / "src" / "render.ts"
 
 # Default output directory
 OUTPUT_DIR = REMOTION_DIR / "output"
-
-
 async def render_product_ad(
     *,
     image_url: str,
@@ -124,3 +124,4 @@ async def render_product_ad(
         raise RuntimeError("Remotion render timed out (300s)")
     except json.JSONDecodeError as e:
         raise RuntimeError(f"Invalid JSON in render output: {e}")
+
