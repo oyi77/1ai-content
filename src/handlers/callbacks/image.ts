@@ -1,10 +1,9 @@
 /**
  * Image Callbacks — BARREL
  *
- * Re-exports all public API from split sub-modules.
+ * Re-exports all image callback handlers from split modules.
  * Consumers importing from "@/handlers/callbacks/image" keep working.
  */
-export { handleImageGeneration } from './image/handle-generation';
 export { handleImageCallbacks } from './image/callback-router';
+export { handleImageGeneration } from './image/handle-generation';
 export { detectImageElements, renderElementSelectionKeyboard, buildElementSelectionMessage } from './image/element-ui';
-export type { } from './image/element-ui';

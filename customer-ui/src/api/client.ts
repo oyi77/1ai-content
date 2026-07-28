@@ -30,33 +30,81 @@ export const api = {
   put: <T>(path: string, body?: unknown) => request<T>("PUT", path, body),
   del: <T>(path: string) => request<T>("DELETE", path),
 
-  // User
-  getUser: () => request<{ user: any }>("GET", "/api/user"),
-  updateProfile: (data: any) => request("PUT", "/api/user/profile", data),
-  updateSettings: (data: any) => request("PUT", "/api/user/settings", data),
+  // ── User ──────────────────────────────────────────────
+  // Backend: GET /api/user → flat user object
+  getUser: () => request<any>("GET", "/api/user"),
 
-  // Videos
-  getVideos: () => request<{ videos: any[] }>("GET", "/api/videos"),
+  // Backend: PATCH /api/user/settings  (field firstName, not name)
+  updateProfile: (data: { name?: string }) =>
+    request("PATCH", "/api/user/settings", { firstName: data.name }),
+
+  // Backend: PATCH /api/user/settings  (field notificationsEnabled, not notifications)
+  updateSettings: (data: { language?: string; notifications?: boolean }) =>
+    request("PATCH", "/api/user/settings", {
+      language: data.language,
+      notificationsEnabled: data.notifications,
+    }),
+
+  // ── Videos ────────────────────────────────────────────
+  getVideos: () => request<{ videos: any[] }>("GET", "/api/user/videos"),
   createVideo: (data: any) => request("POST", "/api/video/create", data),
-  getStoryboard: (id: number) => request(`GET`, `/api/storyboard?id=${id}`),
 
-  // Payments
-  getBilling: () => request<{ transactions: any[]; credits: number }>("GET", "/api/pay/history"),
-  createQrisPayment: (amount: number) => request("POST", "/api/pay/qris", { amount }),
-  createCryptoPayment: (amount: number) => request("POST", "/api/pay/crypto", { amount }),
+  // Backend: POST /api/storyboard (body { niche, duration, customPrompt })
+  getStoryboard: (params: { niche: string; duration?: number; customPrompt?: string }) =>
+    request("POST", "/api/storyboard", params),
 
-  // Subscriptions
-  getSubscriptions: () => request<{ plans: any[]; current: any }>("GET", "/api/subscriptions"),
-  subscribe: (planId: string) => request("POST", "/api/subscriptions", { planId }),
+  // ── Payments ──────────────────────────────────────────
+  // Backend: GET /api/my/transactions → flat array
+  getBilling: async () => {
+    const transactions = await request<any[]>("GET", "/api/my/transactions");
+    return { transactions, credits: 0 };
+  },
 
-  // Referral
-  getReferral: () => request<{ code: string; earnings: number; count: number }>("GET", "/api/referral"),
+  // Unified backend: POST /api/payment/create { packageId, gateway }
+  createQrisPayment: (amount: number) =>
+    request("POST", "/api/payment/create", {
+      packageId: `topup_${amount}`,
+      gateway: "tripay",
+    }),
 
-  // Transfer
-  sendBalance: (telegramId: string, amount: number) =>
-    request("POST", "/api/transfer", { telegramId, amount }),
+  createCryptoPayment: (amount: number) =>
+    request("POST", "/api/payment/create", {
+      packageId: `topup_${amount}`,
+      gateway: "nowpayments",
+    }),
 
-  // AI Image
+  // ── Subscriptions ─────────────────────────────────────
+  // Backend: GET /api/subscriptions → Record<string, plan> (dict, key=plan id)
+  getSubscriptions: async () => {
+    const dict = await request<Record<string, any>>("GET", "/api/subscriptions");
+    const plans = Object.entries(dict).map(([id, plan]) => ({ id, ...plan }));
+    return { plans, current: null };
+  },
+
+  // Backend: POST /api/subscription/buy { plan, cycle, gateway }
+  subscribe: (planId: string) =>
+    request("POST", "/api/subscription/buy", {
+      plan: planId,
+      cycle: "monthly",
+      gateway: "tripay",
+    }),
+
+  // ── Referral ──────────────────────────────────────────
+  // Backend returns { referralCode, referralLink, referralCount, commissionEarned, ... }
+  getReferral: async () => {
+    const data = await request<any>("GET", "/api/referral");
+    return { code: data.referralCode, earnings: data.commissionEarned, count: data.referralCount };
+  },
+
+  // ── Transfer ──────────────────────────────────────────
+  // Backend: POST /api/user/p2p-transfer { recipientUsername, amount (string) }
+  sendBalance: (recipientUsername: string, amount: number) =>
+    request("POST", "/api/user/p2p-transfer", {
+      recipientUsername,
+      amount: String(amount),
+    }),
+
+  // ── AI Image ──────────────────────────────────────────
   generateImage: (prompt: string, style?: string) =>
     request("POST", "/api/image/generate", { prompt, style }),
 };
