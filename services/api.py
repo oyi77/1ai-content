@@ -29,7 +29,7 @@ from pathlib import Path
 from typing import Optional
 from datetime import datetime
 
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -820,46 +820,118 @@ async def start_trending_scanner():
 # DOMAIN-SPLIT ROUTERS — import and include
 # ══════════════════════════════════════════════════════════════
 
-from services.routers.health import health_router
-from services.routers.storyboard import storyboard_router
-from services.routers.download import download_router
-from services.routers.video import video_router
-from services.routers.tikwm import tikwm_router
-from services.routers.upload import upload_router
-from services.routers.loop import loop_router
-from services.routers.music import music_router
-from services.routers.remotion import remotion_router
-from services.routers.clipper import clipper_router
-from services.routers.pinterest import pinterest_router
-from services.routers.carousel import carousel_router
-from services.routers.brand import brand_router
-from services.routers.faceless import faceless_router
-from services.routers.research import research_router
-from services.routers.trends import trends_router
-from services.routers.engagement import engagement_router
-from services.routers.comic import comic_router
-from services.routers.movie import movie_router
+try:
+    from services.routers.health import health_router
+    app.include_router(health_router)
+except Exception as e:
+    print(f"  ⚠ services.routers.health: {e}")
+try:
+    from services.routers.storyboard import storyboard_router
+    app.include_router(storyboard_router)
+except Exception as e:
+    print(f"  ⚠ services.routers.storyboard: {e}")
+try:
+    from services.routers.download import download_router
+    app.include_router(download_router)
+except Exception as e:
+    print(f"  ⚠ services.routers.download: {e}")
+try:
+    from services.routers.video import video_router
+    app.include_router(video_router)
+except Exception as e:
+    print(f"  ⚠ services.routers.video: {e}")
+try:
+    from services.routers.tikwm import tikwm_router
+    app.include_router(tikwm_router)
+except Exception as e:
+    print(f"  ⚠ services.routers.tikwm: {e}")
+try:
+    from services.routers.upload import upload_router
+    app.include_router(upload_router)
+except Exception as e:
+    print(f"  ⚠ services.routers.upload: {e}")
+try:
+    from services.routers.loop import loop_router
+    app.include_router(loop_router)
+except Exception as e:
+    print(f"  ⚠ services.routers.loop: {e}")
+try:
+    from services.routers.music import music_router
+    app.include_router(music_router)
+except Exception as e:
+    print(f"  ⚠ services.routers.music: {e}")
+try:
+    from services.routers.remotion import remotion_router
+    app.include_router(remotion_router)
+except Exception as e:
+    print(f"  ⚠ services.routers.remotion: {e}")
+try:
+    from services.routers.clipper import clipper_router
+    app.include_router(clipper_router)
+except Exception as e:
+    print(f"  ⚠ services.routers.clipper: {e}")
+try:
+    from services.routers.pinterest import pinterest_router
+    app.include_router(pinterest_router)
+except Exception as e:
+    print(f"  ⚠ services.routers.pinterest: {e}")
+try:
+    from services.routers.carousel import carousel_router
+    app.include_router(carousel_router)
+except Exception as e:
+    print(f"  ⚠ services.routers.carousel: {e}")
+try:
+    from services.routers.brand import brand_router
+    app.include_router(brand_router)
+except Exception as e:
+    print(f"  ⚠ services.routers.brand: {e}")
+try:
+    from services.routers.faceless import faceless_router
+    app.include_router(faceless_router)
+except Exception as e:
+    print(f"  ⚠ services.routers.faceless: {e}")
+try:
+    from services.routers.research import research_router
+    app.include_router(research_router)
+except Exception as e:
+    print(f"  ⚠ services.routers.research: {e}")
+try:
+    from services.routers.trends import trends_router
+    app.include_router(trends_router)
+except Exception as e:
+    print(f"  ⚠ services.routers.trends: {e}")
+try:
+    from services.routers.engagement import engagement_router
+    app.include_router(engagement_router)
+except Exception as e:
+    print(f"  ⚠ services.routers.engagement: {e}")
+try:
+    from services.routers.comic import comic_router
+    app.include_router(comic_router)
+except Exception as e:
+    print(f"  ⚠ services.routers.comic: {e}")
+try:
+    from services.routers.movie import movie_router
+    app.include_router(movie_router)
+except Exception as e:
+    print(f"  ⚠ services.routers.movie: {e}")
+from services.routers.ebook import _get as get_ebook_gen, trigger_generation, get_export, get_download
+from services.routers import register_generator_routes
 
-app.include_router(health_router)
-app.include_router(storyboard_router)
-app.include_router(download_router)
-app.include_router(video_router)
-app.include_router(tikwm_router)
-app.include_router(upload_router)
-app.include_router(loop_router)
-app.include_router(music_router)
-app.include_router(remotion_router)
-app.include_router(clipper_router)
-app.include_router(pinterest_router)
-app.include_router(carousel_router)
-app.include_router(brand_router)
-app.include_router(faceless_router)
-app.include_router(research_router)
-app.include_router(trends_router)
-app.include_router(engagement_router)
-app.include_router(comic_router)
-app.include_router(movie_router)
+# ── Register ebook generator (CRUD + extra trigger, export, download) ──
+register_generator_routes(app, get_ebook_gen(), prefix="/ebook", tags=["ebook"])
 
+_ebook_extra = APIRouter(prefix="/ebook", tags=["ebook"])
+@_ebook_extra.post("/projects/{project_id}/generate")
+async def _ebook_trigger(project_id: str):
+    return await trigger_generation(project_id)
+@_ebook_extra.get("/projects/{project_id}/export")
+async def _ebook_export(project_id: str):
+    return await get_export(project_id)
+@_ebook_extra.get("/projects/{project_id}/download/{fmt}")
+async def _ebook_download(project_id: str, fmt: str):
+    return await get_download(project_id, fmt)
+app.include_router(_ebook_extra)
 
 # ══════════════════════════════════════════════════════════════
 # MAIN

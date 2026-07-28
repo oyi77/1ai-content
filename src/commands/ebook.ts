@@ -1,8 +1,8 @@
 /**
  * Ebook Command — Telegram bot commands for ebook generation
  *
- * Integrates with 1ai-ebook API to provide ebook generation
- * capabilities via the Telegram bot interface.
+ * Integrates with the 1ai-content ebook generator to provide
+ * ebook generation capabilities via the Telegram bot interface.
  */
 
 import { BotContext } from "@/types";

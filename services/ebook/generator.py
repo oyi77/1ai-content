@@ -1,0 +1,245 @@
+"""EbookContentGenerator — wraps ebook generation pipeline as a ContentGenerator."""
+
+from __future__ import annotations
+
+import base64
+import json
+import threading
+from pathlib import Path
+
+from services.generator import ContentGenerator, GeneratorInfo
+from services.ebook.db.repository import ProjectRepository
+from services.ebook.models.validation import ProjectInput
+from services.ebook.logger import get_logger
+
+logger = get_logger(__name__)
+
+# Default paths relative to the 1ai-content project root
+_DEFAULT_DATA_DIR = Path("data") / "ebook"
+_DEFAULT_DB_PATH = _DEFAULT_DATA_DIR / "projects.db"
+_DEFAULT_PROJECTS_DIR = _DEFAULT_DATA_DIR / "projects"
+
+
+class EbookContentGenerator(ContentGenerator):
+    """ContentGenerator implementation for AI ebook generation.
+
+    Wraps the existing PipelineOrchestrator + ProjectRepository in a uniform
+    async interface.  Generation runs in a background thread with in-process
+    progress tracking (same pattern as the original server).
+    """
+
+    def __init__(
+        self,
+        *,
+        db_path: str | Path = _DEFAULT_DB_PATH,
+        projects_dir: str | Path = _DEFAULT_PROJECTS_DIR,
+    ) -> None:
+        self._db_path = Path(db_path)
+        self._projects_dir = Path(projects_dir)
+        self._db_path.parent.mkdir(parents=True, exist_ok=True)
+        self._projects_dir.mkdir(parents=True, exist_ok=True)
+        self._repo = ProjectRepository(self._db_path)
+        # Module-level progress store keyed by project_id
+        self._progress: dict[int, dict] = {}
+
+    @property
+    def projects_dir(self) -> Path:
+        """The projects directory path for this generator."""
+        return self._projects_dir
+
+    @property
+    def repo(self) -> object:
+        """Access the underlying ProjectRepository."""
+        return self._repo
+
+    # ── ContentGenerator ────────────────────────────────────────
+
+    @property
+    def info(self) -> GeneratorInfo:
+        return GeneratorInfo(
+            name="ebook",
+            description="AI ebook generation — strategy, outline, manuscript, chapters, QA, cover, export",
+            version="1.0",
+            capabilities=[
+                "ebook",
+                "comics",
+                "multi-language",
+                "docx",
+                "pdf",
+                "epub",
+                "export",
+            ],
+        )
+
+    async def create(self, params: dict) -> dict:
+        validated = ProjectInput(**params)
+        project_id = self._repo.create_project(
+            title=validated.title,
+            idea=validated.idea,
+            product_mode=validated.product_mode,
+            target_language=validated.target_language,
+            chapter_count=validated.chapter_count,
+        )
+        project = self._repo.get_project(project_id)
+        return {"project_id": project_id, "project": project}
+
+    async def get(self, project_id: str) -> dict:
+        project = self._repo.get_project(int(project_id))
+        if project is None:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=404, detail="Project not found")
+        return project
+
+    async def list(self) -> list[dict]:
+        return self._repo.list_projects()
+
+    async def status(self, project_id: str) -> dict:
+        pid = int(project_id)
+        project = self._repo.get_project(pid)
+        if project is None:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        progress = self._progress.get(
+            pid,
+            {"status": project["status"], "progress": 0, "message": ""},
+        )
+        return {
+            "project_id": pid,
+            "db_status": project["status"],
+            **progress,
+        }
+
+    async def delete(self, project_id: str) -> bool:
+        pid = int(project_id)
+        project = self._repo.get_project(pid)
+        if project is None:
+            return False
+        self._repo.delete_project(pid)
+        # Remove generated files if any
+        import shutil
+        proj_dir = self._projects_dir / str(pid)
+        if proj_dir.exists():
+            shutil.rmtree(proj_dir)
+        self._progress.pop(pid, None)
+        return True
+
+    async def health(self) -> dict:
+        return {"status": "ok", "version": "1.0"}
+
+    # ── Generation trigger (not in base interface) ──────────────
+
+    def generate(self, project_id: int) -> dict:
+        """Start generation in a background thread.  Non-blocking."""
+        from services.ebook.pipeline.orchestrator import PipelineOrchestrator
+        from services.ebook.pipeline.error_classifier import ErrorClassifier
+
+        pid = project_id
+        project = self._repo.get_project(pid)
+        if project is None:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        # Prevent double-starts
+        current = self._progress.get(pid, {})
+        if current.get("status") == "running":
+            return {"project_id": pid, "message": "Generation already running"}
+
+        self._progress[pid] = {
+            "status": "running",
+            "progress": 0,
+            "message": "Starting...",
+        }
+
+        def _run():
+            try:
+                orchestrator = PipelineOrchestrator(
+                    db_path=str(self._db_path),
+                    projects_dir=str(self._projects_dir),
+                )
+
+                def on_progress(pct: int, msg: str):
+                    self._progress[pid] = {
+                        "status": "running",
+                        "progress": pct,
+                        "message": msg,
+                    }
+
+                orchestrator.run_full_pipeline(pid, on_progress=on_progress)
+                self._progress[pid] = {
+                    "status": "completed",
+                    "progress": 100,
+                    "message": "Complete!",
+                }
+            except Exception as exc:
+                logger.error(
+                    "Pipeline generation failed",
+                    error=str(exc),
+                    error_type=type(exc).__name__,
+                )
+                self._progress[pid] = {
+                    "status": "failed",
+                    "progress": 0,
+                    "message": ErrorClassifier.classify(exc),
+                }
+
+        thread = threading.Thread(target=_run, daemon=True)
+        thread.start()
+        return {"project_id": pid, "message": "Generation started"}
+
+    # ── Export / download (ebook-specific, beyond base interface) ────
+
+    def export_data(self, project_id: int) -> dict:
+        """Return export data for a project (strategy, marketing kit, cover image, etc.)."""
+        project = self._repo.get_project(project_id)
+        if project is None:
+            return {"error": "Project not found"}
+
+        project_dir = self._projects_dir / str(project_id)
+
+        strategy: dict = {}
+        strategy_file = project_dir / "strategy.json"
+        if strategy_file.exists():
+            with open(strategy_file) as f:
+                strategy = json.load(f)
+
+        marketing_kit: dict = {}
+        mk_file = project_dir / "marketing_kit.json"
+        if mk_file.exists():
+            with open(mk_file) as f:
+                marketing_kit = json.load(f)
+
+        cover_b64 = ""
+        cover_file = project_dir / "cover" / "cover.png"
+        if cover_file.exists():
+            with open(cover_file, "rb") as f:
+                cover_b64 = base64.b64encode(f.read()).decode("utf-8")
+
+        word_count = 0
+        manuscript_json = project_dir / "manuscript.json"
+        if manuscript_json.exists():
+            with open(manuscript_json) as f:
+                mdata = json.load(f)
+            word_count = sum(ch.get("word_count", 0) for ch in mdata.get("chapters", []))
+
+        description = marketing_kit.get("book_description") or strategy.get("goal") or ""
+
+        return {
+            "project_id": project_id,
+            "title": project.get("title", ""),
+            "description": description,
+            "audience": strategy.get("audience", ""),
+            "tone": strategy.get("tone", ""),
+            "keywords": marketing_kit.get("keywords", []),
+            "ad_hooks": marketing_kit.get("ad_hooks", []),
+            "suggested_price": marketing_kit.get("suggested_price", "$9.99"),
+            "word_count": word_count,
+            "cover_image_base64": cover_b64,
+            "product_mode": project.get("product_mode", ""),
+        }
+
+    def download_path(self, project_id: int, fmt: str) -> Path | None:
+        """Return the path to the exported file for the given format, or None."""
+        project_dir = self._projects_dir / str(project_id)
+        file_path = project_dir / "exports" / f"ebook.{fmt}"
+        return file_path if file_path.exists() else None
