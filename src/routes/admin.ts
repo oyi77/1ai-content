@@ -230,9 +230,11 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
       url.startsWith("/api/interceptions") ||
       url.startsWith("/api/intercept/") ||
       url === "/admin/interceptions" ||
-      url === "/admin/dynamic-pricing" ||
-      url === "/admin/ai-config" ||
-      (url.startsWith("/api/system/") && url !== "/api/system/health");
+      (url.startsWith("/api/system/") && url !== "/api/system/health") ||
+      // Catch-all: any /admin/* path that isn't login or a static asset
+      (url.startsWith("/admin/") &&
+       url !== "/admin/login" &&
+       !url.startsWith("/admin/assets/"));
     if (isAdminRoute) {
       await verifyAdmin(request, reply);
     }
@@ -814,10 +816,18 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
   // Static assets (*.js, *.css) are NOT in the isAdminRoute list so they bypass auth.
   const adminUiDist = path.join(process.cwd(), "admin-ui", "dist");
   server.get("/admin/*", async (request, reply) => {
-    const relPath = new URL(request.url, "http://localhost").pathname.replace("/admin/", "");
-    if (/\.[a-z0-9]+(\?|$)/i.test(relPath)) {
-      return reply.sendFile(relPath, adminUiDist);
+    // Normalize path and reject traversal attempts
+    const rawPath = new URL(request.url, "http://localhost").pathname.replace("/admin/", "");
+    const decoded = decodeURIComponent(rawPath);
+    const normalized = path.posix.normalize(decoded);
+    if (normalized.startsWith("..") || normalized.startsWith("/")) {
+      return reply.callNotFound();
     }
+    // Serve static assets (*.js, *.css, *.svg, etc.)
+    if (/\.[a-z0-9]+(\?|$)/i.test(rawPath)) {
+      return reply.sendFile(rawPath, adminUiDist);
+    }
+    // SPA fallback for HTML5 History routes
     return reply.sendFile("index.html");
   });
 

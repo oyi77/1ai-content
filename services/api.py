@@ -86,6 +86,26 @@ async def _probe_video(file_path: str) -> dict:
     except Exception:
         return {}
 
+
+async def _probe_field(file_path: str, field: str, stream_index: int = 0) -> str:
+    """Probe a specific ffprobe field (e.g. pix_fmt) from the first video stream."""
+    try:
+        probe = await _run_subprocess(
+            ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_streams", file_path],
+            capture_output=True, text=True, timeout=10,
+        )
+        if probe.returncode != 0:
+            return ""
+        meta = json.loads(probe.stdout)
+        streams = meta.get("streams", [])
+        for s in streams:
+            if s.get("codec_type") == "video":
+                return s.get(field, "")
+        return ""
+    except Exception:
+        return ""
+
+
 # ── App ────────────────────────────────────────────────────────
 app = FastAPI(
     title="1AI-Content Factory API",
@@ -1658,7 +1678,7 @@ async def download_video_endpoint(req: DownloadRequest):
     Cascade: tikwm → yt-dlp → Vidbee → Cobalt → CloakBrowser → scrape → cover → placeholder
     Returns {file_path, file_type, status, reason, file_size}.
     """
-    from services.download.engine import download_video
+    from services.download.cascade import download_video
 
     result = await download_video(req.video_url, req.category)
 
@@ -1676,7 +1696,7 @@ async def download_profile(req: ProfileDownloadRequest):
     Returns list of {file_path, file_type, status, reason, file_size} per video.
     """
     import re
-    from services.download.engine import download_video, TIKWM_API_URL
+    from services.download.cascade import download_video, TIKWM_API_URL
 
     # 1. Extract username from profile URL
     m = re.search(r"tiktok\.com/@([\w.]+)", req.profile_url)
@@ -1724,7 +1744,7 @@ async def download_profile(req: ProfileDownloadRequest):
 @app.post("/tikwm/user/posts")
 async def tikwm_user_posts(req: UserPostsRequest):
     """Proxy for tikwm user/posts — fetch a creator's video list."""
-    from services.download.engine import TIKWM_API_URL
+    from services.download.cascade import TIKWM_API_URL
     async with httpx.AsyncClient(timeout=15) as client:
         resp = await client.get(
             f"{TIKWM_API_URL}user/posts",
@@ -1738,7 +1758,7 @@ async def tikwm_user_posts(req: UserPostsRequest):
 @app.post("/tikwm/challenge/search")
 async def tikwm_challenge_search(req: ChallengeSearchRequest):
     """Proxy for tikwm challenge/search — find challenges by keyword."""
-    from services.download.engine import TIKWM_API_URL
+    from services.download.cascade import TIKWM_API_URL
     async with httpx.AsyncClient(timeout=15) as client:
         resp = await client.get(
             f"{TIKWM_API_URL}challenge/search",
@@ -1752,7 +1772,7 @@ async def tikwm_challenge_search(req: ChallengeSearchRequest):
 @app.post("/tikwm/challenge/posts")
 async def tikwm_challenge_posts(req: ChallengePostsRequest):
     """Proxy for tikwm challenge/posts — fetch videos in a challenge."""
-    from services.download.engine import TIKWM_API_URL
+    from services.download.cascade import TIKWM_API_URL
     async with httpx.AsyncClient(timeout=15) as client:
         resp = await client.get(
             f"{TIKWM_API_URL}challenge/posts",
@@ -1904,7 +1924,7 @@ async def process_video(req: VideoProcessRequest):
     Pipeline: download → detect format → reframe if needed → return file_path.
     Returns {file_path, file_type, duration, width, height, format, status}.
     """
-    from services.download.engine import download_video
+    from services.download.cascade import download_video
     import uuid
 
     # 1. Download
@@ -1931,39 +1951,51 @@ async def process_video(req: VideoProcessRequest):
     except Exception:
         pass
 
-    # Force H.264 re-encode for Facebook compatibility — always re-encode
-    # regardless of source codec to guarantee yuv420p pixel format and
-    # proper moov atom placement via faststart.
+    # Re-encode to H.264 for Facebook compatibility — but only if needed.
+    # Native TikTok downloads are often already H.264 yuv420p;
+    # full re-encode wastes 30-180s per video. Check first.
     if file_type == "video":
-        print(f"[process_video] codec={video_codec}, file_type={file_type}, w={width}x{height}, re-encode=YES")
-        h264_path = os.path.join(os.path.dirname(file_path), f"{uuid.uuid4().hex}_h264.mp4")
-        try:
-            reenc = await _run_subprocess(
-                ["ffmpeg", "-y", "-i", file_path,
-                 "-c:v", "libx264", "-crf", "18", "-preset", "fast",
-                 "-pix_fmt", "yuv420p",
-                 "-c:a", "aac", "-b:a", "128k",
-                 "-movflags", "+faststart",
-                 h264_path],
-                capture_output=True, text=True, timeout=180,
-            )
-            if reenc.returncode == 0 and os.path.exists(h264_path) and os.path.getsize(h264_path) > 10000:
-                file_path = h264_path
-                video_codec = "h264"
-                # Re-probe to get updated dimensions
-                try:
-                    meta2 = await _probe_video(file_path)
-                    width = meta2.get("width")
-                    height = meta2.get("height")
-                    duration = meta2.get("duration")
-                except Exception:
-                    pass
-            else:
-                # Re-encode failed — log but continue with original
-                if os.path.exists(h264_path):
-                    os.remove(h264_path)
-        except Exception:
-            pass
+        print(f"[process_video] codec={video_codec}, file_type={file_type}, w={width}x{height}")
+
+        # Check if already compatible — H.264 + yuv420p
+        _needs_reencode = True
+        if video_codec and video_codec.lower() in ("h264", "avc1", "libx264"):
+            try:
+                px_fmt = await _probe_field(file_path, "pix_fmt")
+                if px_fmt and px_fmt.strip() == "yuv420p":
+                    _needs_reencode = False
+            except Exception:
+                pass
+
+        if _needs_reencode:
+            h264_path = os.path.join(os.path.dirname(file_path), f"{uuid.uuid4().hex}_h264.mp4")
+            try:
+                reenc = await _run_subprocess(
+                    ["ffmpeg", "-y", "-i", file_path,
+                     "-c:v", "libx264", "-crf", "18", "-preset", "fast",
+                     "-pix_fmt", "yuv420p",
+                     "-c:a", "aac", "-b:a", "128k",
+                     "-movflags", "+faststart",
+                     h264_path],
+                    capture_output=True, text=True, timeout=180,
+                )
+                if reenc.returncode == 0 and os.path.exists(h264_path) and os.path.getsize(h264_path) > 10000:
+                    file_path = h264_path
+                    video_codec = "h264"
+                    try:
+                        meta2 = await _probe_video(file_path)
+                        width = meta2.get("width")
+                        height = meta2.get("height")
+                        duration = meta2.get("duration")
+                    except Exception:
+                        pass
+                else:
+                    if os.path.exists(h264_path):
+                        os.remove(h264_path)
+            except Exception:
+                pass
+        else:
+            print(f"[process_video] Already H.264 yuv420p — skipping re-encode")
 
     # 4. Convert to target format if video and dimensions don't match
     target_w, target_h = {"9:16": (1080, 1920), "16:9": (1920, 1080), "1:1": (1080, 1080)}.get(req.target_format, (1080, 1920))
@@ -2088,7 +2120,7 @@ async def video_regenerate(req: VideoRegenerateRequest):
 
     # ── 1. Download ──────────────────────────────────────────
     try:
-        from services.download.engine import download_video as _dl
+        from services.download.cascade import download_video as _dl
         dl = await _dl(req.url)
         if dl.get("status") != "downloaded" or not dl.get("file_path"):
             raise RuntimeError(f"Download failed: {dl.get('reason', 'unknown')}")
