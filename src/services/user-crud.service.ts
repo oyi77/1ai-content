@@ -9,6 +9,7 @@ import { logger } from '@/utils/logger';
 import { User, Prisma } from '@prisma/client';
 import { NotFoundError } from '@/utils/app-errors';
 import { UserReferralService } from './user-referral.service';
+import { generateSyntheticId } from '@/utils/id-generator';
 
 export class UserCrudService {
   /**
@@ -175,8 +176,6 @@ export class UserCrudService {
       verificationToken: string;
       language?: string;
     }): Promise<User> {
-      const { generateSyntheticId } = await import("@/utils/id-generator.js");
-      const { UserReferralService } = await import("./user-referral.service.js");
       const telegramId = generateSyntheticId();
       const referralCode = await UserReferralService.generateReferralCode(data.firstName);
 

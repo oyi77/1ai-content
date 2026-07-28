@@ -18,8 +18,9 @@ jest.mock("@/utils/logger", () => ({
 }));
 
 // ── Global fetch mock ──
-const mockFetch = jest.fn<any>();
-global.fetch = mockFetch as unknown as typeof fetch;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockFetch: any = jest.fn();
+global.fetch = mockFetch as typeof fetch;
 
 // ── Imports after mocks ──
 import { uploadToTikTok, uploadCarouselToTikTok } from "@/services/tiktok-social.service";

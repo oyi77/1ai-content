@@ -84,7 +84,7 @@ describe('admin-alert.service', () => {
   });
 
   it('skips silently when no telegram instance', () => {
-    setAlertTelegram(null);
+    setAlertTelegram(null as any);
     sendAdminAlert('critical', 'Should not send');
     expect(mockTelegram.sendMessage).not.toHaveBeenCalled();
   });

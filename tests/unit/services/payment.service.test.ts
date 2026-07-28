@@ -288,6 +288,7 @@ describe("PaymentService", () => {
       const result = await PaymentService.createTransaction({
         userId: TEST_USER_ID,
         packageId: "starter",
+        gateway: 'tripay',
         username: "testuser",
       });
 
@@ -320,6 +321,7 @@ describe("PaymentService", () => {
       await PaymentService.createTransaction({
         userId: TEST_USER_ID,
         packageId: "starter",
+        gateway: 'tripay',
         username: "testuser",
       });
 
@@ -360,6 +362,7 @@ describe("PaymentService", () => {
       await PaymentService.createTransaction({
         userId: TEST_USER_ID,
         packageId: "starter",
+        gateway: 'tripay',
       });
 
       expect(mockAxiosPost).toHaveBeenCalledWith(
@@ -395,6 +398,7 @@ describe("PaymentService", () => {
       await PaymentService.createTransaction({
         userId: TEST_USER_ID,
         packageId: "growth",
+        gateway: 'tripay',
         username: "testuser",
       });
 
@@ -432,6 +436,7 @@ describe("PaymentService", () => {
       await PaymentService.createTransaction({
         userId: TEST_USER_ID,
         packageId: "starter",
+        gateway: 'tripay',
         username: "testuser",
       });
 
@@ -471,6 +476,7 @@ describe("PaymentService", () => {
       await PaymentService.createTransaction({
         userId: TEST_USER_ID,
         packageId: "starter",
+        gateway: 'tripay',
       });
 
       // Check that the third arg (headers) has Idempotency-Key
@@ -484,6 +490,7 @@ describe("PaymentService", () => {
         PaymentService.createTransaction({
           userId: TEST_USER_ID,
           packageId: "nonexistent",
+          gateway: 'tripay',
         }),
       ).rejects.toThrow("Invalid package");
     });
@@ -494,6 +501,7 @@ describe("PaymentService", () => {
         PaymentService.createTransaction({
           userId: TEST_USER_ID,
           packageId: "starter",
+          gateway: 'tripay',
         }),
       ).rejects.toThrow("Invalid package");
     });
@@ -515,6 +523,7 @@ describe("PaymentService", () => {
         PaymentService.createTransaction({
           userId: TEST_USER_ID,
           packageId: "starter",
+          gateway: 'tripay',
           username: "testuser",
         }),
       ).rejects.toThrow(PaymentError);
@@ -534,6 +543,7 @@ describe("PaymentService", () => {
         await PaymentService.createTransaction({
           userId: TEST_USER_ID,
           packageId: "starter",
+          gateway: 'tripay',
         });
       } catch {
         // expected
@@ -554,6 +564,7 @@ describe("PaymentService", () => {
         PaymentService.createTransaction({
           userId: TEST_USER_ID,
           packageId: "starter",
+          gateway: 'tripay',
           username: "testuser",
         }),
       ).rejects.toThrow("Failed to create payment transaction");
@@ -568,6 +579,7 @@ describe("PaymentService", () => {
         await PaymentService.createTransaction({
           userId: TEST_USER_ID,
           packageId: "starter",
+          gateway: 'tripay',
         });
       } catch {
         // expected
@@ -603,6 +615,7 @@ describe("PaymentService", () => {
       const result = await PaymentService.createTransaction({
         userId: TEST_USER_ID,
         packageId: "starter",
+        gateway: 'tripay',
       });
 
       expect(result.orderId).toMatch(/^OC-\d+-123456789-[A-F0-9]+$/);

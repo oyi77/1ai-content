@@ -15,7 +15,7 @@ import {
 } from "@prisma/client";
 
 export const mockUser: Partial<User> = {
-  id: BigInt(1),
+  id: BigInt(1).toString(),
   telegramId: BigInt(123456789),
   uuid: "550e8400-e29b-41d4-a716-446655440000",
   username: "testuser",
@@ -32,7 +32,7 @@ export const mockUser: Partial<User> = {
 
 export const mockPremiumUser: Partial<User> = {
   ...mockUser,
-  id: BigInt(2),
+  id: BigInt(2).toString(),
   telegramId: BigInt(987654321),
   uuid: "550e8400-e29b-41d4-a716-446655440001",
   username: "premium_user",

@@ -10,10 +10,10 @@ import { describe, it, expect, jest, beforeEach, afterEach } from "@jest/globals
 // ── Mocks ────────────────────────────────────────────────────────────────────
 
 const mockLogger = {
-  info: jest.fn(),
-  warn: jest.fn(),
-  error: jest.fn(),
-  debug: jest.fn(),
+  info: jest.fn<any>(),
+  warn: jest.fn<any>(),
+  error: jest.fn<any>(),
+  debug: jest.fn<any>(),
 };
 
 jest.mock("@/utils/logger", () => ({ logger: mockLogger }));
@@ -37,7 +37,7 @@ jest.mock("@/config/env", () => ({
 }));
 
 // Pricing mock
-const mockGetVideoCreditCost = jest.fn();
+const mockGetVideoCreditCost = jest.fn<any>();
 mockGetVideoCreditCost.mockReturnValue(0.4);
 
 jest.mock("@/config/pricing", () => ({
@@ -45,20 +45,20 @@ jest.mock("@/config/pricing", () => ({
 }));
 
 // Redis mock
-const mockRedisGet = jest.fn();
+const mockRedisGet = jest.fn<any>();
 mockRedisGet.mockResolvedValue(null);
 
 jest.mock("@/config/redis", () => ({
   redis: {
     get: (...args: unknown[]) => mockRedisGet(...args),
-    set: jest.fn(),
-    del: jest.fn(),
+    set: jest.fn<any>(),
+    del: jest.fn<any>(),
   },
 }));
 
 // Axios mock
-const mockAxiosPost = jest.fn();
-const mockAxiosGet = jest.fn();
+const mockAxiosPost = jest.fn<any>();
+const mockAxiosGet = jest.fn<any>();
 
 jest.mock("axios", () => ({
   __esModule: true,
@@ -68,21 +68,21 @@ jest.mock("axios", () => ({
 }));
 
 // FormData mock
-const mockFormDataAppend = jest.fn();
-const mockFormDataGetHeaders = jest.fn();
+const mockFormDataAppend = jest.fn<any>();
+const mockFormDataGetHeaders = jest.fn<any>();
 mockFormDataGetHeaders.mockReturnValue({ "content-type": "multipart/form-data" });
 
 jest.mock("form-data", () => {
-  return jest.fn().mockImplementation(() => ({
+  return jest.fn<any>().mockImplementation(() => ({
     append: mockFormDataAppend,
     getHeaders: mockFormDataGetHeaders,
   }));
 });
 
 // Circuit breaker mock
-const mockCanExecute = jest.fn();
-const mockRecordSuccess = jest.fn();
-const mockRecordFailure = jest.fn();
+const mockCanExecute = jest.fn<any>();
+const mockRecordSuccess = jest.fn<any>();
+const mockRecordFailure = jest.fn<any>();
 
 jest.mock("@/services/circuit-breaker.service", () => ({
   CircuitBreaker: {
@@ -93,17 +93,17 @@ jest.mock("@/services/circuit-breaker.service", () => ({
 }));
 
 // Prompt optimizer mock
-const mockOptimizeForProvider = jest.fn();
+const mockOptimizeForProvider = jest.fn<any>();
 
 jest.mock("@/services/prompt-optimizer.service", () => ({
   PromptOptimizer: {
-    shouldAvoidProvider: jest.fn().mockReturnValue(false),
+    shouldAvoidProvider: jest.fn<any>().mockReturnValue(false),
     optimizeForProvider: (...args: unknown[]) => mockOptimizeForProvider(...args),
   },
 }));
 
 // Provider router mock
-const mockGetOrderedProviders = jest.fn();
+const mockGetOrderedProviders = jest.fn<any>();
 
 jest.mock("@/services/provider-router.service", () => ({
   ProviderRouter: {
@@ -112,7 +112,7 @@ jest.mock("@/services/provider-router.service", () => ({
 }));
 
 // Quality check mock
-const mockScoreVideo = jest.fn();
+const mockScoreVideo = jest.fn<any>();
 
 jest.mock("@/services/quality-check.service", () => ({
   QualityCheckService: {
@@ -121,7 +121,7 @@ jest.mock("@/services/quality-check.service", () => ({
 }));
 
 // AI task settings mock
-const mockGetSettings = jest.fn();
+const mockGetSettings = jest.fn<any>();
 
 jest.mock("@/services/ai-task-settings.service", () => ({
   AITaskSettingsService: {
@@ -130,7 +130,7 @@ jest.mock("@/services/ai-task-settings.service", () => ({
 }));
 
 // Token tracker mock
-const mockTrackTokens = jest.fn();
+const mockTrackTokens = jest.fn<any>();
 mockTrackTokens.mockResolvedValue(undefined);
 
 jest.mock("@/services/token-tracker.service", () => ({
@@ -138,7 +138,7 @@ jest.mock("@/services/token-tracker.service", () => ({
 }));
 
 // Shared AI pipeline mock
-const mockPipelineGenerate = jest.fn();
+const mockPipelineGenerate = jest.fn<any>();
 
 jest.mock("@/services/shared-ai-pipeline.service", () => ({
   pipelineGenerate: (...args: unknown[]) => mockPipelineGenerate(...args),
@@ -147,8 +147,8 @@ jest.mock("@/services/shared-ai-pipeline.service", () => ({
 // Provider settings mock
 jest.mock("@/services/provider-settings.service", () => ({
   ProviderSettingsService: {
-    getSortedVideoProviders: jest.fn().mockResolvedValue([]),
-    getDynamicSettings: jest.fn().mockResolvedValue({ video: {}, image: {} }),
+    getSortedVideoProviders: jest.fn<any>().mockResolvedValue([]),
+    getDynamicSettings: jest.fn<any>().mockResolvedValue({ video: {}, image: {} }),
   },
 }));
 
@@ -1073,7 +1073,7 @@ describe("VideoGenerationService", () => {
         duration: 10,
         niche: "fnb",
         styles: ["appetizing"],
-      });
+      } as any);
 
       expect(mockLogger.info).toHaveBeenCalledWith("Processing video job: VID-123");
       expect(result.success).toBe(true);
@@ -1088,7 +1088,7 @@ describe("VideoGenerationService", () => {
         duration: 5,
         niche: "tech",
         styles: ["modern"],
-      });
+      } as any);
 
       expect(mockLogger.info).toHaveBeenCalledWith("Processing video job: VID-456");
     });
@@ -1101,7 +1101,7 @@ describe("VideoGenerationService", () => {
         duration: 10,
         niche: "fnb",
         styles: ["appetizing"],
-      });
+      } as any);
 
       expect(result.success).toBe(true);
     });

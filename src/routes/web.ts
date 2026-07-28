@@ -18,16 +18,17 @@
 
 import { FastifyInstance } from "fastify";
 import { pageRoutes } from "./web/pages";
+import { authRoutes } from "./web/auth";
 import { authEmailRoutes } from "./web/auth-email";
 import { userRoutes } from "./web/user";
 import { contentRoutes } from "./web/content";
 import { financeRoutes } from "./web/finance";
 import { chatRoutes } from "./web/chat";
 import { aliasRoutes } from "./web/aliases";
-
 export async function webRoutes(server: FastifyInstance): Promise<void> {
   await Promise.all([
     pageRoutes(server),
+    authRoutes(server),
     userRoutes(server),
     contentRoutes(server),
     financeRoutes(server),

@@ -19,23 +19,23 @@ import { WhiteLabelService } from '@/services/whitelabel.service';
 
 const mockPrisma = {
   user: {
-    findUnique: jest.fn(),
+    findUnique: jest.fn<any>(),
   },
   whiteLabelBot: {
-    create: jest.fn(),
-    findUnique: jest.fn(),
-    findMany: jest.fn(),
-    update: jest.fn(),
+    create: jest.fn<any>(),
+    findUnique: jest.fn<any>(),
+    findMany: jest.fn<any>(),
+    update: jest.fn<any>(),
   },
   commission: {
-    create: jest.fn(),
+    create: jest.fn<any>(),
   },
 };
 
 const mockLogger = {
-  info: jest.fn(),
-  error: jest.fn(),
-  warn: jest.fn(),
+  info: jest.fn<any>(),
+  error: jest.fn<any>(),
+  warn: jest.fn<any>(),
 };
 
 jest.mock('@/config/database', () => ({

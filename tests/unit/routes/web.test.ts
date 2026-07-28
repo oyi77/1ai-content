@@ -239,6 +239,10 @@ function createMockUser(overrides: any = {}) {
     creditBalance: 10,
     tier: "free",
     referralCode: "REF123",
+    email: null,
+    emailVerifiedAt: null,
+    dailyFreeUsed: null,
+    dailyFreeResetAt: null,
     createdAt: new Date("2024-01-01"),
     ...overrides,
   };
@@ -567,6 +571,10 @@ describe("Web Routes", () => {
         credits: 10,
         tier: "free",
         referralCode: "REF123",
+        email: null,
+        emailVerified: false,
+        dailyFreeUsed: null,
+        dailyFreeResetAt: null,
         createdAt: expect.any(Date),
       });
     });

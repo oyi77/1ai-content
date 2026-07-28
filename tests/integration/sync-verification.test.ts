@@ -68,6 +68,7 @@ describe("System-Wide Synchronization Integration", () => {
       userId: BigInt(123),
       packageId: "flash_sale",
       username: "test",
+      gateway: "tripay",
     });
 
     expect(tx.orderId).toBeDefined();

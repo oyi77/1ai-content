@@ -44,7 +44,7 @@ jest.mock("@/services/payment.service", () => ({
       { id: "starter", name: "Starter", price: 49000, totalCredits: 6 },
       { id: "growth", name: "Growth", price: 149000, totalCredits: 22 },
     ]),
-    createTransaction: jest.fn(),
+    createTransaction: jest.fn(() => Promise.resolve({ orderId: "test", redirectUrl: "https://..." })),
     getTransactionStatus: jest.fn(),
   },
 }));
@@ -420,7 +420,7 @@ describe("Topup Command", () => {
     });
 
     it("should create Duitku transaction directly", async () => {
-      (PaymentService.createTransaction as jest.Mock).mockResolvedValue({
+      (PaymentService.createTransaction as jest.Mock<() => Promise<any>>).mockResolvedValue({
         orderId: "ORDER-123",
         redirectUrl: "https://duitku.example.com/pay",
       });
@@ -555,7 +555,7 @@ describe("Topup Command", () => {
         tier: "free",
       });
       PaymentSettingsService.getEnabledGateways.mockResolvedValue([{ id: 'duitku', gateway: 'duitku' }]);
-      (PaymentService.createTransaction as jest.Mock).mockResolvedValue({
+      (PaymentService.createTransaction as jest.Mock<() => Promise<any>>).mockResolvedValue({
         orderId: "ORDER-EXTRA-5",
         redirectUrl: "https://duitku.example.com/pay",
       });
@@ -572,7 +572,7 @@ describe("Topup Command", () => {
         tier: "free",
       });
       PaymentSettingsService.getEnabledGateways.mockResolvedValue([{ id: 'duitku', gateway: 'duitku' }]);
-      (PaymentService.createTransaction as jest.Mock).mockRejectedValue(new Error("Payment error"));
+      (PaymentService.createTransaction as jest.Mock<() => Promise<any>>).mockRejectedValue(new Error("Payment error"));
 
       await handleTopupExtraCredit(ctx as any, 5);
 
