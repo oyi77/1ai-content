@@ -106,7 +106,7 @@ const categories: SidebarCategory[] = [
       { label: "Payments", path: "/payments", type: "react" },
       { label: "Pricing", path: "/pricing", type: "react" },
       { label: "Dynamic Pricing", path: "/dynamic-pricing", type: "react" },
-      { label: "Broadcast", path: "/broadcast", type: "ejs" },
+      { label: "Broadcast", path: "/settings", type: "react" },
     ],
   },
   {

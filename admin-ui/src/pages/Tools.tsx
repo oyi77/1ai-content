@@ -75,7 +75,7 @@ const TOOLS: ToolItem[] = [
   {
     name: "Broadcast",
     description: "Send broadcast messages to users",
-    path: "/admin/broadcast",
+    path: "/admin/react/settings",
     icon: "📢",
   },
 ];
