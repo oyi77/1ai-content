@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
 
 interface User {
-  id: number;
+  id: string;
   telegramId: string | null;
   email: string | null;
   emailVerified: boolean;
@@ -49,7 +49,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       if (res.ok) {
         const data = await res.json();
-        setUser(data.user ?? data);
+        setUser({
+          id: data.id,
+          telegramId: data.telegramId ?? null,
+          email: data.email ?? null,
+          emailVerified: data.emailVerified ?? false,
+          username: data.username ?? null,
+          name: data.firstName ?? "",
+          credits: data.credits ?? 0,
+          isPremium: (data.tier ?? "free") === "premium",
+        });
       } else {
         logout();
       }

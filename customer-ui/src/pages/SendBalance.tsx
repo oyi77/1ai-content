@@ -4,22 +4,22 @@ import { useAuth } from "../auth/AuthContext";
 
 export default function SendBalance() {
   const { user, refreshUser } = useAuth();
-  const [telegramId, setTelegramId] = useState("");
+  const [username, setUsername] = useState("");
   const [amount, setAmount] = useState(10);
   const [sending, setSending] = useState(false);
 
   const handleSend = async () => {
-    if (!telegramId.trim() || amount <= 0) return;
+    if (!username.trim() || amount <= 0) return;
     if (amount > (user?.credits ?? 0)) {
       alert("Insufficient credits");
       return;
     }
     setSending(true);
     try {
-      await api.sendBalance(telegramId.trim(), amount);
-      alert(`Sent ${amount} credits to ${telegramId}!`);
+      await api.sendBalance(username.trim(), amount);
+      alert(`Sent ${amount} credits to ${username}!`);
       await refreshUser();
-      setTelegramId("");
+      setUsername("");
       setAmount(10);
     } catch (e: any) {
       alert(e.message);
@@ -35,13 +35,13 @@ export default function SendBalance() {
       <div className="card" style={{ maxWidth: 500 }}>
         <div style={{ marginBottom: 16 }}>
           <label style={{ display: "block", color: "#8888aa", fontSize: "0.85rem", marginBottom: 6 }}>
-            Recipient Telegram ID
+            Recipient Username
           </label>
           <input
             className="input"
-            placeholder="e.g. 123456789"
-            value={telegramId}
-            onChange={(e) => setTelegramId(e.target.value)}
+            placeholder="e.g. johndoe"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
           />
         </div>
         <div style={{ marginBottom: 16 }}>
@@ -60,7 +60,7 @@ export default function SendBalance() {
             Your balance: {user?.credits ?? 0} credits
           </div>
         </div>
-        <button className="btn btn-primary" onClick={handleSend} disabled={sending || !telegramId.trim() || amount <= 0}>
+        <button className="btn btn-primary" onClick={handleSend} disabled={sending || !username.trim() || amount <= 0}>
           {sending ? "Sending..." : "💸 Send Credits"}
         </button>
       </div>
