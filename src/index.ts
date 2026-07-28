@@ -342,6 +342,16 @@ async function main() {
       maxAge: '1h',
       decorateReply: false,
     });
+
+    // Customer SPA static files
+    await app.register((await import('@fastify/static')).default, {
+      root: path.join(process.cwd(), 'customer-ui', 'dist'),
+      prefix: '/app/',
+      cacheControl: true,
+      maxAge: '1h',
+      decorateReply: false,
+      wildcard: false,
+    });
     await app.register(agencyRoutes, { prefix: '/api' });
     await app.register(contentApiRoutes);
     await app.register(youtubeDashboardRoutes);
@@ -365,6 +375,16 @@ async function main() {
       const relPath = (new URL(request.url, 'http://localhost').pathname).replace('/admin/react/', '');
       if (/\.[a-z0-9]+(\?|$)/i.test(relPath)) {
         return reply.sendFile(relPath, adminUiDist);
+      }
+      return reply.sendFile('index.html');
+    });
+
+    // Customer SPA catch-all
+    const customerUiDist = path.join(process.cwd(), 'customer-ui', 'dist');
+    app.get('/app/*', async (request, reply) => {
+      const relPath = (new URL(request.url, 'http://localhost').pathname).replace('/app/', '');
+      if (/\.[a-z0-9]+(\?|$)/i.test(relPath)) {
+        return reply.sendFile(relPath, customerUiDist);
       }
       return reply.sendFile('index.html');
     });

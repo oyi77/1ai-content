@@ -184,6 +184,7 @@ function createMockReply() {
     view: jest.fn().mockReturnThis(),
     type: jest.fn().mockReturnThis(),
     header: jest.fn().mockReturnThis(),
+    redirect: jest.fn().mockReturnThis(),
   };
 }
 
@@ -355,15 +356,12 @@ describe("Web Routes", () => {
   });
 
   describe("GET /app", () => {
-    it("should render web app page", async () => {
+    it("should redirect to React SPA", async () => {
       const handler = routes.get["/app"];
       const request = createMockRequest();
       const reply = createMockReply();
       await handler(request, reply);
-      expect(reply.view).toHaveBeenCalledWith(
-        "web/app.ejs",
-        expect.any(Object),
-      );
+      expect(reply.redirect).toHaveBeenCalledWith("/app/");
     });
   });
 

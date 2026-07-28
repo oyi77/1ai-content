@@ -129,10 +129,9 @@ export async function pageRoutes(server: FastifyInstance): Promise<void> {
   });
 
   // Web app
+  // Web app - redirect to React SPA
   server.get("/app", async (_request, reply) => {
-    return reply.view("web/app.ejs", {
-      botUsername: getConfig().BOT_USERNAME || "berkahkarya_saas_bot",
-    });
+    return reply.redirect("/app/");
   });
 
   // ── PWA Manifest ──
