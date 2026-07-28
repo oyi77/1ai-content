@@ -17,7 +17,8 @@ logs/
 node_modules/
 .nyc_output/
 .omc/
-output/batch_*/
+.omo/
+output/
 *.pid
 *.pid.lock
 public/qa-screenshots/
@@ -43,8 +44,8 @@ test-results/
 tools/tiktok-carousel-generator/
 
 *.bak
-output/*/
 design-tokens.json
 public/design-system.css
 scripts/fix-css-path.js
 public/hero-comparison.png
+.venv*
