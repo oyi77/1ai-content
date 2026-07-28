@@ -3,74 +3,35 @@ import { prisma } from "@/config/database";
 import { trackingVars } from "./shared";
 
 export async function registerContentToolsRoutes(server: FastifyInstance) {
-  // Captions manager
-  server.get("/admin/captions", async (_request, reply) => {
-    return reply.redirect("/admin/react/captions");
-  });
-
   // CloakBrowser manager
   server.get("/admin/cloak", async (_request, reply) => {
-    return reply.redirect("/admin/react/tools/cloak");
+    return reply.redirect("/admin/tools/cloak");
   });
 
   // Engagement manager
   server.get("/admin/engagement", async (_request, reply) => {
-    return reply.redirect("/admin/react/tools/engagement");
+    return reply.redirect("/admin/tools/engagement");
   });
 
   // Video tools
   server.get("/admin/video-tools", async (_request, reply) => {
-    return reply.redirect("/admin/react/tools/video-tools");
+    return reply.redirect("/admin/tools/video-tools");
   });
 
   // Ad renderer
   server.get("/admin/render-ad", async (_request, reply) => {
-    return reply.redirect("/admin/react/tools/render-ad");
+    return reply.redirect("/admin/tools/render-ad");
   });
 
   // Storyboard creator
   server.get("/admin/storyboard", async (_request, reply) => {
-    return reply.redirect("/admin/react/tools/storyboard");
+    return reply.redirect("/admin/tools/storyboard");
   });
 
   // Pinterest → Facebook pipeline
   server.get("/admin/pinterest", async (_request, reply) => {
-    return reply.redirect("/admin/react/tools/pinterest");
+    return reply.redirect("/admin/tools/pinterest");
   });
-
-  // Bookshelf AI Book Generator
-  server.get("/admin/bookshelf", async (_request, reply) => {
-    return reply.redirect("/admin/react/bookshelf");
-  });
-  // Comic/Manga/Manhwa Generator
-  server.get("/admin/comic", async (_request, reply) => {
-    return reply.redirect("/admin/react/comic");
-  });
-  // Movie / Short-Film Generator
-  server.get("/admin/movie", async (_request, reply) => {
-    return reply.redirect("/admin/react/movie");
-  });
-
-  // TTS Voice Generator
-  server.get("/admin/tts", async (_request, reply) => {
-    return reply.redirect("/admin/react/tts");
-  });
-  // Music Generator (Suno + MusicGen)
-  server.get("/admin/music", async (_request, reply) => {
-    return reply.redirect("/admin/react/music");
-  });
-  // Looping Video Generator
-  server.get("/admin/looping", async (_request, reply) => {
-    return reply.redirect("/admin/react/looping");
-  });
-  // Autopilot Content Jobs
-  server.get("/admin/autopilot", async (_request, reply) => {
-    return reply.redirect("/admin/react/autopilot");
-  });
-  // Channel Analysis
-  server.get("/admin/analyze", async (_request, reply) => {
-    return reply.redirect("/admin/react/analyze");
-  })
 
   // ========== Bookshelf API ==========
 

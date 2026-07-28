@@ -165,7 +165,4 @@ export async function registerPricingRoutes(server: FastifyInstance) {
     };
   });
 
-  server.get("/admin/pricing", async (_request, reply) => {
-    return reply.redirect("/admin/react/pricing");
-  });
 }

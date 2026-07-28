@@ -25,21 +25,9 @@ const promptIdParamSchema = zodToJsonSchema(z.object({
 }), "promptIdParam");
 
 export async function registerPromptsRoutes(server: FastifyInstance) {
-  server.get("/admin/prompts", async (_request, reply) => {
-    return reply.redirect("/admin/react/prompts");
-  });
 
-  server.get("/admin/settings", async (_request, reply) => {
-    return reply.redirect("/admin/react/settings");
-  });
 
-  server.get("/admin/interceptions", async (_request, reply) => {
-    return reply.redirect("/admin/react/interceptions");
-  });
 
-  server.get("/admin/users", async (_request, reply) => {
-    return reply.redirect("/admin/react/users");
-  });
 
   // API: Get all admin prompts (global, visible to all users)
   server.get("/api/admin-prompts", {

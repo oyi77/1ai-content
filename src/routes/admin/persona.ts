@@ -32,9 +32,6 @@ export async function registerPersonaRoutes(
     return { success: true };
   });
 
-  server.get('/admin/personas', async (_request, reply) => {
-    return reply.redirect('/admin/react/personas');
-  });
 
   server.post("/api/admin/welcome-message", { preHandler: validate({ body: welcomeMessageSchema }) }, async (request, reply) => {
     await verifyAdmin(request, reply);

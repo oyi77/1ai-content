@@ -1,11 +1,11 @@
 /**
  * Admin Interceptions E2E Tests
  *
- * Tests the Live Interceptions page (React SPA at /admin/react/interceptions).
+ * Tests the Live Interceptions page (React SPA at /admin/interceptions).
  * InterceptionsPage.tsx renders a modal for adding intercepts,
  * search functionality, and a toast notification system.
  *
- * /admin/interceptions redirects (302) → /admin/react/interceptions.
+ * /admin/interceptions redirects (302) → /admin/interceptions.
  */
 
 import { test, expect } from '@playwright/test';

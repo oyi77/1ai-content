@@ -45,7 +45,7 @@ import ComicPage from "./pages/ComicPage";
 import Fanpage from "./pages/tools/Fanpage";
 export default function App() {
   return (
-    <BrowserRouter basename="/admin/react">
+    <BrowserRouter basename="/admin">
       <Routes>
         <Route element={<Layout />}>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />

@@ -748,10 +748,6 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
     return reply.send(getConfigForAdmin());
   });
 
-  // Admin config view page
-  server.get("/admin/config", async (_request, reply) => {
-    return reply.redirect("/admin/react/config");
-  });
 
 
   // API: Get payment settings
@@ -806,22 +802,6 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
   // /admin/billing -> /admin/pricing (common mistaken path)
   server.get("/admin/billing", async (_request, reply) => {
     return reply.redirect("/admin/pricing");
-  });
-  // /admin/content -> /admin/react/content (React SPA route)
-  server.get("/admin/content", async (_request, reply) => {
-    return reply.redirect("/admin/react/content");
-  });
-  // /admin/payments -> /admin/react/payments (React SPA route)
-  server.get("/admin/payments", async (_request, reply) => {
-    return reply.redirect("/admin/react/payments");
-  });
-  // /admin/tools -> /admin/react/tools (React SPA route)
-  server.get("/admin/tools", async (_request, reply) => {
-    return reply.redirect("/admin/react/tools");
-  });
-  // /admin/playground -> /admin/react/playground (React SPA route)
-  server.get("/admin/playground", async (_request, reply) => {
-    return reply.redirect("/admin/react/playground");
   });
   // /admin/broadcast -> /admin/settings#broadcast (settings tab has broadcast form)
   server.get("/admin/broadcast", async (_request, reply) => {

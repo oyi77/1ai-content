@@ -139,15 +139,5 @@ export async function registerAdminConfigRoutes(
     return { ok: true };
   });
 
-  // ── System redirect ──
 
-  server.get("/admin/system", async (_request, reply) => {
-    return reply.redirect("/admin/react/system");
-  });
-
-  // ── Dynamic Pricing Page ──
-
-  server.get("/admin/dynamic-pricing", async (_request, reply) => {
-    return reply.redirect("/admin/react/dynamic-pricing");
-  });
 }

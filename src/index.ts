@@ -328,7 +328,7 @@ async function main() {
     // React admin SPA static files (registered FIRST so sendFile decorator ties to this root)
     await app.register((await import('@fastify/static')).default, {
       root: path.join(process.cwd(), 'admin-ui', 'dist'),
-      prefix: '/admin/react/',
+      prefix: '/admin/',
       cacheControl: true,
       maxAge: '1h',
       wildcard: false,
@@ -363,16 +363,12 @@ async function main() {
       await app.register(testRoutes);
       logger.info("🧪 Test routes registered");
     }
-
     logger.info("✅ Routes registered");
 
     // React admin SPA catch-all — serves index.html for SPA routes, actual files for assets
     const adminUiDist = path.join(process.cwd(), 'admin-ui', 'dist');
-    app.get('/admin/react', async (_req, reply) => {
-      return reply.sendFile('index.html');
-    });
-    app.get('/admin/react/*', async (request, reply) => {
-      const relPath = (new URL(request.url, 'http://localhost').pathname).replace('/admin/react/', '');
+    app.get('/admin/*', async (request, reply) => {
+      const relPath = (new URL(request.url, 'http://localhost').pathname).replace('/admin/', '');
       if (/\.[a-z0-9]+(\?|$)/i.test(relPath)) {
         return reply.sendFile(relPath, adminUiDist);
       }

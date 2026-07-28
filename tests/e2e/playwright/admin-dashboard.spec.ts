@@ -1,9 +1,9 @@
 /**
  * Admin Dashboard E2E Tests
  *
- * Tests the analytics dashboard page (React SPA at /admin/react/dashboard).
+ * Tests the analytics dashboard page (React SPA at /admin/dashboard).
  * The dashboard is a React SPA — uses text-based assertions on rendered components.
- * /admin/dashboard redirects (302) to /admin/react/dashboard.
+ * /admin/dashboard redirects (302) to /admin/dashboard.
  */
 
 import { test, expect } from '@playwright/test';
@@ -49,7 +49,7 @@ test('dashboard page has Provider Health and Top Niches sections', async ({ page
 });
 
 // ─── Navigation redirects (EJS routes → React SPA) ──────────────────────────
-// /admin/* routes redirect to /admin/react/* equivalents
+// /admin/* routes redirect to /admin/* equivalents
 
 test('GET /admin/pricing redirects to React SPA', async ({ request }) => {
   const response = await request.get('/admin/pricing', {

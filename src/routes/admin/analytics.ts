@@ -7,43 +7,39 @@ import { getQueueStats } from "@/config/queue";
 import { trackingVars } from "./shared";
 
 export async function registerAnalyticsRoutes(server: FastifyInstance) {
-  server.get("/admin/dashboard", async (_request, reply) => {
-    return reply.redirect("/admin/react/dashboard");
-  });
-
   // Calendar page
   server.get("/admin/calendar", async (_request, reply) => {
-    return reply.redirect("/admin/react/analytics/calendar");
+    return reply.redirect("/admin/analytics/calendar");
   });
 
   // Trending scanner page
   server.get("/admin/trending", async (_request, reply) => {
-    return reply.redirect("/admin/react/analytics/trending");
+    return reply.redirect("/admin/analytics/trending");
   });
 
   // A/B Tests page
   server.get("/admin/ab-tests", async (_request, reply) => {
-    return reply.redirect("/admin/react/analytics/ab-tests");
+    return reply.redirect("/admin/analytics/ab-tests");
   });
 
   // Carousel page
   server.get("/admin/carousel", async (_request, reply) => {
-    return reply.redirect("/admin/react/analytics/carousel");
+    return reply.redirect("/admin/analytics/carousel");
   });
 
   // Re-Metadata page
   server.get("/admin/remeta", async (_request, reply) => {
-    return reply.redirect("/admin/react/analytics/remeta");
+    return reply.redirect("/admin/analytics/remeta");
   });
 
   // Repurpose page
   server.get("/admin/repurpose", async (_request, reply) => {
-    return reply.redirect("/admin/react/analytics/repurpose");
+    return reply.redirect("/admin/analytics/repurpose");
   });
 
   // Research page
   server.get("/admin/research", async (_request, reply) => {
-    return reply.redirect("/admin/react/analytics/research");
+    return reply.redirect("/admin/analytics/research");
   });
 
 

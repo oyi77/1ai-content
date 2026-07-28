@@ -1,12 +1,12 @@
 /**
  * Admin Config E2E Tests
  *
- * Tests the configuration UI page (React SPA at /admin/react/config).
+ * Tests the configuration UI page (React SPA at /admin/config).
  * ConfigPage.tsx renders search input, grouped Expand All/Collapse All buttons,
  * and per-item toggles/fields. Groups use conditional rendering — body
  * is removed from the DOM when collapsed.
  *
- * /admin/config redirects (302) → /admin/react/config.
+ * /admin/config redirects (302) → /admin/config.
  */
 
 import { test, expect } from '@playwright/test';
