@@ -109,6 +109,18 @@ class ContentGenerator(ABC):
         """
         ...
 
+
+    # ── Generation trigger (optional) ─────────────────────────────
+
+    async def generate(self, project_id: str) -> dict:
+        """Start content generation for a project.
+
+        Separates project creation (create) from actual content production.
+        Default implementation returns not-implemented — override if the
+        generator uses a two-phase create→generate lifecycle.
+        """
+        return {"status": "not_implemented", "message": "generate() not implemented"}
+
     # ── Extra generator-specific routes ─────────────────────────
 
     def extra_routes(self) -> list[tuple[str, str, Any]]:

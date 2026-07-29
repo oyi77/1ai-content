@@ -548,6 +548,8 @@ from services.routers.engagement import engagement_router
 from services.routers.comic import comic_router
 from services.routers.movie import movie_router
 from services.routers.hooks import hooks_router
+from services.ebook.generator import EbookContentGenerator
+
 
 registry.add_router(health_router)
 registry.add_router(storyboard_router)
@@ -566,6 +568,7 @@ registry.add_router(engagement_router)
 registry.add_router(comic_router)
 registry.add_router(movie_router)
 registry.add_router(hooks_router)
+registry.register(EbookContentGenerator(), prefix="/ebook")
 
 # Wire everything into the app
 registry.wire(app)

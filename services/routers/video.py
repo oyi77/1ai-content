@@ -11,7 +11,7 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from services.api import _PROCESSED_VIDEOS_DB, _probe_field, _probe_video, _run_subprocess
+from services.routers._shared import _PROCESSED_VIDEOS_DB, _probe_field, _probe_video, _run_subprocess
 
 video_router = APIRouter(prefix="", tags=["video"])
 
