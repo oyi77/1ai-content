@@ -34,8 +34,8 @@
     "docker:build": "docker build -t openclaw-bot:latest .",
     "docker:run": "docker run -d --env-file .env -p 3000:3000 openclaw-bot:latest",
     "prepare": "husky install",
-    "render:ad": "cd remotion-ads && node --import tsx src/render.ts",
-    "render:ad:studio": "cd remotion-ads && npx remotion studio src/index.tsx"
+    "render:ad": "cd services/remotion-ads && node --import tsx src/render.ts",
+    "render:ad:studio": "cd services/remotion-ads && npx remotion studio src/index.tsx"
   },
   "keywords": [
     "telegram-bot",

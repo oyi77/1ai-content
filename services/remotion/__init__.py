@@ -11,13 +11,15 @@ from typing import Optional
 from pathlib import Path
 
 
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 # Allow override via env var for flexibility; default to project-relative path
-_DEFAULT_REMOTION_DIR = Path(__file__).resolve().parent.parent.parent / "remotion-ads"
+_DEFAULT_REMOTION_DIR = _PROJECT_ROOT / "services" / "remotion-ads"
 REMOTION_DIR = Path(os.environ.get("REMOTION_ADS_DIR", str(_DEFAULT_REMOTION_DIR)))
 RENDER_SCRIPT = REMOTION_DIR / "src" / "render.ts"
 
-# Default output directory
-OUTPUT_DIR = REMOTION_DIR / "output"
+# Canonical output directory — always at project-root data/remotion (not affected by env override)
+OUTPUT_DIR = _PROJECT_ROOT / "data" / "remotion"
+
 async def render_product_ad(
     *,
     image_url: str,
@@ -63,8 +65,7 @@ async def render_product_ad(
         payload["adCopy"] = ad_copy
     if hook_text:
         payload["hookText"] = hook_text
-    if output_path:
-        payload["outputPath"] = output_path
+    payload["outputPath"] = output_path or str(OUTPUT_DIR / f"product-ad-{category}-{os.urandom(4).hex()}.mp4")
 
     # Ensure output directory exists
     os.makedirs(OUTPUT_DIR, exist_ok=True)

@@ -1,6 +1,11 @@
 coverage/
 data/*.rdb
 data/redis/
+data/videos/
+data/comic/
+data/remotion/
+data/processed/
+data/ebook/
 dist/
 dist.bak/
 docs/assets/
@@ -49,3 +54,7 @@ public/design-system.css
 scripts/fix-css-path.js
 public/hero-comparison.png
 .venv*
+# Test artifacts (do NOT ignore production projects/)
+services/projects/model_stats_*.json
+services/projects/token_calibration.json
+services/data/ebook/projects.db

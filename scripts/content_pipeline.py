@@ -25,7 +25,7 @@ BASE = Path(__file__).parent.parent
 WORKSPACE = Path.home() / ".openclaw/workspace"
 TEMP_DIR = BASE / "data/temp"
 DOWNLOAD_DIR = BASE / "data/downloads"
-PROCESSED_DIR = BASE / "output"
+PROCESSED_DIR = BASE / "data" / "processed"
 LOG_DIR = BASE / "logs"
 
 for d in [TEMP_DIR, DOWNLOAD_DIR, PROCESSED_DIR, LOG_DIR]:

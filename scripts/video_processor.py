@@ -24,7 +24,7 @@ from pathlib import Path
 from datetime import datetime
 
 BASE = Path(__file__).parent.parent
-OUTPUT_DIR = BASE / "output"
+OUTPUT_DIR = BASE / "data" / "videos"
 LOG_DIR = BASE / "logs"
 TEMP_DIR = BASE / "data/temp"
 FONT_DIR = BASE / "data/fonts"

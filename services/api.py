@@ -833,11 +833,8 @@ _ROUTER_MODULES: list[tuple[str, str]] = [
     ("services.routers.loop", "loop_router"),
     ("services.routers.music", "music_router"),
     ("services.routers.remotion", "remotion_router"),
-    ("services.routers.clipper", "clipper_router"),
     ("services.routers.pinterest", "pinterest_router"),
     ("services.routers.carousel", "carousel_router"),
-    ("services.routers.brand", "brand_router"),
-    ("services.routers.faceless", "faceless_router"),
     ("services.routers.research", "research_router"),
     ("services.routers.trends", "trends_router"),
     ("services.routers.engagement", "engagement_router"),
@@ -855,6 +852,18 @@ for mod_path, attr_name in _ROUTER_MODULES:
 # Ebook generator — registered via ContentGenerator protocol (CRUD + extra routes)
 from services.routers.ebook import _get as get_ebook_gen
 registry.register(get_ebook_gen(), prefix="/ebook", tags=["ebook"])
+
+# Brand generator — ContentGenerator wrapping BrandSettings
+from services.brand.generator import BrandContentGenerator
+registry.register(BrandContentGenerator(), prefix="/brand", tags=["brand"])
+
+# Faceless generator — ContentGenerator wrapping FacelessEngine
+from services.faceless.generator import FacelessContentGenerator
+registry.register(FacelessContentGenerator(), prefix="/faceless", tags=["faceless"])
+
+# Clipper generator — ContentGenerator wrapping ClipperEngine
+from services.clipper.generator import ClipperContentGenerator
+registry.register(ClipperContentGenerator(), prefix="/clipper", tags=["clipper"])
 
 # Wire everything into the app
 registry.wire(app)

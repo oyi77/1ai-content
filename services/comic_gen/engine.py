@@ -14,7 +14,7 @@ from services.comic_gen.comic_types import ComicFormat, ComicScript, RenderedPag
 from services.comic_gen.script_engine import generate_script, script_to_dict
 from services.comic_gen.page_composer import compose_page, compose_episode, compose_cover
 
-OUTPUT_DIR = Path.home() / "projects" / "1ai-content" / "output" / "comic"
+OUTPUT_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "comic"
 
 
 async def generate_comic_pipeline(

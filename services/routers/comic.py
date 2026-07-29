@@ -43,7 +43,7 @@ async def comic_generate(req: ComicGenerateRequest):
 @comic_router.get("/comic/page/{path:path}")
 async def comic_page(path: str):
     """Serve a generated comic page image."""
-    full_path = Path("/home/openclaw/projects/1ai-content/output/comic") / path
+    full_path = Path(__file__).resolve().parent.parent.parent / "data" / "comic" / path
     if not full_path.exists():
         full_path = full_path.with_suffix(".png")
     if not full_path.exists():

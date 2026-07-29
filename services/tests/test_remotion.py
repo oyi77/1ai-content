@@ -16,11 +16,11 @@ def test_module_constants_default():
     importlib.reload(services.remotion)
 
     expected_base = (
-        Path(__file__).resolve().parent.parent.parent / "remotion-ads"
+        Path(__file__).resolve().parent.parent / "remotion-ads"
     )
     assert services.remotion.REMOTION_DIR == expected_base
     assert services.remotion.RENDER_SCRIPT == expected_base / "src" / "render.ts"
-    assert services.remotion.OUTPUT_DIR == expected_base / "output"
+    assert services.remotion.OUTPUT_DIR == Path(__file__).resolve().parent.parent.parent / "data" / "remotion"
 
 
 def test_module_constants_with_env():
@@ -31,7 +31,7 @@ def test_module_constants_with_env():
     importlib.reload(services.remotion)
     try:
         assert services.remotion.REMOTION_DIR == Path("/tmp/custom-remotion")
-        assert services.remotion.OUTPUT_DIR == Path("/tmp/custom-remotion") / "output"
+        assert services.remotion.OUTPUT_DIR == Path(__file__).resolve().parent.parent.parent / "data" / "remotion"
     finally:
         del os.environ["REMOTION_ADS_DIR"]
         importlib.reload(services.remotion)
