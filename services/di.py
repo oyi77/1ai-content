@@ -5,12 +5,31 @@ Each function imports its service module on first call and caches the instance,
 avoiding up-front import cost of every service at module load.
 """
 
-from typing import Any
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from services.storyboard.engine import StoryboardEngine
+    from services.tts.engine import TTSEngine
+    from services.suno.client import SunoClient
+    from services.music.generator import MusicGenerator
+    from services.looping.engine import LoopingEngine
+    from services.analysis.channel_analyzer import ChannelAnalyzer
+    from services.cloak_adapter import CloakBrowserAdapter
+    from services.pinterest import PinterestScraper
+    from services.carousel.generator import CarouselGenerator
+    from services.content_calendar.content_calendar import ContentCalendarService
+    from services.ab_testing.service import ABTestingService
+    from services.autopilot.orchestrator import AutoPilotOrchestrator
+    from services.engagement import AutoReplyEngine
+    from services.repurpose.engine import RepurposeEngine
+    from services.remetadata.engine import ReMetadataEngine
 
 _instances: dict[str, Any] = {}
 
 
-def get_storyboard():
+def get_storyboard() -> StoryboardEngine:
     if "storyboard" not in _instances:
         from services.storyboard.engine import StoryboardEngine
 
@@ -18,7 +37,7 @@ def get_storyboard():
     return _instances["storyboard"]
 
 
-def get_tts():
+def get_tts() -> TTSEngine:
     if "tts" not in _instances:
         from services.tts.engine import TTSEngine
 
@@ -26,7 +45,7 @@ def get_tts():
     return _instances["tts"]
 
 
-def get_suno():
+def get_suno() -> SunoClient:
     if "suno" not in _instances:
         from services.suno.client import SunoClient
 
@@ -34,7 +53,7 @@ def get_suno():
     return _instances["suno"]
 
 
-def get_music():
+def get_music() -> MusicGenerator:
     if "music" not in _instances:
         from services.music.generator import MusicGenerator
 
@@ -42,7 +61,7 @@ def get_music():
     return _instances["music"]
 
 
-def get_looping():
+def get_looping() -> LoopingEngine:
     if "looping" not in _instances:
         from services.looping.engine import LoopingEngine
 
@@ -50,7 +69,7 @@ def get_looping():
     return _instances["looping"]
 
 
-def get_analyzer():
+def get_analyzer() -> ChannelAnalyzer:
     if "analyzer" not in _instances:
         from services.analysis.channel_analyzer import ChannelAnalyzer
 
@@ -58,7 +77,7 @@ def get_analyzer():
     return _instances["analyzer"]
 
 
-def get_cloak():
+def get_cloak() -> CloakBrowserAdapter:
     if "cloak" not in _instances:
         from services.cloak_adapter import CloakBrowserAdapter
 
@@ -66,7 +85,7 @@ def get_cloak():
     return _instances["cloak"]
 
 
-def get_pinterest():
+def get_pinterest() -> PinterestScraper:
     if "pinterest" not in _instances:
         from services.pinterest import PinterestScraper
 
@@ -74,7 +93,7 @@ def get_pinterest():
     return _instances["pinterest"]
 
 
-def get_carousel():
+def get_carousel() -> CarouselGenerator:
     if "carousel" not in _instances:
         from services.carousel.generator import CarouselGenerator
 
@@ -82,17 +101,15 @@ def get_carousel():
     return _instances["carousel"]
 
 
-def get_calendar():
+def get_calendar() -> ContentCalendarService:
     if "calendar" not in _instances:
-        from services.content_calendar.content_calendar import (
-            ContentCalendarService,
-        )
+        from services.content_calendar.content_calendar import ContentCalendarService
 
         _instances["calendar"] = ContentCalendarService()
     return _instances["calendar"]
 
 
-def get_ab_testing():
+def get_ab_testing() -> ABTestingService:
     if "ab_testing" not in _instances:
         from services.ab_testing.service import ABTestingService
 
@@ -100,7 +117,7 @@ def get_ab_testing():
     return _instances["ab_testing"]
 
 
-def get_autopilot():
+def get_autopilot() -> AutoPilotOrchestrator:
     if "autopilot" not in _instances:
         from services.autopilot.orchestrator import AutoPilotOrchestrator
 
@@ -108,7 +125,7 @@ def get_autopilot():
     return _instances["autopilot"]
 
 
-def get_engagement():
+def get_engagement() -> AutoReplyEngine:
     if "engagement" not in _instances:
         from services.engagement import AutoReplyEngine
 
@@ -116,7 +133,7 @@ def get_engagement():
     return _instances["engagement"]
 
 
-def get_repurpose_engine():
+def get_repurpose_engine() -> RepurposeEngine:
     if "repurpose" not in _instances:
         from services.repurpose.engine import RepurposeEngine
 
@@ -124,7 +141,7 @@ def get_repurpose_engine():
     return _instances["repurpose"]
 
 
-def get_remetadata_engine():
+def get_remetadata_engine() -> ReMetadataEngine:
     if "remetadata" not in _instances:
         from services.remetadata.engine import ReMetadataEngine
 
