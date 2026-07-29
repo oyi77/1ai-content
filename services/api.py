@@ -19,87 +19,44 @@ Run:
     # or: uvicorn services.api:app --host 0.0.0.0 --port 8766
 """
 
-import subprocess
 import os
-import json
-import httpx
 import asyncio
-import tempfile
 from pathlib import Path
 from typing import Optional
-from datetime import datetime
-
-from fastapi import APIRouter, FastAPI, HTTPException, UploadFile, File, Form
-from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
-from pydantic import BaseModel, Field
-
-# ── Import services ────────────────────────────────────────────
-from services.pinterest import PinterestScraper
-from services.storyboard.engine import StoryboardEngine
-from services.tts.engine import TTSEngine
-from services.suno.client import SunoClient
-from services.music.generator import MusicGenerator
-from services.looping.engine import LoopingEngine
-from services.analysis.channel_analyzer import ChannelAnalyzer
-from services.cloak_adapter import CloakBrowserAdapter
-
-
-async def _run_subprocess(cmd: list[str], **kwargs):
-    """Run subprocess in thread pool to avoid blocking the event loop."""
-    return await asyncio.to_thread(lambda: subprocess.run(cmd, **kwargs))
-
-
-async def _probe_video(file_path: str) -> dict:
-    """Run ffprobe and return structured video metadata."""
-    try:
-        probe = await _run_subprocess(
-            ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_streams", "-show_format", file_path],
-            capture_output=True, text=True, timeout=10,
-        )
-        if probe.returncode != 0:
-            return {}
-        meta = json.loads(probe.stdout)
-        duration = 0.0
-        width = 0
-        height = 0
-        video_codec = ""
-        audio_codec = ""
-        for stream in meta.get("streams", []):
-            if stream.get("codec_type") == "video":
-                width = int(stream.get("width", 0))
-                height = int(stream.get("height", 0))
-                video_codec = stream.get("codec_name", "").lower()
-                duration = float(meta.get("format", {}).get("duration", 0))
-            elif stream.get("codec_type") == "audio":
-                audio_codec = stream.get("codec_name", "")
-        return {
-            "duration": duration,
-            "width": width,
-            "height": height,
-            "video_codec": video_codec,
-            "audio_codec": audio_codec,
-        }
-    except Exception:
-        return {}
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
+from services.api_models import (
+    TTSRequest,
+    AnalyzeRequest,
+    CompareRequest,
+    CloakPostRequest,
+    CloakBatchPostRequest,
+    AutoPilotJobRequest,
+    CalendarEntryRequest,
+    ABTestRequest,
+    CaptionRequest,
+    RepurposeRequest,
+    ReMetadataRequest,
+)
+from services.di import (
+    get_storyboard,
+    get_tts,
+    get_suno,
+    get_music,
+    get_looping,
+    get_analyzer,
+    get_cloak,
+    get_pinterest,
+    get_carousel,
+    get_calendar,
+    get_ab_testing,
+    get_autopilot,
+    get_engagement,
+    get_repurpose_engine,
+    get_remetadata_engine,
+)
 
 
-async def _probe_field(file_path: str, field: str, stream_index: int = 0) -> str:
-    """Probe a specific ffprobe field (e.g. pix_fmt) from the first video stream."""
-    try:
-        probe = await _run_subprocess(
-            ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_streams", file_path],
-            capture_output=True, text=True, timeout=10,
-        )
-        if probe.returncode != 0:
-            return ""
-        meta = json.loads(probe.stdout)
-        streams = meta.get("streams", [])
-        for s in streams:
-            if s.get("codec_type") == "video":
-                return s.get(field, "")
-        return ""
-    except Exception:
-        return ""
 
 
 # ── App ────────────────────────────────────────────────────────
@@ -140,256 +97,7 @@ async def _startup_processed_videos_db():
     except Exception as e:
         print(f"[API] processed_videos DB init warning: {e}")
 
-_PROCESSED_VIDEOS_DB = os.path.join(os.environ.get("DATA_DIR", "/tmp"), "processed_videos.db")
 
-# ── Service instances (lazy init) ──────────────────────────────
-_storyboard: Optional[StoryboardEngine] = None
-_tts: Optional[TTSEngine] = None
-_suno: Optional[SunoClient] = None
-_music: Optional[MusicGenerator] = None
-_looping: Optional[LoopingEngine] = None
-_analyzer: Optional[ChannelAnalyzer] = None
-_cloak: Optional[CloakBrowserAdapter] = None
-
-_pinterest: Optional[PinterestScraper] = None
-def get_storyboard() -> StoryboardEngine:
-    global _storyboard
-    if _storyboard is None:
-        _storyboard = StoryboardEngine()
-    return _storyboard
-
-
-def get_tts() -> TTSEngine:
-    global _tts
-    if _tts is None:
-        _tts = TTSEngine()
-    return _tts
-
-
-def get_suno() -> SunoClient:
-    global _suno
-    if _suno is None:
-        _suno = SunoClient()
-    return _suno
-
-
-def get_music() -> MusicGenerator:
-    global _music
-    if _music is None:
-        _music = MusicGenerator()
-    return _music
-
-
-def get_looping() -> LoopingEngine:
-    global _looping
-    if _looping is None:
-        _looping = LoopingEngine()
-    return _looping
-
-
-def get_analyzer() -> ChannelAnalyzer:
-    global _analyzer
-    if _analyzer is None:
-        _analyzer = ChannelAnalyzer()
-    return _analyzer
-
-
-def get_cloak() -> CloakBrowserAdapter:
-    global _cloak
-    if _cloak is None:
-        _cloak = CloakBrowserAdapter()
-    return _cloak
-
-
-def get_pinterest() -> PinterestScraper:
-    global _pinterest
-    if _pinterest is None:
-        _pinterest = PinterestScraper()
-    return _pinterest
-
-
-# ── More service instances (lazy init) ─────────────────────────
-_carousel = None
-def get_carousel():
-    global _carousel
-    if _carousel is None:
-        from services.carousel.assembler import CarouselAssembler
-        _carousel = CarouselAssembler()
-    return _carousel
-
-
-_calendar = None
-def get_calendar():
-    global _calendar
-    if _calendar is None:
-        from services.content_calendar.content_calendar import ContentCalendarService
-        _calendar = ContentCalendarService()
-    return _calendar
-
-
-_ab_testing = None
-def get_ab_testing():
-    global _ab_testing
-    if _ab_testing is None:
-        from services.ab_testing.service import ABTestingService
-        _ab_testing = ABTestingService()
-    return _ab_testing
-
-
-_autopilot = None
-def get_autopilot():
-    global _autopilot
-    if _autopilot is None:
-        from services.autopilot.tiktok_publisher import AutoPilotTikTokPublisher
-        _autopilot = AutoPilotTikTokPublisher()
-    return _autopilot
-
-
-_engagement = None
-def get_engagement():
-    global _engagement
-    if _engagement is None:
-        from services.engagement import AutoReplyEngine
-        _engagement = AutoReplyEngine()
-    return _engagement
-
-
-_repurpose_engine = None
-def get_repurpose_engine():
-    global _repurpose_engine
-    if _repurpose_engine is None:
-        from services.repurpose.engine import RepurposeEngine
-        _repurpose_engine = RepurposeEngine()
-    return _repurpose_engine
-
-
-_remetadata_engine = None
-def get_remetadata_engine():
-    global _remetadata_engine
-    if _remetadata_engine is None:
-        from services.remetadata.engine import ReMetadataEngine
-        _remetadata_engine = ReMetadataEngine()
-    return _remetadata_engine
-
-
-# ══════════════════════════════════════════════════════════════
-# REQUEST / RESPONSE MODELS (for endpoints staying in api.py)
-# ══════════════════════════════════════════════════════════════
-
-class TTSRequest(BaseModel):
-    text: str
-    language: str = "id"
-    voice: Optional[str] = None
-    rate: str = "+0%"
-    pitch: str = "+0Hz"
-
-
-class AnalyzeRequest(BaseModel):
-    channel_url: str
-    niche: str = ""
-    limit: int = Field(default=50, ge=5, le=200)
-
-
-class CompareRequest(BaseModel):
-    channel_urls: list[str]
-    niche: str = ""
-
-
-class CloakPostRequest(BaseModel):
-    profile_id: str
-    media_path: str = ""
-    caption: str
-    platform: str
-    link: Optional[str] = None
-    tags: Optional[list[str]] = None
-
-
-class CloakBatchPostRequest(BaseModel):
-    profile_ids: list[str]
-    media_path: str = ""
-    caption: str
-    platform: str
-    link: Optional[str] = None
-
-
-class AutoPilotJobRequest(BaseModel):
-    name: str
-    niche: str
-    platforms: list[str] = ["tiktok"]
-    videos_per_day: int = 3
-    posting_times: list[str] = ["11:00", "15:00", "19:00"]
-    content_type: str = "video"
-    style: str = "educational"
-    language: str = "id"
-    auto_publish: bool = True
-    tiktok_profile_id: str = ""
-
-
-class CalendarEntryRequest(BaseModel):
-    user_id: int
-    topic: str
-    scheduled_at: str
-    platform: str = "tiktok"
-    content_type: str = "video"
-    caption: str = ""
-    hashtags: list[str] = []
-    niche: str = ""
-    style: str = "educational"
-    language: str = "id"
-    auto_post: bool = False
-
-
-class ABTestRequest(BaseModel):
-    user_id: int
-    name: str
-    topic: str
-    platform: str = "tiktok"
-    content_type: str = "caption"
-    language: str = "id"
-
-
-class CaptionRequest(BaseModel):
-    topic: str
-    style: str = "hype"
-    platform: str = "tiktok"
-    language: str = "id"
-    max_length: int = 2200
-    include_hashtags: bool = True
-    hashtag_count: int = 10
-
-
-class RepurposeRequest(BaseModel):
-    sources: list[str]
-    target_duration: int = 180
-    platform: str = "tiktok"
-    niche: str = "general"
-    style: str = "educational"
-    language: str = "id"
-    color_preset: str = "cinematic"
-    transition_style: str = "crossfade"
-    overlay_text: str = ""
-    overlay_position: str = "lower_third"
-    watermark_text: str = ""
-    watermark_image: str = ""
-    bgm_path: str = ""
-    bgm_volume: float = 0.15
-    voiceover_path: str = ""
-    speed_min: float = 0.8
-    speed_max: float = 1.5
-    add_subtitles: bool = True
-    subtitle_style: str = "karaoke"
-
-
-class ReMetadataRequest(BaseModel):
-    source: str
-    overlay: str = ""
-    watermark: str = ""
-    position: str = "bottom_right"
-    speed: float = 0
-    color_shift: bool = True
-    niche: str = "general"
-    platform: str = "tiktok"
-    language: str = "id"
 
 
 # ══════════════════════════════════════════════════════════════
@@ -823,47 +531,41 @@ async def start_trending_scanner():
 from services.generator import GeneratorRegistry
 registry = GeneratorRegistry()
 
-_ROUTER_MODULES: list[tuple[str, str]] = [
-    ("services.routers.health", "health_router"),
-    ("services.routers.storyboard", "storyboard_router"),
-    ("services.routers.download", "download_router"),
-    ("services.routers.video", "video_router"),
-    ("services.routers.tikwm", "tikwm_router"),
-    ("services.routers.upload", "upload_router"),
-    ("services.routers.loop", "loop_router"),
-    ("services.routers.music", "music_router"),
-    ("services.routers.remotion", "remotion_router"),
-    ("services.routers.pinterest", "pinterest_router"),
-    ("services.routers.carousel", "carousel_router"),
-    ("services.routers.research", "research_router"),
-    ("services.routers.trends", "trends_router"),
-    ("services.routers.engagement", "engagement_router"),
-    ("services.routers.comic", "comic_router"),
-    ("services.routers.movie", "movie_router"),
-]
+from services.routers.health import health_router
+from services.routers.storyboard import storyboard_router
+from services.routers.download import download_router
+from services.routers.video import video_router
+from services.routers.tikwm import tikwm_router
+from services.routers.upload import upload_router
+from services.routers.loop import loop_router
+from services.routers.music import music_router
+from services.routers.remotion import remotion_router
+from services.routers.pinterest import pinterest_router
+from services.routers.carousel import carousel_router
+from services.routers.research import research_router
+from services.routers.trends import trends_router
+from services.routers.engagement import engagement_router
+from services.routers.comic import comic_router
+from services.routers.movie import movie_router
+from services.routers.hooks import hooks_router
 
-for mod_path, attr_name in _ROUTER_MODULES:
-    try:
-        mod = __import__(mod_path, fromlist=[attr_name])
-        registry.add_router(getattr(mod, attr_name))
-    except Exception as e:
-        print(f"  ⚠ {mod_path}: {e}")
-
-# Ebook generator — registered via ContentGenerator protocol (CRUD + extra routes)
-from services.routers.ebook import _get as get_ebook_gen
-registry.register(get_ebook_gen(), prefix="/ebook", tags=["ebook"])
-
-# Brand generator — ContentGenerator wrapping BrandSettings
-from services.brand.generator import BrandContentGenerator
-registry.register(BrandContentGenerator(), prefix="/brand", tags=["brand"])
-
-# Faceless generator — ContentGenerator wrapping FacelessEngine
-from services.faceless.generator import FacelessContentGenerator
-registry.register(FacelessContentGenerator(), prefix="/faceless", tags=["faceless"])
-
-# Clipper generator — ContentGenerator wrapping ClipperEngine
-from services.clipper.generator import ClipperContentGenerator
-registry.register(ClipperContentGenerator(), prefix="/clipper", tags=["clipper"])
+registry.add_router(health_router)
+registry.add_router(storyboard_router)
+registry.add_router(download_router)
+registry.add_router(video_router)
+registry.add_router(tikwm_router)
+registry.add_router(upload_router)
+registry.add_router(loop_router)
+registry.add_router(music_router)
+registry.add_router(remotion_router)
+registry.add_router(pinterest_router)
+registry.add_router(carousel_router)
+registry.add_router(research_router)
+registry.add_router(trends_router)
+registry.add_router(engagement_router)
+registry.add_router(comic_router)
+registry.add_router(movie_router)
+registry.add_router(hooks_router)
 
 # Wire everything into the app
 registry.wire(app)
