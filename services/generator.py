@@ -14,6 +14,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any
+from fastapi import APIRouter, FastAPI
 
 
 @dataclass
@@ -108,6 +109,21 @@ class ContentGenerator(ABC):
         """
         ...
 
+    # ── Extra generator-specific routes ─────────────────────────
+
+    def extra_routes(self) -> list[tuple[str, str, Any]]:
+        """Return extra route definitions beyond core CRUD.
+
+        Each tuple: (http_method, path, handler_function).
+        Path is relative to the generator's route prefix.
+        Default returns nothing — override to add custom endpoints
+        (e.g. trigger, export, download).
+
+        Handler functions receive path/query parameters from the
+        request and must be async (or regular def — FastAPI handles both).
+        """
+        return []
+
 
 async def health_all(generators: list[ContentGenerator]) -> dict[str, Any]:
     """Aggregate health from all registered generators."""
@@ -122,3 +138,46 @@ async def health_all(generators: list[ContentGenerator]) -> dict[str, Any]:
             results["generators"][gen.info.name] = {"status": "down", "error": str(e)}
             results["status"] = "degraded"
     return results
+
+
+class GeneratorRegistry:
+    """Registry for plain routers + ContentGenerator instances.
+
+    Collects routers and generator registrations, then wires them
+    all into a FastAPI app in one call via ``.wire(app)``.
+    """
+
+    def __init__(self) -> None:
+        self._routers: list[APIRouter] = []
+        self._generator_registrations: list[tuple[ContentGenerator, str, list[str]]] = []
+
+    def add_router(self, router: APIRouter) -> None:
+        """Register a plain router to be included on wire()."""
+        self._routers.append(router)
+
+    def register(
+        self,
+        generator: ContentGenerator,
+        *,
+        prefix: str = "",
+        tags: list[str] | None = None,
+    ) -> None:
+        """Register a ContentGenerator (CRUD + extra routes).
+
+        Args:
+            generator: ContentGenerator implementation.
+            prefix: URL prefix (e.g. "/ebook").
+            tags: OpenAPI tags; defaults to generator info name.
+        """
+        self._generator_registrations.append(
+            (generator, prefix, tags or [generator.info.name])
+        )
+
+    def wire(self, app: FastAPI) -> None:
+        """Include all routers and register all generators on *app*."""
+        from services.routers import register_generator_routes
+
+        for r in self._routers:
+            app.include_router(r)
+        for gen, prefix, tags in self._generator_registrations:
+            register_generator_routes(app, gen, prefix=prefix, tags=tags)

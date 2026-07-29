@@ -817,121 +817,47 @@ async def start_trending_scanner():
 
 
 # ══════════════════════════════════════════════════════════════
-# DOMAIN-SPLIT ROUTERS — import and include
+# DOMAIN-SPLIT ROUTERS — import and register via GeneratorRegistry
 # ══════════════════════════════════════════════════════════════
 
-try:
-    from services.routers.health import health_router
-    app.include_router(health_router)
-except Exception as e:
-    print(f"  ⚠ services.routers.health: {e}")
-try:
-    from services.routers.storyboard import storyboard_router
-    app.include_router(storyboard_router)
-except Exception as e:
-    print(f"  ⚠ services.routers.storyboard: {e}")
-try:
-    from services.routers.download import download_router
-    app.include_router(download_router)
-except Exception as e:
-    print(f"  ⚠ services.routers.download: {e}")
-try:
-    from services.routers.video import video_router
-    app.include_router(video_router)
-except Exception as e:
-    print(f"  ⚠ services.routers.video: {e}")
-try:
-    from services.routers.tikwm import tikwm_router
-    app.include_router(tikwm_router)
-except Exception as e:
-    print(f"  ⚠ services.routers.tikwm: {e}")
-try:
-    from services.routers.upload import upload_router
-    app.include_router(upload_router)
-except Exception as e:
-    print(f"  ⚠ services.routers.upload: {e}")
-try:
-    from services.routers.loop import loop_router
-    app.include_router(loop_router)
-except Exception as e:
-    print(f"  ⚠ services.routers.loop: {e}")
-try:
-    from services.routers.music import music_router
-    app.include_router(music_router)
-except Exception as e:
-    print(f"  ⚠ services.routers.music: {e}")
-try:
-    from services.routers.remotion import remotion_router
-    app.include_router(remotion_router)
-except Exception as e:
-    print(f"  ⚠ services.routers.remotion: {e}")
-try:
-    from services.routers.clipper import clipper_router
-    app.include_router(clipper_router)
-except Exception as e:
-    print(f"  ⚠ services.routers.clipper: {e}")
-try:
-    from services.routers.pinterest import pinterest_router
-    app.include_router(pinterest_router)
-except Exception as e:
-    print(f"  ⚠ services.routers.pinterest: {e}")
-try:
-    from services.routers.carousel import carousel_router
-    app.include_router(carousel_router)
-except Exception as e:
-    print(f"  ⚠ services.routers.carousel: {e}")
-try:
-    from services.routers.brand import brand_router
-    app.include_router(brand_router)
-except Exception as e:
-    print(f"  ⚠ services.routers.brand: {e}")
-try:
-    from services.routers.faceless import faceless_router
-    app.include_router(faceless_router)
-except Exception as e:
-    print(f"  ⚠ services.routers.faceless: {e}")
-try:
-    from services.routers.research import research_router
-    app.include_router(research_router)
-except Exception as e:
-    print(f"  ⚠ services.routers.research: {e}")
-try:
-    from services.routers.trends import trends_router
-    app.include_router(trends_router)
-except Exception as e:
-    print(f"  ⚠ services.routers.trends: {e}")
-try:
-    from services.routers.engagement import engagement_router
-    app.include_router(engagement_router)
-except Exception as e:
-    print(f"  ⚠ services.routers.engagement: {e}")
-try:
-    from services.routers.comic import comic_router
-    app.include_router(comic_router)
-except Exception as e:
-    print(f"  ⚠ services.routers.comic: {e}")
-try:
-    from services.routers.movie import movie_router
-    app.include_router(movie_router)
-except Exception as e:
-    print(f"  ⚠ services.routers.movie: {e}")
-from services.routers.ebook import _get as get_ebook_gen, trigger_generation, get_export, get_download
-from services.routers import register_generator_routes
+from services.generator import GeneratorRegistry
+registry = GeneratorRegistry()
 
-# ── Register ebook generator (CRUD + extra trigger, export, download) ──
-register_generator_routes(app, get_ebook_gen(), prefix="/ebook", tags=["ebook"])
+_ROUTER_MODULES: list[tuple[str, str]] = [
+    ("services.routers.health", "health_router"),
+    ("services.routers.storyboard", "storyboard_router"),
+    ("services.routers.download", "download_router"),
+    ("services.routers.video", "video_router"),
+    ("services.routers.tikwm", "tikwm_router"),
+    ("services.routers.upload", "upload_router"),
+    ("services.routers.loop", "loop_router"),
+    ("services.routers.music", "music_router"),
+    ("services.routers.remotion", "remotion_router"),
+    ("services.routers.clipper", "clipper_router"),
+    ("services.routers.pinterest", "pinterest_router"),
+    ("services.routers.carousel", "carousel_router"),
+    ("services.routers.brand", "brand_router"),
+    ("services.routers.faceless", "faceless_router"),
+    ("services.routers.research", "research_router"),
+    ("services.routers.trends", "trends_router"),
+    ("services.routers.engagement", "engagement_router"),
+    ("services.routers.comic", "comic_router"),
+    ("services.routers.movie", "movie_router"),
+]
 
-_ebook_extra = APIRouter(prefix="/ebook", tags=["ebook"])
-@_ebook_extra.post("/projects/{project_id}/generate")
-async def _ebook_trigger(project_id: str):
-    return await trigger_generation(project_id)
-@_ebook_extra.get("/projects/{project_id}/export")
-async def _ebook_export(project_id: str):
-    return await get_export(project_id)
-@_ebook_extra.get("/projects/{project_id}/download/{fmt}")
-async def _ebook_download(project_id: str, fmt: str):
-    return await get_download(project_id, fmt)
-app.include_router(_ebook_extra)
+for mod_path, attr_name in _ROUTER_MODULES:
+    try:
+        mod = __import__(mod_path, fromlist=[attr_name])
+        registry.add_router(getattr(mod, attr_name))
+    except Exception as e:
+        print(f"  ⚠ {mod_path}: {e}")
+
+# Ebook generator — registered via ContentGenerator protocol (CRUD + extra routes)
+from services.routers.ebook import _get as get_ebook_gen
+registry.register(get_ebook_gen(), prefix="/ebook", tags=["ebook"])
+
+# Wire everything into the app
+registry.wire(app)
 
 # ══════════════════════════════════════════════════════════════
 # MAIN

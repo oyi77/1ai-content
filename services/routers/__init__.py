@@ -61,4 +61,8 @@ def register_generator_routes(
             raise HTTPException(status_code=404, detail="Project not found")
         return {"deleted": project_id}
 
+    # ── Extra generator-specific routes ────────────────────────────
+    for method, path, handler in generator.extra_routes():
+        router.add_api_route(path, handler, methods=[method])
+
     app.include_router(router)

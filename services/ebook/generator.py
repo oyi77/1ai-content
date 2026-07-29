@@ -243,3 +243,48 @@ class EbookContentGenerator(ContentGenerator):
         project_dir = self._projects_dir / str(project_id)
         file_path = project_dir / "exports" / f"ebook.{fmt}"
         return file_path if file_path.exists() else None
+
+    # ── Extra routes (trigger, export, download) ─────────────────
+
+    def extra_routes(self) -> list[tuple[str, str, Any]]:
+        from fastapi import HTTPException
+        from fastapi.responses import FileResponse
+
+        _self = self  # capture for closure
+
+        async def _trigger(project_id: str) -> dict:
+            try:
+                return _self.generate(int(project_id))
+            except HTTPException:
+                raise
+            except Exception as exc:
+                return {"project_id": project_id, "error": str(exc)}
+
+        async def _export(project_id: str) -> dict:
+            result = _self.export_data(int(project_id))
+            if "error" in result:
+                raise HTTPException(status_code=404, detail=result["error"])
+            return result
+
+        async def _download(project_id: str, fmt: str):
+            if fmt not in ("docx", "pdf", "epub"):
+                raise HTTPException(status_code=400, detail="Unsupported format. Use docx, pdf, or epub.")
+            file_path = _self.download_path(int(project_id), fmt)
+            if file_path is None:
+                raise HTTPException(status_code=404, detail=f"File {fmt} not found for project {project_id}")
+            media_types = {
+                "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "pdf": "application/pdf",
+                "epub": "application/epub+zip",
+            }
+            return FileResponse(
+                path=str(file_path),
+                media_type=media_types[fmt],
+                filename=f"ebook-{project_id}.{fmt}",
+            )
+
+        return [
+            ("POST", "/projects/{project_id}/generate", _trigger),
+            ("GET", "/projects/{project_id}/export", _export),
+            ("GET", "/projects/{project_id}/download/{fmt}", _download),
+        ]
