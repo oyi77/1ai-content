@@ -1,6 +1,19 @@
 # Absorption Plan: `remotion-ads/` → 1ai-content Monorepo
 
-**Status**: Plan — not yet approved.
+**Status**: ✅ COMPLETED (2026-07-29)
+
+All 7 steps executed successfully:
+| Step | Status | Notes |
+|------|--------|-------|
+| 1. Fix REMOTION_DIR | ✅ | Added `REMOTION_ADS_DIR` env override with project-relative fallback |
+| 2. Remove duplicated deps | ✅ | No duplicated `remotion` deps in root `package.json` |
+| 3. Add `.gitignore` | ✅ | Standard Node.js ignores + `output/` |
+| 4. Remove README.md | ✅ | Was already absent |
+| 5. Add Python tests | ✅ | 8 tests covering success, all params, timeout, no-JSON, malformed-JSON, stderr |
+| 6. Fix schema mismatch | ✅ | `RenderAd.tsx` rewritten to match `RenderAdRequest` Pydantic model (video-ad fields) |
+| 7. Verify end-to-end | ✅ | Route alive, handler fires, subprocess called with correct payload |
+
+Test results: 511/511 Python tests pass. Admin-ui TypeScript: clean compile.
 
 ---
 

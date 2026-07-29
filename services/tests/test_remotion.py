@@ -48,9 +48,11 @@ async def test_render_product_ad_success():
     )
 
     with patch("asyncio.create_subprocess_exec", new=AsyncMock(return_value=fake_proc)):
-        from services.remotion import render_product_ad
+        import services.remotion
+        import importlib
+        importlib.reload(services.remotion)
 
-        result = await render_product_ad(
+        result = await services.remotion.render_product_ad(
             image_url="https://example.com/img.jpg",
             title="Test Product",
             category="electronics",
@@ -70,9 +72,11 @@ async def test_render_product_ad_with_all_params():
     )
 
     with patch("asyncio.create_subprocess_exec", new=AsyncMock(return_value=fake_proc)):
-        from services.remotion import render_product_ad
+        import services.remotion
+        import importlib
+        importlib.reload(services.remotion)
 
-        result = await render_product_ad(
+        result = await services.remotion.render_product_ad(
             image_url="https://example.com/img.jpg",
             title="Premium Widget",
             category="home",
@@ -90,15 +94,17 @@ async def test_render_product_ad_with_all_params():
 @pytest.mark.asyncio
 async def test_render_product_ad_timeout():
     """RuntimeError raised on timeout, with proc killed."""
-    fake_proc = MagicMock()
-    fake_proc.kill = MagicMock()
-    fake_proc.communicate = AsyncMock(side_effect=asyncio.TimeoutError())
+    fake_proc = AsyncMock()
+    fake_proc.returncode = None
+    fake_proc.communicate = AsyncMock(side_effect=asyncio.TimeoutError)
 
     with patch("asyncio.create_subprocess_exec", new=AsyncMock(return_value=fake_proc)):
-        from services.remotion import render_product_ad
+        import services.remotion
+        import importlib
+        importlib.reload(services.remotion)
 
         with pytest.raises(RuntimeError, match="timed out"):
-            await render_product_ad(
+            await services.remotion.render_product_ad(
                 image_url="https://example.com/img.jpg",
                 title="Test",
                 category="test",
@@ -112,13 +118,35 @@ async def test_render_product_ad_no_json_output():
     """RuntimeError raised when stdout has no valid JSON."""
     fake_proc = AsyncMock()
     fake_proc.returncode = 0
-    fake_proc.communicate = AsyncMock(return_value=(b"not json", b""))
+    fake_proc.communicate = AsyncMock(return_value=(b"no json here", b""))
 
     with patch("asyncio.create_subprocess_exec", new=AsyncMock(return_value=fake_proc)):
-        from services.remotion import render_product_ad
+        import services.remotion
+        import importlib
+        importlib.reload(services.remotion)
 
-        with pytest.raises(RuntimeError, match="No JSON result"):
-            await render_product_ad(
+        with pytest.raises(RuntimeError, match="No JSON result in output"):
+            await services.remotion.render_product_ad(
+                image_url="https://example.com/img.jpg",
+                title="Test",
+                category="test",
+            )
+
+
+@pytest.mark.asyncio
+async def test_render_product_ad_malformed_json():
+    """RuntimeError raised when stdout contains invalid JSON."""
+    fake_proc = AsyncMock()
+    fake_proc.returncode = 0
+    fake_proc.communicate = AsyncMock(return_value=(b"{invalid json}", b""))
+
+    with patch("asyncio.create_subprocess_exec", new=AsyncMock(return_value=fake_proc)):
+        import services.remotion
+        import importlib
+        importlib.reload(services.remotion)
+
+        with pytest.raises(RuntimeError, match="Invalid JSON in render output"):
+            await services.remotion.render_product_ad(
                 image_url="https://example.com/img.jpg",
                 title="Test",
                 category="test",
@@ -130,15 +158,17 @@ async def test_render_product_ad_stderr_on_failure():
     """Stderr is surfaced when render process returns non-zero."""
     fake_proc = AsyncMock()
     fake_proc.returncode = 1
-    fake_proc.communicate = AsyncMock(
-        return_value=(b"{}", b"Video render failed: out of memory")
-    )
+    fake_proc.communicate = AsyncMock(return_value=(b"{}", b"Something went wrong\n"))
 
     with patch("asyncio.create_subprocess_exec", new=AsyncMock(return_value=fake_proc)):
-        from services.remotion import render_product_ad
+        import services.remotion
+        import importlib
+        importlib.reload(services.remotion)
 
-        with pytest.raises(RuntimeError, match="Remotion render failed"):
-            await render_product_ad(
+        with pytest.raises(
+            RuntimeError, match=r"Remotion render failed \(exit 1\):"
+        ):
+            await services.remotion.render_product_ad(
                 image_url="https://example.com/img.jpg",
                 title="Test",
                 category="test",

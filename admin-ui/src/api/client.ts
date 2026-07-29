@@ -817,20 +817,25 @@ export async function regenerateVideo(url: string): Promise<VideoSearchResponse>
 // ── Render Ad API ──
 
 export interface RenderAdResponse {
-  success?: boolean;
-  url?: string;
-  error?: string;
+  status: string;
+  data?: {
+    video_url?: string;
+    output_path?: string;
+    duration_seconds?: number;
+    [key: string]: unknown;
+  };
   [key: string]: unknown;
 }
 
 export async function renderAd(data: {
-  title: string;
-  format: string;
-  style: string;
-  background_color: string;
-  text_color: string;
   image_url?: string;
-  tagline?: string;
+  title: string;
+  category?: string;
+  affiliate_link?: string;
+  brand_name?: string;
+  ad_copy?: string;
+  hook_text?: string;
+  cta_text?: string;
 }): Promise<RenderAdResponse> {
   return postJson("/api/py/content/render-ad", data);
 }
