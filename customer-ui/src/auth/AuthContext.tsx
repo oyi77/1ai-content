@@ -29,6 +29,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = (newToken: string) => {
     localStorage.setItem("token", newToken);
+    // Set loading=true before token change so ProtectedRoute shows a spinner
+    // instead of immediately redirecting before refreshUser() finishes.
+    setLoading(true);
     setToken(newToken);
   };
 

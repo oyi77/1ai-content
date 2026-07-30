@@ -139,7 +139,7 @@ export class TikTokAutomationService {
     language?: string;
   }): Promise<CarouselResult> {
     try {
-      const { data } = await this.client.post<CarouselResult>('/carousel/create', {
+      const { data } = await this.client.post<CarouselResult>('/image/carousel', {
         topic: options.topic,
         num_slides: options.numSlides ?? 7,
         style: options.style ?? 'outline',
@@ -156,7 +156,7 @@ export class TikTokAutomationService {
 
   async getCarouselStyles(): Promise<Record<string, CarouselStyle>> {
     try {
-      const { data } = await this.client.get<{ styles: Record<string, CarouselStyle> }>('/carousel/styles');
+      const { data } = await this.client.get<{ styles: Record<string, CarouselStyle> }>('/image/carousel/styles');
       return data.styles ?? {};
     } catch {
       return {};
@@ -355,7 +355,7 @@ export class TikTokAutomationService {
     addSubtitles?: boolean;
     subtitleStyle?: string;
   }): Promise<Record<string, unknown>> {
-    const { data } = await this.client.post('/repurpose', {
+    const { data } = await this.client.post('/video/repurpose', {
       sources: options.sources,
       target_duration: options.targetDuration ?? 180,
       platform: options.platform ?? 'tiktok',
@@ -403,7 +403,7 @@ export class TikTokAutomationService {
     platform?: string;
     language?: string;
   }): Promise<Record<string, unknown>> {
-    const { data } = await this.client.post('/remeta', {
+    const { data } = await this.client.post('/video/remeta', {
       source: options.source,
       overlay: options.overlay ?? '',
       watermark: options.watermark ?? '',

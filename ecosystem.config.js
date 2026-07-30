@@ -1,6 +1,6 @@
 module.exports = {
   apps: [{
-    name: "vilonacontentbot",
+    name: "1ai-content",
     script: "/home/linuxbrew/.linuxbrew/bin/tsx",
     args: "src/index.ts",
     cwd: "/home/openclaw/projects/1ai-content",
@@ -14,8 +14,8 @@ module.exports = {
     max_restarts: 10,
     restart_delay: 5000,
     kill_timeout: 15000,
-    error_file: "/home/openclaw/.pm2/logs/vilonacontentbot-error.log",
-    out_file: "/home/openclaw/.pm2/logs/vilonacontentbot-out.log",
+    error_file: "/home/openclaw/.pm2/logs/1ai-content-error.log",
+    out_file: "/home/openclaw/.pm2/logs/1ai-content-out.log",
     log_date_format: "YYYY-MM-DD HH:mm:ss Z",
     env: {
       NODE_ENV: "production",

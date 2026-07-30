@@ -80,7 +80,7 @@ export class EbookService {
    */
   async healthCheck(): Promise<boolean> {
     try {
-      const resp = await this.client.get("/ebook/health");
+      const resp = await this.client.get("/text/ebook/health");
       return resp.data.status === "ok";
     } catch {
       return false;
@@ -92,7 +92,7 @@ export class EbookService {
    */
   async createProject(req: CreateEbookRequest): Promise<EbookProject> {
     try {
-      const resp = await this.client.post("/ebook/projects", {
+      const resp = await this.client.post("/text/ebook/projects", {
         idea: req.idea,
         title: req.title || null,
         chapter_count: req.chapter_count,
@@ -114,7 +114,7 @@ export class EbookService {
    */
   async getProject(projectId: number): Promise<EbookProject> {
     try {
-      const resp = await this.client.get(`/ebook/projects/${projectId}`);
+      const resp = await this.client.get(`/text/ebook/projects/${projectId}`);
       return resp.data;
     } catch (err: unknown) {
       const error = err as Error;
@@ -128,7 +128,7 @@ export class EbookService {
    */
   async generate(projectId: number): Promise<void> {
     try {
-      await this.client.post(`/ebook/projects/${projectId}/generate`);
+      await this.client.post(`/text/ebook/projects/${projectId}/generate`);
       logger.info(`Ebook generation started: ${projectId}`);
     } catch (err: unknown) {
       const error = err as Error;
@@ -142,7 +142,7 @@ export class EbookService {
    */
   async getStatus(projectId: number): Promise<EbookStatus> {
     try {
-      const resp = await this.client.get(`/ebook/projects/${projectId}/status`);
+      const resp = await this.client.get(`/text/ebook/projects/${projectId}/status`);
       return resp.data;
     } catch (err: unknown) {
       const error = err as Error;
@@ -156,7 +156,7 @@ export class EbookService {
    */
   async getExport(projectId: number): Promise<EbookExport> {
     try {
-      const resp = await this.client.get(`/ebook/projects/${projectId}/export`);
+      const resp = await this.client.get(`/text/ebook/projects/${projectId}/export`);
       return resp.data;
     } catch (err: unknown) {
       const error = err as Error;
@@ -170,7 +170,7 @@ export class EbookService {
    */
   getDownloadUrl(projectId: number, format: "pdf" | "docx" | "epub"): string {
     const baseUrl = getConfig().EBOOK_API_URL;
-    return `${baseUrl}/ebook/projects/${projectId}/download/${format}?key=${this.apiKey}`;
+    return `${baseUrl}/text/ebook/projects/${projectId}/download/${format}?key=${this.apiKey}`;
   }
 
   /**
@@ -178,7 +178,7 @@ export class EbookService {
    */
   async listProjects(limit: number = 10): Promise<EbookProject[]> {
     try {
-      const resp = await this.client.get(`/ebook/projects?limit=${limit}`);
+      const resp = await this.client.get(`/text/ebook/projects?limit=${limit}`);
       return resp.data;
     } catch (err: unknown) {
       const error = err as Error;

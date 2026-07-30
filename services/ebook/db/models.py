@@ -44,9 +44,9 @@ class JobStatus(str, Enum):
 
 
 class ProjectRecord(Base):
-    """SQLAlchemy ORM model for the projects table."""
+    """SQLAlchemy ORM model for the ebook_projects table."""
 
-    __tablename__ = "projects"
+    __tablename__ = "ebook_projects"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     title = Column(String, nullable=False)
@@ -63,12 +63,12 @@ class ProjectRecord(Base):
 
 
 class JobRecord(Base):
-    """SQLAlchemy ORM model for the jobs table."""
+    """SQLAlchemy ORM model for the ebook_jobs table."""
 
-    __tablename__ = "jobs"
+    __tablename__ = "ebook_jobs"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
+    project_id = Column(Integer, ForeignKey("ebook_projects.id"), nullable=False)
     step = Column(String, nullable=False)
     status = Column(String, nullable=False, default="pending")
     progress = Column(Integer, nullable=False, default=0)
@@ -80,12 +80,12 @@ class JobRecord(Base):
 
 
 class ProjectMetadataRecord(Base):
-    """SQLAlchemy ORM model for the project_metadata table."""
+    """SQLAlchemy ORM model for the ebook_project_metadata table."""
 
-    __tablename__ = "project_metadata"
+    __tablename__ = "ebook_project_metadata"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    project_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
+    project_id = Column(Integer, ForeignKey("ebook_projects.id", ondelete="CASCADE"), nullable=False)
     key = Column(String, nullable=False)
     value = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.now)
@@ -98,9 +98,9 @@ class ProjectMetadataRecord(Base):
 
 
 class IntegrationLogRecord(Base):
-    """SQLAlchemy ORM model for the integration_logs table."""
+    """SQLAlchemy ORM model for the ebook_integration_logs table."""
 
-    __tablename__ = "integration_logs"
+    __tablename__ = "ebook_integration_logs"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     integration_id = Column(String, nullable=False)

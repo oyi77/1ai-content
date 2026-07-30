@@ -128,22 +128,3 @@ async def research_generate_book(req: ResearchGenerateBookRequest):
     return StreamingResponse(_generate(), media_type="text/event-stream")
 
 
-@research_router.post("/bookshelf/generate")
-async def bookshelf_generate(req: BookshelfRequest):
-    """Generate a book on a given subject — SSE streamed progress."""
-    async def _generate():
-        try:
-            from services.bookshelf import generate_book_pipeline
-            async for event in generate_book_pipeline(
-                subject=req.subject,
-                additional_instructions=req.additional_instructions,
-                long_mode=req.long_mode,
-                title_model=req.title_model or None,
-                structure_model=req.structure_model or None,
-                section_model=req.section_model or None,
-            ):
-                yield f"data: {json.dumps(event)}\n\n"
-        except Exception as e:
-            yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
-
-    return StreamingResponse(_generate(), media_type="text/event-stream")

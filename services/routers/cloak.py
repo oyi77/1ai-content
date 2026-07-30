@@ -45,14 +45,17 @@ async def cloak_batch_post(req: CloakBatchPostRequest):
     """Post to multiple profiles at once."""
     try:
         adapter = get_cloak()
-        result = await asyncio.to_thread(
-            adapter.batch_post,
-            profile_ids=req.profile_ids,
-            media_path=req.media_path,
-            caption=req.caption,
-            platform=req.platform,
-            link=req.link,
-        )
+        posts = [
+            {
+                "profile_name": pid,
+                "media_path": req.media_path,
+                "caption": req.caption,
+                "platform": req.platform,
+                "link": req.link,
+            }
+            for pid in req.profile_ids
+        ]
+        result = await asyncio.to_thread(adapter.batch_post, posts=posts)
         return {"results": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

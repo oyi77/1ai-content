@@ -32,6 +32,9 @@ class AutoPilotOrchestrator:
         self._total_published_today = 0
         self._active_jobs = 0
         self._last_count_date = datetime.now().strftime("%Y-%m-%d")
+        # Job store
+        self._jobs: dict[str, dict] = {}
+        self._next_job_id = 1
 
     @property
     def faceless_engine(self):
@@ -55,6 +58,51 @@ class AutoPilotOrchestrator:
             from services.cloak_adapter import CloakBrowserAdapter
             self._cloak_adapter = CloakBrowserAdapter()
         return self._cloak_adapter
+
+    def create_job(self, name: str, niche: str, platforms: list[str],
+                   videos_per_day: int = 3, posting_times: list[str] | None = None,
+                   content_type: str = "faceless", style: str = "educational",
+                   language: str = "id", auto_publish: bool = True,
+                   tiktok_profile_id: str | None = None) -> dict:
+        """Create a new autopilot job and return its config."""
+        job_id = f"job_{self._next_job_id:04d}"
+        self._next_job_id += 1
+        job = {
+            "job_id": job_id,
+            "name": name,
+            "niche": niche,
+            "platforms": platforms,
+            "videos_per_day": videos_per_day,
+            "posting_times": posting_times or ["08:00", "12:00", "18:00"],
+            "content_type": content_type,
+            "style": style,
+            "language": language,
+            "auto_publish": auto_publish,
+            "tiktok_profile_id": tiktok_profile_id,
+            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "status": "created",
+        }
+        self._jobs[job_id] = job
+        return job
+
+    def check_and_run(self) -> list[dict]:
+        """Check all jobs and run any that are ready."""
+        self._reset_daily_counters_if_needed()
+        results = []
+        for job_id, job in list(self._jobs.items()):
+            if job.get("status") in ("running", "completed"):
+                continue
+            job["status"] = "running"
+            self._active_jobs += 1
+            try:
+                result = self.run_job({"job_id": job_id, "config": job})
+                result["job_name"] = job.get("name", job_id)
+                results.append(result)
+                job["status"] = "completed" if result.get("success") else "failed"
+            except Exception as e:
+                results.append({"job_id": job_id, "success": False, "errors": [str(e)]})
+                job["status"] = "failed"
+        return results
 
     def run_job(self, job: dict) -> dict:
         """

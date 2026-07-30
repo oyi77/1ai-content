@@ -5,12 +5,17 @@ import os
 import random
 import subprocess
 import uuid
+from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import FileResponse, StreamingResponse
+from pydantic import BaseModel, Field
 
 from services.utils import TIKTOK_BROWSERS, extract_browser_cookies, has_tiktok_cookies, probe_field, probe_video, run_subprocess
 from services.api_models import VideoProcessRequest, VideoInfoRequest, VideoClipRequest, VideoTransformsRequest, VideoSearchRequest, VideoRegenerateOptions, VideoRegenerateRequest
+from services.di import get_looping, get_repurpose_engine, get_remetadata_engine
 
 video_router = APIRouter(prefix="", tags=["video"])
 
@@ -609,3 +614,217 @@ async def video_transforms(req: VideoTransformsRequest):
         except Exception:
             pass
     return {"variants": variants, "status": "ok"}
+
+
+# ══════════════════════════════════════════════════════════════
+# CONTENT GENERATION ENDPOINTS — added alongside provider routers
+# ══════════════════════════════════════════════════════════════
+
+# ── Request models ──────────────────────────────────────────────
+
+
+class MovieGenerateRequest(BaseModel):
+    prompt: str = Field(..., description="Video concept / story")
+    genre: str = Field(default="general", description="Movie genre")
+    language: str = Field(default="en", description="Language code")
+    num_scenes: int = Field(default=8, ge=3, le=30, description="Number of scenes")
+    style: str = Field(default="slideshow", description="Visual style")
+
+
+class LoopRequest(BaseModel):
+    audio_path: str
+    duration_minutes: int = Field(default=60, ge=1, le=360)
+    visual_type: str = "gradient"
+    resolution: str = "1920x1080"
+    colors: Optional[str] = None
+    image_path: Optional[str] = None
+
+
+class RemetaAdRequest(BaseModel):
+    source: str
+    overlay: Optional[str] = None
+    watermark: Optional[str] = None
+    position: str = "bottom"
+    speed: float = 1.0
+    color_shift: Optional[str] = None
+    niche: str = "general"
+    platform: str = "facebook"
+    language: str = "en"
+
+
+class RenderAdRequest(BaseModel):
+    image_url: str = ""
+    title: str = Field(..., description="Product title/name")
+    category: str = Field(default="beauty", description="Product category")
+    affiliate_link: str = Field(default="", description="Shopee affiliate link")
+    brand_name: str = Field(default="Shopee Affiliate", description="Brand/page name")
+    ad_copy: Optional[str] = Field(default=None, description="Custom ad copy text")
+    hook_text: Optional[str] = Field(default=None, description="Custom hook text")
+    cta_text: str = Field(default="Link di Bio! 🔗", description="Call-to-action text")
+
+
+# ── /video/movie ────────────────────────────────────────────────
+
+MOVIE_BASE = os.path.join(os.path.dirname(__file__), "..", "media", "movies")
+
+
+@video_router.post("/video/movie")
+async def video_movie(req: MovieGenerateRequest):
+    """Generate a short film: script → scenes → audio → video (SSE streamed)."""
+    async def _generate():
+        try:
+            from services.movie_gen.engine import generate_movie
+            style_map = {
+                "slideshow": {"generate_images": True, "generate_audio": True, "generate_video": False},
+                "full": {"generate_images": True, "generate_audio": True, "generate_video": True},
+                "script_only": {"generate_images": False, "generate_audio": False, "generate_video": False},
+            }
+            gen_opts = style_map.get(req.style, {"generate_images": True, "generate_audio": True, "generate_video": True})
+            async for event in generate_movie(
+                prompt=req.prompt,
+                genre=req.genre,
+                language=req.language,
+                num_scenes=req.num_scenes,
+                **gen_opts,
+            ):
+                yield f"data: {json.dumps(event)}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+
+    return StreamingResponse(_generate(), media_type="text/event-stream")
+
+
+@video_router.get("/video/movie/media/{path:path}")
+async def video_movie_media(path: str):
+    """Serve a generated movie file (cover image or video)."""
+    base = Path(MOVIE_BASE).resolve()
+    full = (base / path).resolve()
+    if not str(full).startswith(str(base)):
+        raise HTTPException(status_code=403, detail="Path traversal denied")
+    if not full.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+
+    ext = full.suffix.lower()
+    media_type = (
+        "image/png" if ext == ".png"
+        else "image/jpeg" if ext in (".jpg", ".jpeg")
+        else "video/mp4" if ext == ".mp4"
+        else None
+    )
+    if not media_type:
+        raise HTTPException(status_code=400, detail=f"Unsupported type: {ext}")
+
+    return FileResponse(str(full), media_type=media_type)
+
+
+# ── /video/loop ─────────────────────────────────────────────────
+
+@video_router.post("/video/loop")
+async def video_loop(req: LoopRequest):
+    """Create a looping video from audio."""
+    try:
+        engine = get_looping()
+        res = req.resolution.split("x")
+        width = int(res[0]) if len(res) == 2 else 1920
+        height = int(res[1]) if len(res) == 2 else 1080
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_dir = Path("/tmp/looping_output")
+        output_dir.mkdir(parents=True, exist_ok=True)
+        output_path = str(output_dir / f"loop_{timestamp}.mp4")
+
+        result = await asyncio.to_thread(
+            engine.create_loop,
+            audio_path=req.audio_path,
+            output_path=output_path,
+            duration_hours=req.duration_minutes / 60,
+            width=width,
+            height=height,
+            visual_type=req.visual_type,
+            image_path=req.image_path,
+            base_color=req.colors or "0x1a1a2e",
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@video_router.get("/video/loop/video/{filename}")
+async def video_loop_video(filename: str):
+    """Serve generated looping video."""
+    full_path = Path("/tmp/looping_output") / filename
+    if not full_path.exists():
+        raise HTTPException(status_code=404, detail="Video not found")
+    return FileResponse(str(full_path), media_type="video/mp4")
+
+
+# ── /video/remeta ───────────────────────────────────────────────
+
+@video_router.post("/video/remeta")
+async def video_remeta(req: RemetaAdRequest):
+    """Re-render video with new metadata (text overlay + re-encode)."""
+    try:
+        engine = get_remetadata_engine()
+        result = engine.remetadata(
+            source=req.source,
+            overlay=req.overlay or None,
+            watermark=req.watermark or None,
+            position=req.position,
+            speed=req.speed if req.speed > 0 else None,
+            color_shift=req.color_shift,
+            niche=req.niche,
+            platform=req.platform,
+            language=req.language,
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ── /video/repurpose ────────────────────────────────────────────
+
+@video_router.post("/video/repurpose")
+async def video_repurpose(req: RemetaAdRequest):
+    """Repurpose content from multiple sources — anti-copyright remix."""
+    try:
+        from services.api_models import RepurposeRequest
+        engine = get_repurpose_engine()
+        result = engine.repurpose(
+            sources=req.source if isinstance(req.source, list) else [req.source],
+            target_duration=60,
+            platform=req.platform,
+            niche=req.niche,
+            style="dynamic",
+            language=req.language,
+            color_preset=req.overlay,
+            transition_style="crossfade",
+            overlay_text=req.overlay or None,
+            overlay_position=req.position,
+            watermark_text=req.watermark or None,
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ── /video/ad (Remotion) ────────────────────────────────────────
+
+@video_router.post("/video/ad")
+async def video_ad(req: RenderAdRequest):
+    """Render a product ad video using Remotion (9:16, 1080x1920, 15s)."""
+    import services.remotion as remotion
+    try:
+        result = await remotion.render_product_ad(
+            image_url=req.image_url,
+            title=req.title,
+            category=req.category,
+            affiliate_link=req.affiliate_link,
+            brand_name=req.brand_name,
+            ad_copy=req.ad_copy,
+            hook_text=req.hook_text,
+            cta_text=req.cta_text,
+        )
+        return {"status": "ok", "data": result}
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Remotion render error: {type(e).__name__}: {e}")

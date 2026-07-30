@@ -1,10 +1,12 @@
+import 'dotenv/config';
 import { defineConfig } from '@playwright/test';
 
-// When reuseExistingServer is true, Playwright won't restart the server, so
-// the webServer.env block is ignored. We read ADMIN_PASSWORD from the outer
-// process env so the test fixtures match whatever the running server has.
-// Default matches .env ADMIN_PASSWORD value.
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+// .env is loaded at config-evaluation time (dotenv/config import above), so
+// both tests and this config inherit the right env vars regardless of how
+// Playwright is invoked. With reuseExistingServer:true, the webServer.env
+// block below is ignored for the server — the running PM2 process already
+// has .env loaded at startup.
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
 
 export default defineConfig({
   testDir: './tests/e2e/playwright',
@@ -15,9 +17,8 @@ export default defineConfig({
     headless: true,
     // Expose ADMIN_PASSWORD to all test files via playwright test env
   },
-  // Pass ADMIN_PASSWORD into every test file's process.env
-  // Playwright propagates these via the workers' process environment.
-  // We achieve this by having tests read process.env.ADMIN_PASSWORD directly.
+  // Env vars reach test workers via the dotenv/config import above (not
+  // webServer.env, which is only applied when Playwright starts the server).
   webServer: {
     command: `ADMIN_PASSWORD=${ADMIN_PASSWORD} FORCE_POLLING=true npx tsx src/index.ts`,
     port: 3002,

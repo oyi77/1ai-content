@@ -65,61 +65,43 @@ from services.generator import GeneratorRegistry
 registry = GeneratorRegistry()
 
 from services.routers.health import health_router
-from services.routers.storyboard import storyboard_router
 from services.routers.download import download_router
 from services.routers.video import video_router
 from services.routers.tikwm import tikwm_router
 from services.routers.upload import upload_router
-from services.routers.loop import loop_router
-from services.routers.music import music_router
-from services.routers.remotion import remotion_router
 from services.routers.pinterest import pinterest_router
-from services.routers.carousel import carousel_router
 from services.routers.research import research_router
 from services.routers.trends import trends_router
 from services.routers.engagement import engagement_router
-from services.routers.comic import comic_router
-from services.routers.movie import movie_router
-from services.routers.hooks import hooks_router
-from services.routers.tts import router as tts_router
 from services.routers.analyze import router as analyze_router
 from services.routers.cloak import router as cloak_router
 from services.routers.autopilot import router as autopilot_router
 from services.routers.calendar import router as calendar_router
 from services.routers.ab_testing import router as ab_testing_router
-from services.routers.captions import router as captions_router
-from services.routers.repurpose import router as repurpose_router
-from services.routers.remeta import router as remeta_router
+from services.routers.audio import router as audio_router
+from services.routers.text import router as text_router
+from services.routers.image import router as image_router
 from services.ebook.generator import EbookContentGenerator
 
 
 registry.add_router(health_router)
-registry.add_router(storyboard_router)
 registry.add_router(download_router)
 registry.add_router(video_router)
 registry.add_router(tikwm_router)
 registry.add_router(upload_router)
-registry.add_router(loop_router)
-registry.add_router(music_router)
-registry.add_router(remotion_router)
 registry.add_router(pinterest_router)
-registry.add_router(carousel_router)
 registry.add_router(research_router)
 registry.add_router(trends_router)
 registry.add_router(engagement_router)
-registry.add_router(comic_router)
-registry.add_router(movie_router)
-registry.add_router(hooks_router)
-registry.add_router(tts_router)
 registry.add_router(analyze_router)
 registry.add_router(cloak_router)
 registry.add_router(autopilot_router)
 registry.add_router(calendar_router)
 registry.add_router(ab_testing_router)
-registry.add_router(captions_router)
-registry.add_router(repurpose_router)
-registry.add_router(remeta_router)
-registry.register(EbookContentGenerator(), prefix="/ebook")
+registry.add_router(audio_router)
+registry.add_router(text_router)
+registry.add_router(image_router)
+registry.register(EbookContentGenerator(), prefix="/text/ebook")
 
 # Wire everything into the app
 registry.wire(app)

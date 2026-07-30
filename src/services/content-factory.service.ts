@@ -134,7 +134,7 @@ class ContentFactoryService {
       aspectRatio?: string;
     } = {},
   ): Promise<StoryboardResult> {
-    const resp = await this.client.post('/storyboard/create', {
+    const resp = await this.client.post('/image/storyboard', {
       prompt,
       style: opts.style || 'cinematic',
       num_scenes: opts.numScenes || 4,
@@ -150,7 +150,7 @@ class ContentFactoryService {
       const relativePath = imagePath.includes('storyboard_output')
         ? imagePath.split('storyboard_output/')[1]
         : imagePath;
-      const resp = await this.client.get(`/storyboard/image/${relativePath}`, {
+      const resp = await this.client.get(`/image/storyboard/image/${relativePath}`, {
         responseType: 'arraybuffer',
       });
       return Buffer.from(resp.data);
@@ -170,7 +170,7 @@ class ContentFactoryService {
       pitch?: string;
     } = {},
   ): Promise<TTSResult> {
-    const resp = await this.client.post('/tts/synthesize', {
+    const resp = await this.client.post('/audio/speech', {
       text,
       language: opts.language || 'id',
       voice: opts.voice,
@@ -181,7 +181,7 @@ class ContentFactoryService {
   }
 
   async listVoices(language?: string): Promise<{ voices: Array<{ name: string; language: string; gender: string }> }> {
-    const resp = await this.client.get('/tts/voices', {
+    const resp = await this.client.get('/audio/speech/voices', {
       params: language ? { language } : {},
     });
     return resp.data;
@@ -191,7 +191,7 @@ class ContentFactoryService {
   async getTTSAudio(audioPath: string): Promise<Buffer | null> {
     try {
       const filename = path.basename(audioPath);
-      const resp = await this.client.get(`/tts/audio/${filename}`, {
+      const resp = await this.client.get(`/audio/speech/media/${filename}`, {
         responseType: 'arraybuffer',
       });
       return Buffer.from(resp.data);
@@ -210,7 +210,7 @@ class ContentFactoryService {
       instrumental?: boolean;
     } = {},
   ): Promise<SunoResult> {
-    const resp = await this.client.post('/suno/generate', {
+    const resp = await this.client.post('/audio/music', {
       prompt,
       style: opts.style,
       lyrics: opts.lyrics,
@@ -220,14 +220,14 @@ class ContentFactoryService {
   }
 
   async generateLofi(mood: string = 'chill'): Promise<SunoResult> {
-    const resp = await this.client.post('/suno/lofi', null, {
+    const resp = await this.client.post('/audio/music/lofi', null, {
       params: { mood },
     });
     return resp.data;
   }
 
   async generateBGM(theme: string = 'corporate'): Promise<SunoResult> {
-    const resp = await this.client.post('/suno/bgm', null, {
+    const resp = await this.client.post('/audio/music/bgm', null, {
       params: { theme },
     });
     return resp.data;
@@ -243,7 +243,7 @@ class ContentFactoryService {
       style?: string;
     } = {},
   ): Promise<MusicResult> {
-    const resp = await this.client.post('/music/generate', {
+    const resp = await this.client.post('/audio/music', {
       prompt,
       duration_seconds: opts.duration || 60,
       engine: opts.engine || 'auto',
@@ -253,7 +253,7 @@ class ContentFactoryService {
   }
 
   async generateThemedBGM(theme: string = 'corporate'): Promise<MusicResult> {
-    const resp = await this.client.post('/music/bgm', null, {
+    const resp = await this.client.post('/audio/music/bgm', null, {
       params: { theme },
     });
     return resp.data;
@@ -271,7 +271,7 @@ class ContentFactoryService {
       imagePath?: string;
     } = {},
   ): Promise<LoopResult> {
-    const resp = await this.client.post('/loop/create', {
+    const resp = await this.client.post('/video/loop', {
       audio_path: audioPath,
       duration_minutes: opts.durationMinutes || 60,
       visual_type: opts.visualType || 'gradient',
@@ -391,7 +391,7 @@ class ContentFactoryService {
     platform?: string;
     language?: string;
   }): Promise<{ success: boolean; video_path?: string; metadata?: Record<string, unknown>; changes_applied?: string[]; original_hash?: string; new_hash?: string; error?: string }> {
-    const resp = await this.client.post('/remeta', {
+    const resp = await this.client.post('/video/remeta', {
       source: params.source,
       overlay: params.overlay ?? '',
       watermark: params.watermark ?? '',
@@ -423,7 +423,7 @@ class ContentFactoryService {
     addSubtitles?: boolean;
     subtitleStyle?: string;
   }): Promise<{ success: boolean; video_path?: string; metadata?: Record<string, unknown>; segments_used?: unknown[]; duration?: number; platform?: string; error?: string }> {
-    const resp = await this.client.post('/repurpose', {
+    const resp = await this.client.post('/video/repurpose', {
       sources: params.sources,
       target_duration: params.targetDuration ?? 180,
       platform: params.platform ?? 'tiktok',

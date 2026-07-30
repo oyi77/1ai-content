@@ -84,7 +84,12 @@ class EbookContentGenerator(ContentGenerator):
         return {"project_id": project_id, "project": project}
 
     async def get(self, project_id: str) -> dict:
-        project = self._repo.get_project(int(project_id))
+        try:
+            pid = int(project_id)
+        except ValueError:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=400, detail=f"Invalid project_id: {project_id}")
+        project = self._repo.get_project(pid)
         if project is None:
             from fastapi import HTTPException
             raise HTTPException(status_code=404, detail="Project not found")
@@ -94,7 +99,11 @@ class EbookContentGenerator(ContentGenerator):
         return self._repo.list_projects()
 
     async def status(self, project_id: str) -> dict:
-        pid = int(project_id)
+        try:
+            pid = int(project_id)
+        except ValueError:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=400, detail=f"Invalid project_id: {project_id}")
         project = self._repo.get_project(pid)
         if project is None:
             from fastapi import HTTPException
@@ -111,7 +120,10 @@ class EbookContentGenerator(ContentGenerator):
         }
 
     async def delete(self, project_id: str) -> bool:
-        pid = int(project_id)
+        try:
+            pid = int(project_id)
+        except ValueError:
+            return False
         project = self._repo.get_project(pid)
         if project is None:
             return False
@@ -134,7 +146,11 @@ class EbookContentGenerator(ContentGenerator):
         from services.ebook.pipeline.orchestrator import PipelineOrchestrator
         from services.ebook.pipeline.error_classifier import ErrorClassifier
 
-        pid = int(project_id)
+        try:
+            pid = int(project_id)
+        except ValueError:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=400, detail=f"Invalid project_id: {project_id}")
         project = self._repo.get_project(pid)
         if project is None:
             from fastapi import HTTPException
@@ -189,14 +205,22 @@ class EbookContentGenerator(ContentGenerator):
 
     async def update(self, project_id: str, params: dict) -> dict:
         """Update project parameters (title, config, etc.)."""
-        pid = int(project_id)
+        try:
+            pid = int(project_id)
+        except ValueError:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=400, detail=f"Invalid project_id: {project_id}")
         self._repo.update_project(pid, **params)
         project = self._repo.get_project(pid)
         return {"project_id": pid, "project": project}
 
     async def cancel(self, project_id: str) -> dict:
         """Cancel an in-progress generation."""
-        pid = int(project_id)
+        try:
+            pid = int(project_id)
+        except ValueError:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=400, detail=f"Invalid project_id: {project_id}")
         self._progress[pid] = {
             "status": "cancelled",
             "progress": 0,

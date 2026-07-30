@@ -13,22 +13,26 @@ from sqlalchemy.engine import Engine
 
 
 def get_engine(db_path: Path | str) -> Engine:
-    """Create a sync SQLAlchemy engine for the given db_path.
+    """Create a sync SQLAlchemy engine.
 
-    USE_EBOOK_SQLITE=true → SQLite (default for tests).
-    Otherwise DATABASE_URL is used (PostgreSQL).
+    Priority:
+    1. USE_EBOOK_SQLITE=true  → SQLite (explicit, used by tests)
+    2. DATABASE_URL is set    → PostgreSQL
+    3. Neither                → SQLite (fallback)
     """
-    use_sqlite = os.environ.get("USE_EBOOK_SQLITE", "true").lower() in (
+    use_sqlite = os.environ.get("USE_EBOOK_SQLITE", "").lower() in (
         "true",
         "1",
         "yes",
     )
     if use_sqlite:
         return create_engine(f"sqlite:///{db_path}", echo=False)
+
     pg_url = os.environ.get("DATABASE_URL", "")
     if pg_url:
         return create_engine(pg_url, echo=False)
-    # Fallback to SQLite
+
+    # Fallback to SQLite when neither flag nor DATABASE_URL is set
     return create_engine(f"sqlite:///{db_path}", echo=False)
 
 

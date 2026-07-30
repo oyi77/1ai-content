@@ -1,0 +1,648 @@
+{
+  "meta": {
+    "description": "Provider-level AI/API engine mapping for 1ai-content Python services"
+  },
+  "services": {
+    "tts": {
+      "content_type": "audio",
+      "is_content_generator": true,
+      "generation_methods": [
+        "synthesize(text, voice, output_path, rate, pitch)",
+        "list_voices()"
+      ],
+      "provider_chain": [
+        {
+          "provider": "Microsoft Edge TTS",
+          "protocol": "edge-tts CLI",
+          "endpoint": "edge-tts (local)",
+          "auth": "none",
+          "priority": "primary",
+          "file": "services/tts/engine.py"
+        },
+        {
+          "provider": "MeloTTS",
+          "protocol": "melo CLI",
+          "endpoint": "melo (local)",
+          "auth": "none",
+          "priority": "fallback",
+          "file": "services/tts/engine.py"
+        }
+      ]
+    },
+    "music": {
+      "content_type": "audio",
+      "is_content_generator": true,
+      "generation_methods": [
+        "generate(prompt, duration, style, engine, lyrics, instrumental_only)",
+        "generate_bgm(style, duration)",
+        "generate_lofi(duration)"
+      ],
+      "provider_chain": [
+        {
+          "provider": "Suno AI",
+          "protocol": "REST API + suno-api pkg",
+          "endpoint": "https://studio-api.suno.ai/api/generate/",
+          "auth": "SUNO_API_KEY",
+          "priority": "primary",
+          "file": "services/music/generator.py"
+        },
+        {
+          "provider": "Meta AudioCraft/MusicGen",
+          "protocol": "local python model",
+          "endpoint": "local (audiocraft pkg)",
+          "auth": "none",
+          "model": "facebook/musicgen-small",
+          "priority": "fallback_1",
+          "file": "services/music/generator.py"
+        },
+        {
+          "provider": "FFmpeg",
+          "protocol": "procedural tone synthesis",
+          "endpoint": "ffmpeg (local)",
+          "auth": "none",
+          "priority": "fallback_2",
+          "file": "services/music/generator.py"
+        }
+      ]
+    },
+    "ebook": {
+      "content_type": "text",
+      "is_content_generator": true,
+      "generation_methods": [
+        "create(project_id)",
+        "get(id)",
+        "list()",
+        "status(id)",
+        "delete(id)"
+      ],
+      "provider_chain": [
+        {
+          "provider": "OmniRoute",
+          "protocol": "OpenAI SDK (openai.OpenAI)",
+          "endpoint": "http://localhost:20128/v1",
+          "auth": "OMNIROUTE_API_KEY",
+          "priority": "default",
+          "file": "services/ebook/ai_client.py"
+        },
+        {
+          "provider": "OpenAI",
+          "protocol": "OpenAI SDK",
+          "endpoint": "https://api.openai.com/v1",
+          "auth": "OPENAI_API_KEY",
+          "priority": "configurable",
+          "file": "services/ebook/ai_client.py"
+        },
+        {
+          "provider": "Ollama",
+          "protocol": "OpenAI SDK",
+          "endpoint": "http://localhost:11434/v1",
+          "auth": "none",
+          "priority": "configurable",
+          "file": "services/ebook/ai_client.py"
+        }
+      ],
+      "pipeline_stages": [
+        "strategy_planner",
+        "outline_generator",
+        "manuscript_engine",
+        "cover_generator",
+        "qa_engine",
+        "export_orchestrator"
+      ],
+      "derived_products": [
+        "ebook.docx",
+        "ebook.pdf",
+        "ebook.epub",
+        "ebook.txt",
+        "cover.png"
+      ]
+    },
+    "bookshelf": {
+      "content_type": "text",
+      "is_content_generator": true,
+      "generation_methods": [
+        "generate_book_pipeline(subject, language, sections)"
+      ],
+      "provider_chain": [
+        {
+          "provider": "OmniRoute (called 'groq')",
+          "protocol": "OpenAI SDK",
+          "endpoint": "http://localhost:20128/v1",
+          "auth": "OMNIROUTE_API_KEY or GROQ_API_KEY fallback",
+          "file": "services/bookshelf/openai_provider.py"
+        },
+        {
+          "provider": "Ollama/Llama.cpp",
+          "protocol": "OpenAI SDK",
+          "endpoint": "http://localhost:11434/v1 (configurable via BOOKSHELF_LOCAL_URL)",
+          "auth": "none",
+          "file": "services/bookshelf/openai_provider.py"
+        }
+      ]
+    },
+    "carousel": {
+      "content_type": "text",
+      "is_content_generator": true,
+      "generation_methods": [
+        "generate(topic, num_slides, platform, style, language)"
+      ],
+      "provider_chain": [
+        {
+          "provider": "OmniRoute LLM",
+          "protocol": "httpx POST /chat/completions",
+          "endpoint": "http://127.0.0.1:20128/v1/chat/completions",
+          "auth": "none (local)",
+          "file": "services/carousel/generator.py"
+        }
+      ]
+    },
+    "comic_gen": {
+      "content_type": "image",
+      "is_content_generator": true,
+      "generation_methods": [
+        "generate_comic_pipeline(prompt, fmt, language, num_episodes, pages_per_episode, generate_images)"
+      ],
+      "provider_chain": [
+        {
+          "provider": "Ollama (script)",
+          "protocol": "OpenAI SDK",
+          "endpoint": "http://localhost:11434/v1",
+          "auth": "none",
+          "model": "qwen3:0.6b",
+          "file": "services/comic_gen/script_engine.py"
+        },
+        {
+          "provider": "OmniRoute (images)",
+          "protocol": "httpx POST /v1/images/generations",
+          "endpoint": "http://localhost:8000/v1/images/generations",
+          "auth": "OMNIROUTE_KEY",
+          "model": "flux-1-dev / FLUX.2-pro",
+          "priority": "primary",
+          "file": "services/comic_gen/panel_gen.py"
+        },
+        {
+          "provider": "AgentCash / StableStudio",
+          "protocol": "httpx POST",
+          "endpoint": "https://stablestudio.dev/api/v1/images/generations",
+          "auth": "AGENTCASH_API_KEY",
+          "model": "stable-diffusion-3.5-large",
+          "priority": "fallback",
+          "file": "services/comic_gen/panel_gen.py"
+        },
+        {
+          "provider": "Pillow (placeholder)",
+          "protocol": "local rendering",
+          "endpoint": "local",
+          "auth": "none",
+          "priority": "last_resort",
+          "file": "services/comic_gen/panel_gen.py"
+        }
+      ]
+    },
+    "faceless": {
+      "content_type": "video",
+      "is_content_generator": true,
+      "generation_methods": [
+        "generate_video(topic, platform, style, language)"
+      ],
+      "provider_chain": [
+        {
+          "provider": "OmniRoute LLM (script)",
+          "protocol": "httpx POST /chat/completions",
+          "endpoint": "http://127.0.0.1:20128/v1",
+          "auth": "none (local)",
+          "file": "services/faceless/script_engine.py"
+        },
+        {
+          "provider": "Pexels (stock video)",
+          "protocol": "REST API",
+          "endpoint": "https://api.pexels.com/videos/search",
+          "auth": "PEXELS_API_KEY",
+          "priority": "primary",
+          "file": "services/faceless/stock_engine.py"
+        },
+        {
+          "provider": "Openverse (stock video)",
+          "protocol": "REST API",
+          "endpoint": "https://api.openverse.org/v1/videos/",
+          "auth": "none",
+          "priority": "fallback",
+          "file": "services/faceless/stock_engine.py"
+        },
+        {
+          "provider": "Edge TTS (voiceover)",
+          "protocol": "edge-tts CLI",
+          "endpoint": "local",
+          "auth": "none",
+          "file": "services/faceless/engine.py"
+        },
+        {
+          "provider": "FFmpeg (composition)",
+          "protocol": "subprocess",
+          "endpoint": "local",
+          "auth": "none",
+          "file": "services/faceless/composer.py"
+        }
+      ]
+    },
+    "movie_gen": {
+      "content_type": "video",
+      "is_content_generator": true,
+      "generation_methods": [
+        "generate_movie(prompt, genre, num_scenes, language)"
+      ],
+      "provider_chain": [
+        {
+          "provider": "Ollama (script)",
+          "protocol": "OpenAI SDK (AsyncOpenAI)",
+          "endpoint": "http://localhost:11434/v1",
+          "auth": "none",
+          "model": "qwen3:0.6b",
+          "file": "services/movie_gen/script_engine.py"
+        },
+        {
+          "provider": "FFmpeg (assembly)",
+          "protocol": "subprocess",
+          "endpoint": "local",
+          "auth": "none",
+          "file": "services/movie_gen/engine.py"
+        }
+      ]
+    },
+    "storyboard": {
+      "content_type": "image",
+      "is_content_generator": true,
+      "generation_methods": [
+        "create(project_data)",
+        "status(job_id)",
+        "get(job_id)"
+      ],
+      "provider_chain": [
+        {
+          "provider": "OmniRoute LLM",
+          "protocol": "httpx POST /chat/completions",
+          "endpoint": "http://127.0.0.1:20128/v1",
+          "auth": "none (local)",
+          "model": "antigravity/claude-opus-4-6-thinking",
+          "file": "services/storyboard/engine.py"
+        },
+        {
+          "provider": "OmniRoute Image (FLUX.2-pro)",
+          "protocol": "httpx POST /images/generations",
+          "endpoint": "http://127.0.0.1:20128/v1/images/generations",
+          "auth": "none (local)",
+          "model": "together/black-forest-labs/FLUX.2-pro",
+          "file": "services/storyboard/engine.py"
+        }
+      ]
+    },
+    "clipper": {
+      "content_type": "video",
+      "is_content_generator": false,
+      "generation_methods": [
+        "clip_video(input_path, output_path, highlights)",
+        "extract_highlights(audio_path, transcript_path)"
+      ],
+      "provider_chain": [
+        {
+          "provider": "OmniRoute LLM (highlight scoring)",
+          "protocol": "httpx POST /chat/completions",
+          "endpoint": "http://127.0.0.1:20128/v1",
+          "auth": "none (local)",
+          "file": "services/clipper/highlight_detector.py"
+        },
+        {
+          "provider": "faster-whisper (transcription)",
+          "protocol": "local WhisperModel",
+          "endpoint": "local (CPU)",
+          "auth": "none",
+          "model": "base",
+          "file": "services/clipper/transcriber.py"
+        },
+        {
+          "provider": "FFmpeg (cutting)",
+          "protocol": "subprocess",
+          "endpoint": "local",
+          "auth": "none",
+          "file": "services/clipper/engine.py"
+        }
+      ]
+    },
+    "looping": {
+      "content_type": "video",
+      "is_content_generator": true,
+      "generation_methods": [
+        "create_looping_video(input_path, output_path, duration)",
+        "batch_process(inputs)"
+      ],
+      "provider_chain": [
+        {
+          "provider": "FFmpeg",
+          "protocol": "subprocess",
+          "endpoint": "local",
+          "auth": "none",
+          "file": "services/looping/engine.py"
+        }
+      ]
+    },
+    "repurpose": {
+      "content_type": "video",
+      "is_content_generator": false,
+      "generation_methods": [
+        "repurpose(sources, target_duration, platform, niche, style, language)"
+      ],
+      "provider_chain": [
+        {
+          "provider": "faster-whisper (subtitles)",
+          "protocol": "local WhisperModel",
+          "endpoint": "local",
+          "auth": "none",
+          "file": "services/repurpose/engine.py"
+        },
+        {
+          "provider": "FFmpeg (transitions, coloring, speed)",
+          "protocol": "subprocess",
+          "endpoint": "local",
+          "auth": "none",
+          "file": "services/repurpose/engine.py"
+        }
+      ]
+    },
+    "remetadata": {
+      "content_type": "video",
+      "is_content_generator": false,
+      "generation_methods": [
+        "re_encode(input_path, output_path)",
+        "change_fingerprint(input_path, output_path)"
+      ],
+      "provider_chain": [
+        {
+          "provider": "FFmpeg",
+          "protocol": "subprocess",
+          "endpoint": "local",
+          "auth": "none",
+          "file": "services/remetadata/engine.py"
+        }
+      ]
+    },
+    "remotion": {
+      "content_type": "video",
+      "is_content_generator": true,
+      "generation_methods": [
+        "render_product_ad(image_url, title, category, affiliate_link, brand_name)"
+      ],
+      "provider_chain": [
+        {
+          "provider": "Remotion (Node.js)",
+          "protocol": "subprocess (node render.ts)",
+          "endpoint": "local Node.js",
+          "auth": "none",
+          "file": "services/remotion/__init__.py"
+        }
+      ],
+      "note": "Deterministic template-based \u2014 no external AI provider"
+    },
+    "research": {
+      "content_type": "text",
+      "is_content_generator": true,
+      "generation_methods": [
+        "generate_niches(category, count)",
+        "generate_book_brief(niche, language)"
+      ],
+      "provider_chain": [
+        {
+          "provider": "OmniRoute LLM",
+          "protocol": "httpx POST /chat/completions",
+          "endpoint": "http://127.0.0.1:20128/v1",
+          "auth": "none (local)",
+          "file": "services/research/engine.py"
+        }
+      ]
+    },
+    "trends": {
+      "content_type": "text",
+      "is_content_generator": false,
+      "generation_methods": [
+        "analyze_trends(niche, platform)",
+        "generate_seo_content(topic, keywords, platform)"
+      ],
+      "provider_chain": [
+        {
+          "provider": "OmniRoute LLM",
+          "protocol": "httpx POST /chat/completions",
+          "endpoint": "http://127.0.0.1:20128/v1",
+          "auth": "none (local)",
+          "file": "services/trends/analyzer.py; services/trends/seo_generator.py"
+        }
+      ]
+    },
+    "ab_testing": {
+      "content_type": "text",
+      "is_content_generator": false,
+      "generation_methods": [
+        "create_variant(name, control, variant_count)",
+        "track_conversion(variant_id, goal)",
+        "get_winner(test_id)"
+      ],
+      "provider_chain": [
+        {
+          "provider": "OmniRoute LLM",
+          "protocol": "httpx POST /chat/completions",
+          "endpoint": "http://127.0.0.1:20128/v1",
+          "auth": "none (local)",
+          "file": "services/ab_testing/service.py"
+        }
+      ]
+    },
+    "autopilot": {
+      "content_type": "text",
+      "is_content_generator": false,
+      "generation_methods": [
+        "orchestrate(topic, platform, language)",
+        "generate_seo(topic, platform, language)"
+      ],
+      "provider_chain": [
+        {
+          "provider": "OmniRoute LLM",
+          "protocol": "httpx POST /chat/completions",
+          "endpoint": "http://127.0.0.1:20128/v1",
+          "auth": "none (local)",
+          "file": "services/autopilot/orchestrator.py"
+        }
+      ]
+    },
+    "pinterest": {
+      "content_type": "image",
+      "is_content_generator": false,
+      "generation_methods": [
+        "search_pins(query, count)",
+        "auto_post(image_path, title, description, link, board)"
+      ],
+      "provider_chain": [
+        {
+          "provider": "Pinterest (scraped)",
+          "protocol": "httpx with cookies",
+          "endpoint": "https://id.pinterest.com",
+          "auth": "PINTEREST_COOKIES",
+          "file": "services/pinterest/__init__.py; services/pinterest/auto_poster.py"
+        }
+      ]
+    },
+    "content_calendar": {
+      "content_type": "text",
+      "is_content_generator": false,
+      "generation_methods": [
+        "generate_calendar(month, year, niches, platforms)",
+        "get_schedule(week)",
+        "update_post(post_id, data)"
+      ],
+      "provider_chain": []
+    },
+    "analysis": {
+      "content_type": "text",
+      "is_content_generator": false,
+      "generation_methods": [
+        "analyze_channel(channel_url)",
+        "get_video_stats(video_id)"
+      ],
+      "provider_chain": []
+    },
+    "engagement": {
+      "content_type": "text",
+      "is_content_generator": false,
+      "generation_methods": [
+        "auto_reply(post_data)",
+        "schedule_engagement(plan)"
+      ],
+      "provider_chain": []
+    }
+  },
+  "provider_summary": {
+    "OmniRoute": {
+      "type": "LLM + Image Gen proxy",
+      "default_endpoint": "http://127.0.0.1:20128/v1",
+      "used_by": [
+        "ebook",
+        "bookshelf",
+        "carousel",
+        "faceless",
+        "clipper",
+        "storyboard",
+        "research",
+        "trends",
+        "ab_testing",
+        "autopilot"
+      ],
+      "auth": "OMNIROUTE_API_KEY or none (local)",
+      "models": {
+        "chat": "auto/best-chat, auto/free-chat, antigravity/claude-opus-4-6-thinking",
+        "image": "flux-1-dev, FLUX.2-pro, together/black-forest-labs/FLUX.2-pro"
+      }
+    },
+    "Ollama/Llama.cpp": {
+      "type": "Local LLM",
+      "default_endpoint": "http://localhost:11434/v1",
+      "used_by": [
+        "comic_gen",
+        "movie_gen",
+        "ebook",
+        "bookshelf"
+      ],
+      "auth": "none",
+      "models": [
+        "qwen3:0.6b",
+        "llama3:8b"
+      ]
+    },
+    "OpenAI": {
+      "type": "Cloud LLM",
+      "endpoint": "https://api.openai.com/v1",
+      "used_by": [
+        "ebook"
+      ],
+      "auth": "OPENAI_API_KEY"
+    },
+    "Suno AI": {
+      "type": "Music Gen",
+      "endpoint": "https://studio-api.suno.ai",
+      "used_by": [
+        "music"
+      ],
+      "auth": "SUNO_API_KEY or suno-api pkg"
+    },
+    "Meta AudioCraft": {
+      "type": "Local Music Gen",
+      "endpoint": "local",
+      "used_by": [
+        "music"
+      ],
+      "auth": "none",
+      "model": "facebook/musicgen-small"
+    },
+    "AgentCash/StableStudio": {
+      "type": "Image Gen (paid)",
+      "endpoint": "https://stablestudio.dev",
+      "used_by": [
+        "comic_gen"
+      ],
+      "auth": "AGENTCASH_API_KEY"
+    },
+    "Pexels": {
+      "type": "Stock Video",
+      "endpoint": "https://api.pexels.com",
+      "used_by": [
+        "faceless"
+      ],
+      "auth": "PEXELS_API_KEY"
+    },
+    "Openverse": {
+      "type": "Stock Video (free)",
+      "endpoint": "https://api.openverse.org",
+      "used_by": [
+        "faceless"
+      ],
+      "auth": "none"
+    },
+    "Edge TTS": {
+      "type": "TTS",
+      "endpoint": "edge-tts CLI",
+      "used_by": [
+        "tts",
+        "faceless"
+      ],
+      "auth": "none"
+    },
+    "MeloTTS": {
+      "type": "TTS",
+      "endpoint": "melo CLI",
+      "used_by": [
+        "tts"
+      ],
+      "auth": "none"
+    },
+    "faster-whisper": {
+      "type": "Speech-to-Text",
+      "endpoint": "local",
+      "used_by": [
+        "clipper",
+        "repurpose"
+      ],
+      "auth": "none",
+      "model": "base"
+    },
+    "FFmpeg": {
+      "type": "Universal media processor",
+      "endpoint": "local",
+      "used_by": [
+        "music",
+        "faceless",
+        "movie_gen",
+        "clipper",
+        "looping",
+        "repurpose",
+        "remetadata"
+      ],
+      "auth": "none"
+    }
+  }
+}

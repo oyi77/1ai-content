@@ -44,8 +44,8 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql import JSONB, insert as pg_insert
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import DeclarativeBase, relationship, sessionmaker, validates
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.orm import DeclarativeBase, relationship, validates
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
@@ -68,8 +68,8 @@ def get_engine():
 def get_async_session():
     global _async_session
     if _async_session is None:
-        _async_session = sessionmaker(get_engine(), class_=AsyncSession, expire_on_commit=False)
-    return _async_session
+        _async_session = async_sessionmaker(get_engine(), expire_on_commit=False)
+    return _async_session()
 
 
 class Base(DeclarativeBase):

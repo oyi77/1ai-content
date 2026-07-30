@@ -20,7 +20,7 @@ def test_database_engine_and_tables(test_db_path):
 
     inspector = inspect(engine)
     table_names = inspector.get_table_names()
-    assert "projects" in table_names
-    assert "jobs" in table_names
-    assert "project_metadata" in table_names
-    assert "integration_logs" in table_names
+    assert "ebook_projects" in table_names
+    assert "ebook_jobs" in table_names
+    assert "ebook_project_metadata" in table_names
+    assert "ebook_integration_logs" in table_names
