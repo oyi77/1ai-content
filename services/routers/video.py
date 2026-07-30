@@ -6,102 +6,20 @@ import random
 import subprocess
 import uuid
 from pathlib import Path
-from typing import Optional
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
 
-from services.routers._shared import _PROCESSED_VIDEOS_DB, _probe_field, _probe_video, _run_subprocess
+from services.utils import PROCESSED_VIDEOS_DB, TIKTOK_BROWSERS, extract_browser_cookies, has_tiktok_cookies, probe_field, probe_video, run_subprocess
+from services.api_models import VideoProcessRequest, VideoInfoRequest, VideoClipRequest, VideoTransformsRequest, VideoSearchRequest, VideoRegenerateOptions, VideoRegenerateRequest
 
 video_router = APIRouter(prefix="", tags=["video"])
 
-_TIKTOK_BROWSERS = ["chromium", "vivaldi", "firefox"]
-"""Browser names to try, in order, for cookie extraction."""
 
 
-class VideoProcessRequest(BaseModel):
-    source_url: str
-    target_format: str = "9:16"  # 9:16, 16:9, 1:1
-    platform: str = "facebook"   # facebook, tiktok, instagram
-    category: str = "general"
-    transforms: list[str] = []   # mirror | speed_<factor> | crop_zoom_<zoom>
-
-
-class VideoInfoRequest(BaseModel):
-    file_path: str
-
-
-class VideoClipRequest(BaseModel):
-    file_path: str
-    start_time: float = 0
-    duration: float = 30
-
-
-class VideoTransformsRequest(BaseModel):
-    file_path: str
-    transforms: list[str]
-
-
-class VideoSearchRequest(BaseModel):
-    url: str
-
-
-class VideoRegenerateOptions(BaseModel):
-    remove_watermark: bool = True
-    add_captions: bool = True
-    caption_style: str = "karaoke"  # karaoke, simple, none
-    color_grade: str = "vibrant"     # none, cinematic, warm, cool, vibrant, vintage
-    text_overlay: str = ""           # e.g. "Check this out!"
-    overlay_position: str = "bottom_center"
-    generate_metadata: bool = True
-    language: str = "id"
-
-
-class VideoRegenerateRequest(BaseModel):
-    url: str
-    platform: str = "facebook"
-    options: VideoRegenerateOptions = VideoRegenerateOptions()
 
 
 # ── /video/refresh-cookies ──────────────────────────────────────
 
-async def _extract_browser_cookies(browser: str, cookies_path: str) -> dict:
-    """Try extracting cookies from one browser. Returns result dict."""
-    cmd = [
-        "yt-dlp",
-        "--cookies-from-browser", browser,
-        "--cookies", cookies_path,
-        "--flat-playlist",
-        "--dump-json",
-        "https://www.tiktok.com/@_",  # dummy — fails but cookies written before error
-    ]
-    try:
-        proc = await asyncio.create_subprocess_exec(
-            *cmd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=30)
-    except asyncio.TimeoutError:
-        return {"browser": browser, "status": "timeout"}
-    except FileNotFoundError:
-        return {"browser": browser, "status": "not_found"}
-    except Exception as e:
-        return {"browser": browser, "status": "error", "message": f"{type(e).__name__}: {e}"}
-
-    return {"browser": browser, "status": "ok", "returncode": proc.returncode}
-
-
-def _has_tiktok_cookies(path: str) -> bool:
-    """Check if cookie file contains at least one .tiktok.com entry."""
-    try:
-        with open(path) as f:
-            for line in f:
-                if line.startswith(".tiktok.com\t"):
-                    return True
-    except Exception:
-        pass
-    return False
 
 
 @video_router.post("/video/refresh-cookies")
@@ -116,15 +34,15 @@ async def refresh_tiktok_cookies(browser: str | None = None):
     cookies_path = os.path.abspath(os.path.normpath(cookies_path))
     os.makedirs(cookies_dir, exist_ok=True)
 
-    browsers = [browser] if browser else _TIKTOK_BROWSERS
+    browsers = [browser] if browser else TIKTOK_BROWSERS
     results = []
     used_browser = None
 
     for name in browsers:
-        r = await _extract_browser_cookies(name, cookies_path)
+        r = await extract_browser_cookies(name, cookies_path)
         results.append(r)
         if r["status"] == "ok" and os.path.getsize(cookies_path) > 100:
-            if _has_tiktok_cookies(cookies_path):
+            if has_tiktok_cookies(cookies_path):
                 used_browser = name
                 break
 
@@ -185,7 +103,7 @@ async def process_video(req: VideoProcessRequest):
     height = None
     video_codec = None
     try:
-        meta = await _probe_video(file_path)
+        meta = await probe_video(file_path)
         width = meta.get("width")
         height = meta.get("height")
         video_codec = meta.get("video_codec")
@@ -200,7 +118,7 @@ async def process_video(req: VideoProcessRequest):
         _needs_reencode = True
         if video_codec and video_codec.lower() in ("h264", "avc1", "libx264"):
             try:
-                px_fmt = await _probe_field(file_path, "pix_fmt")
+                px_fmt = await probe_field(file_path, "pix_fmt")
                 if px_fmt and px_fmt.strip() == "yuv420p":
                     _needs_reencode = False
             except Exception:
@@ -209,7 +127,7 @@ async def process_video(req: VideoProcessRequest):
         if _needs_reencode:
             h264_path = os.path.join(os.path.dirname(file_path), f"{uuid.uuid4().hex}_h264.mp4")
             try:
-                reenc = await _run_subprocess(
+                reenc = await run_subprocess(
                     ["ffmpeg", "-y", "-i", file_path,
                      "-c:v", "libx264", "-crf", "18", "-preset", "fast",
                      "-pix_fmt", "yuv420p",
@@ -222,7 +140,7 @@ async def process_video(req: VideoProcessRequest):
                     file_path = h264_path
                     video_codec = "h264"
                     try:
-                        meta2 = await _probe_video(file_path)
+                        meta2 = await probe_video(file_path)
                         width = meta2.get("width")
                         height = meta2.get("height")
                         duration = meta2.get("duration")
@@ -254,7 +172,7 @@ async def process_video(req: VideoProcessRequest):
                     width = target_w
                     height = target_h
                     try:
-                        meta2 = await _probe_video(file_path)
+                        meta2 = await probe_video(file_path)
                         duration = meta2.get("duration")
                     except Exception:
                         pass
@@ -287,7 +205,7 @@ async def process_video(req: VideoProcessRequest):
         from datetime import datetime as _dt
         _url_hash = _hashlib.sha256(req.source_url.encode()).hexdigest()
         try:
-            _conn = _sqlite3.connect(_PROCESSED_VIDEOS_DB)
+            _conn = _sqlite3.connect(PROCESSED_VIDEOS_DB)
             _conn.execute(
                 "INSERT OR REPLACE INTO processed_videos (url_hash, source_url, processed_at, file_path) VALUES (?,?,?,?)",
                 (_url_hash, req.source_url, _dt.utcnow().isoformat(), file_path),
@@ -322,7 +240,7 @@ async def video_search(req: VideoSearchRequest):
     import sqlite3 as _sqlite3
     _url_hash = _hashlib.sha256(req.url.encode()).hexdigest()
     try:
-        _conn = _sqlite3.connect(_PROCESSED_VIDEOS_DB)
+        _conn = _sqlite3.connect(PROCESSED_VIDEOS_DB)
         row = _conn.execute(
             "SELECT source_url, processed_at, file_path FROM processed_videos WHERE url_hash = ?",
             (_url_hash,),
@@ -362,7 +280,7 @@ async def video_regenerate(req: VideoRegenerateRequest):
     # Helper: get video metadata via ffprobe
     async def _probe(path: str) -> dict:
         try:
-            r = await _run_subprocess(
+            r = await run_subprocess(
                 ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_streams", "-show_format", path],
                 capture_output=True, text=True, timeout=10,
             )
@@ -376,7 +294,7 @@ async def video_regenerate(req: VideoRegenerateRequest):
     if req.options.remove_watermark:
         try:
             cropped = str(out_dir / f"crop_{run_id}.mp4")
-            await _run_subprocess(
+            await run_subprocess(
                 ["ffmpeg", "-y", "-i", file_path, "-vf", "crop=iw-20:ih-20:0:0", "-c:a", "copy", cropped],
                 capture_output=True, text=True, timeout=120,
             )
@@ -387,7 +305,7 @@ async def video_regenerate(req: VideoRegenerateRequest):
 
     # ── 3. Reframe to target platform dimensions ─────────────
     try:
-        from services.repurpose.engine import PLATFORM_PRESETS
+        from services.platform_presets import PLATFORM_PRESETS
         preset = PLATFORM_PRESETS.get(req.platform, PLATFORM_PRESETS.get("tiktok"))
         target_w, target_h = preset["width"], preset["height"]
 
@@ -422,7 +340,7 @@ async def video_regenerate(req: VideoRegenerateRequest):
                 break
         if cur_w2 and cur_h2 and (cur_w2 < target_w or cur_h2 < target_h):
             upscaled = str(out_dir / f"upscale_{run_id}.mp4")
-            await _run_subprocess(
+            await run_subprocess(
                 ["ffmpeg", "-y", "-i", file_path,
                  "-vf", f"scale={target_w}:{target_h}:flags=lanczos",
                  "-c:v", "libx264", "-crf", "18", "-preset", "medium",
@@ -437,11 +355,11 @@ async def video_regenerate(req: VideoRegenerateRequest):
     # ── 4. Color grade ───────────────────────────────────────
     if req.options.color_grade and req.options.color_grade != "none":
         try:
-            from services.repurpose.engine import COLOR_PRESETS
+            from services.repurpose.presets import COLOR_PRESETS
             vf = COLOR_PRESETS.get(req.options.color_grade, "")
             if vf:
                 graded = str(out_dir / f"grade_{run_id}.mp4")
-                await _run_subprocess(
+                await run_subprocess(
                     ["ffmpeg", "-y", "-i", file_path, "-vf", vf, "-c:a", "copy", graded],
                     capture_output=True, text=True, timeout=120,
                 )
@@ -453,7 +371,7 @@ async def video_regenerate(req: VideoRegenerateRequest):
     # ── 5. Text overlay ──────────────────────────────────────
     if req.options.text_overlay:
         try:
-            from services.repurpose.engine import OVERLAY_POSITIONS
+            from services.repurpose.presets import OVERLAY_POSITIONS
             pos = OVERLAY_POSITIONS.get(req.options.overlay_position, OVERLAY_POSITIONS["bottom_center"])
             safe_text = req.options.text_overlay.replace("'", "'\\''").replace(":", "\\:")
             drawtext = (
@@ -462,7 +380,7 @@ async def video_regenerate(req: VideoRegenerateRequest):
                 f":x={pos['x']}:y={pos['y']}"
             )
             overlaid = str(out_dir / f"overlay_{run_id}.mp4")
-            await _run_subprocess(
+            await run_subprocess(
                 ["ffmpeg", "-y", "-i", file_path, "-vf", drawtext, "-c:a", "copy", overlaid],
                 capture_output=True, text=True, timeout=120,
             )
@@ -582,7 +500,7 @@ async def video_regenerate(req: VideoRegenerateRequest):
         print(f"[video_regenerate] final_codec={final_codec}, w={width}x{height}, re-encode=YES")
         h264_final = str(out_dir / f"h264_final_{run_id}.mp4")
         try:
-            await _run_subprocess(
+            await run_subprocess(
                 ["ffmpeg", "-y", "-i", file_path,
                  "-c:v", "libx264", "-crf", "18", "-preset", "fast",
                  "-pix_fmt", "yuv420p",
@@ -614,7 +532,7 @@ async def video_regenerate(req: VideoRegenerateRequest):
 async def video_info(req: VideoInfoRequest):
     """Get video metadata via ffprobe."""
     try:
-        meta = await _probe_video(req.file_path)
+        meta = await probe_video(req.file_path)
         if not meta:
             return {"file_path": req.file_path, "status": "failed", "error": "ffprobe returned no data"}
         return {
@@ -643,12 +561,12 @@ def _get_video_clip_fn():
 async def video_clip(req: VideoClipRequest):
     """Clip video to specified duration."""
     try:
-        meta = await _probe_video(req.file_path)
+        meta = await probe_video(req.file_path)
         if not meta:
             return {"file_path": req.file_path, "status": "failed", "error": "ffprobe returned no data"}
         out_dir = os.path.dirname(req.file_path)
         out_path = os.path.join(out_dir, f"{uuid.uuid4().hex}_clip.mp4")
-        result = await _run_subprocess(
+        result = await run_subprocess(
             ["ffmpeg", "-y", "-i", req.file_path,
              "-ss", str(req.start_time), "-t", str(req.duration),
              "-c:v", "libx264", "-preset", "fast", "-crf", "23",
@@ -661,7 +579,7 @@ async def video_clip(req: VideoClipRequest):
             if os.path.exists(out_path):
                 os.remove(out_path)
             return {"file_path": req.file_path, "status": "failed", "error": result.stderr.strip()[:200]}
-        meta2 = await _probe_video(out_path)
+        meta2 = await probe_video(out_path)
         return {
             "file_path": out_path,
             "duration": meta2.get("duration", 0),
@@ -703,7 +621,7 @@ async def video_transforms(req: VideoTransformsRequest):
             cmd += ["-b:a", "128k"]
         cmd += ["-movflags", "+faststart", out_path]
         try:
-            result = await _run_subprocess(cmd, capture_output=True, text=True, timeout=120)
+            result = await run_subprocess(cmd, capture_output=True, text=True, timeout=120)
             if result.returncode == 0 and os.path.isfile(out_path) and os.path.getsize(out_path) > 0:
                 variants.append({"name": name, "file_path": out_path})
         except Exception:

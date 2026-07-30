@@ -1,4 +1,9 @@
 """Root conftest for ebook tests — shared fixtures."""
+import os
+
+# Ebook tests use SQLite, not PostgreSQL. Explicit USE_EBOOK_SQLITE=false
+# in env overrides this default for PG-path testing.
+os.environ.setdefault("USE_EBOOK_SQLITE", "true")
 
 import pytest
 from unittest.mock import MagicMock

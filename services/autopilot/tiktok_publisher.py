@@ -15,6 +15,7 @@ import os
 import time
 from datetime import datetime
 from typing import Optional
+from services.db.models import ContentType
 
 from services.autopilot.scheduler import AutoPilotScheduler
 from services.autopilot.orchestrator import AutoPilotOrchestrator
@@ -115,14 +116,12 @@ class AutoPilotTikTokPublisher:
         }
 
         try:
-            # Step 1: Generate content
-            if content_type == "carousel":
+            if content_type == ContentType.carousel.value:
                 content_result = self._generate_carousel(niche, style, language)
-            elif content_type == "mixed":
+            elif content_type == ContentType.mixed.value:
                 # Alternate between video and carousel
-                import random
-                content_type = random.choice(["video", "carousel"])
-                if content_type == "carousel":
+                content_type = random.choice([ContentType.video.value, ContentType.carousel.value])
+                if content_type == ContentType.carousel.value:
                     content_result = self._generate_carousel(niche, style, language)
                 else:
                     content_result = self._generate_video(niche, style, language)
@@ -147,8 +146,7 @@ class AutoPilotTikTokPublisher:
             # Step 3: Publish via CloakBrowser
             if auto_publish and tiktok_profile_id:
                 media_path = content_result.get("media_path") or (
-                    content_result.get("slides", [None])[0]
-                    if content_type == "carousel"
+                    if content_type == ContentType.carousel.value
                     else content_result.get("video_path")
                 )
 

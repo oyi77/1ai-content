@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from typing import Optional
 
-from services.api import get_music, get_suno
+from services.di import get_music, get_suno
 
 music_router = APIRouter(prefix="", tags=["music"])
 

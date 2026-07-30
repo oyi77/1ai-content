@@ -31,3 +31,4 @@ playwright>=1.40.0
 # Testing
 pytest>=9.0
 pytest-asyncio>=1.4
+psycopg2-binary>=2.9.12

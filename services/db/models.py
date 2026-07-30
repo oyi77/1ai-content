@@ -6,9 +6,37 @@ Python services share the same database as the bot.
 """
 
 import os
+import enum
+from typing import Any
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional
+
+
+class ContentType(str, enum.Enum):
+    """Canonical content type values stored in content_type columns."""
+
+    caption = "caption"
+    carousel = "carousel"
+    mixed = "mixed"
+    short = "short"
+    video = "video"
+
+    @classmethod
+    def _missing_(cls, value: Any) -> "ContentType | None":
+        """ValueError instead of silent fallback for invalid types."""
+        return None  # explicit None so @validates raises
+
+
+def _validate_content_type(v: Any) -> str:
+    """Validate a content_type value against the ContentType enum."""
+    if isinstance(v, ContentType):
+        return v.value
+    if isinstance(v, str):
+        ct = ContentType._value2member_map_.get(v)
+        if ct is not None:
+            return ct.value
+        raise ValueError(f"Invalid content_type: {v!r}. Must be one of {[m.value for m in ContentType]}")
+    raise ValueError(f"Invalid content_type type: {type(v).__name__}. Expected str or ContentType.")
 
 from sqlalchemy import (
     BigInteger, Boolean, Column, DateTime, DECIMAL as SADecimal,
@@ -17,18 +45,31 @@ from sqlalchemy import (
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import DeclarativeBase, relationship, sessionmaker
+from sqlalchemy.orm import DeclarativeBase, relationship, sessionmaker, validates
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
     "postgresql://openclaw:openclaw@localhost:5432/berkahkarya",
 )
 
-# Convert sync URL to async
-ASYNC_DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
+# Lazy async engine — only creates when accessed, to avoid crashing on asyncpg import
+_engine = None
+_async_session = None
 
-engine = create_async_engine(ASYNC_DATABASE_URL, echo=False, pool_size=5, max_overflow=10)
-async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+def get_engine():
+    global _engine
+    if _engine is None:
+        async_url = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
+        _engine = create_async_engine(async_url, echo=False, pool_size=5, max_overflow=10)
+    return _engine
+
+
+def get_async_session():
+    global _async_session
+    if _async_session is None:
+        _async_session = sessionmaker(get_engine(), class_=AsyncSession, expire_on_commit=False)
+    return _async_session
 
 
 class Base(DeclarativeBase):
@@ -139,6 +180,9 @@ class ContentCalendar(Base):
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
     user = relationship("User", back_populates="content_calendar")
+    @validates("content_type")
+    def validate_content_type(self, key: str, value: Any) -> str:
+        return _validate_content_type(value)
 
 
 class ABTest(Base):
@@ -170,6 +214,9 @@ class ABTest(Base):
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
     user = relationship("User", back_populates="ab_tests")
+    @validates("content_type")
+    def validate_content_type(self, key: str, value: Any) -> str:
+        return _validate_content_type(value)
 
 
 class ViralScan(Base):
@@ -201,12 +248,12 @@ class PricingConfig(Base):
 
 async def get_db() -> AsyncSession:
     """Get an async database session."""
-    async with async_session() as session:
+    async with get_async_session() as session:
         yield session
 
 
 async def init_db():
     """Initialize database connection (verify connectivity)."""
-    async with engine.begin() as conn:
+    async with get_engine().begin() as conn:
         await conn.run_sync(lambda _: None)  # just test connection
     print("✅ Database connected (SQLAlchemy async)")

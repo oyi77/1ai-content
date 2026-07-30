@@ -6,9 +6,8 @@ from typing import Callable, Optional
 from PIL import Image
 
 from services.ebook.ai_client import OmnirouteClient
-from services.ebook.db.schema import create_tables
+from services.ebook.db.repository import ProjectRepository
 from services.ebook.logger import get_logger
-import sqlite3
 
 logger = get_logger(__name__)
 
@@ -164,37 +163,22 @@ class ComicsOrchestrator:
         return engine.generate(project, strategy)
 
     def _get_project(self, project_id: int) -> dict:
-        conn = sqlite3.connect(self.db_path)
-        try:
-            create_tables(conn)
-            cursor = conn.execute("SELECT * FROM projects WHERE id = ?", (project_id,))
-            cols = [d[0] for d in cursor.description]
-            row = cursor.fetchone()
-            if not row:
-                raise ValueError(f"Project {project_id} not found")
-            return dict(zip(cols, row))
-        finally:
-            conn.close()
+        repo = ProjectRepository(self.db_path)
+        project = repo.get_project(project_id)
+        if project is None:
+            raise ValueError(f"Project {project_id} not found")
+        return project
 
     def _set_metadata(self, project_id: int, key: str, value: str) -> None:
         try:
-            conn = sqlite3.connect(self.db_path)
-            conn.execute(
-                "INSERT OR REPLACE INTO project_metadata (project_id, key, value) VALUES (?, ?, ?)",
-                (project_id, key, value),
-            )
-            conn.commit()
-            conn.close()
+            repo = ProjectRepository(self.db_path)
+            repo.set_metadata(project_id, key, value)
         except Exception as e:
             logger.debug("metadata_write_skipped", error=str(e))
 
     def _update_status(self, project_id: int, status: str) -> None:
         try:
-            conn = sqlite3.connect(self.db_path)
-            conn.execute(
-                "UPDATE projects SET status = ? WHERE id = ?", (status, project_id)
-            )
-            conn.commit()
-            conn.close()
+            repo = ProjectRepository(self.db_path)
+            repo.update_project_status(project_id, status)
         except Exception as e:
             logger.debug("status_update_skipped", error=str(e))

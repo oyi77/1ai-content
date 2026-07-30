@@ -6,28 +6,7 @@ import shutil
 import subprocess
 
 from ..utils import _get_duration, _fmt_srt
-
-
-COLOR_PRESETS = {
-    "none": "",
-    "cinematic": "eq=contrast=1.1:brightness=0.05:saturation=0.9,curves=m='0/0 0.25/0.20 0.5/0.45 0.75/0.8 1/1'",
-    "warm": "eq=contrast=1.05:brightness=0.03:saturation=1.15,colorbalance=rs=0.1:gs=0.05:bs=-0.05",
-    "cool": "eq=contrast=1.05:brightness=0.02:saturation=0.9,colorbalance=rs=-0.05:gs=0:bs=0.1",
-    "vibrant": "eq=contrast=1.15:brightness=0.02:saturation=1.4",
-    "vintage": "eq=contrast=0.9:brightness=0.05:saturation=0.7,colorbalance=rs=0.1:gs=0.05:bs=-0.1",
-    "dark_moody": "eq=contrast=1.2:brightness=-0.05:saturation=0.8",
-    "bright_clean": "eq=contrast=1.05:brightness=0.08:saturation=1.1",
-}
-
-OVERLAY_POSITIONS = {
-    "top_center": {"x": "(w-text_w)/2", "y": "50"},
-    "top_left": {"x": "50", "y": "50"},
-    "top_right": {"x": "w-text_w-50", "y": "50"},
-    "center": {"x": "(w-text_w)/2", "y": "(h-text_h)/2"},
-    "bottom_center": {"x": "(w-text_w)/2", "y": "h-text_h-80"},
-    "bottom_left": {"x": "50", "y": "h-text_h-50"},
-    "lower_third": {"x": "(w-text_w)/2", "y": "h*0.72"},
-}
+from services.repurpose.presets import COLOR_PRESETS, OVERLAY_POSITIONS
 
 
 def _process_segment(

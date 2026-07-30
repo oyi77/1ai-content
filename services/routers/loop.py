@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
-from services.api import get_looping
+from services.di import get_looping
 
 loop_router = APIRouter(prefix="", tags=["loop"])
 

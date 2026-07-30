@@ -8,7 +8,7 @@ import httpx
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from services.api import get_cloak, get_pinterest
+from services.di import get_cloak, get_pinterest
 
 pinterest_router = APIRouter(prefix="", tags=["pinterest"])
 

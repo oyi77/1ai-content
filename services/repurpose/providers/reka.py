@@ -5,22 +5,9 @@ import re
 import subprocess
 
 from ..utils import _get_duration, _is_sentence_end
+from services.repurpose.presets import (HOOK_KEYWORDS, CTA_KEYWORDS, EXAMPLE_KEYWORDS)
 
 
-HOOK_KEYWORDS = [
-    "tahukah", "pernah", "gimana", "coba", "lihat", "check", "wait",
-    "did you know", "have you ever", "watch this", "check this out",
-    "you won't believe", "here's why", "this is crazy",
-]
-CTA_KEYWORDS = [
-    "follow", "like", "share", "comment", "subscribe", "save",
-    "ikuti", "like", "share", "komen", "subscribe", "simpan",
-    "link di bio", "check link", "link in bio",
-]
-EXAMPLE_KEYWORDS = [
-    "contoh", "misalnya", "seperti", "for example", "such as",
-    "here's how", "begini caranya", "seperti ini",
-]
 
 
 def _detect_scenes(ffmpeg: str, ffprobe: str, video_path: str) -> list[dict]:

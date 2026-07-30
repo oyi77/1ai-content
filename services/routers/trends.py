@@ -1,7 +1,9 @@
 """Trends routes — trending content scanner and cache."""
 from fastapi import APIRouter, HTTPException
 
-from services.api import get_carousel
+from services.db.models import ContentType
+
+from services.di import get_carousel
 
 trends_router = APIRouter(prefix="", tags=["trends"])
 
@@ -37,10 +39,10 @@ async def trending_status():
 
 
 @trends_router.post("/trending/generate")
-async def trending_generate(topic: str, content_type: str = "video", platform: str = "tiktok", language: str = "id"):
+async def trending_generate(topic: str, content_type: str = ContentType.video.value, platform: str = "tiktok", language: str = "id"):
     """Generate content from a trending topic."""
     try:
-        if content_type == "carousel":
+        if content_type == ContentType.carousel.value:
             assembler = get_carousel()
             result = assembler.create(topic=topic, platform=platform, language=language)
         else:

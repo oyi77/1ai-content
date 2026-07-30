@@ -5,14 +5,13 @@
  * Caches results in the prompt_cache DB table.
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/config/database';
 import { createHash } from 'crypto';
 import { logger } from '@/utils/logger';
 import { PROVIDER_CONFIG } from '@/config/providers';
 import { STYLE_PRESETS } from '@/config/styles';
 import { NICHE_CONFIG } from '@/config/niches';
 
-const prisma = new PrismaClient();
 
 export class PromptOptimizer {
   /**

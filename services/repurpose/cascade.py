@@ -31,6 +31,9 @@ from services.clipper.transcriber import Transcriber
 from services.clipper.reframer import Reframer
 from services.trends.seo_generator import SEOGenerator
 
+
+from services.platform_presets import PLATFORM_PRESETS
+from services.repurpose.presets import TRANSITION_PRESETS
 from .utils import _cleanup_temp, _fmt_srt, _get_duration, _is_sentence_end
 from .providers.download import _download_video
 from .providers.music import _remix_audio
@@ -52,27 +55,6 @@ from .providers.video import (
     _process_segment,
 )
 
-
-# ── Platform presets ──
-PLATFORM_PRESETS = {
-    "tiktok": {"width": 1080, "height": 1920, "fps": 30, "max_duration": 180, "aspect": "9:16"},
-    "instagram_reels": {"width": 1080, "height": 1920, "fps": 30, "max_duration": 90, "aspect": "9:16"},
-    "instagram_feed": {"width": 1080, "height": 1350, "fps": 30, "max_duration": 60, "aspect": "4:5"},
-    "youtube_shorts": {"width": 1080, "height": 1920, "fps": 30, "max_duration": 60, "aspect": "9:16"},
-    "youtube": {"width": 1920, "height": 1080, "fps": 30, "max_duration": 600, "aspect": "16:9"},
-    "square": {"width": 1080, "height": 1080, "fps": 30, "max_duration": 60, "aspect": "1:1"},
-}
-
-# ── Transition presets ──
-TRANSITION_PRESETS = {
-    "crossfade": {"duration": 0.5, "filter": "xfade"},
-    "fade_black": {"duration": 0.8, "filter": "fade"},
-    "wipe_left": {"duration": 0.5, "filter": "wipeleft"},
-    "wipe_right": {"duration": 0.5, "filter": "wiperight"},
-    "wipe_up": {"duration": 0.5, "filter": "wipeup"},
-    "zoom_in": {"duration": 0.6, "filter": "circlecrop"},
-    "none": {"duration": 0, "filter": "none"},
-}
 
 
 class RepurposeEngine:

@@ -11,7 +11,7 @@ from typing import Optional
 from sqlalchemy import select, update, delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from services.db.models import ContentCalendar, async_session
+from services.db.models import ContentCalendar, get_async_session
 
 
 class ContentCalendarService:
@@ -32,7 +32,7 @@ class ContentCalendarService:
         auto_post: bool = False,
     ) -> dict:
         """Schedule a content piece."""
-        async with async_session() as session:
+        async with get_async_session() as session:
             entry = ContentCalendar(
                 user_id=user_id,
                 topic=topic,
@@ -60,7 +60,7 @@ class ContentCalendarService:
         limit: int = 50,
     ) -> list[dict]:
         """Get calendar entries with optional filters."""
-        async with async_session() as session:
+        async with get_async_session() as session:
             query = select(ContentCalendar).where(ContentCalendar.user_id == user_id)
             if status:
                 query = query.where(ContentCalendar.status == status)
@@ -74,7 +74,7 @@ class ContentCalendarService:
         """Get entries scheduled for today."""
         today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
         tomorrow = today + timedelta(days=1)
-        async with async_session() as session:
+        async with get_async_session() as session:
             query = (
                 select(ContentCalendar)
                 .where(ContentCalendar.user_id == user_id)
@@ -87,7 +87,7 @@ class ContentCalendarService:
 
     async def update_entry(self, user_id: int, entry_id: int, updates: dict) -> Optional[dict]:
         """Update a calendar entry."""
-        async with async_session() as session:
+        async with get_async_session() as session:
             query = (
                 update(ContentCalendar)
                 .where(ContentCalendar.id == entry_id)
@@ -105,7 +105,7 @@ class ContentCalendarService:
 
     async def delete_entry(self, user_id: int, entry_id: int) -> bool:
         """Delete a calendar entry."""
-        async with async_session() as session:
+        async with get_async_session() as session:
             query = delete(ContentCalendar).where(
                 ContentCalendar.id == entry_id,
                 ContentCalendar.user_id == user_id,
@@ -123,7 +123,7 @@ class ContentCalendarService:
 
     async def get_stats(self, user_id: int) -> dict:
         """Get calendar statistics."""
-        async with async_session() as session:
+        async with get_async_session() as session:
             total = await session.scalar(
                 select(func.count()).select_from(ContentCalendar).where(ContentCalendar.user_id == user_id)
             )
@@ -152,7 +152,7 @@ class ContentCalendarService:
     async def get_pending_for_auto_publish(self) -> list[dict]:
         """Get entries that are due for auto-publishing."""
         now = datetime.now()
-        async with async_session() as session:
+        async with get_async_session() as session:
             query = (
                 select(ContentCalendar)
                 .where(ContentCalendar.status == "scheduled")

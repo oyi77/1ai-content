@@ -2,7 +2,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from services.api import get_carousel
+from services.di import get_carousel
 
 carousel_router = APIRouter(prefix="", tags=["carousel"])
 

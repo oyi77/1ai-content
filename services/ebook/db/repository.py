@@ -25,7 +25,7 @@ class ProjectRepository:
             cursor = conn.cursor()
             cursor.execute(
                 """INSERT INTO projects (title, idea, product_mode, target_language, chapter_count, status)
-                   VALUES (?, ?, ?, ?, ?, ?)""",
+                   VALUES (%s, %s, %s, %s, %s, %s) RETURNING id""",
                 (
                     title,
                     idea,
@@ -35,13 +35,14 @@ class ProjectRepository:
                     ProjectStatus.DRAFT.value,
                 ),
             )
+            result_id = cursor.fetchone()["id"]
             conn.commit()
-            return cursor.lastrowid
+            return result_id
 
     def get_project(self, project_id: int) -> Optional[dict]:
         with self.db.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM projects WHERE id = ?", (project_id,))
+            cursor.execute("SELECT * FROM projects WHERE id = %s", (project_id,))
             row = cursor.fetchone()
             if row is None:
                 return None
@@ -51,7 +52,7 @@ class ProjectRepository:
         with self.db.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "SELECT * FROM projects ORDER BY created_at DESC LIMIT ?", (limit,)
+                "SELECT * FROM projects ORDER BY created_at DESC LIMIT %s", (limit,)
             )
             return [dict(row) for row in cursor.fetchall()]
 
@@ -59,7 +60,7 @@ class ProjectRepository:
         with self.db.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "UPDATE projects SET status = ?, updated_at = ? WHERE id = ?",
+                "UPDATE projects SET status = %s, updated_at = %s WHERE id = %s",
                 (status, datetime.now().isoformat(), project_id),
             )
             conn.commit()
@@ -75,12 +76,12 @@ class ProjectRepository:
         if not kwargs:
             return
 
-        fields = ", ".join(f"{k} = ?" for k in kwargs.keys())
+        fields = ", ".join(f"{k} = %s" for k in kwargs.keys())
         values = list(kwargs.values()) + [datetime.now().isoformat(), project_id]
         with self.db.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                f"UPDATE projects SET {fields}, updated_at = ? WHERE id = ?",
+                f"UPDATE projects SET {fields}, updated_at = %s WHERE id = %s",
                 values,
             )
             conn.commit()
@@ -92,11 +93,11 @@ class ProjectRepository:
         with self.db.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "DELETE FROM project_metadata WHERE project_id = ? AND key = ?",
+                "DELETE FROM project_metadata WHERE project_id = %s AND key = %s",
                 (project_id, "target_languages"),
             )
             cursor.execute(
-                "INSERT INTO project_metadata (project_id, key, value) VALUES (?, ?, ?)",
+                "INSERT INTO project_metadata (project_id, key, value) VALUES (%s, %s, %s)",
                 (project_id, "target_languages", json.dumps(languages)),
             )
             conn.commit()
@@ -108,38 +109,42 @@ class ProjectRepository:
         with self.db.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "SELECT value FROM project_metadata WHERE project_id = ? AND key = ?",
+                "SELECT value FROM project_metadata WHERE project_id = %s AND key = %s",
                 (project_id, "target_languages"),
             )
             row = cursor.fetchone()
             if row:
                 return json.loads(row["value"])
             cursor.execute(
-                "SELECT target_language FROM projects WHERE id = ?", (project_id,)
+                "SELECT target_language FROM projects WHERE id = %s", (project_id,)
             )
             proj = cursor.fetchone()
             return [proj["target_language"]] if proj else ["en"]
 
     def set_metadata(self, project_id: int, key: str, value: str) -> None:
         with self.db.get_connection() as conn:
-            conn.execute(
-                "INSERT OR REPLACE INTO project_metadata (project_id, key, value) VALUES (?, ?, ?)",
+            cursor = conn.cursor()
+            cursor.execute(
+                "INSERT INTO project_metadata (project_id, key, value) VALUES (%s, %s, %s) "
+                "ON CONFLICT (project_id, key) DO UPDATE SET value = EXCLUDED.value",
                 (project_id, key, value),
             )
             conn.commit()
 
     def get_metadata(self, project_id: int, key: str) -> str | None:
         with self.db.get_connection() as conn:
-            cursor = conn.execute(
-                "SELECT value FROM project_metadata WHERE project_id = ? AND key = ?",
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT value FROM project_metadata WHERE project_id = %s AND key = %s",
                 (project_id, key),
             )
             row = cursor.fetchone()
-            return row[0] if row else None
+            return row["value"] if row else None
 
     def delete_project(self, project_id: int) -> None:
         with self.db.get_connection() as conn:
-            conn.execute("DELETE FROM projects WHERE id = ?", (project_id,))
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM projects WHERE id = %s", (project_id,))
             conn.commit()
 
 
@@ -151,16 +156,17 @@ class JobRepository:
         with self.db.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "INSERT INTO jobs (project_id, step, status) VALUES (?, ?, ?)",
+                "INSERT INTO jobs (project_id, step, status) VALUES (%s, %s, %s) RETURNING id",
                 (project_id, step, JobStatus.PENDING.value),
             )
+            result_id = cursor.fetchone()["id"]
             conn.commit()
-            return cursor.lastrowid
+            return result_id
 
     def get_job(self, job_id: int) -> Optional[dict]:
         with self.db.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM jobs WHERE id = ?", (job_id,))
+            cursor.execute("SELECT * FROM jobs WHERE id = %s", (job_id,))
             row = cursor.fetchone()
             if row is None:
                 return None
@@ -176,7 +182,7 @@ class JobRepository:
         with self.db.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "UPDATE jobs SET status = ?, progress = ?, error_message = ?, updated_at = ? WHERE id = ?",
+                "UPDATE jobs SET status = %s, progress = %s, error_message = %s, updated_at = %s WHERE id = %s",
                 (status, progress, error_message, datetime.now().isoformat(), job_id),
             )
             conn.commit()
@@ -185,7 +191,7 @@ class JobRepository:
         with self.db.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "SELECT * FROM jobs WHERE project_id = ? ORDER BY created_at",
+                "SELECT * FROM jobs WHERE project_id = %s ORDER BY created_at",
                 (project_id,),
             )
             return [dict(row) for row in cursor.fetchall()]

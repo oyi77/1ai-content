@@ -6,10 +6,22 @@ def test_db_path(tmp_path):
     return tmp_path / "test.db"
 
 
-def test_update_project_blocks_malicious_id_field(test_db_path):
+@pytest.fixture
+def db_with_tables(test_db_path):
+    """Create a SQLite DB with ebook tables at test_db_path."""
+    from services.ebook.db.schema import create_tables
+    import sqlite3
+
+    conn = sqlite3.connect(str(test_db_path))
+    create_tables(conn)
+    conn.close()
+    return test_db_path
+
+
+def test_update_project_blocks_malicious_id_field(db_with_tables):
     from services.ebook.db.repository import ProjectRepository
 
-    repo = ProjectRepository(test_db_path)
+    repo = ProjectRepository(db_with_tables)
     project_id = repo.create_project(
         title="Test Project",
         idea="Test idea",
@@ -20,10 +32,10 @@ def test_update_project_blocks_malicious_id_field(test_db_path):
         repo.update_project(project_id, **{"id": 999})
 
 
-def test_update_project_blocks_sql_injection_attempt(test_db_path):
+def test_update_project_blocks_sql_injection_attempt(db_with_tables):
     from services.ebook.db.repository import ProjectRepository
 
-    repo = ProjectRepository(test_db_path)
+    repo = ProjectRepository(db_with_tables)
     project_id = repo.create_project(
         title="Test Project",
         idea="Test idea",
@@ -34,10 +46,10 @@ def test_update_project_blocks_sql_injection_attempt(test_db_path):
         repo.update_project(project_id, **{"status' OR '1'='1": "malicious"})
 
 
-def test_update_project_blocks_python_attribute_access(test_db_path):
+def test_update_project_blocks_python_attribute_access(db_with_tables):
     from services.ebook.db.repository import ProjectRepository
 
-    repo = ProjectRepository(test_db_path)
+    repo = ProjectRepository(db_with_tables)
     project_id = repo.create_project(
         title="Test Project",
         idea="Test idea",
@@ -48,10 +60,10 @@ def test_update_project_blocks_python_attribute_access(test_db_path):
         repo.update_project(project_id, __class__="malicious")
 
 
-def test_update_project_allows_valid_fields(test_db_path):
+def test_update_project_allows_valid_fields(db_with_tables):
     from services.ebook.db.repository import ProjectRepository
 
-    repo = ProjectRepository(test_db_path)
+    repo = ProjectRepository(db_with_tables)
     project_id = repo.create_project(
         title="Original Title",
         idea="Original idea",
@@ -74,10 +86,10 @@ def test_update_project_allows_valid_fields(test_db_path):
     assert project["chapter_count"] == 10
 
 
-def test_update_project_blocks_mixed_valid_invalid_fields(test_db_path):
+def test_update_project_blocks_mixed_valid_invalid_fields(db_with_tables):
     from services.ebook.db.repository import ProjectRepository
 
-    repo = ProjectRepository(test_db_path)
+    repo = ProjectRepository(db_with_tables)
     project_id = repo.create_project(
         title="Test Project",
         idea="Test idea",
@@ -91,10 +103,10 @@ def test_update_project_blocks_mixed_valid_invalid_fields(test_db_path):
     assert project["title"] == "Test Project"
 
 
-def test_update_project_blocks_protected_columns(test_db_path):
+def test_update_project_blocks_protected_columns(db_with_tables):
     from services.ebook.db.repository import ProjectRepository
 
-    repo = ProjectRepository(test_db_path)
+    repo = ProjectRepository(db_with_tables)
     project_id = repo.create_project(
         title="Test Project",
         idea="Test idea",

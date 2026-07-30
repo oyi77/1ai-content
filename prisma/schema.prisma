@@ -1197,3 +1197,68 @@ model Movie {
   @@index([createdAt])
   @@map("movies")
 }
+
+// =============================================================================
+// Ebook — AI Ebook/Comics/Manga Generation Pipeline
+// =============================================================================
+model EbookProject {
+  id             BigInt   @id @default(autoincrement())
+  title          String   @db.VarChar(255)
+  idea           String   @db.Text
+  productMode    String   @default("lead_magnet") @map("product_mode") @db.VarChar(32)
+  targetLanguage String   @default("en") @map("target_language") @db.VarChar(8)
+  chapterCount   Int      @default(5) @map("chapter_count")
+  status         String   @default("draft") @db.VarChar(16)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  jobs     EbookJob[]
+  metadata EbookProjectMetadata[]
+
+  @@map("ebook_projects")
+}
+
+model EbookJob {
+  id           BigInt   @id @default(autoincrement())
+  projectId    BigInt   @map("project_id")
+  step         String   @db.VarChar(64)
+  status       String   @default("pending") @db.VarChar(16)
+  progress     Int      @default(0)
+  errorMessage String?  @map("error_message") @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  project EbookProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("ebook_jobs")
+}
+
+model EbookProjectMetadata {
+  id        BigInt   @id @default(autoincrement())
+  projectId BigInt   @map("project_id")
+  key       String   @db.VarChar(64)
+  value     String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  project EbookProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, key])
+  @@map("ebook_project_metadata")
+}
+
+model EbookIntegrationLog {
+  id                  BigInt   @id @default(autoincrement())
+  integrationId       String   @map("integration_id") @db.VarChar(64)
+  event               String   @db.VarChar(128)
+  status              String   @db.VarChar(16)
+  httpStatus          Int?     @map("http_status")
+  error               String?  @db.Text
+  consecutiveFailures Int      @default(0) @map("consecutive_failures")
+  circuitOpen         Int      @default(0) @map("circuit_open")
+  circuitOpenUntil    String?  @map("circuit_open_until")
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  @@index([integrationId])
+  @@map("ebook_integration_logs")
+}

@@ -14,7 +14,7 @@ import httpx
 from sqlalchemy import select, update, delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from services.db.models import ABTest, async_session
+from services.db.models import ABTest, ContentType, get_async_session
 
 OMNIRoute_URL = os.getenv("OMNIRoute_URL", "http://127.0.0.1:20128/v1")
 
@@ -28,14 +28,14 @@ class ABTestingService:
         name: str,
         topic: str,
         platform: str = "tiktok",
-        content_type: str = "caption",
+        content_type: str = ContentType.caption.value,
         language: str = "id",
         description: str = "",
     ) -> dict:
         """Create an A/B test with two AI-generated variants."""
         variants = self._generate_variants(topic, content_type, language)
 
-        async with async_session() as session:
+        async with get_async_session() as session:
             test = ABTest(
                 user_id=user_id,
                 name=name,
@@ -53,7 +53,7 @@ class ABTestingService:
 
     async def get_tests(self, user_id: int, status: Optional[str] = None) -> list[dict]:
         """Get all tests for a user."""
-        async with async_session() as session:
+        async with get_async_session() as session:
             query = select(ABTest).where(ABTest.user_id == user_id)
             if status:
                 query = query.where(ABTest.status == status)
@@ -63,7 +63,7 @@ class ABTestingService:
 
     async def get_test(self, user_id: int, test_id: int) -> Optional[dict]:
         """Get a specific test."""
-        async with async_session() as session:
+        async with get_async_session() as session:
             result = await session.execute(
                 select(ABTest).where(ABTest.id == test_id, ABTest.user_id == user_id)
             )
@@ -72,7 +72,7 @@ class ABTestingService:
 
     async def start_test(self, user_id: int, test_id: int) -> Optional[dict]:
         """Start an A/B test."""
-        async with async_session() as session:
+        async with get_async_session() as session:
             query = (
                 update(ABTest)
                 .where(ABTest.id == test_id, ABTest.user_id == user_id)
@@ -93,7 +93,7 @@ class ABTestingService:
         comments: int = 0,
     ) -> Optional[dict]:
         """Update metrics for a variant."""
-        async with async_session() as session:
+        async with get_async_session() as session:
             test = await session.execute(
                 select(ABTest).where(ABTest.id == test_id, ABTest.user_id == user_id)
             )
@@ -135,7 +135,7 @@ class ABTestingService:
         else:
             winner = "A" if score_a > score_b else "B"
 
-        async with async_session() as session:
+        async with get_async_session() as session:
             query = (
                 update(ABTest)
                 .where(ABTest.id == test_id, ABTest.user_id == user_id)
@@ -147,7 +147,7 @@ class ABTestingService:
 
     async def delete_test(self, user_id: int, test_id: int) -> bool:
         """Delete a test."""
-        async with async_session() as session:
+        async with get_async_session() as session:
             query = delete(ABTest).where(ABTest.id == test_id, ABTest.user_id == user_id)
             result = await session.execute(query)
             await session.commit()
@@ -155,7 +155,7 @@ class ABTestingService:
 
     async def get_stats(self, user_id: int) -> dict:
         """Get A/B testing statistics."""
-        async with async_session() as session:
+        async with get_async_session() as session:
             total = await session.scalar(
                 select(func.count()).select_from(ABTest).where(ABTest.user_id == user_id)
             )
@@ -179,7 +179,7 @@ class ABTestingService:
         """Generate A/B variants using LLM."""
         lang_inst = "Gunakan bahasa Indonesia." if language == "id" else "Use English."
 
-        if content_type == "caption":
+        if content_type == ContentType.caption.value:
             prompt = f"""Buatkan 2 variasi caption TikTok untuk topik: "{topic}"
 {lang_inst}
 Variasi A: Gaya formal/edukatif, panjang 200-300 karakter

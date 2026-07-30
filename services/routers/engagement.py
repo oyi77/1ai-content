@@ -2,7 +2,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from services.api import get_engagement
+from services.di import get_engagement
 
 engagement_router = APIRouter(prefix="", tags=["engagement"])
 

@@ -5,7 +5,6 @@ import httpx
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from services.routers._shared import _PROCESSED_VIDEOS_DB
 
 download_router = APIRouter(prefix="", tags=["download"])
 

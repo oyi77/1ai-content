@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
-from services.api import get_storyboard
+from services.di import get_storyboard
 
 storyboard_router = APIRouter(prefix="", tags=["storyboard"])
 

@@ -7,6 +7,7 @@ Extracted from services/api.py to keep the route file focused on wiring.
 from typing import Optional
 
 from pydantic import BaseModel, Field
+from services.db.models import ContentType
 
 
 class TTSRequest(BaseModel):
@@ -51,7 +52,7 @@ class AutoPilotJobRequest(BaseModel):
     platforms: list[str]
     videos_per_day: int = 3
     posting_times: list[str]
-    content_type: str = "short"
+    content_type: str = ContentType.short.value
     style: Optional[str] = None
     language: str = "en"
     auto_publish: bool = False
@@ -123,3 +124,47 @@ class ReMetadataRequest(BaseModel):
     niche: str = "general"
     platform: str = "tiktok"
     language: str = "en"
+
+
+class VideoProcessRequest(BaseModel):
+    source_url: str
+    target_format: str = "9:16"  # 9:16, 16:9, 1:1
+    platform: str = "facebook"   # facebook, tiktok, instagram
+    category: str = "general"
+    transforms: list[str] = []   # mirror | speed_<factor> | crop_zoom_<zoom>
+
+
+class VideoInfoRequest(BaseModel):
+    file_path: str
+
+
+class VideoClipRequest(BaseModel):
+    file_path: str
+    start_time: float = 0
+    duration: float = 30
+
+
+class VideoTransformsRequest(BaseModel):
+    file_path: str
+    transforms: list[str]
+
+
+class VideoSearchRequest(BaseModel):
+    url: str
+
+
+class VideoRegenerateOptions(BaseModel):
+    remove_watermark: bool = True
+    add_captions: bool = True
+    caption_style: str = "karaoke"  # karaoke, simple, none
+    color_grade: str = "vibrant"     # none, cinematic, warm, cool, vibrant, vintage
+    text_overlay: str = ""           # e.g. "Check this out!"
+    overlay_position: str = "bottom_center"
+    generate_metadata: bool = True
+    language: str = "id"
+
+
+class VideoRegenerateRequest(BaseModel):
+    url: str
+    platform: str = "facebook"
+    options: VideoRegenerateOptions = VideoRegenerateOptions()

@@ -1,0 +1,30 @@
+{
+  "titles": [
+    "Test"
+  ],
+  "subtitles": [
+    "Test"
+  ],
+  "best_title": "Test",
+  "best_subtitle": "Test",
+  "chapters": [
+    {
+      "title": "Ch1",
+      "summary": "Summary",
+      "subchapters": [],
+      "estimated_word_count": 500
+    },
+    {
+      "title": "Ch2",
+      "summary": "Summary",
+      "subchapters": [],
+      "estimated_word_count": 500
+    },
+    {
+      "title": "Ch3",
+      "summary": "Summary",
+      "subchapters": [],
+      "estimated_word_count": 500
+    }
+  ]
+}
