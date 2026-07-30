@@ -40,10 +40,10 @@ def _validate_content_type(v: Any) -> str:
 
 from sqlalchemy import (
     BigInteger, Boolean, Column, DateTime, DECIMAL as SADecimal,
-    ForeignKey, Integer, String, Text, func,
+    ForeignKey, Integer, String, Text, func, select,
 )
 from sqlalchemy.dialects import postgresql
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSONB, insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, relationship, sessionmaker, validates
 
@@ -241,6 +241,65 @@ class PricingConfig(Base):
     description = Column(String(256))
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
+
+
+class ProcessedVideo(Base):
+    """Tracks processed video URLs for duplicate detection."""
+    __tablename__ = "processed_videos"
+
+    url_hash = Column(String(64), primary_key=True)
+    source_url = Column(String, nullable=False)
+    processed_at = Column(DateTime, nullable=False)
+    file_path = Column(String, nullable=True)
+
+
+async def record_processed_video(source_url: str, file_path: str) -> None:
+    """Record a processed video for duplicate detection."""
+    import hashlib
+    from datetime import datetime
+
+    url_hash = hashlib.sha256(source_url.encode()).hexdigest()
+    async with get_async_session() as session:
+        now = datetime.utcnow()
+        stmt = pg_insert(ProcessedVideo).values(
+            url_hash=url_hash,
+            source_url=source_url,
+            processed_at=now,
+            file_path=file_path,
+        ).on_conflict_do_update(
+            index_elements=[ProcessedVideo.url_hash],
+            set_=dict(processed_at=now, file_path=file_path),
+        )
+        await session.execute(stmt)
+        await session.commit()
+
+
+async def check_processed_video(url: str) -> dict:
+    """Check if a video URL has been processed before.
+
+    Returns {found, url_hash, processed_at, file_path}.
+    """
+    import hashlib
+
+    url_hash = hashlib.sha256(url.encode()).hexdigest()
+    async with get_async_session() as session:
+        result = await session.execute(
+            select(ProcessedVideo).where(ProcessedVideo.url_hash == url_hash)
+        )
+        row = result.scalar_one_or_none()
+        if row:
+            return {
+                "found": True,
+                "url_hash": url_hash,
+                "processed_at": row.processed_at.isoformat() if row.processed_at else None,
+                "file_path": row.file_path,
+            }
+    return {
+        "found": False,
+        "url_hash": url_hash,
+        "processed_at": None,
+        "file_path": None,
+    }
 
 # ══════════════════════════════════════════════════════════════
 # SESSION HELPER

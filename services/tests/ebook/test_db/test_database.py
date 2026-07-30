@@ -1,7 +1,3 @@
-import sqlite3
-from contextlib import contextmanager
-from pathlib import Path
-
 import pytest
 
 
@@ -10,35 +6,21 @@ def test_db_path(tmp_path):
     return tmp_path / "test.db"
 
 
-@pytest.fixture
-def db_manager(test_db_path):
-    from services.ebook.db.database import DatabaseManager
+def test_database_engine_and_tables(test_db_path):
+    """Engine is created and tables can be created."""
+    from services.ebook.db.database import get_engine, create_tables
 
-    return DatabaseManager(test_db_path)
+    engine = get_engine(str(test_db_path))
+    assert engine is not None
 
+    create_tables(engine)
 
-def test_database_context_manager(test_db_path):
-    """Connection is returned and a simple query works."""
-    from services.ebook.db.database import DatabaseManager
+    # Verify tables exist via SQLAlchemy inspector
+    from sqlalchemy import inspect
 
-    dm = DatabaseManager(test_db_path)
-    with dm.get_connection() as conn:
-        assert conn is not None
-        cursor = conn.cursor()
-        cursor.execute("SELECT 1")
-        assert cursor.fetchone() is not None
-
-
-def test_database_creates_tables(test_db_path):
-    """Tables can be created and discovered via schema introspection."""
-    from services.ebook.db.database import DatabaseManager
-    from services.ebook.db.schema import create_tables
-
-    dm = DatabaseManager(test_db_path)
-    with dm.get_connection() as conn:
-        create_tables(conn)
-        cursor = conn.cursor()
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
-        tables = [row[0] for row in cursor.fetchall()]
-        assert "projects" in tables
-        assert "jobs" in tables
+    inspector = inspect(engine)
+    table_names = inspector.get_table_names()
+    assert "projects" in table_names
+    assert "jobs" in table_names
+    assert "project_metadata" in table_names
+    assert "integration_logs" in table_names

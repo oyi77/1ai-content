@@ -1,18 +1,18 @@
 import pytest
 from pathlib import Path
+from unittest.mock import MagicMock
 
 
 @pytest.mark.integration
 def test_full_pipeline_integration(test_db_path, temp_project_dir):
     from services.ebook.pipeline.orchestrator import PipelineOrchestrator
     from services.ebook.db.repository import ProjectRepository
-    from services.ebook.db.schema import create_tables
-    from unittest.mock import MagicMock
-    import sqlite3
+    from services.ebook.db.database import get_engine, create_tables as sa_create_tables
+    import os
 
-    conn = sqlite3.connect(test_db_path)
-    create_tables(conn)
-    conn.close()
+    engine = get_engine(test_db_path)
+    sa_create_tables(engine)
+    engine.dispose()
 
     repo = ProjectRepository(test_db_path)
     project_id = repo.create_project(
@@ -133,12 +133,11 @@ The consistency matters as much as the questions themselves.
 @pytest.mark.integration
 def test_streamlit_form_submission(test_db_path, temp_project_dir):
     from services.ebook.pipeline.intake import ProjectIntake
-    from services.ebook.db.schema import create_tables
-    import sqlite3
+    from services.ebook.db.database import get_engine, create_tables as sa_create_tables
 
-    conn = sqlite3.connect(test_db_path)
-    create_tables(conn)
-    conn.close()
+    engine = get_engine(test_db_path)
+    sa_create_tables(engine)
+    engine.dispose()
 
     intake = ProjectIntake(test_db_path)
     project = intake.create_project(
@@ -156,12 +155,11 @@ def test_streamlit_form_submission(test_db_path, temp_project_dir):
 def test_export_includes_all_files(test_db_path, temp_project_dir):
     from services.ebook.export.export_orchestrator import ExportOrchestrator
     from services.ebook.db.repository import ProjectRepository
-    from services.ebook.db.schema import create_tables
-    import sqlite3
+    from services.ebook.db.database import get_engine, create_tables as sa_create_tables
 
-    conn = sqlite3.connect(test_db_path)
-    create_tables(conn)
-    conn.close()
+    engine = get_engine(test_db_path)
+    sa_create_tables(engine)
+    engine.dispose()
 
     repo = ProjectRepository(test_db_path)
     project_id = repo.create_project(

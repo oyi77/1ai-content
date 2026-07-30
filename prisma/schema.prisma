@@ -1262,3 +1262,15 @@ model EbookIntegrationLog {
   @@index([integrationId])
   @@map("ebook_integration_logs")
 }
+
+// =============================================================================
+// PROCESSED VIDEOS (Duplicate detection for video download/processing pipeline)
+// =============================================================================
+model ProcessedVideo {
+  url_hash     String   @id @db.VarChar(64)
+  source_url   String
+  processed_at DateTime @map("processed_at")
+  file_path    String?  @map("file_path")
+
+  @@map("processed_videos")
+}

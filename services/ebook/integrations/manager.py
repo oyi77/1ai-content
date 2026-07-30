@@ -30,8 +30,16 @@ class Integration:
 
 
 class IntegrationManager:
-    def __init__(self, config_file: Path = INTEGRATIONS_FILE):
+    def __init__(self, config_file: Path = INTEGRATIONS_FILE, db_path: str | None = None):
         self.config_file = config_file
+        self.db_path = db_path
+        self._engine = None
+        if db_path:
+            from sqlalchemy import create_engine
+            from services.ebook.db.database import create_tables
+
+            self._engine = create_engine(f"sqlite:///{db_path}")
+            create_tables(self._engine)
         self._integrations: dict[str, Integration] = {}
         self._load()
 
@@ -302,21 +310,28 @@ class IntegrationManager:
 
     def _is_circuit_open(self, integration_id: str) -> bool:
         """Check if circuit breaker is open for this integration."""
+        if not self._engine:
+            return False
         try:
-            from services.ebook.db.database import DatabaseManager
+            from sqlalchemy.orm import Session
+            from services.ebook.db.models import IntegrationLogRecord
+            from datetime import datetime
 
-            db = DatabaseManager()
-            with db._get_connection() as conn:
-                row = conn.execute(
-                    "SELECT circuit_open, circuit_open_until FROM integration_logs WHERE integration_id=? ORDER BY id DESC LIMIT 1",
-                    (integration_id,),
-                ).fetchone()
-                if row and row[0]:
-                    until = row[1]
-                    if until and datetime.fromisoformat(until) > datetime.utcnow():
+            with Session(bind=self._engine) as session:
+                latest = (
+                    session.query(IntegrationLogRecord)
+                    .filter(IntegrationLogRecord.integration_id == integration_id)
+                    .order_by(IntegrationLogRecord.id.desc())
+                    .first()
+                )
+                if latest and latest.circuit_open:
+                    if latest.circuit_open_until and latest.circuit_open_until > datetime.utcnow():
                         return True
                     # Cooldown expired — auto-reset
-                    self._reset_circuit(integration_id)
+                    latest.circuit_open = 0
+                    latest.circuit_open_until = None
+                    latest.consecutive_failures = 0
+                    session.commit()
         except Exception as e:
             logger.warning(
                 "Failed to check circuit breaker state",
@@ -327,41 +342,55 @@ class IntegrationManager:
 
     def _increment_failures(self, integration_id: str) -> None:
         """Increment consecutive failure count; trip circuit after 2."""
+        if not self._engine:
+            return
         try:
-            from services.ebook.db.database import DatabaseManager
+            from sqlalchemy.orm import Session
+            from services.ebook.db.models import IntegrationLogRecord
+            from datetime import datetime
 
-            db = DatabaseManager()
-            with db._get_connection() as conn:
-                row = conn.execute(
-                    "SELECT consecutive_failures FROM integration_logs WHERE integration_id=? ORDER BY id DESC LIMIT 1",
-                    (integration_id,),
-                ).fetchone()
-                count = (row[0] if row else 0) + 1
-                if count >= 2:
-                    until = (datetime.utcnow() + timedelta(minutes=5)).isoformat()
-                    conn.execute(
-                        "UPDATE integration_logs SET circuit_open=1, circuit_open_until=? WHERE integration_id=?",
-                        (until, integration_id),
-                    )
-                    logger.warning(
-                        "Circuit breaker tripped",
-                        integration_id=integration_id,
-                        cooldown_until=until,
-                    )
+            with Session(bind=self._engine) as session:
+                latest = (
+                    session.query(IntegrationLogRecord)
+                    .filter(IntegrationLogRecord.integration_id == integration_id)
+                    .order_by(IntegrationLogRecord.id.desc())
+                    .first()
+                )
+                count = (latest.consecutive_failures if latest else 0) + 1
+                if latest:
+                    latest.consecutive_failures = count
+                    if count >= 2:
+                        latest.circuit_open = 1
+                        latest.circuit_open_until = datetime.utcnow() + timedelta(minutes=5)
+                        logger.warning(
+                            "Circuit breaker tripped",
+                            integration_id=integration_id,
+                            cooldown_until=latest.circuit_open_until.isoformat(),
+                        )
+                    session.commit()
         except Exception as e:
             logger.info("Could not update circuit state", error=str(e))
 
     def _reset_circuit(self, integration_id: str) -> None:
         """Reset circuit breaker after successful delivery."""
+        if not self._engine:
+            return
         try:
-            from services.ebook.db.database import DatabaseManager
+            from sqlalchemy.orm import Session
+            from services.ebook.db.models import IntegrationLogRecord
 
-            db = DatabaseManager()
-            with db._get_connection() as conn:
-                conn.execute(
-                    "UPDATE integration_logs SET circuit_open=0, circuit_open_until=NULL, consecutive_failures=0 WHERE integration_id=?",
-                    (integration_id,),
+            with Session(bind=self._engine) as session:
+                latest = (
+                    session.query(IntegrationLogRecord)
+                    .filter(IntegrationLogRecord.integration_id == integration_id)
+                    .order_by(IntegrationLogRecord.id.desc())
+                    .first()
                 )
+                if latest:
+                    latest.circuit_open = 0
+                    latest.circuit_open_until = None
+                    latest.consecutive_failures = 0
+                    session.commit()
         except Exception as e:
             logger.warning(
                 "Failed to reset circuit breaker",
@@ -378,14 +407,21 @@ class IntegrationManager:
         error: str | None,
     ) -> None:
         """Write attempt to integration_logs."""
+        if not self._engine:
+            return
         try:
-            from services.ebook.db.database import DatabaseManager
+            from sqlalchemy.orm import Session
+            from services.ebook.db.models import IntegrationLogRecord
 
-            db = DatabaseManager()
-            with db._get_connection() as conn:
-                conn.execute(
-                    "INSERT INTO integration_logs (integration_id, event, status, http_status, error) VALUES (?,?,?,?,?)",
-                    (integration_id, event, status, http_status, error),
+            with Session(bind=self._engine) as session:
+                record = IntegrationLogRecord(
+                    integration_id=integration_id,
+                    event=event,
+                    status=status,
+                    http_status=http_status,
+                    error=error,
                 )
+                session.add(record)
+                session.commit()
         except Exception as e:
             logger.info("Could not write integration log", error=str(e))

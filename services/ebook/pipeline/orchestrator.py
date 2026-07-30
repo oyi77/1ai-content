@@ -146,8 +146,7 @@ class PipelineOrchestrator:
         """Fire event to all configured integrations — non-blocking."""
         try:
             from services.ebook.integrations.manager import IntegrationManager
-
-            mgr = IntegrationManager()
+            mgr = IntegrationManager(db_path=self.db_path)
             for integration in mgr.list_integrations():
                 integ_id = integration.get("id") or integration.get("name", "")
                 if integ_id:

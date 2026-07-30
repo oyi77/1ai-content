@@ -8,9 +8,6 @@ import json
 import os
 import subprocess
 
-PROCESSED_VIDEOS_DB = os.path.join(
-    os.environ.get("DATA_DIR", "/tmp"), "processed_videos.db"
-)
 
 
 async def run_subprocess(cmd: list[str], **kwargs):

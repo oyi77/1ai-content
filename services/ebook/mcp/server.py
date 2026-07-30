@@ -26,14 +26,9 @@ PROJECTS_DIR = PROJECT_ROOT / "projects"
 
 
 def _get_repo():
-    from services.ebook.db.database import DatabaseManager
     from services.ebook.db.repository import ProjectRepository
-    from services.ebook.db.schema import create_tables
 
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    db = DatabaseManager(DB_PATH)
-    with db.get_connection() as conn:
-        create_tables(conn)
     return ProjectRepository(DB_PATH)
 
 

@@ -43,25 +43,6 @@ async def startup_db():
         print(f"[API] DB init warning: {e}")
 
 
-@app.on_event("startup")
-async def _startup_processed_videos_db():
-    """Create processed_videos table for URL-based duplicate detection."""
-    import sqlite3 as _sqlite3
-    _db_path = os.path.join(os.environ.get("DATA_DIR", "/tmp"), "processed_videos.db")
-    try:
-        conn = _sqlite3.connect(_db_path)
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS processed_videos (
-                url_hash    TEXT PRIMARY KEY,
-                source_url  TEXT NOT NULL,
-                processed_at TEXT NOT NULL,
-                file_path   TEXT
-            )
-        """)
-        conn.commit()
-        conn.close()
-    except Exception as e:
-        print(f"[API] processed_videos DB init warning: {e}")
 
 
 

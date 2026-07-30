@@ -73,17 +73,18 @@ def test_comics_mode_routes_to_comics_orchestrator(tmp_path):
     db_path = tmp_path / "test.db"
 
     # Create project in DB manually
-    import sqlite3
-    from services.ebook.db.schema import create_tables
+    from services.ebook.db.database import get_engine, create_tables as sa_create_tables
+    from services.ebook.db.models import ProjectRecord
+    from sqlalchemy.orm import Session
 
-    conn = sqlite3.connect(str(db_path))
-    create_tables(conn)
-    conn.execute(
-        "INSERT INTO projects (title, idea, product_mode, target_language, chapter_count, status) VALUES (?,?,?,?,?,?)",
-        ("Test Manga", "A hero saves the world", "manga", "en", 1, "draft"),
-    )
-    conn.commit()
-    conn.close()
+    engine = get_engine(str(db_path))
+    sa_create_tables(engine)
+
+    with Session(bind=engine) as session:
+        rec = ProjectRecord(id=1, title="Test", idea="Test idea", product_mode="comics", status="draft")
+        session.add(rec)
+        session.commit()
+    engine.dispose()
 
     mock_client = _make_mock_ai_client()
     orchestrator = PipelineOrchestrator(
@@ -110,17 +111,18 @@ def test_e2e_manga_pipeline(tmp_path):
     db_path = tmp_path / "test.db"
     projects_dir = tmp_path / "projects"
 
-    import sqlite3
-    from services.ebook.db.schema import create_tables
+    from services.ebook.db.database import get_engine, create_tables as sa_create_tables
+    from services.ebook.db.models import ProjectRecord
+    from sqlalchemy.orm import Session
 
-    conn = sqlite3.connect(str(db_path))
-    create_tables(conn)
-    conn.execute(
-        "INSERT INTO projects (title, idea, product_mode, target_language, chapter_count, status) VALUES (?,?,?,?,?,?)",
-        ("Test Manga", "A hero saves the world", "manga", "en", 1, "draft"),
-    )
-    conn.commit()
-    conn.close()
+    engine = get_engine(str(db_path))
+    sa_create_tables(engine)
+
+    with Session(bind=engine) as session:
+        rec = ProjectRecord(id=1, title="Test Manga", idea="A hero saves the world", product_mode="manga", target_language="en", chapter_count=1, status="draft")
+        session.add(rec)
+        session.commit()
+    engine.dispose()
 
     mock_client = _make_mock_ai_client()
     orchestrator = ComicsOrchestrator(

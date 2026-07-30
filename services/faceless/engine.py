@@ -25,13 +25,31 @@ from services.faceless.composer import FacelessComposer
 from services.tts.engine import TTSEngine
 
 
-# Platform presets
-PLATFORM_PRESETS = {
-    'tiktok': {'resolution': '1080x1920', 'max_duration': 180, 'orientation': 'portrait'},
-    'youtube': {'resolution': '1080x1920', 'max_duration': 60, 'orientation': 'portrait'},
-    'instagram': {'resolution': '1080x1350', 'max_duration': 90, 'orientation': 'portrait'},
-    'facebook': {'resolution': '1920x1080', 'max_duration': 240, 'orientation': 'landscape'},
+from services.platform_presets import PLATFORM_PRESETS as _CANONICAL_PRESETS
+ 
+ 
+_PLATFORM_KEY_MAP = {
+    "tiktok": "tiktok",
+    "youtube": "youtube_shorts",
+    "instagram": "instagram_feed",
+    "facebook": "facebook",
 }
+ 
+ 
+def _get_faceless_presets() -> dict:
+    """Build faceless platform presets from canonical source."""
+    presets = {}
+    for faceless_key, canonical_key in _PLATFORM_KEY_MAP.items():
+        c = _CANONICAL_PRESETS[canonical_key]
+        presets[faceless_key] = {
+            "resolution": f"{c['width']}x{c['height']}",
+            "max_duration": c["max_duration"],
+            "orientation": "portrait" if c["width"] < c["height"] else "landscape",
+        }
+    return presets
+ 
+ 
+PLATFORM_PRESETS = _get_faceless_presets()
 
 
 class FacelessEngine:

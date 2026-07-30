@@ -216,16 +216,13 @@ def test_invoke_webhook_logs_skipped_when_circuit_open(mgr):
 
 
 def test_log_attempt_does_not_crash_when_db_unavailable(mgr):
-    """_log_attempt must silently absorb DB errors — DatabaseManager is imported inside the method."""
-    with patch("services.ebook.db.database.DatabaseManager", side_effect=Exception("no db")):
-        # Should not raise
-        mgr._log_attempt("hook_x", "event.test", "success", 200, None)
+    """_log_attempt must silently absorb — no engine means safe no-op."""
+    mgr._log_attempt("hook_x", "event.test", "success", 200, None)
 
 
 def test_log_attempt_does_not_crash_with_error_payload(mgr):
     """_log_attempt with an error string must not raise."""
-    with patch("services.ebook.db.database.DatabaseManager", side_effect=Exception("no db")):
-        mgr._log_attempt("hook_x", "event.fail", "failed", 500, "connection refused")
+    mgr._log_attempt("hook_x", "event.fail", "failed", 500, "connection refused")
 
 
 # ---------------------------------------------------------------------------

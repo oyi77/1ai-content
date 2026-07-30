@@ -9,7 +9,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
 
-from services.utils import PROCESSED_VIDEOS_DB, TIKTOK_BROWSERS, extract_browser_cookies, has_tiktok_cookies, probe_field, probe_video, run_subprocess
+from services.utils import TIKTOK_BROWSERS, extract_browser_cookies, has_tiktok_cookies, probe_field, probe_video, run_subprocess
 from services.api_models import VideoProcessRequest, VideoInfoRequest, VideoClipRequest, VideoTransformsRequest, VideoSearchRequest, VideoRegenerateOptions, VideoRegenerateRequest
 
 video_router = APIRouter(prefix="", tags=["video"])
@@ -200,18 +200,9 @@ async def process_video(req: VideoProcessRequest):
 
     # Log to processed_videos for duplicate detection
     if file_type == "video" and file_path:
-        import hashlib as _hashlib
-        import sqlite3 as _sqlite3
-        from datetime import datetime as _dt
-        _url_hash = _hashlib.sha256(req.source_url.encode()).hexdigest()
+        from services.db.models import record_processed_video as _rpv
         try:
-            _conn = _sqlite3.connect(PROCESSED_VIDEOS_DB)
-            _conn.execute(
-                "INSERT OR REPLACE INTO processed_videos (url_hash, source_url, processed_at, file_path) VALUES (?,?,?,?)",
-                (_url_hash, req.source_url, _dt.utcnow().isoformat(), file_path),
-            )
-            _conn.commit()
-            _conn.close()
+            await _rpv(req.source_url, file_path)
         except Exception:
             pass
 
@@ -236,21 +227,12 @@ async def video_search(req: VideoSearchRequest):
 
     Returns {found, url_hash, processed_at, file_path}.
     """
-    import hashlib as _hashlib
-    import sqlite3 as _sqlite3
-    _url_hash = _hashlib.sha256(req.url.encode()).hexdigest()
+    from services.db.models import check_processed_video as _cpv
     try:
-        _conn = _sqlite3.connect(PROCESSED_VIDEOS_DB)
-        row = _conn.execute(
-            "SELECT source_url, processed_at, file_path FROM processed_videos WHERE url_hash = ?",
-            (_url_hash,),
-        ).fetchone()
-        _conn.close()
+        result = await _cpv(req.url)
     except Exception:
-        row = None
-    if row:
-        return {"data": {"found": True, "url_hash": _url_hash, "processed_at": row[1], "file_path": row[2]}}
-    return {"data": {"found": False, "url_hash": _url_hash, "processed_at": None, "file_path": None}}
+        result = {"found": False, "url_hash": "", "processed_at": None, "file_path": None}
+    return {"data": result}
 
 
 # ── /video/regenerate ──────────────────────────────────────────

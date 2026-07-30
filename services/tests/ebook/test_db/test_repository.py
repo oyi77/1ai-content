@@ -1,5 +1,3 @@
-import sqlite3
-
 import pytest
 from datetime import datetime
 
@@ -12,13 +10,12 @@ def test_db_path(tmp_path):
 @pytest.fixture
 def db_with_tables(test_db_path):
     """Create a SQLite DB with ebook tables at test_db_path."""
-    from services.ebook.db.schema import create_tables
+    from services.ebook.db.database import get_engine, create_tables
 
-    conn = sqlite3.connect(str(test_db_path))
-    create_tables(conn)
-    conn.close()
+    engine = get_engine(str(test_db_path))
+    create_tables(engine)
+    engine.dispose()
     return test_db_path
-
 
 def test_create_and_get_project(db_with_tables):
     from services.ebook.db.repository import ProjectRepository
