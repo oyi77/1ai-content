@@ -3,7 +3,7 @@
 Music Generator — Background music for video content.
 
 Supports:
-- Suno AI (full songs + instrumentals)
+- Suno AI (full songs + instrumentals + lyrics + lofi)
 - AudioCraft/MusicGen (self-hosted)
 - FFmpeg-based simple beats (fallback)
 
@@ -11,19 +11,26 @@ Usage:
     gen = MusicGenerator()
     result = gen.generate("lo-fi chill beats")
     result = gen.generate_bgm("corporate")
+    result = gen.generate_lofi("chill")
+    result = gen.generate("romantic song", lyrics="...", instrumental_only=False)
 """
 
+import json
+import logging
 import os
 import subprocess
 import tempfile
-from typing import Optional
 from pathlib import Path
+from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 
 class MusicGenerator:
     """Generate background music for videos."""
 
-    def __init__(self):
+    def __init__(self, api_key: Optional[str] = None):
+        self.api_key = api_key or os.getenv("SUNO_API_KEY", "")
         self.output_dir = Path("/tmp/music_output")
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self._check_engines()
@@ -35,17 +42,19 @@ class MusicGenerator:
 
         # Check suno-api
         try:
-            import suno
+            import suno  # noqa: F401
             self.suno_available = True
         except ImportError:
-            pass
+            logger.info("suno-api not installed — Suno engine unavailable")
 
         # Check audiocraft
         try:
-            import audiocraft
+            import audiocraft  # noqa: F401
             self.audiocraft_available = True
         except ImportError:
-            pass
+            logger.info("audiocraft not installed — AudioCraft engine unavailable")
+
+    # ── Public API ────────────────────────────────────────────────
 
     def generate(
         self,
@@ -53,6 +62,8 @@ class MusicGenerator:
         duration_seconds: int = 60,
         style: str = "auto",
         engine: str = "auto",
+        lyrics: Optional[str] = None,
+        instrumental_only: bool = True,
     ) -> dict:
         """
         Generate background music.
@@ -62,6 +73,8 @@ class MusicGenerator:
             duration_seconds: Target duration
             style: Musical style override
             engine: Force specific engine (suno, audiocraft, ffmpeg, auto)
+            lyrics: Custom lyrics (Suno only — auto-generated if None)
+            instrumental_only: Generate instrumental only (no vocals)
 
         Returns:
             dict with success, audio_path, duration, engine
@@ -75,7 +88,7 @@ class MusicGenerator:
                 engine = "ffmpeg"
 
         if engine == "suno":
-            return self._generate_suno(prompt, duration_seconds, style)
+            return self._generate_suno(prompt, duration_seconds, style, lyrics, instrumental_only)
         elif engine == "audiocraft":
             return self._generate_audiocraft(prompt, duration_seconds)
         elif engine == "ffmpeg":
@@ -100,19 +113,62 @@ class MusicGenerator:
         prompt = themes.get(theme, f"{theme} background music")
         return self.generate(prompt, duration_seconds=60)
 
-    def _generate_suno(self, prompt, duration, style) -> dict:
-        """Generate via Suno AI."""
+    def generate_lofi(self, mood: str = "chill") -> dict:
+        """Generate lo-fi beats for looping content."""
+        styles = {
+            "chill": "lo-fi hip hop, chill beats, study music, relaxed tempo",
+            "romantic": "lo-fi, romantic piano, soft beats, dreamy atmosphere",
+            "night": "lo-fi, night city vibes, jazz piano, mellow beats",
+            "rain": "lo-fi, rain ambience, cozy beats, melancholic melody",
+            "happy": "lo-fi, happy vibes, bright piano, uplifting beats",
+        }
+        style = styles.get(mood, styles["chill"])
+        return self.generate(
+            prompt=f"Lo-fi {mood} beats for studying and relaxing",
+            style=style,
+            instrumental_only=True,
+            duration_seconds=180,
+        )
+
+    # ── Suno AI ───────────────────────────────────────────────────
+
+    def _generate_suno(
+        self,
+        prompt: str,
+        duration: int,
+        style: str,
+        lyrics: Optional[str] = None,
+        instrumental_only: bool = True,
+    ) -> dict:
+        """Generate via Suno AI — try REST API first, then suno-api package."""
+        if self.api_key:
+            result = self._suno_via_api(prompt, style, lyrics, instrumental_only)
+            if result.get("success"):
+                return result
+
+        # Fallback: try suno-api package
+        return self._suno_via_package(prompt, style, lyrics, instrumental_only)
+
+    def _suno_via_api(self, prompt, style, lyrics, instrumental_only) -> dict:
+        """Generate via Suno REST API."""
         try:
             import httpx
 
-            api_key = os.getenv("SUNO_API_KEY", "")
-            if not api_key:
-                return {"success": False, "error": "SUNO_API_KEY not set"}
+            full_prompt = f"{style}: {prompt}" if style and style != "auto" else prompt
+            if lyrics:
+                full_prompt += f"\n\nLyrics:\n{lyrics}"
 
             resp = httpx.post(
                 "https://studio-api.suno.ai/api/generate/",
-                headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-                json={"prompt": prompt, "make_instrumental": True, "wait_audio": True},
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "prompt": full_prompt,
+                    "make_instrumental": instrumental_only,
+                    "wait_audio": True,
+                },
                 timeout=120,
             )
 
@@ -120,18 +176,67 @@ class MusicGenerator:
                 data = resp.json()
                 audio_url = data.get("audio_url", "")
                 if audio_url:
-                    output = str(self.output_dir / f"bgm_{hash(prompt) % 10000}.mp3")
-                    subprocess.run(["curl", "-sL", "-o", output, audio_url], check=True, timeout=30)
-                    return {"success": True, "audio_path": output, "engine": "suno", "metadata": data}
-        except Exception:
+                    output = str(self.output_dir / f"suno_{hash(prompt) % 10000}.mp3")
+                    subprocess.run(
+                        ["curl", "-sL", "-o", output, audio_url],
+                        check=True, timeout=30
+                    )
+                    return {
+                        "success": True,
+                        "audio_url": audio_url,
+                        "audio_path": output,
+                        "engine": "suno",
+                        "method": "api",
+                        "metadata": data,
+                    }
+        except Exception as e:
+            logger.warning("Suno API generation failed: %s", e)
+
+        return {"success": False, "error": "API generation failed"}
+
+    def _suno_via_package(self, prompt, style, lyrics, instrumental_only) -> dict:
+        """Generate via suno-api Python package."""
+        try:
+            from suno import SunoClient as _SunoClient
+
+            client = _SunoClient()
+            full_prompt = f"{style}: {prompt}" if style and style != "auto" else prompt
+
+            if lyrics:
+                result = client.generate.full_song(full_prompt, lyrics=lyrics)
+            elif instrumental_only:
+                result = client.generate.instrumental(full_prompt)
+            else:
+                result = client.generate.full_song(full_prompt)
+
+            if result and result.get("audio_url"):
+                audio_path = str(self.output_dir / f"suno_{hash(prompt) % 10000}.mp3")
+                subprocess.run(
+                    ["curl", "-sL", "-o", audio_path, result["audio_url"]],
+                    check=True, timeout=30
+                )
+                return {
+                    "success": True,
+                    "audio_url": result["audio_url"],
+                    "audio_path": audio_path,
+                    "engine": "suno",
+                    "method": "package",
+                    "metadata": result,
+                }
+        except ImportError:
             pass
-        return {"success": False, "error": "Suno generation failed"}
+        except Exception as e:
+            logger.warning("Suno package generation failed: %s", e)
+
+        return {"success": False, "error": "Package generation failed — install suno-api: pip install suno-api"}
+
+    # ── AudioCraft / MusicGen ─────────────────────────────────────
 
     def _generate_audiocraft(self, prompt, duration) -> dict:
         """Generate via AudioCraft/MusicGen."""
         try:
-            from audiocraft.models import MusicGen
-            from audiocraft.data.audio import audio_write
+            from audiocraft.models import MusicGen  # type: ignore[import-untyped]
+            from audiocraft.data.audio import audio_write  # type: ignore[import-untyped]
 
             model = MusicGen.get_pretrained("facebook/musicgen-small")
             model.set_generation_params(duration=min(duration, 30))
@@ -145,12 +250,13 @@ class MusicGenerator:
         except Exception as e:
             return {"success": False, "error": f"AudioCraft failed: {e}"}
 
+    # ── FFmpeg fallback ──────────────────────────────────────────
+
     def _generate_ffmpeg(self, prompt, duration) -> dict:
         """Generate simple background tone via FFmpeg (fallback)."""
         try:
             output = str(self.output_dir / f"bgm_simple_{hash(prompt) % 10000}.wav")
 
-            # Generate a simple ambient tone
             cmd = [
                 "ffmpeg", "-y",
                 "-f", "lavfi", "-i",
@@ -170,19 +276,22 @@ class MusicGenerator:
 # CLI entry point
 if __name__ == "__main__":
     import sys
-    import json
 
     if len(sys.argv) < 2:
-        print("Usage: python generator.py <prompt> [theme]")
+        print("Usage: python generator.py <prompt> [theme|lofi] [--instrumental]")
         print("  themes: corporate, cinematic, upbeat, ambient, lofi, tech, vlog")
+        print("  special: 'lofi' as second arg calls generate_lofi instead")
         sys.exit(1)
 
     prompt = sys.argv[1]
-    theme = sys.argv[2] if len(sys.argv) > 2 else "auto"
+    arg2 = sys.argv[2] if len(sys.argv) > 2 else "auto"
+    instrumental = "--instrumental" in sys.argv
 
     gen = MusicGenerator()
-    if theme != "auto":
-        result = gen.generate_bgm(theme)
+    if arg2 == "lofi" or arg2.startswith("lo-fi"):
+        result = gen.generate_lofi(arg2 if arg2 != "lofi" else "chill")
+    elif arg2 != "auto":
+        result = gen.generate_bgm(arg2)
     else:
-        result = gen.generate(prompt)
-    print(json.dumps(result, indent=2))
+        result = gen.generate(prompt, instrumental_only=instrumental)
+    print(json.dumps(result, indent=2, default=str))

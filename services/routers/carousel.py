@@ -20,7 +20,7 @@ async def carousel_create(req: CarouselRequest):
     """Generate a TikTok carousel from a topic."""
     try:
         assembler = get_carousel()
-        result = assembler.create(
+        result = assembler.generate(
             topic=req.topic,
             num_slides=req.num_slides,
             style=req.style,

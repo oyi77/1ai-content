@@ -12,7 +12,6 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from services.storyboard.engine import StoryboardEngine
     from services.tts.engine import TTSEngine
-    from services.suno.client import SunoClient
     from services.music.generator import MusicGenerator
     from services.looping.engine import LoopingEngine
     from services.analysis.channel_analyzer import ChannelAnalyzer
@@ -43,14 +42,6 @@ def get_tts() -> TTSEngine:
 
         _instances["tts"] = TTSEngine()
     return _instances["tts"]
-
-
-def get_suno() -> SunoClient:
-    if "suno" not in _instances:
-        from services.suno.client import SunoClient
-
-        _instances["suno"] = SunoClient()
-    return _instances["suno"]
 
 
 def get_music() -> MusicGenerator:

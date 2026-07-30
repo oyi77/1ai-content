@@ -95,5 +95,4 @@ class ComicsExporter:
         except ImportError:
             logger.warning("fpdf2 not installed, saving PDF as ZIP of PNGs fallback")
             self._export_cbz(pages, output_path.with_suffix(".cbz"))
-            output_path.write_bytes(b"PDF export requires fpdf2")
         return output_path

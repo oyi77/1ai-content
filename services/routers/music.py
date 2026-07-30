@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from typing import Optional
 
-from services.di import get_music, get_suno
+from services.di import get_music
 
 music_router = APIRouter(prefix="", tags=["music"])
 
@@ -21,19 +21,21 @@ class MusicRequest(BaseModel):
     duration_seconds: int = Field(default=60, ge=10, le=600)
     engine: str = "auto"
     style: Optional[str] = None
+    lyrics: Optional[str] = None
+    instrumental: bool = True
 
 
 # ── Suno AI ─────────────────────────────────────────────────────
 
 @music_router.post("/suno/generate")
 async def suno_generate(req: SunoRequest):
-    """Generate music via Suno AI."""
+    """Generate music via Suno AI (backward-compatible)."""
     try:
-        client = get_suno()
+        gen = get_music()
         result = await asyncio.to_thread(
-            client.generate,
+            gen.generate,
             prompt=req.prompt,
-            style=req.style,
+            style=req.style or "auto",
             lyrics=req.lyrics,
             instrumental_only=req.instrumental,
         )
@@ -44,10 +46,10 @@ async def suno_generate(req: SunoRequest):
 
 @music_router.post("/suno/lofi")
 async def suno_lofi(mood: str = "chill"):
-    """Generate lo-fi beats for looping."""
+    """Generate lo-fi beats (backward-compatible)."""
     try:
-        client = get_suno()
-        result = await asyncio.to_thread(client.generate_lofi, mood=mood)
+        gen = get_music()
+        result = await asyncio.to_thread(gen.generate_lofi, mood=mood)
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -55,10 +57,10 @@ async def suno_lofi(mood: str = "chill"):
 
 @music_router.post("/suno/bgm")
 async def suno_bgm(theme: str = "corporate"):
-    """Generate background music by theme."""
+    """Generate themed background music (backward-compatible)."""
     try:
-        client = get_suno()
-        result = await asyncio.to_thread(client.generate_bgm, theme=theme)
+        gen = get_music()
+        result = await asyncio.to_thread(gen.generate_bgm, theme=theme)
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -77,6 +79,8 @@ async def music_generate(req: MusicRequest):
             duration_seconds=req.duration_seconds,
             engine=req.engine,
             style=req.style,
+            lyrics=req.lyrics,
+            instrumental_only=req.instrumental,
         )
         return result
     except Exception as e:

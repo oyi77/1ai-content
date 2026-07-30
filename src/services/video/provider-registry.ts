@@ -16,7 +16,7 @@
  * 9. Demo mode (fallback)
  */
 
-import { AllProvidersFailedError, ValidationError } from '@/utils/app-errors';
+import { AllProvidersFailedError, ProviderError, ValidationError } from '@/utils/app-errors';
 import { logger } from "@/utils/logger";
 import { getConfig } from "@/config/env";
 import { veoVideoService, type VeoVideoRequest } from "./providers/veo-3.1.service";
@@ -235,7 +235,17 @@ export class VideoProviderRegistry {
         };
       }
 
-      // TODO: Add other providers (geminigen, byteplus, etc.)
+      case "geminigen":
+        throw new ProviderError(
+          "geminigen",
+          "Gemini Gen video provider not yet implemented — use veo-3.1 or kling-3.0 instead"
+        );
+
+      case "byteplus":
+        throw new ProviderError(
+          "byteplus",
+          "BytePlus video provider not yet implemented — use veo-3.1 or kling-3.0 instead"
+        );
 
       case "demo":
         return {

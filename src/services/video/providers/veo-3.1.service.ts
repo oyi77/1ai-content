@@ -12,11 +12,21 @@
  * Docs: https://ai.google.dev/gemini-api/docs/video
  */
 
+import path from "path";
+import fs from "fs/promises";
+import { execFile as execFileCb } from "child_process";
+import { promisify } from "util";
+
 import axios, { type AxiosResponse } from "axios";
 import { logger } from "@/utils/logger";
 import { getConfig } from "@/config/env";
 import { redis } from "@/config/redis";
 import { ConfigError, ProviderError } from "@/utils/app-errors";
+
+const execFileAsync = promisify(execFileCb);
+
+/** Directory for downloaded Veo videos */
+const VEO_VIDEO_DIR = path.resolve("data", "videos");
 
 // ══════════════════════════════════════════════════════════════════════
 // Types
@@ -266,10 +276,27 @@ export class VeoVideoService {
    * Download video from Veo storage and return accessible URL
    */
   private async downloadVideo(videoUri: string): Promise<string> {
-    // In production, this would download to your own storage (S3, GCS, etc.)
-    // For now, return the Veo URI directly
-    // TODO: Implement proper video download and storage
-    return videoUri;
+    try {
+      await fs.mkdir(VEO_VIDEO_DIR, { recursive: true });
+      const filename = `veo-${Date.now()}.mp4`;
+      const outputPath = path.join(VEO_VIDEO_DIR, filename);
+      await execFileAsync("wget", ["-q", "--timeout=120", "-O", outputPath, videoUri]);
+      logger.info({
+        msg: "Veo 3.1: Video downloaded",
+        videoUri,
+        outputPath,
+      });
+      return `/data/videos/${filename}`;
+    } catch (err) {
+      const error = err instanceof Error ? err.message : "Unknown error";
+      logger.warn({
+        msg: "Veo 3.1: Download failed, returning Veo URI directly",
+        videoUri,
+        error,
+      });
+      // Fallback: return the Veo URI (may expire)
+      return videoUri;
+    }
   }
 
   /**
