@@ -86,6 +86,7 @@ test('landing page has twitter:card meta tag', async ({ page }) => {
 
 test('landing page has canonical link tag', async ({ page }) => {
   await page.goto('/');
+  // React SPA — canonical is set in index.html
   const canonical = await page.locator('link[rel="canonical"]').getAttribute('href');
   expect(canonical).toBeTruthy();
 });
@@ -102,8 +103,8 @@ test('landing page renders a visible h1 heading', async ({ page }) => {
 
 test('landing page has at least one CTA button', async ({ page }) => {
   await page.goto('/');
-  // landing.ejs has .btn-primary class for CTA buttons
-  const ctaButton = page.locator('.btn-primary, .btn-cta, a.btn').first();
+  // React SPA: hero section has "Mulai Gratis →" link
+  const ctaButton = page.locator('a[href*="register=1"]').first();
   await expect(ctaButton).toBeVisible();
 });
 
@@ -115,24 +116,28 @@ test('landing page has a navigation bar', async ({ page }) => {
 
 test('landing page has features/solution section', async ({ page }) => {
   await page.goto('/');
-  // landing.ejs has .solution-card or .section class for features
-  const featureSection = page.locator('.solution-card, .solution-grid, [class*="feature"]').first();
-  // May be below the fold — just assert it exists in DOM
-  const count = await page.locator('.solution-card, .solution-grid, [class*="feature"]').count();
+  // React SPA: #features section with feature cards containing h3 titles
+  const featureCards = page.locator('#features h3');
+  const count = await featureCards.count();
   expect(count).toBeGreaterThan(0);
 });
 
 test('landing page has pricing section', async ({ page }) => {
   await page.goto('/');
-  const pricingSection = page.locator('.pricing-grid, .price-card, [class*="pricing"]').first();
-  const count = await page.locator('.pricing-grid, .price-card, [class*="pricing"]').count();
+  // React SPA: #pricing section exists with package cards
+  const pricingSection = page.locator('#pricing');
+  const count = await pricingSection.count();
   expect(count).toBeGreaterThan(0);
+  // Should have at least one package name visible
+  const pkgName = page.locator('#pricing h3').first();
+  await expect(pkgName).toBeVisible();
 });
 
 // ─── Logo ─────────────────────────────────────────────────────────────────────
 
 test('landing page has logo in navigation', async ({ page }) => {
   await page.goto('/');
-  const logo = page.locator('.logo, nav .logo, nav [class*="logo"]').first();
+  // React SPA: nav has a home link with "1AI Content" text
+  const logo = page.locator('nav a[href="/"]').first();
   await expect(logo).toBeVisible();
 });
