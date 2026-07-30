@@ -352,6 +352,21 @@ async function main() {
       decorateReply: false,
       wildcard: false,
     });
+
+    // Landing page static assets (served at /assets/ from landing-ui build)
+    try {
+      await app.register((await import('@fastify/static')).default, {
+        root: path.join(process.cwd(), 'landing-ui', 'dist', 'assets'),
+        prefix: '/assets/',
+        cacheControl: true,
+        maxAge: '1h',
+        decorateReply: false,
+        wildcard: true,
+      });
+      logger.info('🏠 Landing page React SPA assets registered');
+    } catch (e) {
+      logger.warn({ msg: 'landing-ui/dist not found — using EJS landing page', err: String(e) });
+    }
     await app.register(agencyRoutes, { prefix: '/api' });
     await app.register(contentApiRoutes);
     await app.register(youtubeDashboardRoutes);

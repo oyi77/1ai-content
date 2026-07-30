@@ -21,47 +21,56 @@ interface Testimonial {
 }
 
 export async function pageRoutes(server: FastifyInstance): Promise<void> {
-  // ── Landing ──
-  server.get("/", async (request, reply) => {
-    const { redis } = require("../../config/redis");
-    let landingConfig: Record<string, unknown> = {};
-    try {
-      const data = await redis.get("admin:landing_config");
-      if (data) landingConfig = JSON.parse(data);
-    } catch {
-      /* ignore */
-    }
-
-    const packages = await getPackagesAsync();
-
-    const langParam = (request.query as Record<string, string>).lang;
-    const acceptLang = request.headers["accept-language"] || "";
-    let currentLang = langParam || (acceptLang.startsWith("en") ? "en" : "id");
-    if (!["id", "en"].includes(currentLang)) currentLang = "id";
-
-    let testimonials = [];
-    if (landingConfig.testimonials) {
-      if (Array.isArray(landingConfig.testimonials)) {
-        testimonials = landingConfig.testimonials;
-      } else if (typeof landingConfig.testimonials === "object") {
-        const lc = landingConfig.testimonials as Record<string, unknown>;
-        testimonials = (lc[currentLang] || lc["id"] || []) as Array<Testimonial>;
-      }
-    }
-
-    return reply.view("web/landing.ejs", {
-      landingConfig,
-      testimonials,
-      packages,
-      currentLang,
-      botUsername: getConfig().BOT_USERNAME || "berkahkarya_saas_bot",
-      siteUrl: getConfig().WEBHOOK_URL || 'https://saas.aitradepulse.com',
-      fbPixelId: getConfig().FACEBOOK_PIXEL_ID || "",
-      ga4Id: getConfig().GA4_TRACKING_ID || "",
-      ttPixelId: getConfig().TIKTOK_PIXEL_ID || "",
-      ogImageUrl: landingConfig?.heroImageUrl || landingConfig?.ogImageUrl || null,
+  // ── Landing (React SPA via landing-ui) ──
+  const LANDING_INDEX = path.join(process.cwd(), "landing-ui", "dist", "index.html");
+  if (fs.existsSync(LANDING_INDEX)) {
+    const landingHtml = fs.readFileSync(LANDING_INDEX, "utf-8");
+    server.get("/", async (_request, reply) => {
+      return reply.type("text/html").send(landingHtml);
     });
-  });
+  } else {
+    // Fallback: render EJS landing if React build not present
+    server.get("/", async (request, reply) => {
+      const { redis } = require("../../config/redis");
+      let landingConfig: Record<string, unknown> = {};
+      try {
+        const data = await redis.get("admin:landing_config");
+        if (data) landingConfig = JSON.parse(data);
+      } catch {
+        /* ignore */
+      }
+
+      const packages = await getPackagesAsync();
+
+      const langParam = (request.query as Record<string, string>).lang;
+      const acceptLang = request.headers["accept-language"] || "";
+      let currentLang = langParam || (acceptLang.startsWith("en") ? "en" : "id");
+      if (!["id", "en"].includes(currentLang)) currentLang = "id";
+
+      let testimonials = [];
+      if (landingConfig.testimonials) {
+        if (Array.isArray(landingConfig.testimonials)) {
+          testimonials = landingConfig.testimonials;
+        } else if (typeof landingConfig.testimonials === "object") {
+          const lc = landingConfig.testimonials as Record<string, unknown>;
+          testimonials = (lc[currentLang] || lc["id"] || []) as Array<Testimonial>;
+        }
+      }
+
+      return reply.view("web/landing.ejs", {
+        landingConfig,
+        testimonials,
+        packages,
+        currentLang,
+        botUsername: getConfig().BOT_USERNAME || "berkahkarya_saas_bot",
+        siteUrl: getConfig().WEBHOOK_URL || 'https://saas.aitradepulse.com',
+        fbPixelId: getConfig().FACEBOOK_PIXEL_ID || "",
+        ga4Id: getConfig().GA4_TRACKING_ID || "",
+        ttPixelId: getConfig().TIKTOK_PIXEL_ID || "",
+        ogImageUrl: landingConfig?.heroImageUrl || landingConfig?.ogImageUrl || null,
+      });
+    });
+  }
 
   // ── FAQ ──
   server.get("/faq", async (_request, reply) => {

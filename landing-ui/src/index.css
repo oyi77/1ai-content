@@ -1,0 +1,81 @@
+@import "tailwindcss";
+
+:root {
+  --accent: #a855f7;
+  --accent-2: #c084fc;
+  --grad: linear-gradient(135deg, #a855f7, #7c3aed);
+  --grad-hover: linear-gradient(135deg, #c084fc, #8b5cf6);
+  --glow: 0 0 40px rgba(168, 85, 247, 0.3);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: var(--bg, #0a0a1a);
+  color: #f1f5f9;
+  -webkit-font-smoothing: antialiased;
+}
+
+.gradient-text {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-bg {
+  background: var(--grad);
+}
+
+.gradient-border {
+  position: relative;
+}
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: var(--grad);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.glow-card {
+  transition: all 0.3s ease;
+}
+.glow-card:hover {
+  box-shadow: 0 0 30px rgba(168, 85, 247, 0.15);
+  transform: translateY(-4px);
+}
+
+.nav-link {
+  transition: color 0.2s;
+}
+.nav-link:hover {
+  color: var(--accent-2);
+}
+
+.pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(168, 85, 247, 0.2); }
+  50% { box-shadow: 0 0 40px rgba(168, 85, 247, 0.4); }
+}
+
+.hero-gradient {
+  background: radial-gradient(ellipse 80% 60% at 50% -20%, rgba(168,85,247,0.15) 0%, transparent 70%);
+}
+
+/* Smooth scroll */
+html { scroll-behavior: smooth; }
+
+@media (max-width: 640px) {
+  .hero-gradient {
+    background: radial-gradient(ellipse 100% 40% at 50% -10%, rgba(168,85,247,0.12) 0%, transparent 70%);
+  }
+}
