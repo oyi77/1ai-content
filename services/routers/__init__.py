@@ -18,10 +18,13 @@ def register_generator_routes(
     This creates routes at:
         GET    {prefix}/health
         GET    {prefix}/projects
-        POST   {prefix}/projects          (create/generate)
+        POST   {prefix}/projects          (create project)
         GET    {prefix}/projects/{id}
         GET    {prefix}/projects/{id}/status
+        PUT    {prefix}/projects/{id}     (update project)
         DELETE {prefix}/projects/{id}
+        POST   {prefix}/projects/{id}/generate  (start generation)
+        POST   {prefix}/projects/{id}/cancel    (cancel generation)
 
     Args:
         app: FastAPI app to register routes on.
@@ -60,6 +63,18 @@ def register_generator_routes(
 
             raise HTTPException(status_code=404, detail="Project not found")
         return {"deleted": project_id}
+
+    @router.post("/projects/{project_id}/generate")
+    async def generate(project_id: str):
+        return await gen.generate(project_id)
+
+    @router.put("/projects/{project_id}")
+    async def update_project(project_id: str, params: dict):
+        return await gen.update(project_id, params)
+
+    @router.post("/projects/{project_id}/cancel")
+    async def cancel_generation(project_id: str):
+        return await gen.cancel(project_id)
 
     # ── Extra generator-specific routes ────────────────────────────
     for method, path, handler in generator.extra_routes():

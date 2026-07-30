@@ -110,16 +110,34 @@ class ContentGenerator(ABC):
         ...
 
 
-    # ── Generation trigger (optional) ─────────────────────────────
+    # ── Generation trigger ────────────────────────────────────────
 
+    @abstractmethod
     async def generate(self, project_id: str) -> dict:
         """Start content generation for a project.
 
         Separates project creation (create) from actual content production.
-        Default implementation returns not-implemented — override if the
-        generator uses a two-phase create→generate lifecycle.
+        The caller must have created the project via create() first.
         """
-        return {"status": "not_implemented", "message": "generate() not implemented"}
+        ...
+
+    # ── Lifecycle mutations ──────────────────────────────────────
+
+    @abstractmethod
+    async def update(self, project_id: str, params: dict) -> dict:
+        """Update project parameters (title, config, etc.).
+
+        Returns updated project details.
+        """
+        ...
+
+    @abstractmethod
+    async def cancel(self, project_id: str) -> dict:
+        """Cancel an in-progress generation.
+
+        Returns the final state of the cancelled project.
+        """
+        ...
 
     # ── Extra generator-specific routes ─────────────────────────
 
