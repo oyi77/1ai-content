@@ -131,7 +131,7 @@ export async function pageRoutes(server: FastifyInstance): Promise<void> {
         }
       } catch { /* ignore */ }
     }
-    const botUsername = getConfig().BOT_USERNAME || "BKVilonaBot";
+    const botUsername = getConfig().BOT_USERNAME || "vilona_content_bot";
     return reply.type("text/html")
       .send(`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Payment Status</title>
 <style>body{font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f5f5f5}.card{background:white;border-radius:16px;padding:40px;text-align:center;max-width:400px;box-shadow:0 4px 24px rgba(0,0,0,.1)}.icon{font-size:48px;margin-bottom:16px}.success{color:#16a34a}.pending{color:#d97706}.failed{color:#dc2626}.btn{display:inline-block;padding:12px 24px;border-radius:8px;text-decoration:none;margin:8px;font-weight:600}.btn-primary{background:#2563eb;color:white}.btn-secondary{background:#e5e7eb;color:#374151}</style></head>
@@ -147,15 +147,15 @@ export async function pageRoutes(server: FastifyInstance): Promise<void> {
   // ── PWA Manifest ──
   server.get("/manifest.json", async (_request, reply) => {
     return reply.type('application/json').send({
-      name: 'BerkahKarya',
-      short_name: 'BerkahKarya',
+      name: '1AI Content',
+      short_name: '1AI Content',
       start_url: '/app',
       display: 'standalone',
       background_color: '#0a0a1a',
       theme_color: '#00d9ff',
       icons: [
-        { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
-        { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+        { src: '/public/icon-192.png', sizes: '192x192', type: 'image/png' },
+        { src: '/public/icon-512.png', sizes: '512x512', type: 'image/png' },
       ],
     });
   });

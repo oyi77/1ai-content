@@ -1,9 +1,20 @@
 """Upload routes — upload video and audio files for processing."""
+import re
 from pathlib import Path
 from datetime import datetime
 from fastapi import APIRouter, UploadFile, File
 
 upload_router = APIRouter(prefix="", tags=["upload"])
+
+
+def _safe_upload_name(raw: str | None) -> str:
+    """Sanitize a client-supplied filename to a single safe basename.
+
+    Prevents path traversal via `file.filename` (e.g. ``../../etc/...``)
+    and strips anything outside ``[A-Za-z0-9._-]``.
+    """
+    base = Path(raw or "upload").name
+    return re.sub(r"[^\w.\-]", "_", base)
 
 
 @upload_router.post("/upload/video")
@@ -13,7 +24,7 @@ async def upload_video(file: UploadFile = File(...)):
     upload_dir.mkdir(parents=True, exist_ok=True)
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"{timestamp}_{file.filename}"
+    filename = f"{timestamp}_{_safe_upload_name(file.filename)}"
     filepath = upload_dir / filename
 
     content = await file.read()
@@ -35,7 +46,7 @@ async def upload_audio(file: UploadFile = File(...)):
     upload_dir.mkdir(parents=True, exist_ok=True)
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"{timestamp}_{file.filename}"
+    filename = f"{timestamp}_{_safe_upload_name(file.filename)}"
     filepath = upload_dir / filename
 
     content = await file.read()

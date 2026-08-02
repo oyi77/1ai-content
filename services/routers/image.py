@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Query
@@ -75,7 +76,10 @@ async def image_comic(req: ComicGenerateRequest):
 @router.get("/image/comic/page/{path:path}")
 async def image_comic_page(path: str):
     """Serve a generated comic page image."""
-    full_path = Path(__file__).resolve().parent.parent.parent / "data" / "comic" / path
+    base_dir = Path(__file__).resolve().parent.parent.parent / "data" / "comic"
+    full_path = (base_dir / path).resolve()
+    if not str(full_path).startswith(str(base_dir.resolve()) + os.sep):
+        raise HTTPException(status_code=400, detail="Invalid path")
     if not full_path.exists():
         full_path = full_path.with_suffix(".png")
     if not full_path.exists():
@@ -148,7 +152,10 @@ async def image_storyboard(req: StoryboardGenerateRequest):
 @router.get("/image/storyboard/image/{path:path}")
 async def image_storyboard_image(path: str):
     """Serve generated storyboard image."""
-    full_path = Path("/tmp/storyboard_output") / path
+    base_dir = Path("/tmp/storyboard_output")
+    full_path = (base_dir / path).resolve()
+    if not str(full_path).startswith(str(base_dir.resolve()) + os.sep):
+        raise HTTPException(status_code=400, detail="Invalid path")
     if not full_path.exists():
         raise HTTPException(status_code=404, detail="Image not found")
     return FileResponse(str(full_path), media_type="image/png")

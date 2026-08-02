@@ -251,6 +251,7 @@ describe('Payment Webhook Endpoints', () => {
       expect(isolatedPaymentService.handleNotification).toHaveBeenCalledWith(
         expect.objectContaining({ order_id: orderId }),
         signature,
+        { skipSignature: true },
       );
     });
 

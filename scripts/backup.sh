@@ -18,7 +18,51 @@ NC='\033[0m'
 # CONFIGURATION
 # =============================================================================
 
-# Default values (override with environment variables)
+# Default values (override with environment variables). If no DB_* override is
+# given, credentials are derived from the root .env DATABASE_URL
+# (postgresql://user:pass@host:5432/dbname). The password is only used to set
+# PGPASSWORD at runtime — it is never printed.
+ENV_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/.env"
+DATABASE_URL_LINE=""
+if [ -f "$ENV_FILE" ]; then
+    DATABASE_URL_LINE="$(grep -E '^DATABASE_URL=' "$ENV_FILE" | head -1 | cut -d= -f2- | tr -d "'\"")"
+fi
+
+parse_db_url() {
+    # Parses a postgresql:// URL into DB_HOST/DB_PORT/DB_USER/DB_NAME/DB_PASSWORD
+    # unless those vars were already set explicitly.
+    local url="$1" auth hostport creds
+    auth="${url#*://}"          # strip scheme
+    auth="${auth%%/*}"          # strip path/dbname
+    hostport="${auth##*@}"      # strip credentials part
+    creds="${auth%@*}"          # user[:pass] part
+    if [ "$creds" = "$auth" ]; then
+        creds="$hostport"       # URL without credentials: treat host as user fallback
+    fi
+
+    if [[ "$hostport" == *:* ]]; then
+        DB_HOST="${DB_HOST:-${hostport%%:*}}"
+        DB_PORT="${DB_PORT:-${hostport##*:}}"
+    else
+        DB_HOST="${DB_HOST:-$hostport}"
+        DB_PORT="${DB_PORT:-5432}"
+    fi
+
+    if [[ "$creds" == *:* ]]; then
+        DB_USER="${DB_USER:-${creds%%:*}}"
+        DB_PASSWORD="${DB_PASSWORD:-${creds#*:}}"
+    else
+        DB_USER="${DB_USER:-$creds}"
+    fi
+
+    DB_NAME="${DB_NAME:-${url##*/}}"
+    DB_NAME="${DB_NAME%%\?*}"   # strip query params
+}
+
+if [ -n "$DATABASE_URL_LINE" ]; then
+    parse_db_url "$DATABASE_URL_LINE"
+fi
+
 DB_HOST="${DB_HOST:-localhost}"
 DB_PORT="${DB_PORT:-5432}"
 DB_NAME="${DB_NAME:-openclaw}"

@@ -1,0 +1,35 @@
+# Secrets — NEVER ship these into a Docker image
+.env
+.env.*
+!.env.example
+config/tiktok_cookies.txt
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Dependencies (installed inside the image)
+node_modules/
+admin-ui/node_modules/
+.venv/
+.venv-tiktok/
+
+# Build outputs (rebuilt inside the image)
+dist/
+build/
+admin-ui/dist/
+coverage/
+test-results/
+
+# Local data / logs / temp
+logs/
+tmp/
+data/
+backups/
+
+# VCS & CI metadata
+.git/
+.github/
+.pytest_cache/
+__pycache__/
+*.pyc

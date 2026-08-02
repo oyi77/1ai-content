@@ -29,7 +29,7 @@ os.chdir(SERVICES_DIR)
 _load_dotenv(os.path.join(SERVICES_DIR, '.env'))
 
 print(f"PINTEREST_COOKIES loaded: {len(os.environ.get('PINTEREST_COOKIES',''))} chars")
-print(f"PINTEREST_CSRF loaded: {os.environ.get('PINTEREST_CSRF','')[:20]}...")
+print(f"PINTEREST_CSRF loaded: {len(os.environ.get('PINTEREST_CSRF',''))} chars")
 
 if __name__ == '__main__':
     # Launch uvicorn

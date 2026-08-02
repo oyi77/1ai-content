@@ -10,7 +10,7 @@ Fastify HTTP route handlers for the admin dashboard, webhooks, health checks, an
 
 | File | Description |
 |------|-------------|
-| `admin.ts` | Admin dashboard + API endpoints. Auth: Basic auth, cookie `admin_token`, or `?token=` query param vs `ADMIN_PASSWORD` |
+| `admin.ts` | Admin dashboard + API endpoints. Auth: Basic auth, cookie `admin_token`, atau `?token=<hmac>` (HMAC-SHA256 dari `ADMIN_PASSWORD`, key `openclaw-admin-v1` — `admin/auth.ts:16,52-54`). Logout: `admin.ts:84` skip-list + handler `admin/auth.ts:107-112` |
 | `health.ts` | Health check endpoint for monitoring |
 | `web.ts` | Public web app routes — aggregator for 8 sub-modules in `web/` (was previously a 1423-line god object) |
 | `web/pages.ts` | Landing page, FAQ, TOS, Privacy, static files, PWA manifest, payment finish page |
@@ -42,3 +42,5 @@ Fastify HTTP route handlers for the admin dashboard, webhooks, health checks, an
 - `fastify`, `@fastify/view`
 
 <!-- MANUAL: -->
+
+> Last updated: 2026-08-02 — Dokumen auth `?token` dikoreksi ke HMAC-SHA256 (`openclaw-admin-v1`), bukan raw password. Catat route logout admin baru.

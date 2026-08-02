@@ -21,7 +21,7 @@ export default function Layout() {
     <>
       {/* Sidebar */}
       <aside className="sidebar">
-        <div className="sidebar-logo">BerkahKarya</div>
+        <div className="sidebar-logo">1AI Content</div>
         <nav className="sidebar-nav">
           {navItems.map((item) => (
             <NavLink
@@ -43,7 +43,7 @@ export default function Layout() {
       {/* Main content */}
       <div className="main-content">
         <header className="page-header">
-          <h1>BerkahKarya</h1>
+          <h1>1AI Content</h1>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <span className="credits-badge">
               <span>⚡</span>

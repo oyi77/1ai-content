@@ -67,8 +67,16 @@ export async function webhookRoutes(server: FastifyInstance, options: WebhookOpt
       };
 
       logger.info('Midtrans webhook received:', { order_id: body.order_id, status: body.transaction_status });
-      
-      const result = await PaymentService.handleNotification(normalizedEvent, signature);
+
+      // Midtrans signature: SHA512(order_id + status_code + gross_amount + ServerKey)
+      const midtransKey = getConfig().MIDTRANS_SERVER_KEY;
+      if (!midtransKey) return reply.status(503).send({ error: 'Midtrans server key not configured' });
+      const expectedSig = crypto.createHash('sha512')
+        .update(`${body.order_id}${body.status_code}${body.gross_amount}${midtransKey}`)
+        .digest('hex');
+      if (!signature || !timingSafeCompare(signature, expectedSig)) return reply.status(401).send({ error: 'Invalid signature' });
+
+      const result = await PaymentService.handleNotification(normalizedEvent, signature, { skipSignature: true });
 
       // Notify user on payment failure/expiry
       const midtransFailStatuses = ['deny', 'cancel', 'expire'];

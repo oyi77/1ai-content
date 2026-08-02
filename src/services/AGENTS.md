@@ -46,7 +46,7 @@ Business logic layer with 76 top-level `*.service.ts` files covering video gener
 | `ads.service.ts` | Advertisement management |
 | `saved-prompt.service.ts` | User saved prompt CRUD |
 | `avatar.service.ts` | User avatar management |
-| `vilona-animation.service.ts` | Vilona animation integration |
+| `vilona-animation.service.ts` | "1AI Content" loading/welcome animation integration (nama internal file tetap, teks sudah re-brand) |
 | `metrics.service.ts` | Prometheus metrics exposure |
 | `token-tracker.service.ts` | AI token usage tracking |
 | `admin-alert.service.ts` | Admin notification alerts |
@@ -87,3 +87,5 @@ Business logic layer with 76 top-level `*.service.ts` files covering video gener
 - `@prisma/client`, `ioredis`, `bullmq`, `axios`
 
 <!-- MANUAL: -->
+
+> Last updated: 2026-08-02 — Brand drift di-fix ke "1AI Content" di seluruh repo (i18n, menus, vilona-animation texts, seed). Nama internal file `vilona-animation.service.ts` & fungsi `sendVilonaLoading`/`sendVilonaWelcomeAnimation` TIDAK di-rename (dead-code/brand-internal, KEEP).

@@ -9,24 +9,26 @@ status: complete
 # public
 
 ## Tujuan
-Aset statis web (favicon, hero image) di dalam `src/`. **Catatan penting**: route `/public/` di `src/index.ts:338-340` meng-serve `public/` ROOT repo (`path.join(process.cwd(), 'public')`) — bukan `src/public/`. Penggunaan `src/public/` oleh kode belum terverifikasi; kemungkinan salinan yang tidak di-serve langsung.
+Aset statis web (favicon) di dalam `src/` — diserve oleh `src/routes/web/pages.ts:101-107` (`favicon.ico` & `favicon.svg`). **Catatan**: route `/public/` di `src/index.ts:338-340` meng-serve `public/` ROOT repo (`path.join(process.cwd(), 'public')`) — bukan `src/public/`. `src/public/` hanya dipakai untuk favicon via `pages.ts:101-107`.
 
 ## Ekspor
 
 | File | Detail |
 |------|--------|
-| `favicon.ico` | Ikon web (ICO) |
-| `favicon.svg` | Ikon web (SVG) |
-| `hero-comparison.png` | Hero image perbandingan |
-| `hero-tiktok-showcase.png` | Hero image showcase TikTok (duplikat juga ada di `public/` root) |
+| `favicon.ico` | Ikon web (ICO) — diserve oleh `src/routes/web/pages.ts:101-107` |
+| `favicon.svg` | Ikon web (SVG) — diserve oleh `src/routes/web/pages.ts:101-107` |
+| `hero-comparison.png` | Hero image perbandingan (orphan — tidak dirujuk oleh kode, dibiarkan) |
+| ~~`hero-tiktok-showcase.png`~~ | [DIHAPUS 2026-08-02] duplikat byte-identik dari `public/hero-tiktok-showcase.png` |
 
 ## Dependensi Internal
-- Tidak ada (aset statis murni). Tidak ada import/module dari sini.
+- Serviced by: `src/routes/web/pages.ts:101-107` (favicon).
 
 ## Issue Spesifik
-1. **LOW — duplikasi aset**: `hero-tiktok-showcase.png` ada di `src/public/` DAN `public/` root; jika hanya root yang di-serve (index.ts:339), `src/public/` redundan.
-2. Tidak ada issue runtime (aset statis).
+1. **LOW — [RESOLVED] duplikasi aset**: `hero-tiktok-showcase.png` dulunya ada di `src/public/` DAN `public/` root; file di `src/public/` dihapus 2026-08-02 (byte-identik dengan root). `public/hero-tiktok-showcase.png` tetap diserve oleh route `/public/` dan dipakai `src/views/web/landing.ejs:12,17,1263`.
+2. **LOW — orphan `hero-comparison.png`**: grep `hero-comparison` di `src/`, `admin-ui/`, `config/`, `public/` → no match; kemungkinan sisa aset tidak dipakai. [INFERENSI — belum diverifikasi penuh, dibiarkan agar tidak menghilangkan fitur].
+3. Tidak ada issue runtime (aset statis).
 
 ## Rekomendasi Perbaikan Scoped
-1. Konfirmasi penggunaan `src/public/` (grep seluruh repo); jika tidak dipakai, hapus atau sinkronkan dengan `public/` root.
-2. (Opsional) Optimasi ukuran PNG hero jika besar.
+1. `hero-comparison.png` di `src/public/` — bisa dihapus bila konfirmasi grep no-match sebagai sumber aset landing; belum dihapus karena takut "lost feature".
+
+> Last updated: 2026-08-02 — baris `hero-tiktok-showcase.png` dihapus (file di-`rm`, duplikat M-2 root `public/`); catatan route dipindah ke `pages.ts:101-107`; `hero-comparison.png` ditandai orphan [INFERENSI]; dokumentasi sinkron dengan `public/AGENTS.md`.

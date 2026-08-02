@@ -8,7 +8,7 @@ PROJ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, PROJ)  # add project root so 'services' is importable
 
 os.environ["OMNIROUTE_BASE_URL"] = "http://localhost:20128/v1"
-os.environ["OMNIROUTE_API_KEY"] = "sk-a690d0287e21a9e0-5110fc-5d4ca9fc"
+os.environ["OMNIROUTE_API_KEY"] = os.environ.get("OMNIROUTE_API_KEY", "")
 
 from services.bookshelf.agents.section_writer import generate_section_content
 

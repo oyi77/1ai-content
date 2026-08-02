@@ -174,7 +174,7 @@ export function setupCommands(bot: Telegraf<BotContext>): void {
   bot.command("payment_settings", paymentSettingsCommand);
   bot.command("admin", paymentSettingsCommand); // Alias
 
-  // Set bot commands menu — Vilona Content Automation
+  // Set bot commands menu — 1AI Content Automation
   bot.telegram.setMyCommands([
     { command: "start", description: "🏠 Start & main menu" },
     { command: "create", description: "🎬 Buat video baru" },

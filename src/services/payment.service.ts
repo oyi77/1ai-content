@@ -223,11 +223,12 @@ export class PaymentService {
    */
   static async handleNotification(
     body: unknown,
-    signature: string
+    signature: string,
+    opts: { skipSignature?: boolean } = {}
   ): Promise<{ success: boolean; message: string }> {
     // Verify signature
     const bodyStr = typeof body === 'string' ? body : JSON.stringify(body);
-    if (!this.verifyWebhookSignature(bodyStr, signature)) {
+    if (!opts.skipSignature && !this.verifyWebhookSignature(bodyStr, signature)) {
       logger.error('Invalid webhook signature from 1ai-payment');
       return { success: false, message: 'Invalid signature' };
     }

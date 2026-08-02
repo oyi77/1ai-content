@@ -56,7 +56,7 @@ export async function runSeeder() {
     logger.info("[SEEDER] seeding landing_config...");
 
     const defaultLandingConfig = {
-      headline: "BK Vilona — Ubah 1 Foto Jadi Video Iklan Viral",
+      headline: "1AI Content — Ubah 1 Foto Jadi Video Iklan Viral",
       subheadline:
         "Platform AI yang ubah foto produk jadi video iklan profesional dengan struktur HPAS. Langsung dari Telegram. Mulai gratis, bayar pakai VA/e-wallet.",
       videoDuration: "60",
@@ -77,7 +77,7 @@ export async function runSeeder() {
             name: "Mita R.",
             role: "Skincare Reseller",
             avatar: "",
-            text: '"Saya jualan skincare, biasa bingung ngonten karena gak ngerti editing. Pake Vilona bener-bener ngebantu karena framework-nya (HPAS) emang convert! Kemaren tembus 120 paket."',
+            text: '"Saya jualan skincare, biasa bingung ngonten karena gak ngerti editing. Pake 1AI Content bener-bener ngebantu karena framework-nya (HPAS) emang convert! Kemaren tembus 120 paket."',
             stars: 5,
             bg: "#00d9ff",
             color: "#0a0a1a",
@@ -107,7 +107,7 @@ export async function runSeeder() {
             name: "Sarah M.",
             role: "Skincare Reseller",
             avatar: "",
-            text: '"I sell skincare, usually confused about content because I don\'t understand editing. Vilona really helped because the (HPAS) framework actually converts!"',
+            text: '"I sell skincare, usually confused about content because I don\'t understand editing. 1AI Content really helped because the (HPAS) framework actually converts!"',
             stars: 5,
             bg: "#00d9ff",
             color: "#0a0a1a",

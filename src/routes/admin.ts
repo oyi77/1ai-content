@@ -81,7 +81,7 @@ function getQueueByName(name: string) {
 export async function adminRoutes(server: FastifyInstance): Promise<void> {
   server.addHook("onRequest", async (request, reply) => {
     const url = request.url.split("?")[0];
-    if (url === "/admin/login") return;
+    if (url === "/admin/login" || url === "/api/admin/logout") return;
 
     const isAdminRoute =
       url === "/admin" || url === "/admin/dashboard" ||

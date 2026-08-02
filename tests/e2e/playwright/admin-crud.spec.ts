@@ -10,6 +10,7 @@
  */
 
 import { test, expect } from '@playwright/test';
+import crypto from 'crypto';
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin';
 // Relative — Playwright request/page fixtures resolve terhadap use.baseURL
@@ -20,6 +21,10 @@ const BASE = '';
 
 function basicAuthHeader(password: string): string {
   return 'Basic ' + Buffer.from(`admin:${password}`).toString('base64');
+}
+
+function makeAdminToken(password: string): string {
+  return crypto.createHmac('sha256', 'openclaw-admin-v1').update(password).digest('hex');
 }
 
 // ─── Setup: verify login works ──────────────────────────────────────────────
@@ -261,7 +266,7 @@ test.describe('Edge Cases', () => {
     expect(loginRes.status()).toBe(200);
 
     // Navigate to dashboard with token for auto-auth
-    await page.goto(`${BASE}/admin/dashboard?token=${encodeURIComponent(ADMIN_PASSWORD)}`, {
+    await page.goto(`${BASE}/admin/dashboard?token=${makeAdminToken(ADMIN_PASSWORD)}`, {
       waitUntil: 'networkidle',
     });
 
@@ -281,24 +286,19 @@ test.describe('Edge Cases', () => {
     await expect(page.locator('button[type="submit"]')).toBeVisible();
   });
 
-  test('/admin/login with token auto-redirects to dashboard', async ({ page }) => {
-    // Login via POST first to get cookie
-    const loginRes = await page.request.post(`${BASE}/admin/login`, {
-      data: { password: ADMIN_PASSWORD },
+  test('/admin/login with token does NOT auto-redirect (token is HMAC-only, login via form)', async ({ page }) => {
+    // login.ejs tidak lagi auto-submit — token di query hanya untuk API health
+    // (?token=HMAC), bukan untuk auto-login. Token HMAC valid pun tetap tinggal
+    // di halaman login dan form password tetap tampil.
+    await page.goto(`${BASE}/admin/login?token=${makeAdminToken(ADMIN_PASSWORD)}`, {
+      waitUntil: 'domcontentloaded',
     });
-    expect(loginRes.status()).toBe(200);
 
-    // Now visit /admin/login?token= — the EJS JS auto-submits and
-    // redirects to /admin/dashboard after a 1-second timeout
-    await page.goto(
-      `${BASE}/admin/login?token=${encodeURIComponent(ADMIN_PASSWORD)}`,
-      { waitUntil: 'networkidle' },
-    );
+    // Tidak redirect ke dashboard
+    expect(page.url()).not.toContain('/admin/dashboard');
 
-    // The page should have redirected to dashboard (SPA shows KPIs)
-    await expect(page.locator('#root')).not.toBeEmpty({ timeout: 15000 });
-    // URL should now be /admin/dashboard or /admin/dashboard?token=...
-    expect(page.url()).toContain('/admin/dashboard');
+    // Form login tetap tampil
+    await expect(page.locator('input[type="password"]')).toBeVisible({ timeout: 10000 });
   });
 
   test('GET /admin/users returns 404 because users page is served by SPA catch-all', async ({ request }) => {

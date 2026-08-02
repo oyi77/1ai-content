@@ -159,6 +159,7 @@ const envSchema = z.object({
   '1AI_PAYMENT_URL': z.string().default("http://localhost:3103"),
   '1AI_PAYMENT_API_KEY': z.string().optional(),
   '1AI_PAYMENT_WEBHOOK_SECRET': z.string().optional(),
+  'ECOSYSTEM_API_KEY': z.string().optional(),
 
   // ── AI / Chat ──
   OMNIROUTE_URL: z.string().default("http://localhost:20128/v1"),

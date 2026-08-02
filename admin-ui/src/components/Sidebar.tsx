@@ -219,10 +219,10 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         {/* Brand */}
         <div className="flex items-center gap-3 px-5 py-4 border-b border-border/50 shrink-0">
           <div className="w-8 h-8 rounded-lg bg-accent/20 flex items-center justify-center text-accent text-sm font-bold">
-            V
+            1
           </div>
           <div>
-            <div className="text-sm font-semibold text-text-primary">Vilona</div>
+            <div className="text-sm font-semibold text-text-primary">1AI Content</div>
             <div className="text-[10px] text-text-muted uppercase tracking-wider">Content Admin</div>
           </div>
         </div>
@@ -312,7 +312,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
 
         {/* Footer */}
         <div className="px-5 py-3 border-t border-border/50 shrink-0">
-          <div className="text-[10px] text-text-muted">Vilona Content Factory v1.0</div>
+          <div className="text-[10px] text-text-muted">1AI Content Factory v1.0</div>
         </div>
       </aside>
     </>

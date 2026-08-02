@@ -320,6 +320,7 @@ describe("Webhook Routes", () => {
       expect(mockPaymentServiceHandleNotification).toHaveBeenCalledWith(
         expect.objectContaining({ order_id: body.order_id }),
         body.signature_key,
+        { skipSignature: true },
       );
       expect(reply.send).toHaveBeenCalledWith({ ok: true, message: "Notification processed" });
       expect(mockLogger.info).toHaveBeenCalledWith(
@@ -328,9 +329,9 @@ describe("Webhook Routes", () => {
       );
     });
 
-    it("should delegate signature validation to PaymentService (invalid signature)", async () => {
-      // The webhook no longer validates Midtrans signatures itself; it delegates
-      // all verification to PaymentService.handleNotification.
+    it("should reject an invalid Midtrans signature with 401 before touching PaymentService", async () => {
+      // The webhook verifies the Midtrans SHA512 signature itself and only
+      // delegates to PaymentService.handleNotification when it is valid.
       const body = {
         order_id: "OC-1234567890-123456789-ABC123",
         status_code: "200",
@@ -345,23 +346,17 @@ describe("Webhook Routes", () => {
       });
       const reply = createMockReply();
 
-      (mockPaymentServiceHandleNotification as any).mockResolvedValue({
-        success: true,
-        message: "Notification processed",
-      });
-
       const result = await midtransHandler()(request, reply);
 
-      // Webhook passes the normalized event + signature to PaymentService
-      expect(mockPaymentServiceHandleNotification).toHaveBeenCalledWith(
-        expect.objectContaining({ order_id: body.order_id }),
-        expect.any(String),
-      );
-      expect(reply.send).toHaveBeenCalledWith({ ok: true, message: "Notification processed" });
+      expect(reply.status).toHaveBeenCalledWith(401);
+      expect(reply.send).toHaveBeenCalledWith({ error: "Invalid signature" });
+      expect(mockPaymentServiceHandleNotification).not.toHaveBeenCalled();
     });
 
-    it("should delegate signature validation to PaymentService (tampered order_id)", async () => {
-      // Webhook does not validate the signature; PaymentService is responsible.
+    it("should reject a tampered order_id with 401 before touching PaymentService", async () => {
+      // The webhook recomputes the Midtrans SHA512 over the actual body; a
+      // tampered order_id produces a signature mismatch and the request is
+      // rejected with 401 before PaymentService is invoked.
       const originalBody = {
         order_id: "OC-1234567890-123456789-ABC123",
         status_code: "200",
@@ -383,18 +378,11 @@ describe("Webhook Routes", () => {
       });
       const reply = createMockReply();
 
-      (mockPaymentServiceHandleNotification as any).mockResolvedValue({
-        success: false,
-        message: "Invalid signature",
-      });
-
       const result = await midtransHandler()(request, reply);
 
-      // Webhook forwards normalized body + signature to PaymentService for validation
-      expect(mockPaymentServiceHandleNotification).toHaveBeenCalledWith(
-        expect.objectContaining({ order_id: "TAMPERED-ORDER-ID" }),
-        expect.any(String),
-      );
+      expect(reply.status).toHaveBeenCalledWith(401);
+      expect(reply.send).toHaveBeenCalledWith({ error: "Invalid signature" });
+      expect(mockPaymentServiceHandleNotification).not.toHaveBeenCalled();
     });
 
     it("should handle PaymentService error gracefully", async () => {

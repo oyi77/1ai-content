@@ -51,7 +51,7 @@ export async function verifyAdmin(request: FastifyRequest, reply: FastifyReply) 
   // 3) Query token
   const queryToken = (request.query as { token?: string })?.token;
   if (queryToken) {
-    if (timingSafeCompare(queryToken, ADMIN_PASSWORD) || timingSafeCompare(queryToken, makeAdminToken(ADMIN_PASSWORD))) {
+    if (timingSafeCompare(queryToken, makeAdminToken(ADMIN_PASSWORD))) {
       const token = makeAdminToken(ADMIN_PASSWORD);
       reply.setCookie("admin_token", token, {
         path: "/", httpOnly: true, sameSite: "strict",
@@ -79,8 +79,7 @@ export function registerLoginRoutes(server: FastifyInstance) {
 
   // Login POST with rate limiting
   server.post("/admin/login", async (request, reply) => {
-    const ip = ((request.headers["x-forwarded-for"] as string) || request.ip || "unknown")
-      .split(",")[0].trim();
+    const ip = request.ip || "unknown";
     const rateLimitKey = `admin_login:${ip}`;
     const attempts = await redis.get(rateLimitKey);
     if (attempts && parseInt(attempts) >= LOGIN_RATE_LIMIT_MAX) {
@@ -103,5 +102,20 @@ export function registerLoginRoutes(server: FastifyInstance) {
     pipe.expire(rateLimitKey, LOGIN_RATE_LIMIT_WINDOW);
     await pipe.exec();
     return reply.status(401).send({ error: "Wrong password" });
+  });
+
+  // Logout — always succeeds; clears the admin_token cookie.
+  // Excluded from the auth hook in admin.ts so an expired/invalid session
+  // can still clear its cookie.
+  server.post("/api/admin/logout", async (_request, reply) => {
+    return reply
+      .setCookie("admin_token", "", {
+        path: "/",
+        httpOnly: true,
+        sameSite: "strict",
+        secure: getConfig().NODE_ENV === "production",
+        maxAge: 0,
+      })
+      .send({ success: true });
   });
 }

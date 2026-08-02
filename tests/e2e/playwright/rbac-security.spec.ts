@@ -173,13 +173,18 @@ test.describe('Customer SPA Boundary', () => {
 // ─── Auth Gap Verification ──────────────────────────────────────────────────
 
 test.describe('Auth Gap Verification', () => {
-  test('10. /api/analytics/overview is accessible without admin auth (confirmed gap)', async ({ request }) => {
-    const res = await request.get('/api/analytics/overview');
-    // This route is registered at the top-level app (not inside the admin plugin)
-    // so the admin auth hook does NOT protect it — known auth gap
-    expect(res.status()).not.toBe(401);
-    // Should return 200 with data, or 500 if the DB is unpopulated
-    expect([200, 500]).toContain(res.status());
+  test('10. /api/analytics/overview requires admin auth (fixed gap)', async ({ request }) => {
+    // Without auth — 401 (analytics routes are now registered inside the admin
+    // plugin, so the verifyAdmin hook protects them)
+    const noAuth = await request.get('/api/analytics/overview');
+    expect(noAuth.status()).toBe(401);
+
+    // With valid admin HMAC token cookie — 200 with data, or 404/500 if DB unpopulated
+    const token = makeAdminToken(ADMIN_PASSWORD);
+    const withAuth = await request.get('/api/analytics/overview', {
+      headers: { cookie: `admin_token=${token}` },
+    });
+    expect([200, 404, 500]).toContain(withAuth.status());
   });
 
   test('11. /api/packages is accessible without any auth (confirmed gap)', async ({ request }) => {

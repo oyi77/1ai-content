@@ -7,6 +7,7 @@ Mapped from legacy providers:
 from __future__ import annotations
 
 import asyncio
+import os
 from pathlib import Path
 from typing import Optional
 
@@ -123,7 +124,10 @@ async def audio_speech_voices(language: Optional[str] = None):
 @router.get("/audio/speech/media/{filename}")
 async def audio_speech_media(filename: str):
     """Serve a generated speech audio file."""
-    full_path = Path("/tmp/tts_output") / filename
+    base_dir = Path("/tmp/tts_output")
+    full_path = (base_dir / filename).resolve()
+    if not str(full_path).startswith(str(base_dir.resolve()) + os.sep):
+        raise HTTPException(status_code=400, detail="Invalid path")
     if not full_path.exists():
         raise HTTPException(status_code=404, detail="Audio not found")
     return FileResponse(str(full_path), media_type="audio/mpeg")

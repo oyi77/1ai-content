@@ -793,7 +793,10 @@ async def video_loop(req: LoopRequest):
 @video_router.get("/video/loop/video/{filename}")
 async def video_loop_video(filename: str):
     """Serve generated looping video."""
-    full_path = Path("/tmp/looping_output") / filename
+    base_dir = Path("/tmp/looping_output")
+    full_path = (base_dir / filename).resolve()
+    if not str(full_path).startswith(str(base_dir.resolve()) + os.sep):
+        raise HTTPException(status_code=400, detail="Invalid path")
     if not full_path.exists():
         raise HTTPException(status_code=404, detail="Video not found")
     return FileResponse(str(full_path), media_type="video/mp4")

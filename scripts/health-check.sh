@@ -18,9 +18,21 @@ NC='\033[0m'
 # CONFIGURATION
 # =============================================================================
 
-API_URL="${API_URL:-http://localhost:3000}"
+API_URL="${API_URL:-http://localhost:3002}"
 TIMEOUT=10
 VERBOSE=false
+
+# Compute admin HMAC token (matches makeAdminToken in src/routes/admin/auth.ts).
+# The ADMIN_PASSWORD itself is never printed — only the derived token is used.
+HEALTH_TOKEN=""
+if command -v node &>/dev/null; then
+  HEALTH_TOKEN=$(cd "$(dirname "$0")/.." && node -e "
+    require('dotenv').config();
+    const c = require('crypto');
+    const pw = process.env.ADMIN_PASSWORD || '';
+    if (pw) process.stdout.write(c.createHmac('sha256', 'openclaw-admin-v1').update(pw).digest('hex'));
+  " 2>/dev/null)
+fi
 
 # =============================================================================
 # FUNCTIONS
@@ -89,6 +101,32 @@ check_http() {
     
     RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" --max-time $TIMEOUT "$API_URL$endpoint" 2>/dev/null || echo "000")
     
+    if [ "$RESPONSE" = "$expected_code" ]; then
+        log_success "$name is healthy (HTTP $RESPONSE)"
+        ((PASSED++))
+        return 0
+    else
+        log_error "$name failed (HTTP $RESPONSE, expected $expected_code)"
+        ((FAILED++))
+        return 1
+    fi
+}
+
+check_http_auth() {
+    local endpoint=$1
+    local name=$2
+    local expected_code=${3:-200}
+
+    log_info "Checking $name (auth)..."
+
+    if [ -z "$HEALTH_TOKEN" ]; then
+        log_warning "$name skipped — could not compute admin token (node/dotenv missing?)"
+        ((WARNINGS++))
+        return 0
+    fi
+
+    RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" --max-time $TIMEOUT "$API_URL$endpoint?token=$HEALTH_TOKEN" 2>/dev/null || echo "000")
+
     if [ "$RESPONSE" = "$expected_code" ]; then
         log_success "$name is healthy (HTTP $RESPONSE)"
         ((PASSED++))
@@ -217,7 +255,8 @@ echo ""
 
 # Port checks
 echo -e "${BLUE}--- Port Checks ---${NC}"
-check_port "localhost" "3000" "Bot API"
+check_port "localhost" "3002" "Bot API"
+check_port "localhost" "8767" "Media API (Python)"
 check_port "localhost" "5432" "PostgreSQL"
 check_port "localhost" "6379" "Redis"
 echo ""
@@ -225,8 +264,8 @@ echo ""
 # HTTP endpoint checks
 echo -e "${BLUE}--- HTTP Endpoint Checks ---${NC}"
 check_http "/health" "Health Endpoint"
-check_http "/health/db" "Database Health"
-check_http "/health/queue" "Queue Health"
+check_http_auth "/health/db" "Database Health"
+check_http_auth "/health/queue" "Queue Health"
 echo ""
 
 # External service checks (if configured)

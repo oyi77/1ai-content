@@ -21,6 +21,7 @@ models for carousel/loop/storyboard/render-ad are defined inline here
 from __future__ import annotations
 
 import asyncio
+import os
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -140,7 +141,10 @@ async def loop_create(req: LoopRequest):
 @router.get("/loop/video/{filename}")
 async def loop_video(filename: str):
     """Serve a generated looping video (legacy /loop/video/{filename})."""
-    full_path = Path("/tmp/looping_output") / filename
+    base_dir = Path("/tmp/looping_output")
+    full_path = (base_dir / filename).resolve()
+    if not str(full_path).startswith(str(base_dir.resolve()) + os.sep):
+        raise HTTPException(status_code=400, detail="Invalid path")
     if not full_path.exists():
         raise HTTPException(status_code=404, detail="Video not found")
     return FileResponse(str(full_path), media_type="video/mp4")
@@ -238,7 +242,10 @@ async def storyboard_create(req: StoryboardRequest):
 @router.get("/storyboard/image/{path:path}")
 async def storyboard_image(path: str):
     """Serve a generated storyboard scene image (legacy /storyboard/image/{path})."""
-    full_path = Path("/tmp/storyboard_output") / path
+    base_dir = Path("/tmp/storyboard_output")
+    full_path = (base_dir / path).resolve()
+    if not str(full_path).startswith(str(base_dir.resolve()) + os.sep):
+        raise HTTPException(status_code=400, detail="Invalid path")
     if not full_path.exists():
         raise HTTPException(status_code=404, detail="Image not found")
     return FileResponse(str(full_path), media_type="image/png")

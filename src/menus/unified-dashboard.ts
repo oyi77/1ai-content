@@ -31,7 +31,7 @@ export async function showMainDashboard(ctx: BotContext): Promise<void> {
   const text = [
     `👋 ${user.first_name}`,
     "",
-    `🎵 Vilona Content Factory`,
+    `🎵 1AI Content Factory`,
     "",
     `💎 Credits: ${credits} | Tier: ${tier}`,
     "",
@@ -247,7 +247,7 @@ export async function showSupportMenu(ctx: BotContext): Promise<void> {
 export async function showHelpMenu(ctx: BotContext): Promise<void> {
   await ctx.answerCbQuery?.();
   await ctx.editMessageText(
-    "📖 *Panduan Vilona Content*\n\n" +
+    "📖 *Panduan 1AI Content*\n\n" +
     "🎬 `/create` — Buat video dari ide/link/file\n" +
     "🖼️ `/image` — Buat foto produk AI\n" +
     "🖼️ `/carousel` — Buat TikTok carousel\n" +

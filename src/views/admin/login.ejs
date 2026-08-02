@@ -1,16 +1,15 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Login - BerkahKarya Bot</title>
+  <title>Admin Login — 1AI Content</title>
   <link rel="stylesheet" href="/public/design-system.css">
-  <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gradient-to-br from-gray-900 to-gray-800 text-white min-h-screen flex items-center justify-center">
   <div class="w-full max-w-md">
     <div class="bg-gray-800 rounded-lg shadow-2xl p-8">
-      <h1 class="text-3xl font-bold mb-2 text-center">BerkahKarya Bot</h1>
+      <h1 class="text-3xl font-bold mb-2 text-center">1AI Content</h1>
       <p class="text-gray-400 text-center mb-8">Admin Dashboard</p>
       
       <form id="loginForm" onsubmit="handleLogin(event)">
@@ -43,10 +42,6 @@
         ✅ Login successful! Redirecting...
       </div>
     </div>
-    
-    <p class="text-center text-gray-400 mt-8 text-sm">
-      Default password: <code class="bg-gray-800 px-2 py-1 rounded">admin</code>
-    </p>
   </div>
 
   <script>
@@ -69,11 +64,8 @@
 
         if (response.ok) {
           successDiv.classList.remove('hidden');
-          // Store password in localStorage for API calls
-          localStorage.setItem('admin_password', password);
           setTimeout(() => {
-            // Redirect to dashboard with token in query
-            window.location.href = '/admin/dashboard?token=' + encodeURIComponent(password);
+            window.location.href = '/admin/dashboard';
           }, 1000);
         } else {
           const data = await response.json();
@@ -86,12 +78,6 @@
       }
     }
 
-    // Auto-fill from URL token if provided
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('token')) {
-      document.getElementById('password').value = decodeURIComponent(params.get('token'));
-      document.getElementById('loginForm').dispatchEvent(new Event('submit'));
-    }
   </script>
 </body>
 </html>

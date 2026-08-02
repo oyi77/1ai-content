@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
+import { logout } from "../api/client";
 
 /* ---------- Breadcrumb mapping ---------- */
 
@@ -91,6 +92,17 @@ export default function Layout() {
                 <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
                 Live
               </span>
+              <button
+                onClick={() => {
+                  void logout().finally(() => {
+                    window.location.href = "/admin/login";
+                  });
+                }}
+                className="px-2.5 py-1 rounded-lg text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-hover transition-colors cursor-pointer"
+                title="Logout"
+              >
+                Logout
+              </button>
             </div>
           </div>
         </header>

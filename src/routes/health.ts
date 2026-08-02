@@ -11,12 +11,15 @@ import { getQueueStats } from '@/config/queue';
 import { PROVIDER_CONFIG } from '@/config/providers';
 import { MetricsService } from '@/services/metrics.service';
 import { getConfig } from '@/config/env';
+import { timingSafeCompare } from '@/utils/crypto';
+import { makeAdminToken } from '@/routes/admin/auth';
 
 const adminCheck = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
-  const token =
+  const provided =
     request.headers.authorization?.replace('Bearer ', '') ||
     (request.query as Record<string, string>).token;
-  if (token !== process.env.ADMIN_PASSWORD) {
+  const expected = makeAdminToken(getConfig().ADMIN_PASSWORD);
+  if (!provided || !timingSafeCompare(provided, expected)) {
     reply.status(401).send({ error: 'Unauthorized' });
   }
 };

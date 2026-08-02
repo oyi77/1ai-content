@@ -426,8 +426,11 @@ export async function contentApiRoutes(server: FastifyInstance): Promise<void> {
       const path = await import("path");
       fs.mkdirSync(uploadDir, { recursive: true });
 
-      const ext = path.extname(data.filename || ".mp4");
-      const filename = `${Date.now()}_${data.filename || "video" + ext}`;
+      const ext = path.extname(data.filename || ".mp4").toLowerCase();
+      const allowedExts = new Set([".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v", ".jpg", ".jpeg", ".png", ".gif", ".webp", ".mp3", ".wav", ".m4a", ".ogg", ".pdf", ".txt", ".srt", ".vtt"]);
+      if (!allowedExts.has(ext)) { return reply.status(400).send({ error: `File extension "${ext}" not allowed` }); }
+      const safeBase = path.basename(data.filename || `video${ext}`).replace(/[^\w.-]/g, "_");
+      const filename = `${Date.now()}_${safeBase}`;
       const filePath = path.join(uploadDir, filename);
 
       const chunks: Buffer[] = [];

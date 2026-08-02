@@ -36,9 +36,9 @@ test('login page loads with password field and submit button', async ({ page }) 
   await expect(page.locator('button[type="submit"]')).toBeVisible();
 });
 
-test('login page shows BerkahKarya title', async ({ page }) => {
+test('login page shows 1AI Content title', async ({ page }) => {
   await page.goto('/admin/login');
-  await expect(page.locator('h1')).toContainText('BerkahKarya');
+  await expect(page.locator('h1')).toContainText('1AI Content');
 });
 
 test('login page has no error div visible initially', async ({ page }) => {

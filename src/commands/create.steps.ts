@@ -82,7 +82,7 @@ export async function handleDurationSelection(
           firstName: user.first_name,
           lastName: user.last_name,
         });
-        await ctx.reply(`👋 Welcome to BK Vilona!`);
+        await ctx.reply(`👋 Welcome to 1AI Content!`);
       } catch (err) {
         if ((err as {code: string})?.code === 'P2002') {
           // Created concurrently by another handler — fetch the existing record

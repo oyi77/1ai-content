@@ -1,7 +1,7 @@
 /**
  * OpenClaw Bot - Main Entry Point
  *
- * Telegram bot + Fastify web server for BerkahKarya content platform.
+ * Telegram bot + Fastify web server for 1AI Content platform.
  * Handles webhooks, admin dashboard, web app, and background workers.
  */
 
@@ -30,6 +30,8 @@ import { webRoutes } from "@/routes/web";
 import { agencyRoutes } from "@/routes/agency";
 import { contentApiRoutes } from "@/routes/content-api";
 import { youtubeDashboardRoutes } from "@/routes/youtube/dashboard.route";
+import { verifyAdmin } from "@/routes/admin/auth";
+import { analyticsRoutes } from "@/routes/analytics-api";
 import { ecosystemRoutes } from "@/routes/ecosystem";
 import { PaymentService } from "@/services/payment.service";
 import { initializeDatabase, prisma } from "@/config/database";
@@ -53,7 +55,7 @@ import axios from "axios";
 
 // Set global axios defaults — all HTTP calls get 30s timeout by default
 axios.defaults.timeout = 30_000;
-axios.defaults.headers.common["User-Agent"] = "BerkahKarya-Bot/3.0";
+axios.defaults.headers.common["User-Agent"] = "1AI-Content-Bot/3.0";
 
 // Initialize bot
 const bot = new Telegraf(appConfig.BOT_TOKEN);
@@ -69,6 +71,8 @@ SubscriptionService.setBotInstance(bot);
 // Initialize Fastify server
 export const app = Fastify({
   logger: false,
+  // Hanya percaya X-Forwarded-For dari peer localhost/nginx — spoofing dari client mati
+  trustProxy: (address: string) => address === "127.0.0.1" || address === "::1" || address === "::ffff:127.0.0.1",
 });
 
 async function main() {
@@ -256,6 +260,7 @@ async function main() {
       reply.header('X-Content-Type-Options', 'nosniff');
       reply.header('X-Frame-Options', 'DENY');
       reply.header('X-XSS-Protection', '1; mode=block');
+      reply.header('Referrer-Policy', 'strict-origin-when-cross-origin');
     });
 
     // ── CORS (onRequest to avoid conflicts with SSE/raw responses) ──
@@ -269,7 +274,7 @@ async function main() {
         if (allowedOrigins.includes(origin)) {
           reply.header('Access-Control-Allow-Origin', origin);
           reply.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-          reply.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+          reply.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-API-Key, X-Ecosystem-Key');
           reply.header('Access-Control-Allow-Credentials', 'true');
           reply.header('Vary', 'Origin');
         }
@@ -286,7 +291,7 @@ async function main() {
         if (allowedOrigins.includes(origin)) {
           reply.header('Access-Control-Allow-Origin', origin);
           reply.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-          reply.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+          reply.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-API-Key, X-Ecosystem-Key');
           reply.header('Access-Control-Allow-Credentials', 'true');
           reply.header('Access-Control-Max-Age', '86400');
         }
@@ -347,9 +352,12 @@ async function main() {
     }
     await app.register(agencyRoutes, { prefix: '/api' });
     await app.register(contentApiRoutes);
-    await app.register(youtubeDashboardRoutes);
+    await app.register(async (adminApi) => {
+      adminApi.addHook("onRequest", verifyAdmin);
+      await youtubeDashboardRoutes(adminApi);
+      await analyticsRoutes(adminApi);
+    });
     await app.register(ecosystemRoutes);
-    await app.register((await import('./routes/analytics-api.js')).analyticsRoutes);
 
     if (appConfig.NODE_ENV === 'test') {
       const testRoutes = require('./routes/test').default;
@@ -501,6 +509,8 @@ async function main() {
       logger.error("uncaughtException:", err);
       sendAdminAlert(`Uncaught exception:\n\`${err.message.slice(0, 300)}\``);
       sendGroupAlert('critical', 'Uncaught Exception', { error: err.message.slice(0, 300) });
+      // Crash-lah secara eksplisit — PM2/systemd akan restart; menghindari state korup yang terus jalan
+      process.exit(1);
     });
   } catch (error) {
     logger.error("Failed to start bot:", error);

@@ -109,7 +109,7 @@ export class MetaCAPIService {
         event_name: event.eventName,
         event_time: event.eventTime || Math.floor(Date.now() / 1000),
         action_source: event.actionSource || 'app',
-        event_source_url: event.eventSourceUrl || 'https://berkahkarya.org',
+        event_source_url: event.eventSourceUrl || 'https://content.aitradepulse.com',
         user_data: buildUserDataPayload(event.userData),
         custom_data: event.customData || {},
       }],
@@ -177,7 +177,7 @@ export class MetaCAPIService {
     await this.sendEvent({
       eventName: 'ViewContent',
       userData,
-      customData: { content_name: contentName || 'BK Vilona Bot Start', content_category: 'ai_tool' },
+      customData: { content_name: contentName || '1AI Content Bot Start', content_category: 'ai_tool' },
     });
   }
 

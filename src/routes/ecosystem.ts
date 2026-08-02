@@ -7,6 +7,8 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { logger } from '@/utils/logger';
 import { prisma } from '@/config/database';
+import { getConfig } from '@/config/env';
+import { timingSafeCompare } from '@/utils/crypto';
 import type { ConversionWebhook, ConversionAck, PlatformResult } from '@/types/ecosystem';
 
 // ══════════════════════════════════════════════════════════════════════
@@ -23,16 +25,20 @@ interface PublishResultWebhook {
 // Routes
 // ══════════════════════════════════════════════════════════════════════
 
+const ecosystemWebhookAuth = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
+  const key = getConfig().ECOSYSTEM_API_KEY;
+  if (!key) { reply.status(503).send({ error: "Ecosystem API key not configured" }); return; }
+  const provided = (request.headers["x-api-key"] || request.headers["x-ecosystem-key"]) as string | undefined;
+  if (!provided || !timingSafeCompare(provided, key)) { reply.status(401).send({ error: "Unauthorized" }); return; }
+};
+
 export async function ecosystemRoutes(server: FastifyInstance): Promise<void> {
   
   /**
    * POST /webhook/publish-result
    * Receive publish results from 1ai-social
    */
-  server.post('/webhook/publish-result', async (
-    request: FastifyRequest<{ Body: PublishResultWebhook }>,
-    reply: FastifyReply
-  ) => {
+  server.post<{ Body: PublishResultWebhook }>('/webhook/publish-result', { preHandler: [ecosystemWebhookAuth] }, async (request, reply) => {
     const { contentId, userId, results } = request.body;
 
     logger.info({
@@ -71,10 +77,7 @@ export async function ecosystemRoutes(server: FastifyInstance): Promise<void> {
    * POST /webhook/conversion-update
    * Receive conversion events from 1ai-affiliate
    */
-  server.post('/webhook/conversion-update', async (
-    request: FastifyRequest<{ Body: ConversionWebhook }>,
-    reply: FastifyReply
-  ) => {
+  server.post<{ Body: ConversionWebhook }>('/webhook/conversion-update', { preHandler: [ecosystemWebhookAuth] }, async (request, reply) => {
     const conversion = request.body;
 
     logger.info({

@@ -14,18 +14,18 @@ const LOADING_FRAMES: Record<string, string[]> = {
     '✨ _Hampir siap!_',
   ],
   generate: [
-    '🎬 _Vilona sprint ke server AI..._',
+    '🎬 _1AI Content sprint ke server AI..._',
     '⚡ _AI providers diaktifkan..._',
     '🎨 _Prompt sedang diproses..._',
     '✨ _Hampir jadi! Sabar ya..._',
   ],
   thinking: [
-    '💭 _Vilona lagi mikir..._',
+    '💭 _1AI Content lagi mikir..._',
     '🧠 _AI sedang bekerja..._',
     '✨ _Bentar, hampir selesai!_',
   ],
   searching: [
-    '🔍 _Vilona nyari data..._',
+    '🔍 _1AI Content nyari data..._',
     '📊 _Scanning trending content..._',
     '✨ _Ketemu!_',
   ],
@@ -88,9 +88,9 @@ export async function sendVilonaLoadingAutoDelete(
 export async function sendVilonaWelcomeAnimation(ctx: BotContext): Promise<void> {
   try {
     const welcomeFrames = [
-      '🏃‍♀️💨 _Vilona masuk..._',
+      '🏃‍♀️💨 _1AI Content masuk..._',
       '🏃‍♀️✨ _Hampir siap!_',
-      '👋✨ _Halo! Vilona siap bantu kamu!_',
+      '👋✨ _Halo! 1AI Content siap bantu kamu!_',
     ];
 
     const sent = await ctx.reply(welcomeFrames[0], { parse_mode: 'Markdown' });
