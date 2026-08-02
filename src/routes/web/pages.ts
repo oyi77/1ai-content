@@ -63,7 +63,7 @@ export async function pageRoutes(server: FastifyInstance): Promise<void> {
         testimonials,
         packages,
         currentLang,
-        botUsername: getConfig().BOT_USERNAME || "berkahkarya_saas_bot",
+        botUsername: getConfig().BOT_USERNAME || "vilona_content_bot",
         siteUrl: getConfig().WEBHOOK_URL || 'https://saas.aitradepulse.com',
         fbPixelId: getConfig().FACEBOOK_PIXEL_ID || "",
         ga4Id: getConfig().GA4_TRACKING_ID || "",
@@ -81,14 +81,14 @@ export async function pageRoutes(server: FastifyInstance): Promise<void> {
   // ── Terms of Service ──
   server.get("/terms", async (_request, reply) => {
     return reply.view("web/tos.ejs", {
-      botUsername: getConfig().BOT_USERNAME || "berkahkarya_saas_bot",
+      botUsername: getConfig().BOT_USERNAME || "vilona_content_bot",
     });
   });
 
   // ── Privacy Policy ──
   server.get("/privacy", async (_request, reply) => {
     return reply.view("web/privacy.ejs", {
-      botUsername: getConfig().BOT_USERNAME || "berkahkarya_saas_bot",
+      botUsername: getConfig().BOT_USERNAME || "vilona_content_bot",
     });
   });
 

@@ -561,7 +561,7 @@
   "topup.crypto_title": "💎 *Crypto Payment*\\n\\nSelect amount:\\n\\n{list}\\n\\n_Supported: USDT (BSC), BNB, MATIC, TON_",
   "topup.crypto_coin_select": "💎 *{credits} Credits — ${usd} USD*\\n\\nSelect cryptocurrency:",
   "topup.crypto_created": "💎 *Crypto Payment Created*\\n\\nSend exactly:\\n`{payAmount} {payCurrency}`\\n\\nTo address:\\n`{payAddress}`\\n\\nNetwork: *{coinLabel}*\\nCredits: *{credits}*\\nOrder: `{orderId}`\\n\\n⏱ Payment expires in ~15 minutes.\\n\\n_Credits will be added automatically once confirmed._",
-  "topup.stars_invoice_desc": "{credits} Video Generation Credits for @berkahkarya_saas_bot",
+  "topup.stars_invoice_desc": "{credits} Video Generation Credits for @vilona_content_bot",
   "topup.stars_invoice_label": "{credits} Credits",
   "topup.no_gateway_available": "No payment method is available at the moment. Please try again later.",
   "topup.gateway_unavailable": "The selected payment method is currently unavailable. Please choose another method.",

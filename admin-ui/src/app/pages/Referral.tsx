@@ -20,7 +20,7 @@ export default function Referral() {
   };
 
   const referralLink = referral?.code
-    ? `https://t.me/berkahkarya_saas_bot?start=${referral.code}`
+    ? `https://t.me/vilona_content_bot?start=${referral.code}`
     : "";
 
   if (loading) return <div className="loading-spinner">Loading referral info...</div>;

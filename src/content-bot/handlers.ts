@@ -44,7 +44,7 @@ export function registerHandlers(bot: import("telegraf").Telegraf<BotContext>): 
       `🔁 /loop — Video loop\n` +
       `📋 /storyboard — Visual storyboard\n` +
       `📊 /analyze <url> — Analisa channel\n\n` +
-      `Untuk top up & profile, gunakan @berkahkarya_saas_bot`,
+      `Untuk top up & profile, gunakan @vilona_content_bot`,
       { parse_mode: "Markdown" },
     );
   });
@@ -62,7 +62,7 @@ export function registerHandlers(bot: import("telegraf").Telegraf<BotContext>): 
       `🔁 /loop — Video loop\n` +
       `📋 /storyboard — Visual storyboard\n` +
       `📊 /analyze <url> — Analisa channel\n\n` +
-      `Untuk top up & profile, gunakan @berkahkarya_saas_bot`,
+      `Untuk top up & profile, gunakan @vilona_content_bot`,
       { parse_mode: "Markdown" },
     );
   });

@@ -83,6 +83,8 @@ from services.routers.ab_testing import router as ab_testing_router
 from services.routers.audio import router as audio_router
 from services.routers.text import router as text_router
 from services.routers.image import router as image_router
+from services.routers.compat import router as compat_router
+from services.routers.content import router as content_router
 from services.ebook.generator import EbookContentGenerator
 
 
@@ -103,6 +105,8 @@ registry.add_router(ab_testing_router)
 registry.add_router(audio_router)
 registry.add_router(text_router)
 registry.add_router(image_router)
+registry.add_router(compat_router)
+registry.add_router(content_router)
 registry.register(EbookContentGenerator(), prefix="/text/ebook")
 
 

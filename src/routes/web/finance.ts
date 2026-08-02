@@ -170,7 +170,7 @@ td{padding:8px;border-bottom:1px solid #eee}.total{font-size:24px;font-weight:bo
       const sellRate = sellRateStr ? parseInt(sellRateStr) : 3000;
       const creditsIfConverted = Math.floor(availableCommission / sellRate);
 
-      const BOT_USERNAME = getConfig().BOT_USERNAME || "berkahkarya_saas_bot";
+      const BOT_USERNAME = getConfig().BOT_USERNAME || "vilona_content_bot";
       const referralLink = `https://t.me/${BOT_USERNAME}?start=ref_${user.referralCode}`;
 
       return {

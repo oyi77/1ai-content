@@ -69,7 +69,7 @@ export class NowPaymentsService {
         price_currency: 'usd',
         pay_currency: params.coin,
         order_id: orderId,
-        order_description: `${params.credits} credits for @berkahkarya_saas_bot`,
+        order_description: `${params.credits} credits for @vilona_content_bot`,
         ipn_callback_url: `${getConfig().WEBHOOK_URL}/webhook/nowpayments`,
       },
       {

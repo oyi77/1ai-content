@@ -19,7 +19,7 @@ const landingConfigBodySchema = zodToJsonSchema(z.object({
   pricingNote: z.string().optional().default(""),
   footerText: z.string().optional().default(""),
   videoDuration: z.string().optional().default("60"),
-  botUsername: z.string().optional().default("berkahkarya_saas_bot"),
+  botUsername: z.string().optional().default("vilona_content_bot"),
   proofStats: z.array(z.unknown()).optional().default([]),
   problemCards: z.array(z.unknown()).optional().default([]),
   solutionCards: z.array(z.unknown()).optional().default([]),
@@ -42,7 +42,7 @@ export async function registerSettingsRoutes(server: FastifyInstance) {
       footerText: base.footerText || "",
       videoDuration: base.videoDuration || "60",
       botUsername:
-        base.botUsername || getConfig().BOT_USERNAME || "berkahkarya_saas_bot",
+        base.botUsername || getConfig().BOT_USERNAME || "vilona_content_bot",
       proofStats: base.proofStats || [],
       problemCards: base.problemCards || [],
       solutionCards: base.solutionCards || [],
@@ -69,7 +69,7 @@ export async function registerSettingsRoutes(server: FastifyInstance) {
       footerText: data.footerText || "",
       videoDuration: data.videoDuration || "60",
       botUsername:
-        data.botUsername || getConfig().BOT_USERNAME || "berkahkarya_saas_bot",
+        data.botUsername || getConfig().BOT_USERNAME || "vilona_content_bot",
       proofStats: Array.isArray(data.proofStats) ? data.proofStats : [],
       problemCards: Array.isArray(data.problemCards) ? data.problemCards : [],
       solutionCards: Array.isArray(data.solutionCards)

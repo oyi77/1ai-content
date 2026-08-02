@@ -35,7 +35,7 @@ export async function referralCommand(ctx: BotContext): Promise<void> {
     const stats = await UserService.getStats(telegramId);
 
     const referralCode = user.referralCode || 'N/A';
-    const referralLink = `https://t.me/${getConfig().BOT_USERNAME || 'berkahkarya_saas_bot'}?start=ref_${referralCode}`;
+    const referralLink = `https://t.me/${getConfig().BOT_USERNAME || 'vilona_content_bot'}?start=ref_${referralCode}`;
 
     const formatRupiah = (amount: number): string => {
       return `Rp ${amount.toLocaleString('id-ID')}`;

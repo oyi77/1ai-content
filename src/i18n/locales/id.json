@@ -561,7 +561,7 @@
   "topup.crypto_title": "💎 *Pembayaran Crypto*\\n\\nPilih jumlah:\\n\\n{list}\\n\\n_Didukung: USDT (BSC), BNB, MATIC, TON_",
   "topup.crypto_coin_select": "💎 *{credits} Kredit — ${usd} USD*\\n\\nPilih cryptocurrency:",
   "topup.crypto_created": "💎 *Crypto Payment Created*\\n\\nSend exactly:\\n`{payAmount} {payCurrency}`\\n\\nTo address:\\n`{payAddress}`\\n\\nNetwork: *{coinLabel}*\\nKredit: *{credits}*\\nOrder: `{orderId}`\\n\\n⏱ Payment expires in ~15 minutes.\\n\\n_Credits will be added automatically once confirmed._",
-  "topup.stars_invoice_desc": "{credits} Video Generation Credit untuk @berkahkarya_saas_bot",
+  "topup.stars_invoice_desc": "{credits} Video Generation Credit untuk @vilona_content_bot",
   "topup.stars_invoice_label": "{credits} Kredit",
   "topup.no_gateway_available": "Tidak ada metode pembayaran yang tersedia saat ini. Coba lagi nanti.",
   "topup.gateway_unavailable": "Metode pembayaran yang dipilih sedang tidak tersedia. Silakan pilih metode lain.",

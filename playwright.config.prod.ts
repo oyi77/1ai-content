@@ -4,7 +4,8 @@ import { defineConfig } from '@playwright/test';
 // No webServer — tests target the live production deployment.
 // Uses the same specs as the local config.
 // Auth is handled by individual test specs (beforeEach setExtraHTTPHeaders, request headers).
-// Ensure ADMIN_PASSWORD env var is set (default matches .env: admin123).
+// ADMIN_PASSWORD is read from the environment (see tests/e2e/playwright/rbac-security.spec.ts
+// resolveAdminPassword) — no default credential is assumed.
 export default defineConfig({
   testDir: './tests/e2e/playwright',
   timeout: 30000,

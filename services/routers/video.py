@@ -4,6 +4,7 @@ import json
 import os
 import random
 import subprocess
+import tempfile
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -14,7 +15,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 from services.utils import TIKTOK_BROWSERS, extract_browser_cookies, has_tiktok_cookies, probe_field, probe_video, run_subprocess
-from services.api_models import VideoProcessRequest, VideoInfoRequest, VideoClipRequest, VideoTransformsRequest, VideoSearchRequest, VideoRegenerateOptions, VideoRegenerateRequest
+from services.api_models import VideoProcessRequest, VideoInfoRequest, VideoClipRequest, VideoTransformsRequest, VideoFramesRequest, VideoSearchRequest, VideoRegenerateOptions, VideoRegenerateRequest
 from services.di import get_looping, get_repurpose_engine, get_remetadata_engine
 
 video_router = APIRouter(prefix="", tags=["video"])
@@ -614,6 +615,47 @@ async def video_transforms(req: VideoTransformsRequest):
         except Exception:
             pass
     return {"variants": variants, "status": "ok"}
+
+
+# ── /video/frames ───────────────────────────────────────────────
+
+
+@video_router.post("/video/frames")
+async def video_frames(req: VideoFramesRequest):
+    """Extract N evenly-spaced reference frames from a local video file.
+
+    Timestamps at t = k * duration / (N+1) for k = 1..N (never the first or
+    last frame).  Used by the Content Factory workflow to send reference
+    frames alongside a base video to the variation bot.
+    """
+    if not os.path.isfile(req.file_path):
+        raise HTTPException(status_code=404, detail=f"File not found: {req.file_path}")
+    if req.num_frames < 1:
+        raise HTTPException(status_code=400, detail="num_frames must be >= 1")
+
+    from services.clipper.reframer import Reframer  # lazy import (endpoint convention)
+    reframer = Reframer()
+
+    meta = await probe_video(req.file_path)
+    duration = float(meta.get("duration") or 0.0)
+    if duration <= 0:
+        return {"data": {"status": "failed", "error": "Could not probe video duration", "frames": []}}
+
+    out_dir = req.output_dir or os.path.join(tempfile.gettempdir(), "content_factory_frames")
+    os.makedirs(out_dir, exist_ok=True)
+
+    n = req.num_frames
+    frames = []
+    for k in range(1, n + 1):
+        ts = round(k * duration / (n + 1), 3)
+        out_path = os.path.join(out_dir, f"frame_{k:02d}_{uuid.uuid4().hex[:8]}.jpg")
+        try:
+            reframer.generate_thumbnail(req.file_path, ts, out_path, title="")
+        except Exception as exc:
+            return {"data": {"status": "failed", "error": f"Frame {k} extraction failed: {exc}", "frames": frames}}
+        frames.append({"index": k, "timestamp": ts, "file_path": out_path})
+
+    return {"data": {"status": "ok", "num_frames": n, "frames": frames}}
 
 
 # ══════════════════════════════════════════════════════════════

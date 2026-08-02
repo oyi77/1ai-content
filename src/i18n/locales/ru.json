@@ -561,7 +561,7 @@
   "topup.crypto_title": "💎 *Крипто-оплата*\\n\\nВыберите сумму:\\n\\n{list}\\n\\n_Поддерживаются: USDT (BSC), BNB, MATIC, TON_",
   "topup.crypto_coin_select": "💎 *{credits} Кредитов — ${usd} USD*\\n\\nВыберите криптовалюту:",
   "topup.crypto_created": "💎 *Крипто-платёж создан*\\n\\nОтправьте точно:\\n`{payAmount} {payCurrency}`\\n\\nНа адрес:\\n`{payAddress}`\\n\\nСеть: *{coinLabel}*\\nКредиты: *{credits}*\\nЗаказ: `{orderId}`\\n\\n⏱ Платёж истекает через ~15 минут.\\n\\n_Кредиты будут начислены автоматически после подтверждения._",
-  "topup.stars_invoice_desc": "{credits} кредитов генерации видео для @berkahkarya_saas_bot",
+  "topup.stars_invoice_desc": "{credits} кредитов генерации видео для @vilona_content_bot",
   "topup.stars_invoice_label": "{credits} Кредитов",
   "topup.no_gateway_available": "В данный момент нет доступных методов оплаты. Попробуйте позже.",
   "topup.gateway_unavailable": "Выбранный способ оплаты временно недоступен. Пожалуйста, выберите другой.",

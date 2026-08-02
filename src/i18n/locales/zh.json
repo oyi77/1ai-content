@@ -561,7 +561,7 @@
   "topup.crypto_title": "💎 *加密货币支付*\\n\\n选择金额:\\n\\n{list}\\n\\n_支持: USDT (BSC), BNB, MATIC, TON_",
   "topup.crypto_coin_select": "💎 *{credits} 积分 — ${usd} USD*\\n\\n选择加密货币:",
   "topup.crypto_created": "💎 *加密支付已创建*\\n\\n请准确发送:\\n`{payAmount} {payCurrency}`\\n\\n到地址:\\n`{payAddress}`\\n\\n网络: *{coinLabel}*\\n积分: *{credits}*\\n订单: `{orderId}`\\n\\n⏱ 支付将在约15分钟后过期。\\n\\n_确认后积分将自动添加。_",
-  "topup.stars_invoice_desc": "{credits} 个视频生成积分 @berkahkarya_saas_bot",
+  "topup.stars_invoice_desc": "{credits} 个视频生成积分 @vilona_content_bot",
   "topup.stars_invoice_label": "{credits} 积分",
   "topup.no_gateway_available": "目前没有可用的支付方式，请稍后再试。",
   "topup.gateway_unavailable": "所选支付方式暂时不可用，请选择其他方式。",

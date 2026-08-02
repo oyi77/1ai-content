@@ -36,7 +36,7 @@ export async function profileCommand(ctx: BotContext): Promise<void> {
     const tierLabel = user.tier.charAt(0).toUpperCase() + user.tier.slice(1);
     const creditBalance = Number(user.creditBalance);
     const referralCode = user.referralCode || 'N/A';
-    const referralLink = `https://t.me/${getConfig().BOT_USERNAME || 'berkahkarya_saas_bot'}?start=ref_${referralCode}`;
+    const referralLink = `https://t.me/${getConfig().BOT_USERNAME || 'vilona_content_bot'}?start=ref_${referralCode}`;
 
     const formatRupiah = (amount: number): string => {
       return `Rp ${amount.toLocaleString('id-ID')}`;

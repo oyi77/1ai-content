@@ -2,6 +2,7 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { getOmniRouteService } from "@/services/omniroute.service";
 import { ImageGenerationService } from "@/services/image.service";
 import { generateVideoWithFallback } from "@/services/video-fallback.service";
+import { VIDEO_PROVIDERS_SORTED, IMAGE_PROVIDERS_SORTED } from "@/config/providers";
 import { ProviderError } from "@/utils/app-errors";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
@@ -25,6 +26,17 @@ const playgroundVideoSchema = zodToJsonSchema(z.object({
 }), "playgroundVideo");
 
 export async function registerPlaygroundRoutes(server: FastifyInstance) {
+  // API: Playground — Models/Providers list
+  server.get("/api/admin/playground/models", async () => {
+    const omni = getOmniRouteService();
+    const models = await omni.listModels();
+    return {
+      models,
+      videoProviders: VIDEO_PROVIDERS_SORTED.map((p) => p.key),
+      imageProviders: IMAGE_PROVIDERS_SORTED.map((p) => p.key),
+    };
+  });
+
   // API: Playground — Text/Chat
   server.post("/api/admin/playground/text", {
     schema: { body: playgroundTextSchema },

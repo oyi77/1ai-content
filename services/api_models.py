@@ -149,6 +149,12 @@ class VideoTransformsRequest(BaseModel):
     transforms: list[str]
 
 
+class VideoFramesRequest(BaseModel):
+    file_path: str                        # local path (VideoInfoRequest-style, no download)
+    num_frames: int = 5                   # N; timestamps at k*duration/(N+1), k=1..N
+    output_dir: str | None = None         # optional; defaults to a temp frames dir
+
+
 class VideoSearchRequest(BaseModel):
     url: str
 
