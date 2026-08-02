@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Scope: admin-ui | Stack: TypeScript / React / Vite / TailwindCSS / Oxlint | Status: complete | last_reviewed_commit: bac10d88791d79fd8cadf2840fa2defc4343587a -->
+<!-- Scope: admin-ui | Stack: TypeScript / React / Vite / TailwindCSS / Oxlint | Status: complete | last_reviewed_commit: f2c66e58791d79fd8cadf2840fa2defc4343587a -->
 <!-- Generated: 2026-08-02 | Updated: 2026-08-02 -->
 
 # admin-ui
@@ -26,7 +26,7 @@ SATU React SPA untuk SELURUH frontend 1ai-content — Landing (`/`), Admin (`/ad
 | `src/main.tsx` | Entry point — eager CSS (`./index.css` + `./styles/admin-skin.css`), lazy 3 app, Routes `/`→Landing, `/admin/*`→AdminApp, `/app/*`→CustomerApp |
 | `src/api/client.ts` | Satu file berisi seluruh helper API (1.427 baris): `fetchJson`/`postJson`/`checkAuth`/`login`/`logout` + ~30 helper per-fitur |
 | `vite.config.ts` | Konfigurasi build (`base: "/"`, plugin tailwindcss + react; proxy dev `/api` & `/auth` → localhost:3000) |
-| `index.html` | HTML shell (lang="en", title "admin-ui") |
+| `index.html` | HTML shell — lang="id", title "1AI Content — AI Content Factory" + meta SEO (description, og, twitter, theme-color `#0a0a1a`, canonical, og:image `/public/hero-tiktok-showcase.png`) |
 
 ## Subdirectories
 
@@ -48,7 +48,7 @@ SATU React SPA untuk SELURUH frontend 1ai-content — Landing (`/`), Admin (`/ad
 - SATU bundle, 3 namespace: route admin di `src/App.tsx`, customer di `src/app/App.tsx`, landing di `src/landing/App.tsx` (relatif, tanpa basename). CSS eager di `main.tsx` + `src/app/index.css` (di-import `app/App.tsx:1`) + `src/landing/index.css` (di-import `landing/App.tsx:1` pasca-fix 2026-08-02); waspadai konflik selector global lintas namespace (satu build).
 - Semua request API same-origin (`API_BASE = ""` di `src/api/client.ts`); auth via cookie — sertakan `credentials: "include"` pada fetch yang melewati konteks berbeda.
 - Route baru WAJIB didaftarkan di `src/App.tsx`; halaman baru ditaruh di `src/pages/` dan memanggil helper dari `src/api/client.ts`.
-- Bahasa UI saat ini "en"; kustomisasi brand (title/lang di `index.html`, README) belum dilakukan — jangan asumsikan sudah beres.
+- Brand `index.html` SUDAH disesuaikan pasca-fix 2026-08-02 (lang="id", title "1AI Content — AI Content Factory", meta SEO + og:image `/public/hero-tiktok-showcase.png` — lihat Prioritas #6 root). Bahasa UI konten komponen masih "en" — kustomisasi i18n belum ada.
 - Backend di luar scope direktori ini (trace `Login`/`user_id=0` terputus di API `/admin/*` dan `/api/py/*`) — verifikasi sisi server sebelum mengubah perilaku auth.
 - `/admin/*` di belakang auth Basic server-side (`src/routes/admin/auth.ts`) — tanpa credential 401 (browser prompt → cookie); login admin SPA end-to-end belum diverifikasi browser.
 
@@ -57,7 +57,7 @@ SATU React SPA untuk SELURUH frontend 1ai-content — Landing (`/`), Admin (`/ad
 - **[MEDIUM]** `user_id=0` hardcoded: `src/api/client.ts:214` (`/api/py/calendar/list/0`), `:230` (delete calendar `?user_id=0`), `:306` (`/api/py/ab-test/list/0`), `:320/:324/:329` (ab-test `?user_id=0`); `src/pages/ABTestsPage.tsx:66` & `src/pages/CalendarPage.tsx:84` (`user_id: 0`). [INFERENSI] user 0 = scope global/admin; verifikasi backend apakah data antar-user tercampur.
 - **[MEDIUM]** `src/pages/Login.tsx` tidak pernah di-import — `App.tsx` tidak punya route `/login`; satu-satunya referensi adalah tautan `<a href="/admin/login">` di `src/pages/Settings.tsx:112`. [INFERENSI] login mungkin ditangani server-side, atau halaman Login adalah dead code.
 - **[LOW]** Dua gaya styling tidak konsisten: `src/components/UI.tsx` memakai slate-900/purple-600 hardcoded, sedangkan `Layout.tsx`/`Sidebar.tsx`/`Login.tsx` memakai token custom (`text-text-primary`, `bg-accent`, `glass-strong`) dari `src/styles/admin-skin.css`.
-- **[LOW]** `README.md` masih template Vite default; `index.html` belum disesuaikan brand (lang="en", title "admin-ui").
+- **[LOW — FIXED 2026-08-02]** `index.html` sudah disesuaikan brand (lang="id", title "1AI Content — AI Content Factory" + meta SEO, og:image `/public/hero-tiktok-showcase.png`) — `admin-ui/index.html:5-17`. `README.md` masih template Vite default (belum diverifikasi, kandidat rapikan manual).
 - **[LOW]** `tsconfig.app.json` tidak konsisten dengan `tsconfig.node.json` (`noUnusedLocals/Parameters: false` vs `true`) dan memuat komentar `/* Linting */` dobel (baris 19–20).
 - **[LOW]** Path `/settings` muncul di 2 kategori Sidebar: `src/components/Sidebar.tsx:109` (Monetization → "Broadcast") dan `:134` (System → "Settings").
 - **[LOW][INFERENSI]** CSS var undefined di namespace Admin: `src/styles/admin-skin.css` memakai `var(--surface)` (`:7/:41/:118/:152`) & `var(--accent)` (`:104/:106/:128`); class utility `bg-[var(--bg2)]` di `src/pages/` (MoviePage.tsx:461, BookshelfPage.tsx:506, MediasPage.tsx:508/543/594, ComicPage.tsx:329/475, AiConfigPage.tsx:302/315/330/354/373/388/396/565) & `accent-[var(--accent)]` (Music.tsx:177, Autopilot.tsx:171). `--surface:`/`--bg2:` tidak terdefinisi di file mana pun (grep definisi → 0 match); `--accent` KINI terdefinisi global via `src/landing/index.css:4` yang di-import `landing/App.tsx:1` (fix HIGH 2026-08-02 — lihat `src/landing/AGENTS.md`); `--surface:`/`--bg2:` masih undefined (grep definisi → 0 match). [INFERENSI] visual Admin berpotensi rusak (token fallback ke inherit) — sarankan definisikan di `src/index.css` (mis. blok `@theme` Tailwind v4).
@@ -72,5 +72,6 @@ SATU React SPA untuk SELURUH frontend 1ai-content — Landing (`/`), Admin (`/ad
 
 <!-- MANUAL: konsolidasi 2026-08-02 — 1 bundle, 3 namespace; customer-ui & landing-ui dihapus; base "/" tanpa basename. -->
 <!-- MANUAL 2: 2026-08-02 pasca-fix — landing/index.css di-import (regresi HIGH ditutup); --accent kini terdefinisi global. -->
+<!-- MANUAL 3: 2026-08-02 QA final — index.html brand + meta SEO (lang id, og:image /public/hero-tiktok-showcase.png); commit f2c66e5. -->
 
-> Last updated: 2026-08-02 — (1) tambah temuan CSS var undefined (Admin namespace); referensi `src/app/AGENTS.md` & `src/landing/AGENTS.md` dibuat; (2) update pasca-fix HIGH regresi CSS landing (import landing/index.css), `--accent` terdefinisi global, sisa `--surface`/`--bg2` undefined.
+> Last updated: 2026-08-02 — (1) tambah temuan CSS var undefined (Admin namespace); referensi `src/app/AGENTS.md` & `src/landing/AGENTS.md` dibuat; (2) update pasca-fix HIGH regresi CSS landing (import landing/index.css), `--accent` terdefinisi global, sisa `--surface`/`--bg2` undefined; (3) QA final — item LOW index.html ditandai FIXED (brand lang id + meta SEO), baris Key Files & For AI Agents disinkronkan, last_reviewed_commit → `f2c66e5`.
