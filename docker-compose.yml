@@ -58,7 +58,6 @@ services:
       - POSTGRES_DB=openclaw
     volumes:
       - postgres-data:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - openclaw-network
     healthcheck:
@@ -109,33 +108,6 @@ services:
       - monitoring
 
   # ==========================================================================
-  # EBOOK GENERATION SERVICE (Sibling ebook/ FastAPI)
-  # ==========================================================================
-  ebook:
-    build:
-      context: ./ebook
-      dockerfile: Dockerfile
-    container_name: openclaw-ebook
-    restart: unless-stopped
-    ports:
-      - "8765:8765"
-    env_file:
-      - .env
-    environment:
-      - EBOOK_API_KEY=${EBOOK_API_KEY:-}
-    depends_on:
-      - postgres
-      - redis
-    networks:
-      - openclaw-network
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8765/health')"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
-
-  # ==========================================================================
   # PROMETHEUS (Optional - for metrics)
   # ==========================================================================
   prometheus:
@@ -145,7 +117,7 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./config/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus-data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -171,8 +143,8 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:
       - grafana-data:/var/lib/grafana
-      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
-      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+      - ./config/monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./config/monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
     depends_on:
       - prometheus
     networks:

@@ -46,3 +46,14 @@ Ordered ebook generation stages. Each stage is an independent class; the compile
 - `json`, `pathlib` — stdlib only (no third-party deps in pipeline stages)
 
 <!-- MANUAL: -->
+
+
+## Temuan Baru (audit 2026-08-02)
+
+- Semua file yang terdokumentasi di tabel Key Files masih ada (`intake.py`, `strategy_planner.py`, `outline_generator.py`, `manuscript_engine.py`, `qa_engine.py`, `content_safety.py`).
+- **Tidak terdokumentasi** (ada di folder, belum ada di dokumen ini): `book_structure.py`, `chapter_generator.py`, `chapter_structure_checker.py`, `error_classifier.py`, `marketing_kit.py`, `model_tracker.py`, `orchestrator.py`, `pipeline_profile.py`, `progress_tracker.py`, `prose_scorer.py`, `refinement_engine.py`, `style_context.py`, `style_guide.py`, `token_calibrator.py` (14 modul).
+- `orchestrator.py` sekarang memanggil `pipeline_profile.get_profile()` — pipeline berbasis profile yang tidak disebut di dokumen ini.
+- **Stale**: klaim "imports within src/ use absolute src.* paths" — kode nyata memakai `services.ebook.*` (contoh: `from services.ebook.ai_client import OmnirouteClient` di `orchestrator.py`).
+- `content_safety.py` ada dan fungsi `add_disclaimer()` valid — klaim lama masih benar.
+
+> Last updated: 2026-08-02 — audit temuan baru (14 modul tak terdokumentasi, import path berubah)

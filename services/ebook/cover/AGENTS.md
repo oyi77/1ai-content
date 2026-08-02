@@ -34,3 +34,12 @@ Ebook cover generation. Calls the AI to produce a visual description prompt, the
 - `Pillow>=10` — `Image`, `ImageDraw`, `ImageFont`
 
 <!-- MANUAL: -->
+
+
+## Temuan Baru (audit 2026-08-02)
+
+- **Tidak terdokumentasi**: `html_cover_generator.py` ada di folder, belum tercatat di dokumen ini — generator cover berbasis HTML/Jinja2 (selain `cover_generator.py` berbasis Pillow yang sudah terdokumentasi).
+- Template terkait di `cover/templates/`: `academic.html.j2`, `base.html.j2`, `comics.html.j2`, `fiction.html.j2`, `nonfiction.html.j2` — 5 tema cover HTML.
+- Deskripsi `cover_generator.py` (Pillow, 1200×1600, DejaVu, warna per product_mode) masih valid.
+
+> Last updated: 2026-08-02 — audit temuan baru (html_cover_generator + 5 template tak terdokumentasi)

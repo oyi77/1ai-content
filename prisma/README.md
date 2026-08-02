@@ -55,4 +55,4 @@ User
 
 ---
 
-*See [DATABASE.md](../docs/DATABASE.md) for detailed documentation*
+*See [prisma/AGENTS.md](AGENTS.md) for database schema conventions*

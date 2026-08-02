@@ -227,12 +227,13 @@ test.describe('Customer SPA', () => {
     await page.locator('input[type="email"]').fill('nonexistent_' + Date.now() + '@nowhere.test');
     await page.locator('input[type="password"]').fill('SomePassword123!');
 
-    await page.getByRole('button', { name: 'Sign In' }).click();
-
-    // Wait for API response
-    await page.waitForResponse(
+    // Register waitForResponse BEFORE clicking — otherwise a fast local response
+    // can arrive before the wait starts (classic race) and the test times out.
+    const errorResponse = page.waitForResponse(
       (res) => res.url().includes('/auth/email/login') && res.status() === 401,
     );
+    await page.getByRole('button', { name: 'Sign In' }).click();
+    await errorResponse;
 
     await expect(page.getByText('Invalid email or password')).toBeVisible();
   });

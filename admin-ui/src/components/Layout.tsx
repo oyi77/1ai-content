@@ -18,14 +18,14 @@ const breadcrumbName: Record<string, string> = {
 function Breadcrumbs() {
   const location = useLocation();
   const navigate = useNavigate();
-  const parts = location.pathname.split("/").filter(Boolean);
+  const parts = location.pathname.split("/").filter((p: string) => p && p !== "admin");
 
   if (parts.length === 0) return null;
 
   return (
     <nav className="flex items-center gap-1.5 text-xs text-text-muted">
       <button
-        onClick={() => navigate("/dashboard")}
+        onClick={() => navigate("/admin/dashboard")}
         className="hover:text-text-primary transition-colors cursor-pointer"
       >
         Admin

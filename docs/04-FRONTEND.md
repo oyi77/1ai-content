@@ -144,21 +144,15 @@ if (res.status === 401) {
 }
 ```
 
-## Customer React SPA (`customer-ui/`)
+## Customer SPA namespace (`admin-ui/src/app/` — ex-`customer-ui/`)
 
 ### Build Configuration
 
-```typescript
-// customer-ui/vite.config.ts
-export default defineConfig({
-  base: "/app/",
-  build: { outDir: "dist" },
-});
-```
+Consolidated ke `admin-ui/` (vite `base: "/"`, tanpa basename) — lihat `admin-ui/AGENTS.md` & `docs/01-ARCHITECTURE.md`.
 
 ### Router
 
-`BrowserRouter` with `basename="/app"`. Contains the customer-facing dashboard for managing credits, videos, and account settings.
+Route namespace `/app/*` dimount di `admin-ui/src/main.tsx` (CustomerApp lazy) → `src/app/App.tsx` (`AuthProvider` + `ProtectedRoute` + route relatif). Nav sidebar: `src/app/layout/Layout.tsx:4-15` (semua `/app/*`).
 
 ## EJS Views (`src/views/`)
 
@@ -225,7 +219,6 @@ CSS variables defined in `layout.ejs` and `admin-login.ejs`:
 
 ### Static File Serving
 
-- **Admin SPA**: `admin-ui/dist/` served at `/admin/` via `@fastify/static`
-- **Customer SPA**: `customer-ui/dist/` served at `/app/` via `@fastify/static`
+- **Consolidated SPA**: `admin-ui/dist/` served at `/admin/` (index.ts:328-335) & `/assets/` (index.ts:346-359) via `@fastify/static`; SPA fallback notFoundHandler `/admin/*` & `/app/*` → `index.html` (index.ts:373-383)
 - **Public files**: `public/` served at `/public/` via `@fastify/static`
 - **Python backend**: Static video files at `/api/py/loop/video/{filename}`

@@ -42,3 +42,13 @@ SQLite persistence layer. Handles schema creation, Pydantic data models, and rep
 - `sqlite3` — stdlib, no install needed
 
 <!-- MANUAL: -->
+
+
+## Temuan Baru (audit 2026-08-02)
+
+- **Stale**: tabel Key Files menyebut `schema.py` dengan `create_tables()` (DDL untuk `projects`, `jobs`, `project_metadata`) — file `schema.py` TIDAK ADA. File yang ada hanya `database.py`, `models.py`, `repository.py`. DDL kemungkinan sudah dipindah ke `database.py`; perlu diverifikasi.
+- **Stale**: section Dependencies Internal menyebut `src/db/schema.py` — jalur nyata `services.ebook.db.schema` tidak ada.
+- `database.py`/`repository.py`/`models.py` masih sesuai deskripsi umum (thin connection factory + repository pattern) — klaim inti tetap valid.
+- Catatan: verifikasi apakah tabel `jobs` masih dibuat, mengingat folder `services/ebook/jobs/` tidak ada.
+
+> Last updated: 2026-08-02 — audit temuan baru (schema.py hilang, klaim DDL basi)

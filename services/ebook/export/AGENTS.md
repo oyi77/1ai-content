@@ -39,3 +39,12 @@ Converts the generated manuscript and cover into distributable files. Produces D
 - `libreoffice` (system binary) — PDF conversion
 
 <!-- MANUAL: -->
+
+
+## Temuan Baru (audit 2026-08-02)
+
+- **Tidak terdokumentasi** (file ada, belum ada di tabel Key Files): `export_orchestrator.py`, `epub_generator.py`, `comics_exporter.py` — tiga modul baru; `comics_exporter.py` menandakan dukungan ekspor komik yang belum terdokumentasi.
+- Catatan: bug `DocxGenerator._add_toc()` (membaca `toc.md` dari `self.projects_dir`, bukan `projects/{id}/`) SUDAH tercatat di dokumen ini — bukan temuan baru, tetap valid.
+- **Stale**: klaim `src/` di section Dependencies (Internal: `src/pipeline/`, `src/cover/`) — kode nyata memakai `services.ebook.*`.
+
+> Last updated: 2026-08-02 — audit temuan baru (3 modul ekspor tak terdokumentasi)

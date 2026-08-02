@@ -26,8 +26,8 @@ from telethon.tl.types import (
 
 # ── Config ─────────────────────────────────────────────────────
 BOT_USERNAME = "vilona_content_bot"
-API_ID = 23647272
-API_HASH = "5e776079cb96bac6dcd1965c9e3b1824"
+API_ID = int(os.getenv("TELEGRAM_API_ID", "0"))
+API_HASH = os.getenv("TELEGRAM_API_HASH", "")
 SESSION_PATH = os.path.expanduser("~/.hermes/workspace/sessions/vilona_session")
 
 # ── Results tracking ───────────────────────────────────────────

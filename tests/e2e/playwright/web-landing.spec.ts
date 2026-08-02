@@ -116,18 +116,17 @@ test('landing page has a navigation bar', async ({ page }) => {
 
 test('landing page has features/solution section', async ({ page }) => {
   await page.goto('/');
-  // React SPA: #features section with feature cards containing h3 titles
-  const featureCards = page.locator('#features h3');
-  const count = await featureCards.count();
-  expect(count).toBeGreaterThan(0);
+  // React SPA: #features section with feature cards containing h3 titles.
+  // count() does NOT auto-wait (returns 0 before the lazy-loaded React chunk renders),
+  // so assert visibility on the first card instead — consistent with the other tests.
+  const featureCard = page.locator('#features h3').first();
+  await expect(featureCard).toBeVisible();
 });
 
 test('landing page has pricing section', async ({ page }) => {
   await page.goto('/');
   // React SPA: #pricing section exists with package cards
-  const pricingSection = page.locator('#pricing');
-  const count = await pricingSection.count();
-  expect(count).toBeGreaterThan(0);
+  await expect(page.locator('#pricing').first()).toBeVisible();
   // Should have at least one package name visible
   const pkgName = page.locator('#pricing h3').first();
   await expect(pkgName).toBeVisible();

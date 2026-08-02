@@ -146,7 +146,7 @@ test.describe('Customer API Boundary', () => {
 test.describe('Customer SPA Boundary', () => {
   test('8. SPA /app/dashboard without token redirects to /app/login', async ({ page }) => {
     const res = await page.goto('/app/dashboard');
-    // Fastify serves customer-ui/dist/index.html (200), SPA JS handles client-side redirect
+    // Fastify serves admin-ui/dist/index.html (200), SPA JS handles client-side redirect
     expect(res?.status()).toBe(200);
 
     // Wait for SPA ProtectedRoute to redirect to login

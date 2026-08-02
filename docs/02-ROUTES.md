@@ -10,17 +10,17 @@ Fastify evaluates routes in registration order. The sequence below is the author
 324  /webhook/telegram     → webhookRoutes (Telegram bot)
 325  /admin(/...)          → adminRoutes         ← auth middleware here
 326  / etc.                → webRoutes           ← public pages & API
-329  /admin/assets/*       → @fastify/static (admin-ui/dist)
+328  /admin/*             → @fastify/static (admin-ui/dist)
 337  /public/*             → @fastify/static (public/)
-347  /app/assets/*         → @fastify/static (customer-ui/dist)
+346  /assets/*             → @fastify/static (admin-ui/dist/assets)
 355  /api/agency           → agencyRoutes
 356  /api/content          → contentApiRoutes
 357  /api/youtube          → youtubeDashboardRoutes
 358  /api/ecosystem         → ecosystemRoutes
 359  /api/analytics         → analyticsRoutes
-361  (test routes if NODE_ENV=test)
-370  /app/*                → Customer SPA catch-all
-379  (setNotFoundHandler)  → 404 handler
+366  (test routes if NODE_ENV=test)
+373  /admin/*, /app/*      → SPA fallback notFoundHandler (admin-ui/dist/index.html)
+373  (setNotFoundHandler)  → 404 handler
 392  (setErrorHandler)     → 500 handler
 ```
 

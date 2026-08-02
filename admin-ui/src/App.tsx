@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Layout from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
 import Analytics from "./pages/Analytics";
@@ -43,55 +43,58 @@ import RenderAd from "./pages/tools/RenderAd";
 import Pinterest from "./pages/tools/Pinterest";
 import ComicPage from "./pages/ComicPage";
 import Fanpage from "./pages/tools/Fanpage";
-export default function App() {
+
+/**
+ * Admin SPA — dimount di bawah <Route path="/admin/*"> pada main.tsx.
+ * Route relatif: di-render setelah prefix /admin dipotong oleh parent Routes.
+ */
+export default function AdminApp() {
   return (
-    <BrowserRouter basename="/admin">
-      <Routes>
-        <Route element={<Layout />}>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/analytics" element={<Analytics />} />
-          <Route path="/analytics/calendar" element={<CalendarPage />} />
-          <Route path="/analytics/trending" element={<TrendingPage />} />
-          <Route path="/analytics/ab-tests" element={<ABTestsPage />} />
-          <Route path="/analytics/carousel" element={<CarouselPage />} />
-          <Route path="/analytics/remeta" element={<RemetaPage />} />
-          <Route path="/analytics/repurpose" element={<RepurposePage />} />
-          <Route path="/analytics/research" element={<ResearchPage />} />
-          <Route path="/content" element={<Content />} />
-          <Route path="/users" element={<Users />} />
-          <Route path="/payments" element={<Payments />} />
-          <Route path="/tools" element={<Tools />} />
-          <Route path="/tools/cloak" element={<Cloak />} />
-          <Route path="/tools/engagement" element={<Engagement />} />
-          <Route path="/tools/video-tools" element={<VideoTools />} />
-          <Route path="/tools/storyboard" element={<Storyboard />} />
-          <Route path="/tools/render-ad" element={<RenderAd />} />
-          <Route path="/tools/pinterest" element={<Pinterest />} />
-          <Route path="/tools/fanpage" element={<Fanpage />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/pricing" element={<Pricing />} />
-          <Route path="/medias" element={<MediasPage />} />
-          <Route path="/ai-config" element={<AiConfigPage />} />
-          <Route path="/comic" element={<ComicPage />} />
-          <Route path="/playground" element={<Playground />} />
-          <Route path="/tts" element={<Tts />} />
-          <Route path="/music" element={<Music />} />
-          <Route path="/bookshelf" element={<BookshelfPage />} />
-          <Route path="/movie" element={<MoviePage />} />
-          <Route path="/providers" element={<ProvidersPage />} />
-          <Route path="/captions" element={<Captions />} />
-          <Route path="/analyze" element={<Analyze />} />
-          <Route path="/looping" element={<Looping />} />
-          <Route path="/autopilot" element={<Autopilot />} />
-          <Route path="/prompts" element={<PromptsPage />} />
-          <Route path="/personas" element={<PersonasPage />} />
-          <Route path="/dynamic-pricing" element={<DynamicPricingPage />} />
-          <Route path="/config" element={<ConfigPage />} />
-          <Route path="/system" element={<SystemPage />} />
-          <Route path="/interceptions" element={<InterceptionsPage />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+    <Routes>
+      <Route element={<Layout />}>
+        <Route index element={<Navigate to="dashboard" replace />} />
+        <Route path="dashboard" element={<Dashboard />} />
+        <Route path="analytics" element={<Analytics />} />
+        <Route path="analytics/calendar" element={<CalendarPage />} />
+        <Route path="analytics/trending" element={<TrendingPage />} />
+        <Route path="analytics/ab-tests" element={<ABTestsPage />} />
+        <Route path="analytics/carousel" element={<CarouselPage />} />
+        <Route path="analytics/remeta" element={<RemetaPage />} />
+        <Route path="analytics/repurpose" element={<RepurposePage />} />
+        <Route path="analytics/research" element={<ResearchPage />} />
+        <Route path="content" element={<Content />} />
+        <Route path="users" element={<Users />} />
+        <Route path="payments" element={<Payments />} />
+        <Route path="tools" element={<Tools />} />
+        <Route path="tools/cloak" element={<Cloak />} />
+        <Route path="tools/engagement" element={<Engagement />} />
+        <Route path="tools/video-tools" element={<VideoTools />} />
+        <Route path="tools/storyboard" element={<Storyboard />} />
+        <Route path="tools/render-ad" element={<RenderAd />} />
+        <Route path="tools/pinterest" element={<Pinterest />} />
+        <Route path="tools/fanpage" element={<Fanpage />} />
+        <Route path="settings" element={<Settings />} />
+        <Route path="pricing" element={<Pricing />} />
+        <Route path="medias" element={<MediasPage />} />
+        <Route path="ai-config" element={<AiConfigPage />} />
+        <Route path="comic" element={<ComicPage />} />
+        <Route path="playground" element={<Playground />} />
+        <Route path="tts" element={<Tts />} />
+        <Route path="music" element={<Music />} />
+        <Route path="bookshelf" element={<BookshelfPage />} />
+        <Route path="movie" element={<MoviePage />} />
+        <Route path="providers" element={<ProvidersPage />} />
+        <Route path="captions" element={<Captions />} />
+        <Route path="analyze" element={<Analyze />} />
+        <Route path="looping" element={<Looping />} />
+        <Route path="autopilot" element={<Autopilot />} />
+        <Route path="prompts" element={<PromptsPage />} />
+        <Route path="personas" element={<PersonasPage />} />
+        <Route path="dynamic-pricing" element={<DynamicPricingPage />} />
+        <Route path="config" element={<ConfigPage />} />
+        <Route path="system" element={<SystemPage />} />
+        <Route path="interceptions" element={<InterceptionsPage />} />
+      </Route>
+    </Routes>
   );
 }

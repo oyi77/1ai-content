@@ -108,7 +108,6 @@ Flow:
 ```
 
 **Files:**
-- `services/suno/client.py` — Suno AI client
 - `services/music/generator.py` — Multi-engine music gen
 
 ---
@@ -394,7 +393,7 @@ Flow:
 ```
 
 **Files:**
-- `services/cloakbrowser/__init__.py` — CloakBrowser adapter
+- `services/cloak_adapter/__init__.py` — CloakBrowser adapter
 - `src/services/postautomation.service.ts` — Post automation
 
 ---
@@ -417,7 +416,7 @@ Flow:
 │  Step 2: Batch Generate Content                                 │
 │  ├─ For each idea (10 videos):                                  │
 │  │   ├─ Generate AI video (video-generation.service)           │
-│  │   ├─ Generate matching music (suno.client)                  │
+│  │   ├─ Generate matching music (music.generator)               │
 │  │   ├─ Generate voiceover if needed (tts.engine)              │
 │  │   ├─ Compose final video (video-editor.service)             │
 │  │   └─ Generate thumbnail (image.service)                     │
@@ -655,10 +654,9 @@ Flow:
 │  NEW PYTHON SERVICES (services/)                                │
 │  ├─ looping/engine.py              (looping video creation)     │
 │  ├─ analysis/channel_analyzer.py   (channel analysis)           │
-│  ├─ suno/client.py                 (Suno AI music)              │
 │  ├─ tts/engine.py                  (multi-engine TTS)           │
 │  ├─ music/generator.py             (background music)           │
-│  └─ cloakbrowser/__init__.py       (CloakBrowser CDP adapter)   │
+│  └─ cloak_adapter/__init__.py      (CloakBrowser CDP adapter)   │
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 

@@ -4,16 +4,17 @@
 
 ## Docs
 
-- [docs/00-overview.md](docs/00-overview.md) — What the system is, tech stack, architecture overview
-- [docs/01-architecture.md](docs/01-architecture.md) — Components, data flow, diagrams
-- [docs/02-business-flows.md](docs/02-business-flows.md) — Domain model, business rules, entity lifecycles
-- [docs/03-user-flows.md](docs/03-user-flows.md) — User journeys (Telegram bot, admin dashboard)
-- [docs/04-api-reference.md](docs/04-api-reference.md) — Endpoints, contracts, auth
-- [docs/06-data-model.md](docs/06-data-model.md) — Prisma schema, entities, relationships
-- [docs/07-modularity-recommendations.md](docs/07-modularity-recommendations.md) — Architecture improvements roadmap
-- [docs/08-glossary.md](docs/08-glossary.md) — Domain & technical terms
-- [docs/ECOSYSTEM_ARCHITECTURE.md](docs/ECOSYSTEM_ARCHITECTURE.md) — 1ai-content ↔ 1ai-social ↔ 1ai-affiliate integration
-- [docs/AUDIT_REPORT.md](docs/AUDIT_REPORT.md) — Codebase quality audit
+- [docs/01-ARCHITECTURE.md](docs/01-ARCHITECTURE.md) — Components, data flow, architecture
+- [docs/02-ROUTES.md](docs/02-ROUTES.md) — API & bot routes
+- [docs/03-SECURITY.md](docs/03-SECURITY.md) — Security policies & procedures
+- [docs/04-FRONTEND.md](docs/04-FRONTEND.md) — Frontend SaaS (admin/customer/landing Vue SPAs)
+- [docs/05-TESTING.md](docs/05-TESTING.md) — Testing conventions
+- [docs/06-EXECUTION.md](docs/06-EXECUTION.md) — Execution & deployment guides
+- [docs/AGENTS.md](docs/AGENTS.md) — Docs conventions
+- [docs/README.md](docs/README.md) — Docs index
+- [docs/db-consolidation-plan.md](docs/db-consolidation-plan.md) — DB consolidation plan
+
+> Catatan: section Docs sebelumnya merujuk `docs/00-overview.md`, `docs/01-architecture.md`, `docs/04-api-reference.md`, `docs/ECOSYSTEM_ARCHITECTURE.md`, `docs/AUDIT_REPORT.md`, dst. — file tsb tidak ada di repo; daftar di atas adalah file aktual.
 
 ## Modules
 
@@ -38,25 +39,12 @@
 - [config/payment.yml](config/payment.yml) — Payment gateway configuration
 - [config/ai.yml](config/ai.yml) — AI provider configuration
 - [config/features.yml](config/features.yml) — Feature flags
+- [config/monitoring/AGENTS.md](config/monitoring/AGENTS.md) — Prometheus + Grafana setup
 
 ## Infrastructure
 
 - [Dockerfile](Dockerfile) — Production container build
 - [docker-compose.yml](docker-compose.yml) — Full stack: app, PostgreSQL, Redis, Prometheus, Grafana
-- [monitoring/AGENTS.md](monitoring/AGENTS.md) — Prometheus + Grafana setup
+- [ecosystem.config.js](ecosystem.config.js) — PM2 process management
 
-## Research
-
-- [docs/research/FEATURE_MATRIX.md](docs/research/FEATURE_MATRIX.md) — Competitor feature comparison
-- [docs/research/GAP_ANALYSIS.md](docs/research/GAP_ANALYSIS.md) — Prioritized gap registry
-- [docs/research/competitors/google-veo.md](docs/research/competitors/google-veo.md) — Google Veo 3.1 profile
-- [docs/research/competitors/kling-ai.md](docs/research/competitors/kling-ai.md) — Kling AI 3.0 profile
-- [docs/research/competitors/runway.md](docs/research/competitors/runway.md) — Runway Gen-4.5 profile
-
-## Exploration
-
-- [docs/exploration/CODEBASE_AUDIT.md](docs/exploration/CODEBASE_AUDIT.md) — Living codebase audit
-
-## Sprints
-
-- [docs/sprints/SPRINT_1.md](docs/sprints/SPRINT_1.md) — Sprint 1 summary
+> Catatan: section Research (`docs/research/*`), Exploration (`docs/exploration/*`), dan Sprints (`docs/sprints/*`) sebelumnya merujuk direktori yang tidak ada di repo; `monitoring/AGENTS.md` diganti `config/monitoring/AGENTS.md` di atas.

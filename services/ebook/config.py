@@ -62,10 +62,11 @@ class PipelineConfig:
     cover_title_font_size: int = 80
     cover_watermark_font_size: int = 40
 
-    # Server
-    api_host: str = "0.0.0.0"
-    api_port: int = 8765
-    ui_port: int = 8501
+    # Server — LEGACY: standalone ebook server (8765/8501) dihapus dari docker-compose;
+    # generator kini dilayani via services/api.py di prefix /text/ebook (port 8767).
+    # api_host: str = "0.0.0.0"
+    # api_port: int = 8765
+    # ui_port: int = 8501
 
     # AI reliability
     ai_request_timeout: int = 300

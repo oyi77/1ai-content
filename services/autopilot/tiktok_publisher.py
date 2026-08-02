@@ -12,6 +12,7 @@ Usage:
 
 import json
 import os
+import random
 import time
 from datetime import datetime
 from typing import Optional
@@ -145,10 +146,7 @@ class AutoPilotTikTokPublisher:
 
             # Step 3: Publish via CloakBrowser
             if auto_publish and tiktok_profile_id:
-                media_path = content_result.get("media_path") or (
-                    if content_type == ContentType.carousel.value
-                    else content_result.get("video_path")
-                )
+                media_path = content_result.get("media_path") or content_result.get("video_path")
 
                 if media_path and os.path.exists(media_path):
                     tags = [h.lstrip("#") for h in hashtags[:5]]

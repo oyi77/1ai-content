@@ -18,13 +18,13 @@ from telethon import TelegramClient, events
 from telethon.tl.types import Message
 
 # ── Config ─────────────────────────────────────────────────────
-API_ID = 23647272
-API_HASH = "5e776079cb96bac6dcd1965c9e3b1824"
+API_ID = int(os.getenv("TELEGRAM_API_ID", "0"))
+API_HASH = os.getenv("TELEGRAM_API_HASH", "")
 SESSION = os.path.expanduser("~/.telethon_session/alwayscuanbos")
 BOT = "vilonacontentbot"
 BASE = "https://content.aitradepulse.com"
 PY_API = "http://localhost:8767"
-BOT_API = "https://api.telegram.org/bot8769330028:AAH3xWAKpiADzrPNkcqUAOyeGAM4nAfS9ZI"
+BOT_API = "https://api.telegram.org/bot" + os.getenv("BOT_TOKEN", "")
 
 passed = 0
 failed = 0

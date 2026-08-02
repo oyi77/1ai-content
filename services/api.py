@@ -20,7 +20,9 @@ Run:
 """
 
 import os
-from fastapi import FastAPI
+import secrets
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 
 
 
@@ -102,6 +104,29 @@ registry.add_router(audio_router)
 registry.add_router(text_router)
 registry.add_router(image_router)
 registry.register(EbookContentGenerator(), prefix="/text/ebook")
+
+
+# ══════════════════════════════════════════════════════════════
+# EBOOK API KEY ENFORCEMENT (optional) — prefix /text/ebook/*
+# Aktif HANYA jika env EBOOK_API_KEY diset (default .env.example:
+# "Optional API key"). Jika env tidak diset, request dibiarkan
+# lewat (default = open) agar tidak memutus alur legacy. TS sudah
+# selalu mengirim header X-API-Key (src/services/ebook.service.ts).
+# Perbandingan memakai secrets.compare_digest (timing-safe).
+# ══════════════════════════════════════════════════════════════
+
+@app.middleware("http")
+async def enforce_ebook_api_key(request: Request, call_next):
+    expected = os.getenv("EBOOK_API_KEY")
+    if expected and request.url.path.startswith("/text/ebook"):
+        provided = request.headers.get("X-API-Key", "")
+        if not provided or not secrets.compare_digest(provided, expected):
+            return JSONResponse(
+                status_code=401,
+                content={"detail": "Unauthorized: missing or invalid X-API-Key"},
+            )
+    return await call_next(request)
+
 
 # Wire everything into the app
 registry.wire(app)

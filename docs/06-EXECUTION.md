@@ -22,11 +22,8 @@ cd ~/projects/1ai-content
 # Install Node dependencies
 npm install
 
-# Install admin SPA dependencies
+# Install SPA dependencies (single admin-ui bundle)
 cd admin-ui && npm install && cd ..
-
-# Install customer SPA dependencies
-cd customer-ui && npm install && cd ..
 ```
 
 ### 2. Environment Configuration
@@ -67,11 +64,8 @@ Note: The project uses `prisma db push` (not `prisma migrate`) — there are 0 a
 ### 4. Build SPAs
 
 ```bash
-# Build admin SPA
+# Build SPA (single admin-ui bundle)
 cd admin-ui && npm run build && cd ..
-
-# Build customer SPA
-cd customer-ui && npm run build && cd ..
 ```
 
 ### 5. Start Development Server

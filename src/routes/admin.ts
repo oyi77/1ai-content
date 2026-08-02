@@ -118,8 +118,10 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
       url.startsWith("/api/interceptions") || url.startsWith("/api/intercept/") ||
       url === "/admin/interceptions" ||
       (url.startsWith("/api/system/") && url !== "/api/system/health") ||
-      // Catch-all: any /admin/* not login or static asset
-      (url.startsWith("/admin/") && url !== "/admin/login" && !url.startsWith("/admin/assets/"));
+      // Catch-all: any /admin/* not login or static asset.
+      // SPA asset kini di /assets/ dan hook ini hanya berlaku utk rute adminRoutes,
+      // jadi pengecualian `!url.startsWith("/assets/")` praktis tidak pernah match.
+      (url.startsWith("/admin/") && url !== "/admin/login" && !url.startsWith("/assets/"));
 
     if (isAdminRoute) {
       await verifyAdmin(request, reply);

@@ -47,10 +47,9 @@ from sqlalchemy.dialects.postgresql import JSONB, insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, relationship, validates
 
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql://openclaw:openclaw@localhost:5432/berkahkarya",
-)
+# No hardcoded credential default — DATABASE_URL is required at engine use time.
+# Default is empty so an accidental fallback never connects with embedded creds.
+DATABASE_URL = os.getenv("DATABASE_URL", "")
 
 # Lazy async engine — only creates when accessed, to avoid crashing on asyncpg import
 _engine = None
@@ -60,6 +59,11 @@ _async_session = None
 def get_engine():
     global _engine
     if _engine is None:
+        if not DATABASE_URL:
+            raise RuntimeError(
+                "DATABASE_URL environment variable is required before using the "
+                "database engine (e.g. postgresql://user:pass@host:5432/dbname)."
+            )
         async_url = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
         _engine = create_async_engine(async_url, echo=False, pool_size=5, max_overflow=10)
     return _engine

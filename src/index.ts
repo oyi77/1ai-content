@@ -330,7 +330,8 @@ async function main() {
       root: path.join(process.cwd(), 'admin-ui', 'dist'),
       prefix: '/admin/',
       cacheControl: true,
-      maxAge: '1h',
+      // maxAge 0 (ms) — index.html landing & SPA fallback harus fresh pasca-deploy (sendFile terikat ke plugin ini); aset ber-hash tetap 1h via /assets/ & /public/. Catatan: string '0' TIDAK dipakai — @lukeed/ms.parse('0') mengembalikan undefined -> header max-age=NaN
+      maxAge: 0,
       wildcard: false,
     });
 
@@ -343,29 +344,19 @@ async function main() {
       decorateReply: false,
     });
 
-    // Customer SPA static files
-    await app.register((await import('@fastify/static')).default, {
-      root: path.join(process.cwd(), 'customer-ui', 'dist'),
-      prefix: '/app/',
-      cacheControl: true,
-      maxAge: '1h',
-      decorateReply: false,
-      wildcard: false,
-    });
-
-    // Landing page static assets (served at /assets/ from landing-ui build)
+    // Single frontend bundle (admin-ui) — all SPA asset files served at /assets/
     try {
       await app.register((await import('@fastify/static')).default, {
-        root: path.join(process.cwd(), 'landing-ui', 'dist', 'assets'),
+        root: path.join(process.cwd(), 'admin-ui', 'dist', 'assets'),
         prefix: '/assets/',
         cacheControl: true,
         maxAge: '1h',
         decorateReply: false,
         wildcard: true,
       });
-      logger.info('🏠 Landing page React SPA assets registered');
+      logger.info('🏠 Frontend SPA assets registered (admin-ui single bundle)');
     } catch (e) {
-      logger.warn({ msg: 'landing-ui/dist not found — using EJS landing page', err: String(e) });
+      logger.warn({ msg: 'admin-ui/dist/assets not found — SPA assets unavailable; landing page served from admin-ui/dist or EJS via src/routes/web/pages.ts', err: String(e) });
     }
     await app.register(agencyRoutes, { prefix: '/api' });
     await app.register(contentApiRoutes);
@@ -380,18 +371,19 @@ async function main() {
     }
     logger.info("✅ Routes registered");
 
-    // Customer SPA catch-all
-    const customerUiDist = path.join(process.cwd(), 'customer-ui', 'dist');
-    app.get('/app/*', async (request, reply) => {
-      const relPath = (new URL(request.url, 'http://localhost').pathname).replace('/app/', '');
-      if (/\.[a-z0-9]+(\?|$)/i.test(relPath)) {
-        return reply.sendFile(relPath, customerUiDist);
-      }
-      return reply.sendFile('index.html', customerUiDist);
-    });
-
-    // 404 handler
+    // SPA fallback — hanya /app/*; /admin/* ditangani catch-all di src/routes/admin.ts
+    const spaDist = path.join(process.cwd(), 'admin-ui', 'dist');
+    // Whitelist ekstensi statis — path SPA valid berakhiran dot-token (mis. /app/foo.bar) harus tetap dapat index.html
+    const SPA_STATIC_EXT = /\.(?:js|mjs|cjs|css|png|jpe?g|gif|svg|webp|ico|avif|woff2?|ttf|eot|otf|map|json|txt|md|xml|pdf|mp4|webm|mp3|wav|ogg|html?)$/i;
     app.setNotFoundHandler((request, reply) => {
+      const pathname = new URL(request.url, 'http://localhost').pathname;
+      const isSpaRoute =
+        (request.method === 'GET' || request.method === 'HEAD') &&
+        pathname.startsWith('/app/') &&
+        !SPA_STATIC_EXT.test(pathname);
+      if (isSpaRoute) {
+        return reply.sendFile('index.html', spaDist);
+      }
       const wantsHtml = request.headers.accept?.includes('text/html');
       if (wantsHtml) {
         return reply.status(404).type('text/html').send(

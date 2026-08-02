@@ -75,4 +75,4 @@ Utility functions:
 
 ---
 
-*See [ARCHITECTURE.md](../docs/ARCHITECTURE.md) for detailed architecture documentation*
+*See [01-ARCHITECTURE.md](../docs/01-ARCHITECTURE.md) for detailed architecture documentation*

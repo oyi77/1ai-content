@@ -188,7 +188,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
 
   function handleNav(item: SidebarItem) {
     if (item.type === "react") {
-      navigate(item.path);
+      navigate(`/admin${item.path}`);
     } else {
       window.location.href = `/admin${item.path}`;
     }
@@ -234,7 +234,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
 
             const catActive = cat.items.some((item) =>
               item.type === "react"
-                ? location.pathname.startsWith(item.path)
+                ? location.pathname.startsWith(`/admin${item.path}`)
                 : location.pathname === `/admin${item.path}` ||
                   location.pathname.startsWith(`/admin${item.path}/`)
             );
@@ -273,7 +273,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                     {cat.items.map((item) => {
                       const itemActive =
                         item.type === "react"
-                          ? location.pathname.startsWith(item.path)
+                          ? location.pathname.startsWith(`/admin${item.path}`)
                           : location.pathname === `/admin${item.path}`;
 
                       return (

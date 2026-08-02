@@ -4,7 +4,7 @@
 # services
 
 ## Purpose
-Business logic layer with 41 services covering video generation, payment processing, AI prompt optimization, user management, analytics, and social media posting.
+Business logic layer with 76 top-level `*.service.ts` files covering video generation, payment processing, AI prompt optimization, user management, analytics, and social media posting. Tabel `Key Files` di bawah non-exhaustive (41 dari 76 terdokumentasi).
 
 ## Key Files
 
@@ -51,6 +51,12 @@ Business logic layer with 41 services covering video generation, payment process
 | `token-tracker.service.ts` | AI token usage tracking |
 | `admin-alert.service.ts` | Admin notification alerts |
 | `p2p.service.ts` | Peer-to-peer service |
+
+> **Catatan SRC (2026-08-02):** Direktori ini berisi **76 file `*.service.ts`** level-atas (104 rekursif — subfolder `video/`, `youtube/`, `audio/`, `image/`, `video-analysis/`, `content-analysis/`), tapi tabel di atas hanya mendokumentasikan 41. Berikut **35 service yang tidak terdaftar** di tabel (diverifikasi ada di disk, urutan alfabetis):
+>
+> `admin-config`, `ai-config`, `ai-task-settings`, `balance-checker`, `content-factory`, `content-pipeline`, `content-rework`, `content-webhook`, `custom-provider`, `dynamic-pricing`, `ebook`, `exchange-rate`, `intercept`, `money-printer`, `provider-balance`, `provider-cost-tracker`, `shared-ai-pipeline`, `shared-platform-adapters`, `storyboard-image`, `storyboard-visual`, `template-video`, `tiktok-automation`, `tiktok-social`, `user-credits`, `user-crud`, `user-referral`, `user-stats`, `user-telegram`, `video-clipper`, `video-editor`, `video-library`, `video-lifecycle`, `video-storyboard`, `viral-scanner`, `whitelabel`
+>
+> Sebelum mengubah tabel, jalankan `ls -1 src/services/*.service.ts` untuk daftar lengkap terbaru.
 
 ## For AI Agents
 

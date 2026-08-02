@@ -5,12 +5,13 @@ Uses polling-based response detection to avoid timing issues.
 """
 
 import asyncio
+import os
 import sys
 from telethon import TelegramClient
 from datetime import datetime, timezone
 
-API_ID = 23913448
-API_HASH = "78d168f985edf365a5cd9679a917a0b2"
+API_ID = int(os.getenv("TELEGRAM_API_ID", "0"))
+API_HASH = os.getenv("TELEGRAM_API_HASH", "")
 SESSION_PATH = "/home/openclaw/.openclaw/workspace/.vilona/sessions/paijo"
 BOT_USERNAME = "berkahkarya_saas_bot"
 

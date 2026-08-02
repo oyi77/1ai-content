@@ -51,13 +51,13 @@ Order is critical — Fastify evaluates routes in registration order.
 324: webhook routes (Telegram bot)
 325: adminRoutes — all /admin/* routes             (key: auth + SPA)
 326: webRoutes — public routes (pages, auth, content, finance, chat, aliases)
-328-334: @fastify/static for admin-ui/dist at /admin/
+328-335: @fastify/static for admin-ui/dist at /admin/
 337-344: @fastify/static for public/ at /public/
-347-354: @fastify/static for customer-ui/dist at /app/
-355-359: agency, content-api, youtube-dashboard, ecosystem, analytics-api routes
+346-359: @fastify/static admin-ui/dist/assets di /assets/ (single bundle)
+360-364: agency, content-api, youtube-dashboard, ecosystem, analytics-api routes
 361-365: test-only routes (NODE_ENV=test)
-368-376: Customer SPA catch-all /app/*
-379-389: 404 handler
+373-383: SPA fallback notFoundHandler — /admin/* & /app/* → admin-ui/dist/index.html
+373-392: SPA fallback + 404 handler
 392-409: 500 handler
 ```
 
@@ -148,23 +148,26 @@ FastAPI server on port 8767. Proxied via nginx at `/api/py/*` → `http://127.0.
 
 | Config | Value |
 |--------|-------|
-| **Vite base** | `/admin/` |
+| **Vite base** | `/` (tanpa basename) |
 | **Build output** | `admin-ui/dist/` |
-| **Router basename** | `/admin` (BrowserRouter) |
-| **Assets URL** | `/admin/assets/*` |
-| **Static file serving** | `@fastify/static` at `/admin/` from `admin-ui/dist` |
+| **Router** | AdminApp di `src/App.tsx` (relatif, tanpa basename) |
+| **Assets URL** | `/assets/*` |
+| **Static file serving** | `@fastify/static` at `/admin/` + `/assets/` dari `admin-ui/dist`; SPA fallback notFoundHandler |
 
 Served by:
-1. `@fastify/static` — serves `/admin/assets/*` (JS, CSS, etc.) — registered at `index.ts:329`
-2. `adminRoutes` SPA catch-all (`/admin/*`) — serves `/admin/index.html` for all other `/admin/*` paths
+1. `@fastify/static` — serves `/admin/*` & `/assets/*` (JS, CSS, dll) dari `admin-ui/dist` — registered at `index.ts:328-335` & `346-359`
+2. `setNotFoundHandler` SPA fallback — serves `admin-ui/dist/index.html` untuk `/admin/*` & `/app/*` (index.ts:373-383)
 
-### Customer SPA (`customer-ui/`)
+### Consolidated SPA (`admin-ui/`)
 
 | Config | Value |
 |--------|-------|
-| **Build output** | `customer-ui/dist/` |
-| **Router basename** | `/app` |
-| **Served at** | `/app/*` |
+| **Build output** | `admin-ui/dist/` |
+| **Vite base** | `/` (tanpa basename) |
+| **Router** | `src/main.tsx`: `/`→Landing, `/admin/*`→AdminApp, `/app/*`→CustomerApp |
+| **Served at** | `/` + `/admin/*` + `/app/*` |
+
+> Konsolidasi 2026-08-02: `customer-ui/` & `landing-ui/` dihapus; source digabung ke `admin-ui/src/{app,landing}`.
 
 ## nginx Reverse Proxy (`~/.cloudflare-router/nginx/sites/app_content.conf`)
 

@@ -17,7 +17,7 @@ from datetime import datetime
 
 import httpx
 
-BOT_TOKEN = "8769330028:AAH3xWAKpiADzrPNkcqUAOyeGAM4nAfS9ZI"
+BOT_TOKEN = os.getenv("BOT_TOKEN", "")
 BASE = f"https://api.telegram.org/bot{BOT_TOKEN}"
 TEST_CHAT_ID = os.getenv("TEST_CHAT_ID", "")  # Set to your chat ID for live testing
 

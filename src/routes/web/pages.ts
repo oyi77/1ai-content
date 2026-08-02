@@ -21,11 +21,12 @@ interface Testimonial {
 }
 
 export async function pageRoutes(server: FastifyInstance): Promise<void> {
-  // ── Landing (React SPA via landing-ui) ──
-  const LANDING_INDEX = path.join(process.cwd(), "landing-ui", "dist", "index.html");
+  // ── Landing (React SPA via admin-ui single bundle) ──
+  const LANDING_INDEX = path.join(process.cwd(), "admin-ui", "dist", "index.html");
   if (fs.existsSync(LANDING_INDEX)) {
-    const landingHtml = fs.readFileSync(LANDING_INDEX, "utf-8");
     server.get("/", async (_request, reply) => {
+      // Baca per-request agar hasil rebuild admin-ui langsung terlihat tanpa restart
+      const landingHtml = fs.readFileSync(LANDING_INDEX, "utf-8");
       return reply.type("text/html").send(landingHtml);
     });
   } else {

@@ -13,6 +13,7 @@ that loop as the session-scoped event_loop fixture so every test runs on it.
 
 import asyncio
 import inspect
+import os
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -21,8 +22,8 @@ from telethon import TelegramClient
 from telethon.tl.custom import Message
 
 # ─── connection constants ────────────────────────────────────────────────────
-API_ID = 23913448
-API_HASH = "78d168f985edf365a5cd9679a917a0b2"
+API_ID = int(os.getenv("TELEGRAM_API_ID", "0"))
+API_HASH = os.getenv("TELEGRAM_API_HASH", "")
 SESSION_PATH = "/home/openclaw/.hermes/workspace/sessions/paijo"
 BOT_USERNAME = "berkahkarya_saas_bot"
 BASE_URL = "http://localhost:3000"

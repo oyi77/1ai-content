@@ -1,7 +1,6 @@
 # 🤖 OpenClaw Bot
 
 [![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)](CHANGELOG.md)
-[![Status](https://img.shields.io/badge/status-production-green.svg)](STATUS.md)
 [![License](https://img.shields.io/badge/license-PROPRIETARY-red.svg)](LICENSE)
 
 > **AI Video Marketing SaaS Platform — Child Bot Architecture**
@@ -97,18 +96,9 @@ It calls the **sibling `ebook/` FastAPI service** (default `http://localhost:876
 | `EBOOK_API_URL` | `http://localhost:8765` | Base URL of ebook FastAPI service |
 | `EBOOK_API_KEY` | (empty) | Optional authentication key |
 
-To start the ebook service alongside the bot:
+To start the ebook service alongside the bot, see `services/ebook/AGENTS.md`. Entry point: `EbookContentGenerator` (`services/ebook/generator.py`), diregistrasi di `services/api.py` (port 8767; `api_port=8765` di `services/ebook/config.py`).
 
-```bash
-cd ebook
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-python run_api.py
-```
-
-Or use `docker-compose.ebook.yml` (if available) or the root `docker-compose.yml` after adding the ebook service.
-
-See `ebook/README.md` for full ebook service documentation.
+Atau jalankan service `ebook` pada root `docker-compose.yml`.
 
 ---
 
@@ -136,7 +126,7 @@ cp .env.example .env
 # Edit .env with your configuration
 
 # Run migrations
-npm run migrate
+npm run migrate:dev
 
 # Start development
 npm run dev
@@ -151,14 +141,13 @@ npm run start
 
 | Document | Description |
 |----------|-------------|
-| [MASTER_PROMPT.md](docs/MASTER_PROMPT.md) | Complete bot behavior specification |
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | System architecture & design patterns |
-| [API.md](docs/API.md) | API contracts & integration guides |
-| [DATABASE.md](docs/DATABASE.md) | Database schema & migrations |
-| [SECURITY.md](docs/SECURITY.md) | Security policies & procedures |
-| [DEPLOYMENT.md](docs/DEPLOYMENT.md) | Deployment guides & CI/CD |
-| [MONITORING.md](docs/MONITORING.md) | Observability & alerting |
-| [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Common issues & solutions |
+| [01-ARCHITECTURE.md](docs/01-ARCHITECTURE.md) | System architecture & design patterns |
+| [02-ROUTES.md](docs/02-ROUTES.md) | API & bot routes |
+| [03-SECURITY.md](docs/03-SECURITY.md) | Security policies & procedures |
+| [04-FRONTEND.md](docs/04-FRONTEND.md) | Frontend SaaS (Vue SPAs) |
+| [05-TESTING.md](docs/05-TESTING.md) | Testing conventions |
+| [06-EXECUTION.md](docs/06-EXECUTION.md) | Deployment guides & CI/CD |
+| [AGENTS.md](docs/AGENTS.md) | Docs conventions |
 
 ---
 
@@ -226,15 +215,9 @@ docker run -d \
 
 ### Kubernetes
 
-```bash
-# Apply manifests
-kubectl apply -f k8s/
+> Manifests `k8s/` belum tersedia di repo — deploy via Docker (di atas) atau PM2 (`ecosystem.config.js`).
 
-# Check status
-kubectl get pods -n openclaw
-```
-
-See [DEPLOYMENT.md](docs/DEPLOYMENT.md) for detailed deployment guides.
+See [docs/06-EXECUTION.md](docs/06-EXECUTION.md) for detailed deployment guides.
 
 ---
 

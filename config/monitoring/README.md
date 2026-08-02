@@ -61,4 +61,4 @@ docker-compose --profile monitoring up -d
 
 ---
 
-*See [MONITORING.md](../docs/MONITORING.md) for detailed documentation*
+*See [AGENTS.md](AGENTS.md) for monitoring setup documentation*
