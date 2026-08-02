@@ -319,7 +319,7 @@
   "social.invalid_recipient_id": "❌ Invalid recipient ID format.",
   "social.amount_positive": "❌ Amount must be a positive number.",
   "social.transfer_failed": "❌ Transfer Failed: {error}",
-  "social.send_usage": "Usage: /send <recipient_telegram_id> <amount>\nExample: /send 123456789 50",
+  "social.send_usage": "Usage: /send `recipient_telegram_id` `amount`\nExample: /send 123456789 50",
   "social.coming_soon": "🔗 *Social Media Auto-Post*\n\nSocial media account connection and auto-post is under development.\n\nComing soon: connect TikTok, Instagram, Facebook, YouTube and publish videos directly from the bot!",
   "social.coming_soon_short": "🚧 Coming soon!",
   "misc.coming_soon": "🚧 Feature coming soon!",

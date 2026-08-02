@@ -255,7 +255,7 @@ export async function handleTikTokAutomationCallbacks(ctx: BotContext, data: str
         `📋 Total: ${apStatus.total_jobs}`,
         `🕐 Last: ${apStatus.last_run ?? 'Never'}\n`,
       ];
-      if (apStatus.jobs.length > 0) {
+      if (apStatus.jobs?.length > 0) {
         lines.push('*All Jobs:*');
         for (const job of apStatus.jobs) {
           lines.push(`• ${job.name} — ${job.status} (${job.config.content_type}) — ${job.config.posting_times.join(', ')}`);

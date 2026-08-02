@@ -35,6 +35,10 @@ class AutoPilotOrchestrator:
         # Job store
         self._jobs: dict[str, dict] = {}
         self._next_job_id = 1
+        # Run tracking (feeds get_status contract)
+        self._run_counts: dict[str, int] = {}
+        self._results_log: list[dict] = []
+        self._last_run: str | None = None
 
     @property
     def faceless_engine(self):
@@ -100,8 +104,24 @@ class AutoPilotOrchestrator:
                 results.append(result)
                 job["status"] = "completed" if result.get("success") else "failed"
             except Exception as e:
-                results.append({"job_id": job_id, "success": False, "errors": [str(e)]})
+                result = {"job_id": job_id, "success": False, "errors": [str(e)]}
+                results.append(result)
                 job["status"] = "failed"
+            # Track run metadata for get_status()
+            self._run_counts[job_id] = self._run_counts.get(job_id, 0) + 1
+            job["last_run"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self._last_run = job["last_run"]
+            self._results_log.append({
+                "job_id": job_id,
+                "job_name": job.get("name", job_id),
+                "success": result.get("success"),
+                "videos_generated": result.get("videos_generated", 0),
+                "videos_published": result.get("videos_published", 0),
+                "errors": result.get("errors", []),
+                "ran_at": job["last_run"],
+            })
+            if len(self._results_log) > 50:
+                self._results_log = self._results_log[-50:]
         return results
 
     def run_job(self, job: dict) -> dict:
@@ -214,13 +234,35 @@ class AutoPilotOrchestrator:
         }
 
     def get_status(self) -> dict:
-        """Return overall autopilot status."""
+        """Return overall autopilot status (TS AutoPilotStatus contract)."""
         self._reset_daily_counters_if_needed()
+        jobs = []
+        for job in self._jobs.values():
+            jobs.append({
+                "job_id": job["job_id"],
+                "name": job.get("name", job["job_id"]),
+                "status": job.get("status", "created"),
+                "config": {
+                    "niche": job.get("niche", "general"),
+                    "platforms": job.get("platforms", ["tiktok"]),
+                    "videos_per_day": job.get("videos_per_day", 3),
+                    "posting_times": job.get("posting_times", ["08:00", "12:00", "18:00"]),
+                    "content_type": job.get("content_type", "faceless"),
+                    "style": job.get("style", "educational"),
+                    "language": job.get("language", "id"),
+                    "auto_publish": job.get("auto_publish", True),
+                    "tiktok_profile_id": job.get("tiktok_profile_id", ""),
+                },
+                "last_run": job.get("last_run"),
+                "next_run": job.get("next_run"),
+                "run_count": self._run_counts.get(job["job_id"], 0),
+            })
         return {
             "active_jobs": self._active_jobs,
-            "total_videos_today": self._total_videos_today,
-            "total_published_today": self._total_published_today,
-            "next_run": self._next_run_hint(),
+            "total_jobs": len(self._jobs),
+            "jobs": jobs,
+            "recent_results": self._results_log[-10:],
+            "last_run": self._last_run,
         }
 
     # ── INTERNAL ────────────────────────────────────────────
@@ -233,10 +275,6 @@ class AutoPilotOrchestrator:
             self._total_published_today = 0
             self._active_jobs = 0
             self._last_count_date = today
-
-    def _next_run_hint(self) -> str | None:
-        """Return a hint for the next run (informational)."""
-        return datetime.now().strftime("%Y-%m-%d %H:%M")
 
 
 class _SEOGenerator:

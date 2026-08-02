@@ -319,7 +319,7 @@
   "social.invalid_recipient_id": "❌ 接收者 ID 格式无效。",
   "social.amount_positive": "❌ 金额必须为正数。",
   "social.transfer_failed": "❌ 转账失败: {error}",
-  "social.send_usage": "用法: /send <收件人telegram_id> <金额>\n示例: /send 123456789 50",
+  "social.send_usage": "用法: /send `收件人telegram_id` `金额`\n示例: /send 123456789 50",
   "social.coming_soon": "🔗 *社交媒体自动发布*\n\n社交媒体账号连接和自动发布功能正在开发中。\n\n即将推出：连接TikTok、Instagram、Facebook、YouTube，直接从机器人发布视频！",
   "social.coming_soon_short": "🚧 即将推出！",
   "misc.coming_soon": "🚧 功能即将推出！",

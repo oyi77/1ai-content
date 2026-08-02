@@ -319,7 +319,7 @@
   "social.invalid_recipient_id": "❌ Неверный формат ID получателя.",
   "social.amount_positive": "❌ Сумма должна быть положительным числом.",
   "social.transfer_failed": "❌ Перевод не удался: {error}",
-  "social.send_usage": "Использование: /send <telegram_id_получателя> <сумма>\nПример: /send 123456789 50",
+  "social.send_usage": "Использование: /send `telegram_id_получателя` `сумма`\nПример: /send 123456789 50",
   "social.coming_soon": "🔗 *Авто-публикация в соцсетях*\n\nПодключение аккаунтов соцсетей и авто-публикация в разработке.\n\nСкоро: подключите TikTok, Instagram, Facebook, YouTube и публикуйте видео прямо из бота!",
   "social.coming_soon_short": "🚧 Скоро!",
   "misc.coming_soon": "🚧 Функция скоро появится!",

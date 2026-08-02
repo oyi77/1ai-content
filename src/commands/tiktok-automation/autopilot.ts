@@ -22,7 +22,7 @@ export async function autopilotCommand(ctx: BotContext): Promise<void> {
         `🕐 Last Run: ${status.last_run ?? 'Never'}\n`,
       ];
 
-      if (status.jobs.length > 0) {
+      if (status.jobs?.length > 0) {
         lines.push('*Jobs:*');
         for (const job of status.jobs) {
           lines.push(`• ${job.name} — ${job.status} (${job.config.content_type})`);

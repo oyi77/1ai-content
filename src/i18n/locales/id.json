@@ -319,7 +319,7 @@
   "social.invalid_recipient_id": "❌ Format ID penerima tidak valid.",
   "social.amount_positive": "❌ Jumlah harus angka positif.",
   "social.transfer_failed": "❌ Transfer Gagal: {error}",
-  "social.send_usage": "Penggunaan: /send <id_telegram_penerima> <jumlah>\nContoh: /send 123456789 50",
+  "social.send_usage": "Penggunaan: /send `id_telegram_penerima` `jumlah`\nContoh: /send 123456789 50",
   "social.coming_soon": "🔗 *Social Media Auto-Post*\n\nFitur koneksi akun sosial media dan auto-post sedang dalam pengembangan.\n\nSegera hadir: hubungkan TikTok, Instagram, Facebook, YouTube dan publikasikan video langsung dari bot!",
   "social.coming_soon_short": "🚧 Segera hadir!",
   "misc.coming_soon": "🚧 Fitur segera hadir!",
