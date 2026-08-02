@@ -1,11 +1,13 @@
 import 'dotenv/config';
 import { defineConfig } from '@playwright/test';
 
-// .env is loaded at config-evaluation time (dotenv/config import above), so
-// both tests and this config inherit the right env vars regardless of how
-// Playwright is invoked. With reuseExistingServer:true, the webServer.env
-// block below is ignored for the server — the running PM2 process already
-// has .env loaded at startup.
+// E2E berjalan di server test SENDIRI di :3111 — BUKAN :3002 (PM2 prod 1ai-content).
+// Ini mencegah e2e mencemari DB prod dan menembak webhook prod.
+// webServer.env DIPAKAI penuh: tidak ada proses yang listen di :3111, jadi
+// Playwright selalu me-start server test sendiri (reuseExistingServer:true
+// hanya fallback kalau ada yang listen).
+// Command server test men-sync schema ke DB test (prisma db push) lalu start
+// bot dengan NODE_ENV=test → seeder idempotent berjalan di DB test.
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
 
 export default defineConfig({
@@ -13,21 +15,20 @@ export default defineConfig({
   timeout: 30000,
   retries: 1,
   use: {
-    baseURL: 'http://localhost:3002',
+    baseURL: 'http://localhost:3111',
     headless: true,
-    // Expose ADMIN_PASSWORD to all test files via playwright test env
   },
-  // Env vars reach test workers via the dotenv/config import above (not
-  // webServer.env, which is only applied when Playwright starts the server).
   webServer: {
-    command: `ADMIN_PASSWORD=${ADMIN_PASSWORD} FORCE_POLLING=true npx tsx src/index.ts`,
-    port: 3002,
+    command: `npx prisma db push --skip-generate && npx tsx src/index.ts`,
+    port: 3111,
     timeout: 120000,
     reuseExistingServer: true,
     env: {
       ADMIN_PASSWORD,
       NODE_ENV: 'test',
       FORCE_POLLING: 'true',
+      PORT: '3111', // default app :3000 (src/config/env.ts:27) — override wajib
+      DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/1ai_content_test',
     },
   },
 });

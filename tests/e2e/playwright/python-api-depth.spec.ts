@@ -4,7 +4,7 @@
  * Tests the Python FastAPI backend (port 8767) through the TS proxy at /api/py/*
  * with deep response-body assertions — shape, types, and known-value validation.
  *
- * All proxy calls go through http://localhost:3002/api/py/... (180s timeout).
+ * All proxy calls go through the config baseURL /api/py/... (180s timeout).
  * One direct test hits 127.0.0.1:8767 for comparison.
  */
 

@@ -12,7 +12,9 @@
 import { test, expect } from '@playwright/test';
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin';
-const BASE = 'http://localhost:3002';
+// Relative — Playwright request/page fixtures resolve terhadap use.baseURL
+// (http://localhost:3111 di local e2e; tidak lagi menembak :3002 prod).
+const BASE = '';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

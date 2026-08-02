@@ -42,7 +42,6 @@ import {
   cleanupStuckVideos,
   setCleanupTelegram,
 } from "@/workers/cleanup.worker";
-import { startDailyReportWorker } from "@/workers/daily-report.worker";
 import cron from "node-cron";
 import { retentionQueue } from "@/workers/retention.worker";
 import { UserService } from "@/services/user.service";
@@ -139,18 +138,6 @@ async function main() {
       }
     } catch (avatarWorkerErr) {
       logger.warn("⚠️ Avatar talk worker failed to start:", avatarWorkerErr);
-    }
-
-    // Start daily report worker (sends activity report at 00:00 WIB)
-    try {
-      if (isPlaceholderToken) {
-        logger.warn("⚠️ Skipping daily report worker (placeholder BOT_TOKEN)");
-      } else {
-        startDailyReportWorker(bot);
-        logger.info("✅ Daily report worker started");
-      }
-    } catch (reportErr) {
-      logger.warn("⚠️ Daily report worker failed to start:", reportErr);
     }
 
     // Retention cron: push check jobs every 6 hours

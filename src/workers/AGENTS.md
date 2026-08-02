@@ -13,7 +13,6 @@ BullMQ worker processes for async job processing. The video generation worker is
 | `video-generation.worker.ts` | Main video pipeline — 9-tier provider fallback via circuit breaker. On success: upload to S3/R2, notify user. On failure: refund credits, notify user. |
 | `retention.worker.ts` | Sends re-engagement messages to inactive users |
 | `cleanup.worker.ts` | Cleans up expired/orphaned resources |
-| `daily-report.worker.ts` | Generates daily analytics reports |
 | `weekly-leaderboard.worker.ts` | Computes and publishes weekly leaderboards |
 
 ## For AI Agents

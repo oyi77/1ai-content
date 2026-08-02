@@ -28,7 +28,7 @@ Model utama (grup): User, ApiKey, Transaction, Video, Commission, Subscription, 
 ## Dependensi Internal
 
 - `../config/database.yml`: arah koneksi dev/staging/prod & backup (schema dipakai oleh DB yang sama).
-- PrismaClient dikonsumsi `src/` dan `scripts/daily-report.ts`.
+- PrismaClient dikonsumsi `src/`.
 - `seed.ts` bergantung pada kolom String tier — aman selama kolom tetap String (lihat Issue #1).
 
 ## Issue Spesifik

@@ -4,7 +4,6 @@
  * Starts all background workers:
  * - Video generation worker
  * - Avatar talk worker
- * - Daily report worker
  * - Startup cleanup
  */
 
@@ -16,7 +15,6 @@ import {
   cleanupStuckVideos,
   setCleanupTelegram,
 } from "@/workers/cleanup.worker";
-import { startDailyReportWorker } from "@/workers/daily-report.worker";
 import { setAlertTelegram, sendAdminAlert as sendGroupAlert } from "@/services/admin-alert.service";
 import type { Telegraf } from "telegraf";
 
@@ -49,18 +47,6 @@ export async function startWorkers(bot: Telegraf): Promise<void> {
       logger.info("✅ Avatar talk worker started");
     } catch {
       logger.warn("⚠️ Avatar talk worker failed to start");
-    }
-  }
-
-  // Start daily report worker
-  if (isPlaceholderToken) {
-    logger.warn("⚠️ Skipping daily report worker (placeholder BOT_TOKEN)");
-  } else {
-    try {
-      startDailyReportWorker(bot);
-      logger.info("✅ Daily report worker started");
-    } catch {
-      logger.warn("⚠️ Daily report worker failed to start");
     }
   }
 
