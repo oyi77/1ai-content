@@ -136,7 +136,7 @@ export async function requestProductInput(ctx: BotContext, action: GenerateActio
     if (action === 'clone_style') {
       if (ctx.session) ctx.session.state = 'AWAITING_PRODUCT_INPUT';
       await ctx.reply(
-        `🔄 *Clone Style*\\n\\nKirim foto **referensi gaya** yang ingin ditiru.\\n(Setelah itu kirim foto produk kamu)`,
+        `🔄 *Clone Style*\n\nKirim foto **referensi gaya** yang ingin ditiru.\n(Setelah itu kirim foto produk kamu)`,
         { parse_mode: 'Markdown' },
       );
       return;

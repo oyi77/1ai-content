@@ -157,7 +157,7 @@ export async function executeGeneration(ctx: BotContext): Promise<void> {
           });
         } catch {
           // If video send fails, try as URL link
-          await ctx.reply(t('gen.free_trial_video', lang, { niche: userNiche }) + `\\n\\n[Download](${template.videoUrl})`, {
+          await ctx.reply(t('gen.free_trial_video', lang, { niche: userNiche }) + `\n\n[Download](${template.videoUrl})`, {
             parse_mode: 'Markdown',
             reply_markup: { inline_keyboard: [
               [{ text: t('btn.create_own', lang), callback_data: 'generate_start' }],

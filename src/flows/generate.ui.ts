@@ -136,7 +136,7 @@ export async function showGenerateAction(ctx: BotContext, mode: GenerateMode): P
     ]);
 
     const balanceDisplay = dbUser ? ` (${t('gen.balance_label', lang)}: ${creditsToUnits(Number(dbUser.creditBalance)) / 10} cr)` : '';
-    const text = `${getStepIndicator(mode, 2)} ${modeLabel} Mode${balanceDisplay}\\n\\n${t('gen.select_action', lang)}`;
+    const text = `${getStepIndicator(mode, 2)} ${modeLabel} Mode${balanceDisplay}\n\n${t('gen.select_action', lang)}`;
 
     const markup = {
       inline_keyboard: [
@@ -462,8 +462,8 @@ export async function showProSceneReview(
     }
 
     const sceneList = scenes
-      .map((s, i) => `${i + 1}. *${HPAS_SCENES[s.sceneId as SceneId].nameId}* (${s.durationSeconds}s)\\n   ${s.prompt.slice(0, 200)}${s.prompt.length > 200 ? '...' : ''}`)
-      .join('\\n\\n');
+      .map((s, i) => `${i + 1}. *${HPAS_SCENES[s.sceneId as SceneId].nameId}* (${s.durationSeconds}s)\n   ${s.prompt.slice(0, 200)}${s.prompt.length > 200 ? '...' : ''}`)
+      .join('\n\n');
 
     const text = t('gen.pro_scene_review', lang, { industry, scenes: sceneList });
 
@@ -526,19 +526,19 @@ export async function showConfirmScreen(ctx: BotContext): Promise<void> {
     const lang = ctx.session?.userLang || 'id';
     const totalSteps: Record<string, number> = { basic: 4, smart: 6, pro: 11 };
     const confirmStep = totalSteps[mode] || 6;
-    let text = `${getStepIndicator(mode, confirmStep)} ${t('gen.confirm_title', lang)}` + `\\n\\n` +
-      `Mode: ${modeLabel}\\n` +
-      `Aksi: ${actionLabel}\\n`;
+    let text = `${getStepIndicator(mode, confirmStep)} ${t('gen.confirm_title', lang)}` + `\n\n` +
+      `Mode: ${modeLabel}\n` +
+      `Aksi: ${actionLabel}\n`;
 
     if (action === 'image_set' && selectedAR) {
-      text += `Rasio: ${selectedAR}\\n`;
-      text += `Resolusi: ${resLabels[selectedRes] || selectedRes}\\n`;
+      text += `Rasio: ${selectedAR}\n`;
+      text += `Resolusi: ${resLabels[selectedRes] || selectedRes}\n`;
     } else {
-      text += `Platform: ${platformLabel[platform]}\\n`;
+      text += `Platform: ${platformLabel[platform]}\n`;
     }
 
-    text += `Industri: ${industry}\\n` +
-      `Produk: ${productDesc.slice(0, 60)}${productDesc.length > 60 ? '...' : ''}\\n\\n` +
+    text += `Industri: ${industry}\n` +
+      `Produk: ${productDesc.slice(0, 60)}${productDesc.length > 60 ? '...' : ''}\n\n` +
       t('gen.confirm_cost', lang, { cost: cost / 10 });
 
     await ctx.reply(text, {

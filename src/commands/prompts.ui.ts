@@ -46,7 +46,7 @@ export async function showNichePrompts(ctx: BotContext, nicheKey: string, edit =
   const hasAdmin = adminPrompts.length > 0;
   const hasSaved = savedPrompts.length > 0;
 
-  let msg = `${niche.emoji} **${niche.label} PROMPT TEMPLATES**\\n`;
+  let msg = `${niche.emoji} **${niche.label} PROMPT TEMPLATES**\n`;
   msg += `────────────────────────────────────────────\n\n`;
   msg += `Berikut prompt terbaik untuk niche ${niche.label}:\n\n`;
 
@@ -58,26 +58,26 @@ export async function showNichePrompts(ctx: BotContext, nicheKey: string, edit =
   }
 
   if (hasAdmin) {
-    msg += `⭐ **Dari Admin:**\\n`;
+    msg += `⭐ **Dari Admin:**\n`;
     adminPrompts.forEach(p => {
-      msg += `**${rowNum}. ${p.title}**\\n`;
+      msg += `**${rowNum}. ${p.title}**\n`;
       msg += `\`${p.prompt.slice(0, 100)}${p.prompt.length > 100 ? "..." : ""}\`\n\n`;
       rows.push([{ text: `${rowNum++}. ${p.title} ⭐`, callback_data: `use_admin_prompt_${p.id}` }]);
     });
   }
 
-  msg += `**PROMPT TEMPLATES:**\\n`;
+  msg += `**PROMPT TEMPLATES:**\n`;
   niche.prompts.forEach((p) => {
-    msg += `**${rowNum}. ${p.title}** ⭐ ${p.successRate}% success\\n`;
-    msg += `───────────────────────────\\n`;
+    msg += `**${rowNum}. ${p.title}** ⭐ ${p.successRate}% success\n`;
+    msg += `───────────────────────────\n`;
     msg += `\`${p.prompt.slice(0, 100)}${p.prompt.length > 100 ? "..." : ""}\`\n\n`;
     msg += `✅ Cocok untuk: ${p.suitable}\n\n`;
     rows.push([{ text: `${rowNum++}. ${p.title} ⭐`, callback_data: `use_prompt_${p.id}` }]);
   });
 
-  msg += `────────────────────────────────────────────\\n`;
-  msg += `💡 **Cara Pakai:**\\n`;
-  msg += `Ketik \`/use 1\` untuk pakai prompt #1\\n`;
+  msg += `────────────────────────────────────────────\n`;
+  msg += `💡 **Cara Pakai:**\n`;
+  msg += `Ketik \`/use 1\` untuk pakai prompt #1\n`;
   msg += `Ketik \`/customize 1\` untuk modifikasi prompt`;
 
   rows.push([{ text: "➕ Tambah Custom Prompt", callback_data: `add_custom_prompt_${nicheKey}` }]);
@@ -112,15 +112,15 @@ export async function showPromptDetail(ctx: BotContext, promptId: string, edit =
 
   const credLine = credits !== "?" ? `💰 Saldo kamu: **${credits} credits** ✓\n\n` : "";
   const msg =
-    `✅ **Prompt Aktif!**\n\n─────────────────────────────────────\\n` +
-    `📋 **${p.title}**\\n─────────────────────────────────────\n\n` +
+    `✅ **Prompt Aktif!**\n\n─────────────────────────────────────\n` +
+    `📋 **${p.title}**\n─────────────────────────────────────\n\n` +
     `\`${p.prompt}\`\n\n─────────────────────────────────────\n\n` +
-    `🎬 **Langkah Selanjutnya:**\n\n1. **Upload foto produk kamu** (opsional)\\n` +
-    `→ AI akan animasikan foto jadi video\n\n2. **Atau langsung generate**\\n` +
-    `→ AI akan buat visual dari prompt ini\n\n─────────────────────────────────────\\n` +
-    `📊 **Credit Estimator:**\\n${credLine}` +
-    `• Video 5 detik: 0.2 credits\\n• Video 15 detik: 0.5 credits\\n` +
-    `• Video 30 detik: 1.0 credits\\n• Video 60 detik: 2.0 credits`;
+    `🎬 **Langkah Selanjutnya:**\n\n1. **Upload foto produk kamu** (opsional)\n` +
+    `→ AI akan animasikan foto jadi video\n\n2. **Atau langsung generate**\n` +
+    `→ AI akan buat visual dari prompt ini\n\n─────────────────────────────────────\n` +
+    `📊 **Credit Estimator:**\n${credLine}` +
+    `• Video 5 detik: 0.2 credits\n• Video 15 detik: 0.5 credits\n` +
+    `• Video 30 detik: 1.0 credits\n• Video 60 detik: 2.0 credits`;
 
   const markup = {
     inline_keyboard: [
@@ -149,16 +149,16 @@ export async function showCustomizePrompt(ctx: BotContext, promptId: string, edi
   const base = p ? p.prompt : "Prompt kustom";
 
   const msg =
-    `🔧 **PROMPT CUSTOMIZER**\\n─────────────────────────────────────\n\n` +
-    `Base prompt:\\n\`${base.slice(0, 100)}${base.length > 100 ? "..." : ""}\`\n\n` +
-    `─────────────────────────────────────\\n**MODIFY OPTIONS:**\\n` +
-    `─────────────────────────────────────\n\n📐 **Style**\\n` +
-    `[Cinematic] [Minimalist] [Editorial] [Dramatic] [Fun]\n\n💡 **Lighting**\\n` +
-    `[Golden Hour] [Studio] [Natural] [Neon] [Moody]\n\n🎭 **Mood**\\n` +
-    `[Cozy] [Energetic] [Luxury] [Professional] [Casual]\n\n⏱️ **Duration**\\n` +
-    `[5 sec] [15 sec] [30 sec] [60 sec]\n\n📱 **Platform**\\n` +
+    `🔧 **PROMPT CUSTOMIZER**\n─────────────────────────────────────\n\n` +
+    `Base prompt:\n\`${base.slice(0, 100)}${base.length > 100 ? "..." : ""}\`\n\n` +
+    `─────────────────────────────────────\n**MODIFY OPTIONS:**\n` +
+    `─────────────────────────────────────\n\n📐 **Style**\n` +
+    `[Cinematic] [Minimalist] [Editorial] [Dramatic] [Fun]\n\n💡 **Lighting**\n` +
+    `[Golden Hour] [Studio] [Natural] [Neon] [Moody]\n\n🎭 **Mood**\n` +
+    `[Cozy] [Energetic] [Luxury] [Professional] [Casual]\n\n⏱️ **Duration**\n` +
+    `[5 sec] [15 sec] [30 sec] [60 sec]\n\n📱 **Platform**\n` +
     `[TikTok 9:16] [IG Reels] [YouTube Shorts] [FB Reels]\n\n` +
-    `─────────────────────────────────────\n\nKetik pilihanmu, contoh:\\n` +
+    `─────────────────────────────────────\n\nKetik pilihanmu, contoh:\n` +
     `"style dramatic, lighting neon, duration 10 sec"\n\natau jelaskan perubahan yang kamu mau!`;
 
   const markup = {
@@ -200,10 +200,10 @@ export async function showMyPrompts(ctx: BotContext, nicheKey: string, edit = fa
       return;
     }
 
-    let msg = `📌 *Prompt Tersimpan — ${niche?.emoji || ""} ${niche?.label || nicheKey}*\\n_${saved.length} prompt kamu_ 👇\n\n`;
+    let msg = `📌 *Prompt Tersimpan — ${niche?.emoji || ""} ${niche?.label || nicheKey}*\n_${saved.length} prompt kamu_ 👇\n\n`;
     saved.forEach((p, i) => {
-      msg += `*${i + 1}. ${p.title}*\\n`;
-      msg += `\`${p.prompt.slice(0, 80)}${p.prompt.length > 80 ? "..." : ""}\`\\n`;
+      msg += `*${i + 1}. ${p.title}*\n`;
+      msg += `\`${p.prompt.slice(0, 80)}${p.prompt.length > 80 ? "..." : ""}\`\n`;
       msg += `📊 Dipakai ${p.usageCount}x\n\n`;
     });
 
@@ -230,8 +230,8 @@ export async function startAddCustomPrompt(ctx: BotContext, nicheKey: string, ed
   const niche = PROMPT_LIBRARY[nicheKey];
   const msg =
     `➕ *Tambah Custom Prompt — ${niche?.emoji || ""} ${niche?.label || nicheKey}*\n\n` +
-    `Ketik prompt kamu sekarang.\n\n*Tips prompt yang baik:*\\n• Minimal 10 kata\\n` +
-    `• Sertakan: subjek, style, lighting, mood\\n• Contoh: _"Cinematic shot produk skincare dengan golden hour lighting, soft bokeh background, premium aesthetic"_\n\n_Ketik promptnya langsung, atau tap Batal_`;
+    `Ketik prompt kamu sekarang.\n\n*Tips prompt yang baik:*\n• Minimal 10 kata\n` +
+    `• Sertakan: subjek, style, lighting, mood\n• Contoh: _"Cinematic shot produk skincare dengan golden hour lighting, soft bokeh background, premium aesthetic"_\n\n_Ketik promptnya langsung, atau tap Batal_`;
 
   const markup = { inline_keyboard: [[{ text: "❌ Batal", callback_data: `prompts_${nicheKey}` }]] };
 

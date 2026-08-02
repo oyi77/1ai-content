@@ -329,10 +329,6 @@ export async function messageHandler(ctx: BotContext): Promise<void> {
       }).catch(() => {});
     }
 
-    if ("text" in message && message.text?.startsWith("/")) {
-      return;
-    }
-
     // Handle /skip for video creation (must be before state checks)
     if (
       "text" in message &&
@@ -340,6 +336,18 @@ export async function messageHandler(ctx: BotContext): Promise<void> {
       ctx.session?.videoCreation?.waitingForImage
     ) {
       await handleSkipImageReference(ctx);
+      return;
+    }
+
+    // Fallback untuk command yang tidak terdaftar — balas alih-alih diam.
+    // Semua command terdaftar ditangani Telegraf `bot.command`, jadi hanya
+    // slash yang tidak dikenal yang sampai ke sini.
+    if ("text" in message && message.text?.startsWith("/")) {
+      const lang = ctx.session?.userLang || ctx.from?.language_code || 'id';
+      const cmd = message.text.split(/\s+/)[0];
+      await ctx.reply(t('msg.command_not_found', lang).replace('{cmd}', cmd), {
+        parse_mode: 'Markdown',
+      }).catch(() => {});
       return;
     }
 

@@ -75,10 +75,10 @@ export async function dailyCommand(ctx: BotContext): Promise<void> {
     const p = niche.prompts.find((x) => x.id === userPrompt.promptId)!;
 
     const msg =
-      `🎁 **MYSTERY PROMPT BOX**\\n─────────────────────────────────────\n\n✨ **PROMPT UNLOCKED!**\n\n` +
-      `─────────────────────────────────────\\n📂 Niche: **${niche.label}**\\n⭐ Rarity: **${userPrompt.rarity}**\\n` +
+      `🎁 **MYSTERY PROMPT BOX**\n─────────────────────────────────────\n\n✨ **PROMPT UNLOCKED!**\n\n` +
+      `─────────────────────────────────────\n📂 Niche: **${niche.label}**\n⭐ Rarity: **${userPrompt.rarity}**\n` +
       `─────────────────────────────────────\n\n**${p.title}**\n\n\`${p.prompt}\`\n\n` +
-      `─────────────────────────────────────\\n💡 Prompt ini bisa langsung dipakai untuk generate!\\n` +
+      `─────────────────────────────────────\n💡 Prompt ini bisa langsung dipakai untuk generate!\n` +
       `─────────────────────────────────────\n\n⏰ Prompt baru setiap hari — jangan sampai ketinggalan!`;
 
     if (ctx.session) {
@@ -106,7 +106,7 @@ export async function dailyCommand(ctx: BotContext): Promise<void> {
 
 export async function trendingCommand(ctx: BotContext): Promise<void> {
   try {
-    let msg = `🔥 **TRENDING PROMPTS THIS WEEK**\\n`;
+    let msg = `🔥 **TRENDING PROMPTS THIS WEEK**\n`;
     msg += `─────────────────────────────────────\n\n`;
     msg += `Diupdate setiap hari berdasarkan penggunaan real user!\n\n`;
     msg += `─────────────────────────────────────\n\n`;
@@ -117,9 +117,9 @@ export async function trendingCommand(ctx: BotContext): Promise<void> {
       const niche = PROMPT_LIBRARY[t.niche];
       const p = niche.prompts.find((x) => x.id === t.promptId)!;
 
-      msg += `**#${i + 1}** ${niche.emoji} ${p.title}\\n`;
-      msg += `📈 +${t.usageChange}% usage | ⭐ ${p.successRate}% success\\n`;
-      msg += `Top niche: ${niche.label}\\n`;
+      msg += `**#${i + 1}** ${niche.emoji} ${p.title}\n`;
+      msg += `📈 +${t.usageChange}% usage | ⭐ ${p.successRate}% success\n`;
+      msg += `Top niche: ${niche.label}\n`;
       msg += `\`"${p.prompt.slice(0, 60)}..."\`\n\n`;
       msg += `─────────────────────────────────────\n\n`;
 
