@@ -94,6 +94,8 @@ python3 -m uvicorn api:app --host 0.0.0.0 --port 8767 --reload
 
 ## Production Deployment
 
+> **CATATAN 2026-08-02 — runtime aktual**: bot TS produksi = **:3002 via PM2 `1ai-content`** (`ecosystem.config.js`, NODE_ENV=production, nginx `app_content.conf` → 127.0.0.1:3002), auto-restart saat reboot via systemd `pm2-openclaw.service` (enabled). Dua blok systemd di bawah ini (### Systemd Service = `src/index.ts`, ### Systemd Bot Service = `src/bot.ts`) **OBSOLETE / TIDAK DIPAKAI** — unit `1ai-content-bot.service` sudah di-`systemctl disable --now` (disabled/inactive); jangan re-create. Satu-satunya unit systemd yang masih aktif untuk repo ini: `1ai-content.service` = media-api Python **:8767** (`services/run_api.py`, Type=simple, User=openclaw, Restart=always, log `/var/log/1ai-content.log`).
+
 ### Systemd Service
 
 ```bash
