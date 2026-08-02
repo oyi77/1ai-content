@@ -35,6 +35,7 @@ const envSchema = z.object({
   CORS_ORIGIN: z.string().optional(),
   VIDEO_DIR: z.string().default("/tmp/videos"),
   AUDIO_DIR: z.string().default("/tmp/audio"),
+  // DEPRECATED alias — same API as CONTENT_FACTORY_URL (media-api :8767, services/run_api.py)
   EBOOK_API_URL: z.string().default("http://localhost:8767"),
   EBOOK_API_KEY: z.string().optional(),
 
@@ -105,6 +106,7 @@ const envSchema = z.object({
   YT_CLIENT_ID: z.string().optional(),
   YT_CLIENT_SECRET: z.string().optional(),
   CLOAKBROWSER_URL: z.string().default("http://localhost:8090"),
+  // Media/Content Factory API — single media backend (media-api :8767, services/run_api.py)
   CONTENT_FACTORY_URL: z.string().default("http://localhost:8767"),
   SOCIAL_WEBHOOK_URL: z.string().default("http://localhost:8200/api/webhooks/content"),
   SOCIAL_API_URL: z.string().default("http://localhost:8200"),

@@ -7,7 +7,7 @@ status: complete
 # AGENTS.md — services/
 
 ## Tujuan Folder Ini
-Kumpulan layanan Python mandiri (FastAPI) yang melayani pipeline media & konten. API utama berjalan di port **8767** (`run_api.py`), menyediakan endpoint `/health`, `/audio/*`, `/text/*`, `/image/*`, `/video/*`, `/download/*`, `/research/*`, `/trending/*`, `/analyze/*`, `/cloak/*`, `/autopilot/*`, `/calendar/*`, `/ab-test/*`; layanan ebook terpisah di port **8765** (`services/ebook`). Dipanggil oleh bot TS (`src/`) via HTTP dan oleh pipeline antar-service Python.
+Kumpulan layanan Python mandiri (FastAPI) yang melayani pipeline media & konten. API utama berjalan di port **8767** (`run_api.py`), menyediakan endpoint `/health`, `/audio/*`, `/text/*`, `/image/*`, `/video/*`, `/download/*`, `/research/*`, `/trending/*`, `/analyze/*`, `/cloak/*`, `/autopilot/*`, `/calendar/*`, `/ab-test/*`, `/text/ebook` (ebook generator DI-ABSORB ke API ini — port 8765 mati, `services/ebook/` tetap library internal). DI-MANAGE SYSTEMD `1ai-content.service` (`Restart=always`, enabled) — JANGAN tambah manajer duplikat (PM2 media-api sudah dihapus, lihat root `AGENTS.md` Prioritas #9). Dipanggil oleh bot TS (`src/`) via HTTP dan oleh pipeline antar-service Python.
 
 ## Ekspor / Interface Utama
 - `run_api.py` — entry point: load `.env` root lalu `services/.env`, siapkan `sys.path` (`~/.hermes/scripts`, project root), lalu `uvicorn.run("api:app", host="127.0.0.1", port=8767)` (`run_api.py:34-37`)
@@ -21,7 +21,7 @@ Kumpulan layanan Python mandiri (FastAPI) yang melayani pipeline media & konten.
 
 ## Dependensi Internal
 - **Depends on**: env root `.env` + `services/.env` (API keys/cookies — `run_api.py:25-29`); schema DB bersama PostgreSQL (`../prisma`, dan model sendiri di `services/db/models.py`); dir data runtime `../data` & `services/data`, `services/projects` (artefak pipeline)
-- **Depended by**: `/src` (bot TS memanggil API 8767 via HTTP); `services/ebook` dipanggil bot TS (port 8765) — lihat `src/AGENTS.md`
+- **Depended by**: `/src` (bot TS memanggil media-api 8767 via HTTP — termasuk endpoint ebook `/text/ebook`); lihat `src/AGENTS.md`
 
 ## Sub-Layanan
 Tiap folder layanan punya `AGENTS.md` sendiri (tujuan, interface, issue, rekomendasi). Ringkasan 1-baris:
@@ -41,7 +41,7 @@ Tiap folder layanan punya `AGENTS.md` sendiri (tujuan, interface, issue, rekomen
 | `data/` | [INFERENSI STRUKTUR] penyimpanan *data artifact*: `ebook/projects.db` (SQLite), `projects/` (kosong) — bukan package Python |
 | `db/` | Lapisan akses DB (PostgreSQL via SQLAlchemy async): `__init__.py` (re-export helper) + `models.py` (model + session/engine) — default kredensial lama sudah dihapus (lazy-raise, lihat Issue Spesifik) |
 | `download/` | Unduh video (TikTok): cascade provider → oEmbed/placeholder; scraping halaman TikTok; slideshow → video |
-| `ebook/` | Generator ebook AI (pipeline intake → QA → safety, cover, export DOCX/PDF/EPUB) — port 8765; detail lengkap di `ebook/AGENTS.md` |
+| `ebook/` | Generator ebook AI (pipeline intake → QA → safety, cover, export DOCX/PDF/EPUB) — library internal DI-ABSORB ke media-api :8767 (`/text/ebook`); detail lengkap di `ebook/AGENTS.md` |
 | `engagement/` | Auto-reply komentar media sosial (platform cloak): template Bahasa Indonesia, limit harian, posting balasan |
 | `faceless/` | Pipeline video faceless: script (LLM) → TTS → stock footage → compose scene → stitch → captions → BGM; jalur khusus video produk |
 | `looping/` | Video loop dari audio: background visual (ffmpeg filters), audio crossfade, durasi default 1 jam |
@@ -99,4 +99,4 @@ if not DATABASE_URL:
 - `services/tests/conftest.py:10-12` men-set `OMNIROUTE_API_KEY="sk-test-key"` — placeholder test, bukan secret asli (aman, tidak perlu redaksi).
 - `run_api.py:31-32` mencetak panjang `PINTEREST_COOKIES` dan 20 karakter pertama `PINTEREST_CSRF` ke stdout — kebocoran parsial token ke log; pertimbangkan menghapus print tersebut.
 
-> Last updated: 2026-08-02 — fase eksekusi swarm: Issue Spesifik Critical (db/models.py) & High (autopilot SyntaxError) ditandai SUDAH DIPERBAIKI + patch dipindah ke "SUDAH DITERAPKAN"; verifikasi literal: py_compile OK, pytest services 526 passed / 1 skipped.
+> Last updated: 2026-08-02 — fase eksekusi swarm: Issue Spesifik Critical (db/models.py) & High (autopilot SyntaxError) ditandai SUDAH DIPERBAIKI + patch dipindah ke "SUDAH DITERAPKAN"; verifikasi literal: py_compile OK, pytest services 526 passed / 1 skipped. Update runtime: ebook absorbed ke :8767 (`/text/ebook`), media-api di-manage systemd `1ai-content.service` (PM2 duplikat dihapus — lihat root AGENTS.md Prioritas #9).
