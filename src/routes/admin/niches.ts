@@ -36,7 +36,7 @@ export async function registerNicheRoutes(server: FastifyInstance, verifyAdmin: 
   server.post("/api/niches", {
     schema: { body: nicheBodySchema },
   }, async (request, reply) => {
-    const body = request.body as { id: string; name: string; description: string; icon: string; tag: string; prompt: string; enabled?: boolean };
+    const body = (request.body ?? {}) as { id: string; name: string; description: string; icon: string; tag: string; prompt: string; enabled?: boolean };
     await prisma.pricingConfig.upsert({
       where: { category_key: { category: "niche", key: body.id } },
       create: {

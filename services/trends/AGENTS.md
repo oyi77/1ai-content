@@ -10,7 +10,7 @@ Engine tren konten: memindai topik tren dari berbagai sumber (YouTube, Google, R
 ## Ekspor / Interface Utama
 - `scanner.py` — `TrendScanner` (l.32).
   - Konstanta: `_REDDIT_UA` l.26, `_CACHE_DIR /tmp/trend_cache` l.27, `_SCAN_INTERVAL` 600s l.29; API key YouTube via env `YOUTUBE_API_KEY` l.36.
-  - `get_cached` l.43; `scan_now` l.53; `start_background_scan` l.60 (daemon thread); `get_status` l.82; `_do_scan` l.110 (ThreadPool 4); `_write_cache` l.135.
+  - `get_cached` l.43; `scan_now` l.53; `scan_all` l.60 (alias dari `scan_now`); `start_background_scan` l.65 (daemon thread); `get_status` l.82; `_do_scan` l.110 (ThreadPool 4); `_write_cache` l.135.
   - Sumber: `_scan_youtube` l.145 (`yt-dlp ytsearch10:`), `_scan_google` l.189 (RSS), `_scan_reddit` l.222 (old.reddit), `_scan_tiktok` l.242 (regex best-effort).
   - `get_scanner` l.264; `start_background_scanner` l.271; CLI l.277 (`--bg`).
 - `analyzer.py` — `TrendAnalyzer` l.18, `analyze_trends` l.26, `_call_llm` l.135 (model `auto/best-chat`), CLI l.156.

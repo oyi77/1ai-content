@@ -146,16 +146,21 @@ Proxied via nginx at `/api/py/*`.
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/py/research/generate-book` | POST | SSE-streamed book generation |
-| `/api/py/bookshelf/generate` | POST | Bookshelf pipeline generation (blocking) |
-| `/api/py/bookshelf/generate-book` | POST | Book generation (blocking) |
-| `/api/py/loop/video/{filename}` | GET | Serve generated video file |
-| `/api/py/download/tiktok` | POST | TikTok video/audio download |
-| `/api/py/download/youtube` | POST | YouTube video download |
-| `/api/py/download/youtube/mp3` | POST | YouTube audio extraction |
-| `/api/py/download/instagram` | POST | Instagram media download |
-| `/api/py/media/analyze` | POST | Media content analysis |
-| `/api/py/captions/generate` | POST | Auto-caption generation |
+| `/api/py/health` | GET | Health check media-api |
+| `/api/py/audio/music`, `/audio/music/bgm`, `/audio/music/lofi`, `/audio/speech` | POST | Musik & speech generation (`/audio/speech/voices` = list voice) |
+| `/api/py/tts/synthesize`, `/tts/voices`, `/tts/audio/{filename}` | POST/GET | Legacy TTS (compat re-expose) |
+| `/api/py/music/generate`, `/suno/generate`, `/suno/bgm`, `/suno/lofi` | POST | Legacy music / Suno (compat re-expose) |
+| `/api/py/captions/styles`, `/captions/prompts`, `/captions/generate` | GET/POST | Captions (compat re-expose) |
+| `/api/py/text/hook`, `/text/hook/batch`, `/text/hook/critique`, `/text/caption`, `/text/book`, `/text/ebook` | POST | Hook / caption / ebook generation |
+| `/api/py/image/comic`, `/image/comic/page/{path}`, `/image/carousel` (+`/styles`, `/templates`), `/image/storyboard`, `/image/storyboard/image/{path}` | POST/GET | Image production (comic, carousel, storyboard) |
+| `/api/py/video/*` (`process`, `search`, `regenerate`, `info`, `transforms`, `frames`, `movie`, `loop`, `remeta`, `repurpose`, `ad`, `refresh-cookies`) | POST | Pipeline video (fallback 9-tier) |
+| `/api/py/content/render-ad`, `/carousel/create`, `/carousel/styles`, `/carousel/templates`, `/loop/create`, `/repurpose`, `/regenerate`, `/remeta`, `/storyboard/create` | POST | Content-pipeline (compat/content routers) |
+| `/api/py/download/video`, `/download/profile` | POST | Media download |
+| `/api/py/research/topics`, `/research/book-brief`, `/research/generate-book` | POST | Riset & book-brief |
+| `/api/py/cloak/*`, `/autopilot/*`, `/calendar/*`, `/ab-test/*` | — | Router Cloak / autopilot / calendar / A/B-test (prefix per-domain) |
+| `/api/py/upload/*`, `/pinterest/*`, `/trends/*`, `/engagement/*`, `/tikwm/*` | — | Router upload / pinterest / trends / engagement / TikWM (prefix kosong, path per-file) |
+
+> Catatan 2026-08-02 (audit): endpoint lama `download/tiktok`, `download/youtube`, `download/youtube/mp3`, `download/instagram`, `media/analyze`, `bookshelf/*`, `loop/video/{filename}` di tabel lama TIDAK ADA di `services/routers/` — digantikan `download/video` / `download/profile`; tidak ada router `/media/*` atau `/bookshelf/*`.
 
 ## Other Route Modules
 

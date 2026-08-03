@@ -267,7 +267,10 @@ export async function handleMultiImageUpload(ctx: BotContext, message: Record<st
 
 export async function handleStoryboardEdit(ctx: BotContext, message: Record<string, unknown>): Promise<void> {
   const text = (message.text as string)?.trim();
-  if (!text) return;
+  if (!text) {
+    await ctx.reply('❌ Teks diperlukan untuk melanjutkan.');
+    return;
+  }
 
   const sceneIndex = (ctx.session?.stateData as any)?.storyboardEditIndex ?? 0;
   const lang = ctx.session?.userLang || 'id';
@@ -299,7 +302,10 @@ export async function handleStoryboardEdit(ctx: BotContext, message: Record<stri
 /** Handle manual transcript input */
 export async function handleTranscriptInput(ctx: BotContext, message: Record<string, unknown>): Promise<void> {
   const text = (message.text as string)?.trim();
-  if (!text) return;
+  if (!text) {
+    await ctx.reply('❌ Teks diperlukan untuk melanjutkan.');
+    return;
+  }
 
   const lang = ctx.session?.userLang || 'id';
   if (ctx.session) {

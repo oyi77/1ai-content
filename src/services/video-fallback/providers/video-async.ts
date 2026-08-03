@@ -649,7 +649,7 @@ async function generateViaOmniRouteVideo(params: VideoFallbackParams): Promise<V
   if (!OMNIROUTE_API_KEY) return { success: false, error: "OMNIROUTE_API_KEY not configured", provider: "omniroute" };
 
   const resp = await axios.post(
-    `${OMNIROUTE_URL}/v1/videos/generations`,
+    `${OMNIROUTE_URL}/videos/generations`,
     { model: "wan-video", prompt: params.prompt, duration: Math.min(10, params.duration), aspect_ratio: mapAspectRatioSimple(params.aspectRatio) },
     { headers: { Authorization: `Bearer ${OMNIROUTE_API_KEY}`, "Content-Type": "application/json" }, timeout: 120000 },
   );
@@ -658,7 +658,7 @@ async function generateViaOmniRouteVideo(params: VideoFallbackParams): Promise<V
   if (!taskId) throw new ProviderError("OmniRoute", "no task id");
 
   const videoUrl = await pollUntilComplete("OmniRoute", taskId, async (id) => {
-    const poll = await axios.get(`${OMNIROUTE_URL}/v1/videos/generations/${id}`, {
+    const poll = await axios.get(`${OMNIROUTE_URL}/videos/generations/${id}`, {
       headers: { Authorization: `Bearer ${OMNIROUTE_API_KEY}` }, timeout: 10000,
     });
     const status = poll.data?.status;

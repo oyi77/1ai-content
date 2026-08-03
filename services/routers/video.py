@@ -8,15 +8,16 @@ import tempfile
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 from services.utils import TIKTOK_BROWSERS, extract_browser_cookies, has_tiktok_cookies, probe_field, probe_video, run_subprocess
-from services.api_models import VideoProcessRequest, VideoInfoRequest, VideoClipRequest, VideoTransformsRequest, VideoFramesRequest, VideoSearchRequest, VideoRegenerateOptions, VideoRegenerateRequest
+from services.api_models import VideoProcessRequest, VideoInfoRequest, VideoClipRequest, VideoTransformsRequest, VideoFramesRequest, VideoSearchRequest, VideoRegenerateOptions, VideoRegenerateRequest, RepurposeRequest
 from services.di import get_looping, get_repurpose_engine, get_remetadata_engine
+from services.remetadata.engine import normalize_color_shift
 
 video_router = APIRouter(prefix="", tags=["video"])
 
@@ -688,7 +689,7 @@ class RemetaAdRequest(BaseModel):
     watermark: Optional[str] = None
     position: str = "bottom"
     speed: float = 1.0
-    color_shift: Optional[str] = None
+    color_shift: Optional[Union[bool, str]] = None
     niche: str = "general"
     platform: str = "facebook"
     language: str = "en"
@@ -815,7 +816,7 @@ async def video_remeta(req: RemetaAdRequest):
             watermark=req.watermark or None,
             position=req.position,
             speed=req.speed if req.speed > 0 else None,
-            color_shift=req.color_shift,
+            color_shift=normalize_color_shift(req.color_shift),
             niche=req.niche,
             platform=req.platform,
             language=req.language,
@@ -828,23 +829,30 @@ async def video_remeta(req: RemetaAdRequest):
 # ── /video/repurpose ────────────────────────────────────────────
 
 @video_router.post("/video/repurpose")
-async def video_repurpose(req: RemetaAdRequest):
+async def video_repurpose(req: RepurposeRequest):
     """Repurpose content from multiple sources — anti-copyright remix."""
     try:
-        from services.api_models import RepurposeRequest
         engine = get_repurpose_engine()
-        result = engine.repurpose(
-            sources=req.source if isinstance(req.source, list) else [req.source],
-            target_duration=60,
+        result = await asyncio.to_thread(
+            engine.repurpose,
+            sources=req.sources,
+            target_duration=req.target_duration,
             platform=req.platform,
             niche=req.niche,
-            style="dynamic",
+            style=req.style,
             language=req.language,
-            color_preset=req.overlay,
-            transition_style="crossfade",
-            overlay_text=req.overlay or None,
-            overlay_position=req.position,
-            watermark_text=req.watermark or None,
+            color_preset=req.color_preset,
+            transition_style=req.transition_style,
+            overlay_text=req.overlay_text or None,
+            overlay_position=req.overlay_position,
+            watermark_text=req.watermark_text or None,
+            watermark_image=req.watermark_image or None,
+            bgm_path=req.bgm_path or None,
+            bgm_volume=req.bgm_volume,
+            voiceover_path=req.voiceover_path or None,
+            speed_range=(req.speed_min, req.speed_max),
+            add_subtitles=req.add_subtitles,
+            subtitle_style=req.subtitle_style,
         )
         return result
     except Exception as e:

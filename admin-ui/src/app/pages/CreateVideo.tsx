@@ -8,13 +8,14 @@ export default function CreateVideo() {
   const [prompt, setPrompt] = useState("");
   const [style, setStyle] = useState("realistic");
   const [duration, setDuration] = useState("30");
+  const [niche, setNiche] = useState("food_culinary");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
 
   const handleCreate = async () => {
     setLoading(true);
     try {
-      const data = await api.createVideo({ prompt, style, duration: parseInt(duration) });
+      const data = await api.createVideo({ prompt, style, duration: parseInt(duration), niche });
       setResult(data);
       setStep(3);
       await refreshUser();
@@ -52,6 +53,26 @@ export default function CreateVideo() {
       {step === 2 && (
         <div className="card" style={{ maxWidth: 600 }}>
           <div className="card-title">Step 2: Style & Duration</div>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: "block", color: "#8888aa", fontSize: "0.85rem", marginBottom: 6 }}>
+              Niche
+            </label>
+            <select className="input" value={niche} onChange={(e) => setNiche(e.target.value)}>
+              <option value="fashion_lifestyle">Fashion & Lifestyle</option>
+              <option value="food_culinary">Food & Culinary</option>
+              <option value="tech_gadgets">Tech & Gadgets</option>
+              <option value="beauty_skincare">Beauty & Skincare</option>
+              <option value="travel_adventure">Travel & Adventure</option>
+              <option value="fitness_health">Fitness & Health</option>
+              <option value="home_decor">Home & Decor</option>
+              <option value="business_finance">Business & Finance</option>
+              <option value="education_knowledge">Education</option>
+              <option value="cinematic">Cinematic</option>
+              <option value="anime">Anime</option>
+              <option value="music_video">Music Video</option>
+              <option value="entertainment">Entertainment</option>
+            </select>
+          </div>
           <div style={{ marginBottom: 16 }}>
             <label style={{ display: "block", color: "#8888aa", fontSize: "0.85rem", marginBottom: 6 }}>
               Video Style

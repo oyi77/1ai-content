@@ -1,11 +1,11 @@
 #!/bin/bash
 # =============================================================================
-# OPENCLAW BOT - BACKUP SCRIPT
+# 1AI CONTENT BOT - BACKUP SCRIPT
 # =============================================================================
 # This script performs database and file backups
 # =============================================================================
 
-set -e
+set -euo pipefail
 
 # Colors
 RED='\033[0;31m'
@@ -102,7 +102,7 @@ log_warning() {
 print_header() {
     echo -e "${BLUE}"
     echo "╔═══════════════════════════════════════════════════════════════╗"
-    echo "║                   OPENCLAW BOT BACKUP                         ║"
+    echo "║                    1AI CONTENT BOT BACKUP                     ║"
     echo "╚═══════════════════════════════════════════════════════════════╝"
     echo -e "${NC}"
     echo "Time: $(date)"

@@ -203,8 +203,16 @@ class AutoPilotOrchestrator:
                         caption = seo.get("title", video["topic"])
                         tags = seo.get("tags", [])
 
+                        profile_id = config.get("tiktok_profile_id") or self._resolve_default_profile(platform)
+                        if not profile_id:
+                            errors.append(
+                                f"Publish {video['topic']} to {platform}: no CloakBrowser profile id "
+                                "configured (set tiktok_profile_id on the job or ensure a profile exists)"
+                            )
+                            continue
+
                         pub_result = self.cloak_adapter.post(
-                            profile_id=None,  # auto-select
+                            profile_id=profile_id,
                             media_path=video["path"],
                             caption=caption,
                             platform=platform,
@@ -275,6 +283,19 @@ class AutoPilotOrchestrator:
             self._total_published_today = 0
             self._active_jobs = 0
             self._last_count_date = today
+
+    def _resolve_default_profile(self, platform: str) -> str:
+        """Pick the first CloakBrowser profile id available for a platform.
+
+        Returns "" when no profile can be resolved so the caller decides how to
+        surface the failure (rather than posting to an empty profile id).
+        """
+        try:
+            profiles = self.cloak_adapter.list_profiles(platform)
+            profile = next((p for p in profiles if p.get("id")), None)
+            return profile.get("id", "") if profile else ""
+        except Exception:
+            return ""
 
 
 class _SEOGenerator:

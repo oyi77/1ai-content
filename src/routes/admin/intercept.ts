@@ -8,7 +8,7 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { prisma } from "@/config/database";
 import { getConfig } from "@/config/env";
 import { logger } from "@/utils/logger";
-import { validate, interceptToggleSchema, interceptUploadSchema, interceptDeliverSchema } from "@/utils/validation";
+import { validate, interceptToggleSchema, interceptDeliverSchema } from "@/utils/validation";
 
 type AdminVerifier = (request: FastifyRequest, reply: FastifyReply) => Promise<boolean>;
 
@@ -16,7 +16,7 @@ export function registerInterceptRoutes(server: FastifyInstance, verifyAdmin: Ad
   // Toggle intercept on a user
   server.post("/api/intercept/toggle", { preHandler: validate({ body: interceptToggleSchema }) }, async (request, reply) => {
     if (!await verifyAdmin(request, reply)) return;
-    const { telegramId, enabled } = request.body as { telegramId: string; enabled: boolean };
+    const { telegramId, enabled } = (request.body ?? {}) as { telegramId: string; enabled: boolean };
     if (!telegramId) return reply.status(400).send({ error: "telegramId required" });
     const { InterceptService } = await import("../../services/intercept.service.js");
     try {
@@ -110,7 +110,7 @@ export function registerInterceptRoutes(server: FastifyInstance, verifyAdmin: Ad
   });
 
   // Upload a media file and get back a URL for deliver
-  server.post("/api/intercept/upload", { preHandler: validate({ body: interceptUploadSchema }) }, async (request, reply) => {
+  server.post("/api/intercept/upload", async (request, reply) => {
     if (!await verifyAdmin(request, reply)) return;
     const fs = await import('fs');
     const path = await import('path');
@@ -150,7 +150,7 @@ export function registerInterceptRoutes(server: FastifyInstance, verifyAdmin: Ad
   // Admin delivers media to waiting job
   server.post("/api/intercept/deliver", { preHandler: validate({ body: interceptDeliverSchema }) }, async (request, reply) => {
     if (!await verifyAdmin(request, reply)) return;
-    const { jobId, mediaUrl, mediaType } = request.body as {
+    const { jobId, mediaUrl, mediaType } = (request.body ?? {}) as {
       jobId: string; mediaUrl: string; mediaType: string;
     };
     if (!jobId || !mediaUrl) return reply.status(400).send({ error: "jobId and mediaUrl required" });

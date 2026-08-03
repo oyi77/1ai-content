@@ -137,18 +137,21 @@ class FacelessEngine:
                 scene_output = os.path.join(work_dir, f'scene_{i:02d}.mp4')
                 audio_path = scene.get('audio_path', '')
                 duration = scene.get('audio_duration', 10)
+                # Guard against missing/invalid TTS output — composer crashes on '' audio
+                if audio_path and not os.path.exists(audio_path):
+                    audio_path = ''
 
                 # Get stock footage for this scene
                 keywords = scene.get('visual_keywords', ['nature'])
                 stock_a = self._find_stock(stock_results, keywords[0] if keywords else 'nature')
                 stock_b = self._find_stock(stock_results, keywords[1] if len(keywords) > 1 else keywords[0] if keywords else 'nature')
 
-                if use_ab_split and stock_a and stock_b:
+                if audio_path and use_ab_split and stock_a and stock_b:
                     # A/B split composition
                     self.composer.compose_scene_ab_split(
                         stock_a, stock_b, audio_path, scene_output, resolution=resolution,
                     )
-                elif stock_a:
+                elif audio_path and stock_a:
                     # Single visual
                     self.composer.compose_scene(stock_a, audio_path, scene_output, resolution=resolution)
                 else:
@@ -290,13 +293,16 @@ class FacelessEngine:
             for i, scene in enumerate(scenes):
                 scene_output = os.path.join(work_dir, f'scene_{i:02d}.mp4')
                 audio_path = scene.get('audio_path', '')
+                # Guard against missing/invalid TTS output — composer crashes on '' audio
+                if audio_path and not os.path.exists(audio_path):
+                    audio_path = ''
                 keywords = scene.get('visual_keywords', [product_name])
                 stock_a = self._find_stock(stock_results, keywords[0] if keywords else product_name)
                 stock_b = self._find_stock(stock_results, keywords[1] if len(keywords) > 1 else keywords[0] if keywords else product_name)
 
-                if stock_a and stock_b:
+                if audio_path and stock_a and stock_b:
                     self.composer.compose_scene_ab_split(stock_a, stock_b, audio_path, scene_output, resolution=resolution)
-                elif stock_a:
+                elif audio_path and stock_a:
                     self.composer.compose_scene(stock_a, audio_path, scene_output, resolution=resolution)
                 else:
                     self._create_color_fallback(scene_output, scene.get('audio_duration', 10), resolution, audio_path)

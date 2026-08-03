@@ -12,6 +12,7 @@ Phases:
 import asyncio
 import json
 import os
+import shutil
 import subprocess
 import tempfile
 import time
@@ -154,11 +155,13 @@ async def generate_movie(
 
                 img_path = image_paths[scene.scene_id]
                 seg_duration = scene.duration_seconds if scene.duration_seconds > 3 else 5.0
-                audio_path = audio_paths.get(scene.scene_id)
 
-                seg_path = await render_scene_segment(
+                # Narration is merged ONCE below (narration_combined.mp3) and added
+                # by assemble_movie. Do NOT bake per-scene audio into segments,
+                # otherwise the narration plays twice (segments + merged track).
+                _, seg_path = await render_scene_segment(
                     scene.scene_id, img_path, seg_duration, video_dir,
-                    audio_path=audio_path,
+                    audio_path=None,
                 )
                 segment_paths.append(seg_path)
                 total_duration += seg_duration
@@ -166,10 +169,11 @@ async def generate_movie(
             if segment_paths:
                 yield {"type": "log", "message": f"Assembling final movie from {len(segment_paths)} segments..."}
 
-                # Merge all narration audio into one file (if we have per-scene audio but no segments with audio)
+                # Merge all narration audio into ONE track applied to the final
+                # movie (segments are rendered silent; see render_scene_segment above).
                 merged_audio = None
                 if audio_paths and not any(audio_paths.values()):
-                    pass  # handled by render_scene_segment
+                    pass  # no usable per-scene audio — skip narration
                 elif audio_paths:
                     # Build one combined narration track
                     merged_audio = os.path.join(audio_dir, "narration_combined.mp3")
@@ -341,7 +345,7 @@ def _generate_narration(
     if hasattr(engine, "generate"):
         engine.generate(text, output_path, lang=language)
     elif hasattr(engine, "synthesize"):
-        engine.synthesize(text, output_path, language=language)
+        engine.synthesize(text, output_path=output_path, language=language)
     else:
         raise RuntimeError("TTS engine has no generate/synthesize method")
 
@@ -384,8 +388,13 @@ def _find_or_generate_bgm(mood: str, output_dir: str) -> str:
     try:
         from services.music import MusicGenerator
         gen = MusicGenerator()
-        gen.generate(mood=mood, output_path=bgm_path, duration=30)
-        if os.path.exists(bgm_path):
+        result = gen.generate(mood, duration_seconds=30)
+        if (
+            result.get("success")
+            and result.get("audio_path")
+            and os.path.exists(result["audio_path"])
+        ):
+            shutil.copyfile(result["audio_path"], bgm_path)
             return bgm_path
     except Exception:
         pass

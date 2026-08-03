@@ -41,7 +41,7 @@ export async function registerPlaygroundRoutes(server: FastifyInstance) {
   server.post("/api/admin/playground/text", {
     schema: { body: playgroundTextSchema },
   }, async (request, reply) => {
-    const { prompt, model } = request.body as { prompt: string; model?: string };
+    const { prompt, model } = (request.body ?? {}) as { prompt: string; model?: string };
     const omni = getOmniRouteService();
     const result = await omni.chat("admin_playground", prompt, model);
     return result;
@@ -51,7 +51,7 @@ export async function registerPlaygroundRoutes(server: FastifyInstance) {
   server.post("/api/admin/playground/image", {
     schema: { body: playgroundImageSchema },
   }, async (request, reply) => {
-    const { prompt, provider, aspectRatio } = request.body as { prompt: string; provider?: string; aspectRatio?: string };
+    const { prompt, provider, aspectRatio } = (request.body ?? {}) as { prompt: string; provider?: string; aspectRatio?: string };
     const result = await ImageGenerationService.generateImage({
       prompt,
       category: "product",
@@ -65,7 +65,7 @@ export async function registerPlaygroundRoutes(server: FastifyInstance) {
   server.post("/api/admin/playground/video", {
     schema: { body: playgroundVideoSchema },
   }, async (request, reply) => {
-    const { prompt, provider, duration, niche } = request.body as { prompt: string; provider?: string; duration?: number; niche?: string };
+    const { prompt, provider, duration, niche } = (request.body ?? {}) as { prompt: string; provider?: string; duration?: number; niche?: string };
     const result = await generateVideoWithFallback({
       prompt,
       duration,

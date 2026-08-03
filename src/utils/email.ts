@@ -23,12 +23,12 @@ export class ConsoleEmailService implements EmailService {
 
   async sendVerificationEmail(to: string, token: string): Promise<void> {
     const url = `${this.baseUrl}/verify-email?token=${token}`;
-    console.log(`[EMAIL] Verification for ${to}: ${url}`);
+    console.log(`[EMAIL NOT SENT — console-only service, no SMTP] Verification for ${to}: ${url}`);
   }
 
   async sendPasswordResetEmail(to: string, token: string): Promise<void> {
     const url = `${this.baseUrl}/reset-password?token=${token}`;
-    console.log(`[EMAIL] Password reset for ${to}: ${url}`);
+    console.log(`[EMAIL NOT SENT — console-only service, no SMTP] Password reset for ${to}: ${url}`);
   }
 }
 

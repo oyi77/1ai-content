@@ -11,6 +11,7 @@
 import { test, expect } from '@playwright/test';
 
 const PROXY_BASE = ''; // relative — Playwright request uses location.origin
+const PY_API_BASE = process.env.PY_API_BASE ?? 'http://127.0.0.1:8767'; // direct Python server base (configurable)
 
 // ─── Health —──────────────────────────────────────────────────────────────────
 
@@ -37,7 +38,7 @@ test.describe('Python API — health', () => {
 
   test('GET http://127.0.0.1:8767/health direct matches proxy shape', async ({ request }) => {
     // Direct hit on the Python server, bypassing the TS proxy
-    const response = await request.get('http://127.0.0.1:8767/health');
+    const response = await request.get(`${PY_API_BASE}/health`);
     expect(response.status()).toBe(200);
     const body = await response.json();
     expect(body).toMatchObject({

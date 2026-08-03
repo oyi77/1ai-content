@@ -80,7 +80,7 @@ export async function registerAdminConfigRoutes(
   }, async (request, reply) => {
     if (!await verifyAdmin(request, reply)) return;
     const { category, key } = request.params as { category: string; key: string };
-    const { value } = request.body as { value: unknown };
+    const { value } = (request.body ?? {}) as { value: unknown };
     await AdminConfigService.set(category, key, value);
     return { ok: true };
   });
@@ -117,7 +117,7 @@ export async function registerAdminConfigRoutes(
   }, async (request, reply) => {
     if (!await verifyAdmin(request, reply)) return;
     const { name } = request.params as { name: string };
-    const { value } = request.body as { value: string };
+    const { value } = (request.body ?? {}) as { value: string };
     if (!API_KEY_REGISTRY[name]) return reply.status(400).send({ error: 'Unknown key' });
     await prisma.pricingConfig.upsert({
       where: { category_key: { category: 'api_keys', key: name } },

@@ -34,6 +34,34 @@ const BLOCKED_HOSTNAMES = [
 ];
 
 /**
+ * Normalize a URL hostname for IP matching:
+ * - strips IPv6 brackets ("[::1]" -> "::1")
+ * - decodes IPv4-mapped IPv6 ("::ffff:127.0.0.1" and "::ffff:7f00:1" -> "127.0.0.1")
+ *
+ * Without this, `http://[::1]/` and `http://[::ffff:127.0.0.1]/` bypass every
+ * BLOCKED_IP_PATTERNS rule (Node's URL.hostname returns bracketed, hex-encoded
+ * forms that match none of the dotted-quad / bare-colon patterns).
+ */
+function normalizeHostname(hostname: string): string {
+  const stripped = hostname.startsWith('[') && hostname.endsWith(']')
+    ? hostname.slice(1, -1)
+    : hostname;
+
+  const v4Mapped = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/i.exec(stripped);
+  if (v4Mapped) return v4Mapped[1];
+
+  // ::ffff:xxxx:xxxx — hex-encoded IPv4 inside IPv6
+  const v4Hex = /^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/i.exec(stripped);
+  if (v4Hex) {
+    const hi = parseInt(v4Hex[1], 16);
+    const lo = parseInt(v4Hex[2], 16);
+    return `${hi >> 8}.${hi & 255}.${lo >> 8}.${lo & 255}`;
+  }
+
+  return stripped;
+}
+
+/**
  * Validate a user-supplied URL for safe server-side fetching.
  * Returns the validated URL string or throws an Error.
  */
@@ -50,10 +78,11 @@ export function validateUrl(input: string): string {
     throw new ValidationError('Only http and https protocols are allowed', 'protocol');
   }
 
-  const hostname = parsed.hostname.toLowerCase();
+  const rawHostname = parsed.hostname.toLowerCase();
+  const hostname = normalizeHostname(rawHostname);
 
   // Block known dangerous hostnames
-  if (BLOCKED_HOSTNAMES.includes(hostname)) {
+  if (BLOCKED_HOSTNAMES.includes(rawHostname)) {
     throw new ValidationError('Access to internal hosts is not allowed', 'host');
   }
 
@@ -83,20 +112,22 @@ export async function validateUrlWithDns(input: string): Promise<string> {
 
   const parsed = new URL(input);
   const hostname = parsed.hostname;
+  const normalized = normalizeHostname(hostname.toLowerCase());
 
-  // Skip DNS check for IP literals (already checked by validateUrl)
-  if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname) || hostname.startsWith('[')) {
+  // Skip DNS check for IP literals (already checked by validateUrl via normalizeHostname)
+  if (normalized.includes(':') || /^\d+\.\d+\.\d+\.\d+$/.test(normalized)) {
     return input;
   }
 
   try {
     const { address } = await dnsLookup(hostname);
+    const normalizedAddress = normalizeHostname(address.toLowerCase());
     for (const pattern of BLOCKED_IP_PATTERNS) {
-      if (pattern.test(address)) {
+      if (pattern.test(normalizedAddress)) {
         throw new ValidationError(`Hostname ${hostname} resolves to a private IP address`, 'hostname');
       }
     }
-    if (address === '169.254.169.254') {
+    if (normalizedAddress === '169.254.169.254') {
       throw new ValidationError(`Hostname ${hostname} resolves to cloud metadata endpoint`, 'hostname');
     }
   } catch (err) {

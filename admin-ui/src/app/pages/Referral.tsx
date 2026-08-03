@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { api } from "../api/client";
 
 export default function Referral() {
-  const [referral, setReferral] = useState<{ code: string; earnings: number; count: number } | null>(null);
+  const [referral, setReferral] = useState<{ code: string; earnings: number; count: number; link?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 

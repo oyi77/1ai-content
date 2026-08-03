@@ -222,6 +222,36 @@ export class AIConfigService {
     await redis.set(REDIS_KEY_CHAT, JSON.stringify(merged));
   }
 
+  // Reset tasks section to factory defaults (Redis + DB)
+  static async resetTasksConfig(): Promise<void> {
+    await prisma.pricingConfig.upsert({
+      where: { category_key: { category: 'ai_config', key: 'tasks' } },
+      create: { category: 'ai_config', key: 'tasks', value: JSON.parse(JSON.stringify(DEFAULT_TASKS)), updatedBy: BigInt(0) },
+      update: { value: JSON.parse(JSON.stringify(DEFAULT_TASKS)), updatedBy: BigInt(0) },
+    });
+    await redis.set(REDIS_KEY_TASKS, JSON.stringify(DEFAULT_TASKS));
+  }
+
+  // Reset prompts section to defaults (Redis + DB)
+  static async resetPromptsConfig(): Promise<void> {
+    await prisma.pricingConfig.upsert({
+      where: { category_key: { category: 'ai_config', key: 'prompts' } },
+      create: { category: 'ai_config', key: 'prompts', value: JSON.parse(JSON.stringify(DEFAULT_PROMPTS)), updatedBy: BigInt(0) },
+      update: { value: JSON.parse(JSON.stringify(DEFAULT_PROMPTS)), updatedBy: BigInt(0) },
+    });
+    await redis.set(REDIS_KEY_PROMPTS, JSON.stringify(DEFAULT_PROMPTS));
+  }
+
+  // Reset chat section to defaults (Redis + DB)
+  static async resetChatConfig(): Promise<void> {
+    await prisma.pricingConfig.upsert({
+      where: { category_key: { category: 'ai_config', key: 'chat' } },
+      create: { category: 'ai_config', key: 'chat', value: JSON.parse(JSON.stringify(DEFAULT_CHAT)), updatedBy: BigInt(0) },
+      update: { value: JSON.parse(JSON.stringify(DEFAULT_CHAT)), updatedBy: BigInt(0) },
+    });
+    await redis.set(REDIS_KEY_CHAT, JSON.stringify(DEFAULT_CHAT));
+  }
+
   // Helper: get a single task's provider config
   static async getTaskConfig(task: keyof AITasksConfig): Promise<TaskProviderConfig> {
     const tasks = await AIConfigService.getTasksConfig();

@@ -12,6 +12,7 @@ const PY_API = "/api/py";
 interface SSEEvent {
   type: string;
   payload?: Record<string, unknown>;
+  message?: string;
 }
 
 async function streamGenerateComic(
@@ -19,7 +20,7 @@ async function streamGenerateComic(
   onEvent: (event: SSEEvent) => void,
   signal: AbortSignal,
 ): Promise<void> {
-  const res = await fetch(`${PY_API}/comic/generate`, {
+  const res = await fetch(`${PY_API}/image/comic`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -156,7 +157,7 @@ export default function ComicPage() {
           generate_images: generateImages,
         },
         (event: SSEEvent) => {
-          const p = event.payload || {};
+          const p = { ...(event.payload || {}), ...(event.message ? { message: event.message } : {}) };
           switch (event.type) {
             case "progress":
               setProgress((prev) => [...prev, (p.message as string) || (p.step as string) || ""]);

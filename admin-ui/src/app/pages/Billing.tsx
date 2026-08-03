@@ -5,15 +5,21 @@ export default function Billing() {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [credits, setCredits] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [reload, setReload] = useState(0);
   const [topUpAmount, setTopUpAmount] = useState(50);
   const [payMethod, setPayMethod] = useState<"qris" | "crypto">("qris");
 
   useEffect(() => {
+    setLoading(true);
+    setError(null);
     api.getBilling().then((d) => {
       setTransactions(d.transactions ?? []);
       setCredits(d.credits ?? 0);
-    }).catch(() => {}).finally(() => setLoading(false));
-  }, []);
+    }).catch((e: any) => {
+      setError(e?.message || "Failed to load billing. Please try again.");
+    }).finally(() => setLoading(false));
+  }, [reload]);
 
   const handleTopUp = async () => {
     try {
@@ -26,11 +32,21 @@ export default function Billing() {
         alert(`Payment initiated for ${topUpAmount} credits`);
       }
     } catch (e: any) {
-      alert(e.message);
+      setError(e?.message || "Payment initiation failed. Please try again.");
     }
   };
 
   if (loading) return <div className="loading-spinner">Loading billing...</div>;
+
+  if (error) {
+    return (
+      <div className="card" style={{ textAlign: "center", padding: 40, borderColor: "#ff5c5c" }}>
+        <div style={{ fontSize: "3rem", marginBottom: 12 }}>⚠️</div>
+        <p style={{ color: "#ff8a8a", marginBottom: 16 }}>{error}</p>
+        <button className="btn btn-primary" onClick={() => setReload((r) => r + 1)}>Retry</button>
+      </div>
+    );
+  }
 
   return (
     <div>

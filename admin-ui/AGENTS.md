@@ -50,7 +50,7 @@ SATU React SPA untuk SELURUH frontend 1ai-content — Landing (`/`), Admin (`/ad
 - Route baru WAJIB didaftarkan di `src/App.tsx`; halaman baru ditaruh di `src/pages/` dan memanggil helper dari `src/api/client.ts`.
 - Brand `index.html` SUDAH disesuaikan pasca-fix 2026-08-02 (lang="id", title "1AI Content — AI Content Factory", meta SEO + og:image `/public/hero-tiktok-showcase.png` — lihat Prioritas #6 root). Bahasa UI konten komponen masih "en" — kustomisasi i18n belum ada.
 - Backend di luar scope direktori ini (trace `Login`/`user_id=0` terputus di API `/admin/*` dan `/api/py/*`) — verifikasi sisi server sebelum mengubah perilaku auth.
-- `/admin/*` di belakang auth Basic server-side (`src/routes/admin/auth.ts`) — tanpa credential 401 (browser prompt → cookie); login admin SPA end-to-end belum diverifikasi browser.
+- `/admin/*` di belakang auth Basic server-side (`src/routes/admin/auth.ts`) — tanpa credential 401 (browser prompt → cookie); login admin end-to-end terverifikasi prod 2026-08-02 (`tmp/prod-login-verify.ts` 9/9 PASS).
 
 ### Temuan Audit (2026-08-02, commit `bac10d88`)
 - **[HIGH]** `src/pages/Login.tsx:98` — UI menampilkan "Default password: `admin`" hardcoded (default credential di client code). Trace menuju backend `/admin/login` tidak bisa diverifikasi dari scope ini.

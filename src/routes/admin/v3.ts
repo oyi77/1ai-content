@@ -1,4 +1,5 @@
 import { FastifyInstance, FastifyRequest } from "fastify";
+import { verifyAdmin } from "./auth";
 import { prisma } from "@/config/database";
 import { redis } from "@/config/redis";
 import { getConfig } from "@/config/env";
@@ -61,7 +62,7 @@ export async function registerV3Routes(server: FastifyInstance) {
   server.post("/api/v3/retention/trigger", {
     schema: { body: retentionTriggerSchema },
   }, async (request, reply) => {
-    const { type } = request.body as { type: string };
+    const { type } = (request.body ?? {}) as { type: string };
     try {
       await retentionQueue.add("run_checks", { type });
       return { queued: true, type };
@@ -74,8 +75,8 @@ export async function registerV3Routes(server: FastifyInstance) {
 
   // ── v3.0 User Gamification ──
 
-  /** GET /api/v3/users/:id/gamification */
-server.get("/api/v3/users/:id/gamification", async (request: FastifyRequest, reply) => {
+  /** GET /api/v3/users/:id/gamification — admin-only (per-user gamification lookup) */
+  server.get("/api/v3/users/:id/gamification", { onRequest: [verifyAdmin] }, async (request: FastifyRequest, reply) => {
     try {
       const userId = BigInt((request.params as { id: string }).id);
       const [summary, streak, badges] = await Promise.all([

@@ -11,6 +11,7 @@ export default function Cloak() {
   const [postProfileId, setPostProfileId] = useState("");
   const [platform, setPlatform] = useState("instagram");
   const [caption, setCaption] = useState("");
+  const [mediaPath, setMediaPath] = useState("");
   const [posting, setPosting] = useState(false);
   const [postResult, setPostResult] = useState("");
   const [postErr, setPostErr] = useState("");
@@ -36,7 +37,7 @@ export default function Cloak() {
     setPostResult("");
     setPostErr("");
     try {
-      const res = await cloakPost({ profile_id: postProfileId, platform, caption });
+      const res = await cloakPost({ profile_id: postProfileId, platform, caption, media_path: mediaPath });
       if (res.success) setPostResult("Post submitted successfully!");
       else setPostErr(res.error || "Post failed");
     } catch (err: unknown) {
@@ -100,6 +101,13 @@ export default function Cloak() {
             value={caption}
             onChange={(e) => setCaption(e.target.value)}
             required
+          />
+          <Input
+            label="Media Path (optional)"
+            name="mediaPath"
+            value={mediaPath}
+            onChange={(e) => setMediaPath(e.target.value)}
+            placeholder="/data/videos/example.mp4"
           />
           <Button type="submit" variant="primary" loading={posting}>
             Submit Post

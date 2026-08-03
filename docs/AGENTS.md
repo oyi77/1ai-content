@@ -23,10 +23,10 @@ Folder dokumentasi teknis `1ai-content`. Enam dokumen utama (`01-*` s/d `06-*`) 
 | File | Konten | Otoritas |
 |---|---|---|
 | `README.md` | Indeks dokumen, arsip, quarantine | — |
-| `01-ARCHITECTURE.md` | Fastify :3002, Python FastAPI :8767, nginx cf-router :6969, urutan registrasi route (index.ts), Prisma, bot grammY | Otoritatif |
+| `01-ARCHITECTURE.md` | Fastify :3002, Python FastAPI :8767, nginx cf-router :6969, urutan registrasi route (index.ts), Prisma, bot Telegraf | Otoritatif |
 | `02-ROUTES.md` | Peta route per domain (method/path, cara menambah route) | Otoritatif |
 | `03-SECURITY.md` | Arsitektur auth, cookie-token HMAC, `isAdminRoute`, pertahanan path traversal, rate limit | Otoritatif |
-| `04-FRONTEND.md` | Struktur React SPA, sistem EJS, design system, pola API client | Otoritatif |
+| `04-FRONTEND.md` | Struktur SPA React konsolidasi (admin-ui, 3 namespace), sisa EJS minimal, design system, pola API client | Otoritatif |
 | `05-TESTING.md` | Jest unit, Playwright E2E, pola test | Otoritatif |
 | `06-EXECUTION.md` | Setup dev, deployment, debugging, rollback, CI/CD | Otoritatif |
 | `db-consolidation-plan.md` | Rencana konsolidasi 4 DB → 1 PostgreSQL (17 item, 4 fase) | Rencana |

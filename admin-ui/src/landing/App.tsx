@@ -50,14 +50,17 @@ export default function Landing() {
     fetch("/api/packages")
       .then((r) => r.json())
       .then((data) => {
-        const list = (data?.packages || []).map((p: Record<string, unknown>) => ({
-          id: p.id as string,
-          name: p.name as string,
-          price: (p as { priceIdr?: number }).priceIdr ?? 0,
-          credits: (p.credits as number) ?? 0,
-          features: [] as string[],
-          popular: !!(p as { isPopular?: boolean }).isPopular,
-        }));
+        const list = (data?.packages || []).map((p: Record<string, unknown>, i: number) => {
+          const fb = FALLBACK_PRICING.find((f) => f.id === p.id) ?? FALLBACK_PRICING[i];
+          return {
+            id: p.id as string,
+            name: p.name as string,
+            price: (p as { priceIdr?: number }).priceIdr ?? 0,
+            credits: (p.credits as number) ?? 0,
+            features: (fb?.features ?? []) as string[],
+            popular: !!(p as { isPopular?: boolean }).isPopular,
+          };
+        });
         if (list.length >= 3) setPricing(list);
       })
       .catch(() => { /* use fallback */ });

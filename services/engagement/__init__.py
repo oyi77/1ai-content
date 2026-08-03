@@ -5,7 +5,7 @@ Monitors and replies to comments on TikTok/Instagram posts
 using CloakBrowser CDP for stealth engagement.
 
 Usage:
-    from services.engagement.auto_reply import AutoReplyEngine
+    from services.engagement import AutoReplyEngine
     engine = AutoReplyEngine()
     engine.start_monitoring(profile_id="tiktok_01")
 """
@@ -210,12 +210,17 @@ class AutoReplyEngine:
         """Post reply via CloakBrowser."""
         if self.cloak:
             try:
-                return self.cloak.post(
+                result = self.cloak.post(
                     profile_id=profile_id,
                     media_path="",
                     caption=reply,
                     platform=platform,
                 )
+                if result.get("success"):
+                    # Track real replies too so _check_limit stays effective now
+                    # that the simulated branch is no longer the only path.
+                    self._daily_limits[profile_id] = self._daily_limits.get(profile_id, 0) + 1
+                return result
             except Exception as e:
                 return {"success": False, "error": str(e)}
 

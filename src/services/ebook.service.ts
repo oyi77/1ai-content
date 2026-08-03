@@ -166,11 +166,44 @@ export class EbookService {
   }
 
   /**
-   * Get download URL for ebook file
+   * Download exported ebook file through the authenticated client.
+   * Returns the raw file so callers (HTTP, Telegram, MCP) can stream it
+   * without ever exposing the API key.
+   */
+  async download(
+    projectId: number,
+    format: "pdf" | "docx" | "epub"
+  ): Promise<{ buffer: Buffer; contentType: string; filename: string }> {
+    const contentTypeMap: Record<string, string> = {
+      docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      pdf: "application/pdf",
+      epub: "application/epub+zip",
+    };
+
+    try {
+      const resp = await this.client.get(
+        `/text/ebook/projects/${projectId}/download/${format}`,
+        { responseType: "arraybuffer" }
+      );
+      return {
+        buffer: Buffer.from(resp.data),
+        contentType: contentTypeMap[format],
+        filename: `ebook-${projectId}.${format}`,
+      };
+    } catch (err: unknown) {
+      const error = err as Error;
+      logger.error(`Failed to download ebook ${projectId} (${format}):`, error);
+      throw new ProviderError('Ebook', `download failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get download URL for ebook file (clean URL, never embeds the API key).
+   * Used only as a fallback when direct file delivery is unavailable.
    */
   getDownloadUrl(projectId: number, format: "pdf" | "docx" | "epub"): string {
     const baseUrl = getConfig().EBOOK_API_URL;
-    return `${baseUrl}/text/ebook/projects/${projectId}/download/${format}?key=${this.apiKey}`;
+    return `${baseUrl}/text/ebook/projects/${projectId}/download/${format}`;
   }
 
   /**

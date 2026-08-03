@@ -16,7 +16,7 @@ status: complete
 Otomasi penerbitan konten berjadwal: orchestrator menjalankan job (faceless → SEO → cloak publish), scheduler in-memory mengelola jadwal, dan publisher TikTok memposting via CloakBrowser.
 
 ## Ekspor-Interface
-- `AutoPilotOrchestrator` (`orchestrator.py:23`): `__init__` (26; `_active_jobs=0` 33, `_jobs={}` 36, `_next_job_id=1` 37); property `faceless_engine` (40, lazy), `seo_generator` (48, class lokal `_SEOGenerator` di 242), `cloak_adapter` (55, lazy); `create_job` (62, id `job_{:04d}` 68); `check_and_run` (88); `run_job` (107); `get_status` (216); `_reset_daily_counters_if_needed` (228); `_next_run_hint` (237).
+- `AutoPilotOrchestrator` (`orchestrator.py:23`): `__init__` (26; `_active_jobs=0` 33, `_jobs={}` 36, `_next_job_id=1` 37, `_run_counts`/`_results_log`/`_last_run` 38-40); property `faceless_engine` (40, lazy), `seo_generator` (48, class lokal `_SEOGenerator` di 242), `cloak_adapter` (55, lazy); `create_job` (62, id `job_{:04d}` 68); `check_and_run` (88, mencatat run_count/last_run/results_log); `run_job` (107); `get_status` (216, mengembalikan kontrak TS `AutoPilotStatus`: `active_jobs`, `total_jobs`, `jobs` (bentuk `AutoPilotJob` — config dinest di bawah `config`), `recent_results`, `last_run`); `_reset_daily_counters_if_needed` (228).
 - `AutoPilotScheduler` (`scheduler.py:27`): `__init__` (30, in-memory), `create_job` (33), `get_jobs` (68), `get_job` (72), `stop_job` (76), `check_and_run` (84), `mark_run` (110), `_compute_next_run` (127).
 - `AutoPilotTikTokPublisher` (`tiktok_publisher.py:26`): `__init__` (36), `create_job` (43, default times `["11:00","15:00","19:00"]` 77), `run_scheduled_job` (93).
 - `__init__.py` KOSONG (0 baris) — tidak ada ekspor; impor via path modul.

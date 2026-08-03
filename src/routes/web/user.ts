@@ -61,7 +61,7 @@ export async function userRoutes(server: FastifyInstance): Promise<void> {
   server.patch("/api/user/settings", async (request, reply) => {
     const user = await getUser(request, reply);
     if (!user) return;
-    const { language, notificationsEnabled, firstName } = request.body as {
+    const { language, notificationsEnabled, firstName } = (request.body ?? {}) as {
       language?: string;
       notificationsEnabled?: boolean;
       firstName?: string;

@@ -309,12 +309,21 @@ export async function handleEbookDownload(
   const projectId = parseInt(parts[2]);
   const format = parts[3] as "pdf" | "docx" | "epub";
 
-  const url = ebookService.getDownloadUrl(projectId, format);
-
-  await ctx.reply(
-    `📥 Download ebook (${format.toUpperCase()}):\n\n${url}`,
-    { parse_mode: "Markdown" }
-  );
+  try {
+    const file = await ebookService.download(projectId, format);
+    await ctx.replyWithDocument(
+      { source: file.buffer, filename: file.filename },
+      { caption: `📥 Ebook ${format.toUpperCase()} siap.` }
+    );
+  } catch (err: unknown) {
+    const error = err as Error;
+    logger.warn(`Ebook download via Telegram failed (${projectId} ${format}): ${error.message}`);
+    const url = ebookService.getDownloadUrl(projectId, format);
+    await ctx.reply(
+      `📥 Download ebook (${format.toUpperCase()}):\n\n${url}`,
+      { parse_mode: "Markdown" }
+    );
+  }
 }
 
 /**

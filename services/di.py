@@ -120,7 +120,7 @@ def get_engagement() -> AutoReplyEngine:
     if "engagement" not in _instances:
         from services.engagement import AutoReplyEngine
 
-        _instances["engagement"] = AutoReplyEngine()
+        _instances["engagement"] = AutoReplyEngine(cloak_adapter=get_cloak())
     return _instances["engagement"]
 
 

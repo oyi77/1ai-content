@@ -21,7 +21,8 @@ from services.comic_gen.comic_types import ComicFormat, Panel, PanelShape
 
 # ── Try OmniRoute image endpoint ──────────────────────────────────────
 
-OMNIROUTE_BASE = os.environ.get("OMNIROUTE_URL", "http://localhost:8000")
+_OMNIROUTE_BASE_URL = os.environ.get("OMNIROUTE_URL", os.environ.get("OMNIROUTE_BASE_URL", "http://localhost:20128/v1")).rstrip("/")
+OMNIROUTE_BASE = _OMNIROUTE_BASE_URL.removesuffix("/v1") if _OMNIROUTE_BASE_URL.endswith("/v1") else _OMNIROUTE_BASE_URL
 OMNIROUTE_IMAGE_MODEL = os.environ.get(
     "OMNIROUTE_IMAGE_MODEL", "black-forest-labs/flux-1-dev"
 )
@@ -47,7 +48,7 @@ async def _try_omniroute(
                     "size": f"{width}x{height}",
                     "response_format": "b64_json",
                 },
-                headers={"Authorization": f"Bearer {os.environ.get('OMNIROUTE_KEY', '')}"},
+                headers={"Authorization": f"Bearer {os.environ.get('OMNIROUTE_API_KEY', os.environ.get('OMNIROUTE_KEY', ''))}"},
             )
             if resp.status_code != 200:
                 return None

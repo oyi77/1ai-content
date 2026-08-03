@@ -60,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           username: data.username ?? null,
           name: data.firstName ?? "",
           credits: data.credits ?? 0,
-          isPremium: (data.tier ?? "free") === "premium",
+          isPremium: (data.tier ?? "free") === "pro" || (data.tier ?? "free") === "agency",
         });
       } else {
         logout();

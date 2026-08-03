@@ -27,6 +27,11 @@ from pathlib import Path
 CLOAKBROWSER_URL = os.getenv("CLOAKBROWSER_URL", "http://127.0.0.1:8090")
 CLOAKBROWSER_AUTH = os.getenv("CLOAKBROWSER_AUTH", "cloak_openclaw_2026")
 
+# The synchronous CDP posting flow (``_post_via_cdp``) implements the Facebook UI
+# only. Autopilot / engagement callers natively use "tiktok"; alias it so those
+# calls post through the supported flow instead of failing with "Unsupported platform".
+_PLATFORM_ALIASES = {"tiktok": "facebook"}
+
 
 class CloakBrowserAdapter:
     """Post to social media via CloakBrowser CDP."""
@@ -143,6 +148,15 @@ class CloakBrowserAdapter:
             if profile:
                 resolved_name = profile.get("name", "")
 
+        if not resolved_id:
+            # No explicit profile — auto-select the first available one.
+            profiles = self.list_profiles(platform)
+            profile = next((p for p in profiles if p.get("id")), None)
+            if not profile:
+                return {"success": False, "error": "No CloakBrowser profiles available to auto-select"}
+            resolved_id = profile.get("id", "")
+            resolved_name = profile.get("name", "")
+
         # Launch profile (allow already-running)
         did_launch = False
         launch_result = self._api("POST", f"/api/profiles/{resolved_id}/launch")
@@ -164,6 +178,8 @@ class CloakBrowserAdapter:
         # Post via Playwright CDP
         try:
             post_result = self._post_via_cdp(ws_url, media_path, caption, platform, link, tags)
+            if post_result.get("error"):
+                return {"success": False, "error": post_result["error"], "profile": resolved_name, "platform": platform}
             return {"success": True, "profile": resolved_name, "platform": platform, **post_result}
         except Exception as e:
             return {"success": False, "error": str(e), "profile": resolved_name}
@@ -177,6 +193,9 @@ class CloakBrowserAdapter:
         platform: str, link: Optional[str], tags: Optional[list]
     ) -> dict:
         """Post via Playwright CDP (synchronous). Supports Facebook only for now."""
+        # Normalize aliases used by autopilot/engagement callers to the platform
+        # this sync flow actually implements.
+        platform = _PLATFORM_ALIASES.get(platform, platform)
         from playwright.sync_api import sync_playwright
 
         # Start local WS proxy to bridge CDP auth headers

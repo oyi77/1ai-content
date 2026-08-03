@@ -72,7 +72,12 @@ class EbookContentGenerator(ContentGenerator):
         )
 
     async def create(self, params: dict) -> dict:
-        validated = ProjectInput(**params)
+        from pydantic import ValidationError
+        from fastapi import HTTPException
+        try:
+            validated = ProjectInput(**params)
+        except ValidationError as e:
+            raise HTTPException(status_code=422, detail=e.errors())
         project_id = self._repo.create_project(
             title=validated.title,
             idea=validated.idea,
@@ -291,9 +296,13 @@ class EbookContentGenerator(ContentGenerator):
         _self = self  # capture for closure
 
         async def _export(project_id: str) -> dict:
-            result = _self.export_data(int(project_id))
+            from fastapi import HTTPException
+            try:
+                pid = int(project_id)
+            except ValueError:
+                raise HTTPException(status_code=400, detail=f"Invalid project_id: {project_id}")
+            result = _self.export_data(pid)
             if "error" in result:
-                from fastapi import HTTPException
                 raise HTTPException(status_code=404, detail=result["error"])
             return result
 
@@ -301,7 +310,12 @@ class EbookContentGenerator(ContentGenerator):
             if fmt not in ("docx", "pdf", "epub"):
                 from fastapi import HTTPException
                 raise HTTPException(status_code=400, detail="Unsupported format. Use docx, pdf, or epub.")
-            file_path = _self.download_path(int(project_id), fmt)
+            from fastapi import HTTPException
+            try:
+                pid = int(project_id)
+            except ValueError:
+                raise HTTPException(status_code=400, detail=f"Invalid project_id: {project_id}")
+            file_path = _self.download_path(pid, fmt)
             if file_path is None:
                 from fastapi import HTTPException
                 raise HTTPException(status_code=404, detail=f"File {fmt} not found for project {project_id}")

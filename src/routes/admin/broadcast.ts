@@ -5,7 +5,7 @@ import { validate, broadcastBodySchema } from "@/utils/validation";
 
 export async function registerBroadcastRoutes(server: FastifyInstance) {
   server.post("/api/broadcast", { preHandler: validate({ body: broadcastBodySchema }) }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as { message: string; tier?: string };
+    const body = (request.body ?? {}) as { message: string; tier?: string };
 
     const where: Record<string, unknown> = { isBanned: false };
     if (body.tier) {

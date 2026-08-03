@@ -1,0 +1,9 @@
+[submodule "src/tools/vidbee"]
+	path = src/tools/vidbee
+	url = https://github.com/nexmoe/VidBee.git
+[submodule "src/tools/krillinai"]
+	path = src/tools/krillinai
+	url = https://github.com/KrillinAI/KrillinAI.git
+[submodule "src/tools/tiktok-downloader"]
+	path = src/tools/tiktok-downloader
+	url = https://github.com/JoeanAmier/TikTokDownloader.git

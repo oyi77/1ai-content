@@ -1,9 +1,9 @@
 """Trends routes — trending content scanner and cache."""
+import asyncio
+
 from fastapi import APIRouter, HTTPException
 
 from services.db.models import ContentType
-
-from services.di import get_carousel
 
 trends_router = APIRouter(prefix="", tags=["trends"])
 
@@ -43,8 +43,9 @@ async def trending_generate(topic: str, content_type: str = ContentType.video.va
     """Generate content from a trending topic."""
     try:
         if content_type == ContentType.carousel.value:
-            assembler = get_carousel()
-            result = assembler.create(topic=topic, platform=platform, language=language)
+            from services.carousel.assembler import CarouselAssembler
+            assembler = CarouselAssembler()
+            result = await asyncio.to_thread(assembler.create, topic=topic, platform=platform, language=language)
         else:
             from services.autopilot.tiktok_publisher import AutoPilotOrchestrator
             orch = AutoPilotOrchestrator()

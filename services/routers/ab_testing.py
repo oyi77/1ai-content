@@ -53,9 +53,15 @@ async def ab_test_start(user_id: int, test_id: str):
 async def ab_test_end(user_id: int, test_id: str):
     """End test and determine winner."""
     try:
+        try:
+            tid = int(test_id)
+        except ValueError:
+            raise HTTPException(status_code=422, detail=f"Invalid test_id: {test_id}")
         ab = get_ab_testing()
-        test = await ab.end_test(user_id, int(test_id))
+        test = await ab.end_test(user_id, tid)
         return test if test else {"error": "Test not found"}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -64,8 +70,14 @@ async def ab_test_end(user_id: int, test_id: str):
 async def ab_test_delete(test_id: str, user_id: int = 0):
     """Delete an A/B test."""
     try:
+        try:
+            tid = int(test_id)
+        except ValueError:
+            raise HTTPException(status_code=422, detail=f"Invalid test_id: {test_id}")
         ab = get_ab_testing()
-        result = await ab.delete_test(user_id, int(test_id))
+        result = await ab.delete_test(user_id, tid)
         return {"success": result}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

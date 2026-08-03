@@ -317,7 +317,7 @@ After any deployment:
 curl http://localhost:3002/health
 
 # 2. Public page
-curl -s http://localhost:3002/ | grep -q "Vilona Content"
+curl -s http://localhost:3002/ | grep -q "1AI Content"
 
 # 3. Admin login page
 curl -s http://localhost:3002/admin/login | grep -q "Admin Login"

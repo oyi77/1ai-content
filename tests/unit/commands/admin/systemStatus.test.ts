@@ -114,7 +114,6 @@ describe("Admin System Status Command", () => {
       const replyCall = ctx.reply.mock.calls[0];
       expect(replyCall[0]).toContain("Active Users:");
       expect(replyCall[0]).toContain("Videos Generated (24h):");
-      expect(replyCall[0]).toContain("Error Rate:");
     });
 
     it("should handle queue stats errors gracefully", async () => {

@@ -31,7 +31,7 @@ export async function registerUserMgmtRoutes(server: FastifyInstance) {
   // Change User Tier
   server.patch("/api/users/:id/tier", { preHandler: validate({ params: idParamSchema, body: tierBodySchema }) }, async (request: FastifyRequest, reply: FastifyReply) => {
     const { id } = request.params as { id: string };
-    const { tier } = request.body as { tier: string };
+    const { tier } = (request.body ?? {}) as { tier: string };
     const validTiers = ["free", "basic", "lite", "pro", "agency"];
     if (!tier || !validTiers.includes(tier.toLowerCase()))
       return reply.status(400).send({ error: "Invalid tier" });

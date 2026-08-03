@@ -64,8 +64,8 @@ class ExportOrchestrator:
             result = generator.generate(project_id, title=title)
             docx_path = project_dir / "exports" / "ebook.docx"
             path_str = (
-                str(result)
-                if result
+                str(result["docx"])
+                if isinstance(result, dict) and result.get("docx")
                 else (str(docx_path) if docx_path.exists() else None)
             )
             return {"status": "success", "path": path_str, "error": None}
@@ -94,10 +94,10 @@ class ExportOrchestrator:
                     title = outline.get("best_title", "Ebook")
 
             generator = EpubGenerator(projects_dir=project_dir.parent)
-            epub_path = generator.generate(project_id, title=title)
+            result = generator.generate(project_id, title=title)
             path_str = (
-                str(epub_path)
-                if epub_path
+                str(result["epub"])
+                if isinstance(result, dict) and result.get("epub")
                 else str(project_dir / "exports" / "ebook.epub")
             )
             return {"status": "success", "path": path_str, "error": None}
@@ -117,7 +117,7 @@ class ExportOrchestrator:
             return {"status": "failed", "path": None, "error": str(e)}
 
     def _generate_pdf(self, project_dir: Path) -> dict:
-        converter = PdfConverter()
+        converter = PdfConverter(projects_dir=self.projects_dir)
         docx_file = project_dir / "exports" / "ebook.docx"
 
         if not docx_file.exists():

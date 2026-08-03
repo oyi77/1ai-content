@@ -79,7 +79,7 @@ export const creditsBodySchema = z.object({
 });
 
 export const tierBodySchema = z.object({
-  tier: z.enum(['free', 'pro', 'premium', 'enterprise']),
+  tier: z.enum(['free', 'basic', 'pro', 'agency']),
 });
 
 export const banBodySchema = z.object({
@@ -89,7 +89,7 @@ export const banBodySchema = z.object({
 
 export const broadcastBodySchema = z.object({
   message: z.string().min(1).max(4096),
-  targetTier: z.enum(['all', 'free', 'pro', 'premium']).optional(),
+  targetTier: z.enum(['all', 'free', 'basic', 'pro', 'agency']).optional(),
 });
 
 export const cancelSubscriptionSchema = z.object({

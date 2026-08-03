@@ -156,7 +156,7 @@ const envSchema = z.object({
   DUITKU_ENVIRONMENT: z.string().default("sandbox"),
   NOWPAYMENTS_API_KEY: z.string().optional(),
   NOWPAYMENTS_IPN_SECRET: z.string().optional(),
-  '1AI_PAYMENT_URL': z.string().default("http://localhost:3103"),
+  '1AI_PAYMENT_URL': z.string().default("http://localhost:3100"),
   '1AI_PAYMENT_API_KEY': z.string().optional(),
   '1AI_PAYMENT_WEBHOOK_SECRET': z.string().optional(),
   'ECOSYSTEM_API_KEY': z.string().optional(),

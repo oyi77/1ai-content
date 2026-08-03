@@ -39,7 +39,7 @@ gateways:
     
     # Webhook
     webhook:
-      endpoint: "/webhooks/midtrans"
+      endpoint: "/webhook/midtrans"
       secret: "${MIDTRANS_WEBHOOK_SECRET}"
       verify_signature: true
       idempotency_key: true
@@ -67,7 +67,7 @@ gateways:
     
     # Webhook
     webhook:
-      endpoint: "/webhooks/tripay"
+      endpoint: "/webhook/tripay"
       verify_signature: true
 
 # =============================================================================

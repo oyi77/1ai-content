@@ -59,7 +59,6 @@ export async function calendarCommand(ctx: BotContext): Promise<void> {
             ],
             [
               { text: '📋 All Entries', callback_data: 'cal_list_all' },
-              { text: '🔄 Sync AutoPilot', callback_data: 'cal_sync_autopilot' },
             ],
           ],
         },
@@ -81,18 +80,10 @@ export async function calendarCommand(ctx: BotContext): Promise<void> {
 
       ctx.session.stateData = { ...ctx.session.stateData, calendarTopic: topic, calendarDate: scheduledAt };
       await ctx.reply(
-        `📅 *Schedule: ${topic}*\n${scheduledAt ? `Waktu: ${scheduledAt}` : 'Pilih waktu:'}\n\nPilih tipe konten:`,
-        {
-          parse_mode: 'Markdown',
-          reply_markup: {
-            inline_keyboard: [
-              [
-                { text: '🎬 Video', callback_data: 'cal_type_video' },
-                { text: '🖼️ Carousel', callback_data: 'cal_type_carousel' },
-              ],
-            ],
-          },
-        },
+        `📅 *Schedule: ${topic}*\n${scheduledAt ? `Waktu: ${scheduledAt}` : 'Pilih waktu'}\n\n` +
+          'Ketik `/calendar schedule <topik> | <YYYY-MM-DD HH:MM>` untuk menjadwalkan konten.\n' +
+          'Lihat jadwal dengan `/calendar`.',
+        { parse_mode: 'Markdown' },
       );
       return;
     }

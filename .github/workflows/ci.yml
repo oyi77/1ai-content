@@ -180,16 +180,29 @@ jobs:
         run: |
           docker run --rm -d \
             --name openclaw-test \
+            -p 3002:3000 \
             -e NODE_ENV=production \
+            -e ADMIN_PASSWORD=test-admin-password \
+            -e JWT_SECRET=ci-only-jwt-secret-0123456789abcdef \
             -e BOT_TOKEN=${{ secrets.BOT_TOKEN || 'test-bot-token' }} \
             -e DATABASE_URL=postgresql://test:test@host.docker.internal:5432/openclaw_test \
             -e REDIS_URL=redis://host.docker.internal:6379 \
             openclaw-bot:${{ github.sha }}
 
-          sleep 10
+          # Poll /health until the bot is up (max 60s), then dump logs for debugging
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:3002/health >/dev/null 2>&1; then
+              echo "health check OK"
+              docker stop openclaw-test
+              exit 0
+            fi
+            sleep 2
+          done
 
+          echo "health check timed out"
           docker logs openclaw-test
           docker stop openclaw-test
+          exit 1
 
   security-scan:
     runs-on: ubuntu-latest
@@ -202,7 +215,7 @@ jobs:
           scan-type: "fs"
           scan-ref: "."
           format: "table"
-          exit-code: "0"
+          exit-code: "1"
           ignore-unfixed: true
           severity: "CRITICAL,HIGH"
           skip-dirs: "node_modules,admin-ui/node_modules,.venv,dist,build,coverage,logs,tmp,data"

@@ -26,6 +26,16 @@ from typing import Optional
 from services.trends.seo_generator import SEOGenerator
 
 
+def normalize_color_shift(value) -> bool:
+    """Coerce bool|str color_shift to a bool for the engine."""
+    if value is None:
+        return False
+    if isinstance(value, bool):
+        return value
+    s = str(value).strip().lower()
+    return s not in ("", "none", "0", "false", "no", "off")
+
+
 class ReMetadataEngine:
     """
     Simple video re-rendering for metadata change.
@@ -54,7 +64,7 @@ class ReMetadataEngine:
         watermark: Optional[str] = None,
         position: str = "bottom_right",
         speed: Optional[float] = None,
-        color_shift: bool = True,
+        color_shift: bool | str = True,
         niche: str = "general",
         platform: str = "tiktok",
         language: str = "id",
@@ -85,6 +95,8 @@ class ReMetadataEngine:
                 "changes_applied": [...],
             }
         """
+        # Coerce bool|str from API callers (e.g. "false" must not be truthy)
+        color_shift = normalize_color_shift(color_shift)
         job_id = f"remeta_{os.getpid()}_{int(time.time())}"
         work_dir = output_dir or os.path.join(self.output_base, job_id)
         os.makedirs(work_dir, exist_ok=True)

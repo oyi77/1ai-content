@@ -1,9 +1,10 @@
 #!/bin/bash
 # =============================================================================
-# VILONA CONTENT BOT — RESTART ALL SERVICES
+# 1AI CONTENT — RESTART BOT SERVICE
 # =============================================================================
-# Restarts both pm2 processes and verifies they come back online.
-# Usage: ./scripts/restart-all.sh [--no-verify]
+# Restarts the single PM2 process (1ai-content, port 3002) and verifies it
+# comes back online. Usage: ./scripts/restart-all.sh [--no-verify]
+# NOTE: the Python media-api (:8767) is systemd-managed — do NOT restart it here.
 # =============================================================================
 
 set -euo pipefail
@@ -28,24 +29,14 @@ if ! command -v pm2 &>/dev/null; then
   exit 1
 fi
 
-# ── Restart content-factory-api first (bot depends on it) ───────
-log "Restarting content-factory-api..."
-if pm2 restart content-factory-api 2>/dev/null; then
-  ok "content-factory-api restart signaled"
+# ── Restart 1ai-content ──────────────────────────────────────────
+log "Restarting 1ai-content..."
+if pm2 restart 1ai-content 2>/dev/null; then
+  ok "1ai-content restart signaled"
 else
-  err "content-factory-api restart failed (process may not be registered)"
-  log "Attempting to start content-factory-api from ecosystem config..."
-  pm2 start ecosystem.config.js --only content-factory-api 2>/dev/null || true
-fi
-
-# ── Restart vilonacontentbot ────────────────────────────────────
-log "Restarting vilonacontentbot..."
-if pm2 restart vilonacontentbot 2>/dev/null; then
-  ok "vilonacontentbot restart signaled"
-else
-  err "vilonacontentbot restart failed (process may not be registered)"
-  log "Attempting to start vilonacontentbot from ecosystem config..."
-  pm2 start ecosystem.config.js --only vilonacontentbot 2>/dev/null || true
+  err "1ai-content restart failed (process may not be registered)"
+  log "Attempting to start 1ai-content from ecosystem config..."
+  pm2 start ecosystem.config.js --only 1ai-content 2>/dev/null || true
 fi
 
 # ── Wait for processes to stabilize ─────────────────────────────
@@ -59,7 +50,7 @@ if [[ "$VERIFY" == true ]]; then
 
   ALL_OK=true
 
-  for PROC in vilonacontentbot content-factory-api; do
+  for PROC in 1ai-content; do
     STATUS=$(pm2 jlist 2>/dev/null | python3 -c "
 import sys, json
 try:
@@ -88,8 +79,7 @@ except:
     echo -e "${GREEN}All services restarted successfully.${NC}"
   else
     err "Some services did not come back online. Check logs:"
-    echo "  pm2 logs vilonacontentbot --lines 20"
-    echo "  pm2 logs content-factory-api --lines 20"
+    echo "  pm2 logs 1ai-content --lines 20"
     exit 1
   fi
 else

@@ -50,7 +50,7 @@ export async function webhookRoutes(server: FastifyInstance, options: WebhookOpt
 
   server.post('/webhook/midtrans', async (request, reply) => {
     try {
-      const body = request.body as Record<string, unknown>;
+      const body = (request.body ?? {}) as Record<string, unknown>;
       const rawBody = JSON.stringify(body);
       const signature = String(body.signature_key || '');
       
@@ -111,7 +111,7 @@ export async function webhookRoutes(server: FastifyInstance, options: WebhookOpt
         return reply.status(500).send({ error: 'Tripay webhook not configured' });
       }
 
-      const body = request.body as Record<string, unknown>;
+      const body = (request.body ?? {}) as Record<string, unknown>;
       const signature = request.headers['x-signature'] as string;
       const expectedSignature = crypto
         .createHmac('sha256', tripayPrivateKey)
@@ -162,7 +162,7 @@ export async function webhookRoutes(server: FastifyInstance, options: WebhookOpt
 
   server.post('/webhook/nowpayments', async (request, reply) => {
     try {
-      const body = request.body as Record<string, unknown>;
+      const body = (request.body ?? {}) as Record<string, unknown>;
 
       // Verify IPN signature — mandatory when NOWPAYMENTS_IPN_SECRET is configured
       // Use process.env directly — tests mutate this at runtime to test the "no secret" path
@@ -241,7 +241,7 @@ export async function webhookRoutes(server: FastifyInstance, options: WebhookOpt
 
   server.post('/webhook/duitku', async (request, reply) => {
     try {
-      const body = request.body as Record<string, unknown>;
+      const body = (request.body ?? {}) as Record<string, unknown>;
       logger.info('Duitku callback received:', body);
       
       const result = await DuitkuService.handleCallback({

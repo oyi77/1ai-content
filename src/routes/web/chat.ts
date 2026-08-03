@@ -24,7 +24,7 @@ export async function chatRoutes(server: FastifyInstance): Promise<void> {
       chatRateMap.set(ip, { count: 1, resetAt: now + 60_000 });
     }
 
-    const { message, sessionId } = request.body as { message?: string; sessionId?: string };
+    const { message, sessionId } = (request.body ?? {}) as { message?: string; sessionId?: string };
     if (!message || typeof message !== "string" || message.trim().length === 0) {
       return reply.status(400).send({ error: "Message is required" });
     }

@@ -24,6 +24,23 @@ from typing import Optional
 from pathlib import Path
 
 
+def _format_tuning(value, unit: str):
+    """Normalize a rate/pitch value for edge-tts, or None to omit the flag."""
+    if value is None:
+        return None
+    text = str(value).strip()
+    if not text:
+        return None
+    if "%" in text or "hz" in text.lower():
+        return text
+    try:
+        n = float(text)
+    except ValueError:
+        return text
+    sign = "+" if n >= 0 else "-"
+    return f"{sign}{abs(n)}{unit}"
+
+
 class TTSEngine:
     """Multi-engine text-to-speech."""
 
@@ -107,14 +124,14 @@ class TTSEngine:
     def _edge_tts(self, text, voice, output_path, rate, pitch) -> dict:
         """Generate speech using Edge TTS."""
         try:
-            cmd = [
-                "edge-tts",
-                "--voice", voice,
-                "--rate", rate,
-                "--pitch", pitch,
-                "--text", text,
-                "--write-media", output_path,
-            ]
+            cmd = ["edge-tts", "--voice", voice]
+            rate_f = _format_tuning(rate, "%")
+            if rate_f:
+                cmd += ["--rate", rate_f]
+            pitch_f = _format_tuning(pitch, "Hz")
+            if pitch_f:
+                cmd += ["--pitch", pitch_f]
+            cmd += ["--text", text, "--write-media", output_path]
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
 
             if result.returncode == 0 and os.path.exists(output_path):

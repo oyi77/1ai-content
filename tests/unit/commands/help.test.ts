@@ -42,7 +42,7 @@ describe("Help Command", () => {
 
       expect(ctx.reply).toHaveBeenCalled();
       const replyCall = ctx.reply.mock.calls[0];
-      expect(replyCall[0]).toContain("BERKAHKARYA AI");
+      expect(replyCall[0]).toContain("1AI Content");
     });
 
     it("should show all command categories", async () => {

@@ -21,6 +21,11 @@ BOT_TOKEN = os.getenv("BOT_TOKEN", "")
 BASE = f"https://api.telegram.org/bot{BOT_TOKEN}"
 TEST_CHAT_ID = os.getenv("TEST_CHAT_ID", "")  # Set to your chat ID for live testing
 
+if not BOT_TOKEN:
+    print("❌ BOT_TOKEN env var is not set (or empty).")
+    print("   Run with it set, e.g.:  BOT_TOKEN=<token> python3 tests/e2e/bot/test_bot_e2e.py")
+    sys.exit(1)
+
 passed = 0
 failed = 0
 errors = []
@@ -222,8 +227,8 @@ def test_admin_pages():
 
     for page in pages:
         r = httpx.get(f"http://localhost:3002{page}", timeout=10)
-        has_sidebar = "Vilona Content" in r.text if r.status_code == 200 else False
-        ok(f"{page}", f"status={r.status_code}, sidebar={has_sidebar}")
+        has_sidebar = "1AI Content" in r.text if r.status_code == 200 else False
+        ok(f"{page}", f"status={r.status_code}, branding={has_sidebar}")
 
 
 def test_miniapp():
@@ -233,7 +238,7 @@ def test_miniapp():
 
     r = httpx.get("https://content.aitradepulse.com/app/mini", timeout=10)
     ok("MiniApp loads", f"status={r.status_code}")
-    ok("Has Vilona branding", str("Vilona Content" in r.text))
+    ok("Has 1AI Content branding", str("1AI Content" in r.text))
     ok("Has navigation", str("navigate" in r.text))
     ok("Has API calls", str("api(" in r.text or "pyApi(" in r.text))
 
@@ -244,7 +249,7 @@ def test_pm2_process():
     print("-" * 40)
 
     r = subprocess.run(["pm2", "list"], capture_output=True, text=True, timeout=10)
-    ok("vilonacontentbot in PM2", str("vilonacontentbot" in r.stdout))
+    ok("1ai-content in PM2", str("1ai-content" in r.stdout))
     ok("Status online", str("online" in r.stdout))
 
     r = subprocess.run(["systemctl", "is-enabled", "pm2-openclaw"], capture_output=True, text=True, timeout=5)
@@ -257,7 +262,7 @@ def test_pm2_process():
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("🤖 @vilonacontentbot E2E Verification")
+    print("🤖 1AI Content E2E Verification")
     print(f"   Time: {datetime.now().isoformat()}")
     print("=" * 60)
 

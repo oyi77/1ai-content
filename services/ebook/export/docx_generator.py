@@ -77,8 +77,13 @@ class DocxGenerator:
         if toc_file.exists():
             content = toc_file.read_text()
             for line in content.split("\n"):
-                if line.strip().startswith("## ") and "Table of Contents" not in line:
-                    title = line.replace("## ", "").strip()
+                stripped = line.strip()
+                if stripped.startswith("## ") and "Table of Contents" not in stripped:
+                    title = stripped.replace("## ", "").strip()
+                    doc.add_paragraph(title)
+                elif stripped and stripped[0].isdigit() and "**" in stripped:
+                    # toc.md numbered chapter entries: "1. **Title**  "
+                    title = stripped.split("**")[1].strip()
                     doc.add_paragraph(title)
 
     def _set_rtl(self, paragraph) -> None:

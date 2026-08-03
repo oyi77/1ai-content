@@ -338,6 +338,60 @@ describe("PaymentService", () => {
       );
     });
 
+    it("should mint a subscription transaction for sub_ package", async () => {
+      mockPrisma.transaction.create.mockResolvedValue({ id: "tx-sub" });
+      mockAxiosPost.mockResolvedValue({
+        data: {
+          success: true,
+          data: {
+            id: "pay-sub",
+            gateway: "duitku",
+            gateway_reference: null,
+            status: "pending",
+            amount: 199000,
+            currency: "IDR",
+            payment_url: "https://url",
+            payment_method: null,
+            expires_at: null,
+            created_at: "2024-01-15T10:30:00Z",
+          },
+        },
+      });
+
+      await PaymentService.createTransaction({
+        userId: TEST_USER_ID,
+        packageId: "sub_pro_monthly",
+        gateway: "duitku",
+        username: "testuser",
+      });
+
+      expect(mockPrisma.transaction.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            userId: TEST_USER_ID,
+            type: "subscription",
+            packageName: "pro_monthly",
+            amountIdr: 199000,
+            creditsAmount: 50,
+            gateway: "unified",
+            status: "pending",
+          }),
+        }),
+      );
+    });
+
+    it("should reject an invalid subscription package", async () => {
+      await expect(
+        PaymentService.createTransaction({
+          userId: TEST_USER_ID,
+          packageId: "sub_pro_weekly",
+          gateway: "duitku",
+        })
+      ).rejects.toThrow("Invalid package");
+
+      expect(mockPrisma.transaction.create).not.toHaveBeenCalled();
+    });
+
     it("should use 'User' as default name when no username given", async () => {
       mockGetPackagesAsync.mockResolvedValue(makePackages());
       mockPrisma.transaction.create.mockResolvedValue({ id: "tx-123" });
@@ -652,17 +706,17 @@ describe("PaymentService", () => {
       expect(result).toBe(false);
     });
 
-    it("should return true when webhook secret is not configured (skip verification)", () => {
+    it("should return false when webhook secret is not configured (fail-closed)", () => {
       (getConfig as jest.Mock).mockReturnValue({
         WEBHOOK_URL: "https://test.example.com",
         "1AI_PAYMENT_URL": "http://localhost:3100",
         "1AI_PAYMENT_API_KEY": "test-api-key",
-        // intentionally omitting 1AI_PAYMENT_WEBHOOK_SECRET to test skip-verification path
+        // intentionally omitting 1AI_PAYMENT_WEBHOOK_SECRET to test fail-closed path
       });
 
       const body = JSON.stringify({ order_id: "ORD-001" });
       const result = PaymentService.verifyWebhookSignature(body, "anything");
-      expect(result).toBe(true);
+      expect(result).toBe(false);
     });
   });
 

@@ -8,6 +8,7 @@ import { BotContext } from '@/types';
 import { logger } from '@/utils/logger';
 import { getConfig } from '@/config/env';
 import { prisma } from '@/config/database';
+import { addNotificationJob } from '@/config/queue';
 
 /**
  * Check if user is admin
@@ -140,12 +141,8 @@ export async function adminBroadcastCommand(ctx: BotContext): Promise<void> {
       return;
     }
 
-    // In a real implementation, you would send messages to each user here
-    // For now, we'll just log and notify the admin
-    logger.info(`Would broadcast to ${users.length} users:`, users.map(u => ({ 
-      id: u.telegramId.toString(), 
-      name: u.username || u.firstName 
-    })));
+    await addNotificationJob({ type: "broadcast", message: broadcastMessage, users: users.map((u) => u.telegramId.toString()) });
+    logger.info(`Broadcast queued for ${users.length} users`);
 
     await ctx.reply(
       '✅ *Broadcast Queued*\n\n' +

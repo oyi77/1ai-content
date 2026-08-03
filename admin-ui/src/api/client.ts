@@ -770,7 +770,7 @@ export async function fetchEngagementStats(): Promise<Record<string, unknown>> {
 export async function generateReply(data: {
   comment_text: string;
   platform: string;
-  tone?: string;
+  profile_id: string;
 }): Promise<EngageReplyResponse> {
   return postJson("/api/py/engagement/reply", data);
 }

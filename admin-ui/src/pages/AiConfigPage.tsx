@@ -456,7 +456,7 @@ export default function AiConfigPage() {
                     </Button>
                     <Button variant="ghost" size="sm" onClick={() => handleCheckBalance(p.id)}>Balance</Button>
                     <Button variant="ghost" size="sm" onClick={() => handleFetchModels(p.id)}>Models</Button>
-                    {testResult[p.id] && (
+                    {testResult[p.id]?.message !== undefined && (
                       <span className={`text-xs px-2 py-0.5 rounded ${
                         testResult[p.id].status === "ok" ? "bg-emerald-500/20 text-emerald-400" :
                         testResult[p.id].status === "error" ? "bg-red-500/20 text-red-400" :

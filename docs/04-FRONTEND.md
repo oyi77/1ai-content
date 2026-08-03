@@ -4,11 +4,12 @@
 
 | Layer | Technology |
 |-------|-----------|
-| Admin SPA | React 18, React Router 6, TypeScript, Vite, Tailwind CSS v4 |
-| Customer SPA | React 18, React Router 6, TypeScript, Vite |
-| Server-rendered views | EJS (Embedded JavaScript templates) |
-| Design system | Custom variables in `src/views/admin/layout.ejs` + element-plus elements |
-| Build tools | Vite for SPAs, tsx/custom for EJS |
+| Admin/Customer/Landing SPA | React 19, react-router-dom 7, TypeScript, Vite, Tailwind CSS v4 — SATU bundle `admin-ui/`, 3 namespace (`/`, `/admin/*`, `/app/*`) di `src/main.tsx` |
+| Server-rendered views | EJS (sisa: `admin/login.ejs`, `web/{privacy,tos,faq}.ejs`, `youtube/dashboard.ejs`) |
+| Design system | Tailwind v4 theme + `admin-ui/src/styles/admin-skin.css` + `src/index.css` |
+| Build tools | Vite (admin-ui) |
+
+> Konsolidasi 2026-08-02: `customer-ui/` & `landing-ui/` dihapus; source digabung ke `admin-ui/src/{app,landing}`.
 
 ## Admin React SPA (`admin-ui/`)
 
@@ -17,66 +18,37 @@
 ```typescript
 // admin-ui/vite.config.ts
 export default defineConfig({
-  base: "/admin/",              // Assets served at /admin/assets/*
-  build: { outDir: "dist" },    // Output: admin-ui/dist/
+  base: "/",                    // Assets served at /assets/*; 3 namespace SPA dimount di src/main.tsx
+  build: { outDir: "dist" },    // Output: admin-ui/dist/ (emptyOutDir: true)
 });
 ```
 
 ### Router Structure
 
+Runtime: satu `BrowserRouter` **tanpa basename** di `admin-ui/src/main.tsx`, dengan 3 route lazy pada 3 namespace, lalu `admin-ui/src/App.tsx` memegang ~40 route relatif di dalam `<Layout />` (sidebar + header):
+
 ```typescript
-// admin-ui/src/App.tsx
-<BrowserRouter basename="/admin">
+// admin-ui/src/main.tsx
+<BrowserRouter>
   <Routes>
-    <Route element={<Layout />}>
-      <Route path="/" element={<Navigate to="/dashboard" />} />
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/analytics" element={<Analytics />} />
-      <Route path="/analytics/calendar" element={<CalendarPage />} />
-      <Route path="/analytics/trending" element={<TrendingPage />} />
-      <Route path="/analytics/ab-tests" element={<ABTestsPage />} />
-      <Route path="/analytics/carousel" element={<CarouselPage />} />
-      <Route path="/analytics/remeta" element={<RemetaPage />} />
-      <Route path="/analytics/repurpose" element={<RepurposePage />} />
-      <Route path="/analytics/research" element={<ResearchPage />} />
-      <Route path="/content" element={<Content />} />
-      <Route path="/users" element={<Users />} />
-      <Route path="/payments" element={<Payments />} />
-      <Route path="/tools" element={<Tools />} />
-      <Route path="/tools/cloak" element={<Cloak />} />
-      <Route path="/tools/engagement" element={<Engagement />} />
-      <Route path="/tools/video-tools" element={<VideoTools />} />
-      <Route path="/tools/storyboard" element={<Storyboard />} />
-      <Route path="/tools/render-ad" element={<RenderAd />} />
-      <Route path="/tools/pinterest" element={<Pinterest />} />
-      <Route path="/tools/fanpage" element={<Fanpage />} />
-      <Route path="/settings" element={<Settings />} />
-      <Route path="/pricing" element={<Pricing />} />
-      <Route path="/medias" element={<MediasPage />} />
-      <Route path="/ai-config" element={<AiConfigPage />} />
-      <Route path="/comic" element={<ComicPage />} />
-      <Route path="/playground" element={<Playground />} />
-      <Route path="/tts" element={<Tts />} />
-      <Route path="/music" element={<Music />} />
-      <Route path="/bookshelf" element={<BookshelfPage />} />
-      <Route path="/movie" element={<MoviePage />} />
-      <Route path="/providers" element={<ProvidersPage />} />
-      <Route path="/captions" element={<Captions />} />
-      <Route path="/analyze" element={<Analyze />} />
-      <Route path="/looping" element={<Looping />} />
-      <Route path="/autopilot" element={<Autopilot />} />
-      <Route path="/prompts" element={<PromptsPage />} />
-      <Route path="/personas" element={<PersonasPage />} />
-      <Route path="/dynamic-pricing" element={<DynamicPricingPage />} />
-      <Route path="/config" element={<ConfigPage />} />
-      <Route path="/system" element={<SystemPage />} />
-      <Route path="/interceptions" element={<InterceptionsPage />} />
-    </Route>
+    <Route path="/" element={<Landing />} />                 {/* Landing namespace */}
+    <Route path="/admin/*" element={<Suspense fallback={<Spinner />}><AdminApp /></Suspense>} />  {/* AdminApp = src/App.tsx */}
+    <Route path="/app/*" element={<Suspense fallback={<Spinner />}><CustomerApp /></Suspense>} />  {/* Customer namespace */}
   </Routes>
 </BrowserRouter>
+
+// admin-ui/src/App.tsx — route relatif di dalam <Layout /> (komentar: dimount di bawah <Route path="/admin/*">)
+<Routes>
+  <Route element={<Layout />}>
+    <Route index element={<Navigate to="dashboard" replace />} />
+    <Route path="dashboard" element={<Dashboard />} />
+    {/* ...analytics, analytics/calendar, tools/*, settings, prompts, personas,
+        dynamic-pricing, config, system, interceptions, dst. — ~40 route relatif */}
+  </Route>
+</Routes>
 ```
 
-All routes are children of `<Layout />` which provides the sidebar navigation and header.
+Semua route server-render-nya: Fastify catch-all `sendFile("index.html")` untuk `/admin/*` & `/app/*`, lalu router di sisi client yang memetakan pathname ke namespace.
 
 ### Page Organization
 
@@ -154,56 +126,27 @@ Consolidated ke `admin-ui/` (vite `base: "/"`, tanpa basename) — lihat `admin-
 
 Route namespace `/app/*` dimount di `admin-ui/src/main.tsx` (CustomerApp lazy) → `src/app/App.tsx` (`AuthProvider` + `ProtectedRoute` + route relatif). Nav sidebar: `src/app/layout/Layout.tsx:4-15` (semua `/app/*`).
 
-## EJS Views (`src/views/`)
+## Remaining EJS Templates (`src/views/`)
 
-Server-rendered templates using EJS. The layout system uses:
+Server-rendered EJS tersisa minimal (legacy — mayoritas UI sudah SPA React `admin-ui/`):
 
 ```
 src/views/
 ├── admin/
-│   ├── layout.ejs          — Admin layout with sidebar, nav, CSS/JS includes
-│   ├── admin-login.ejs     — Login page (standalone, no layout)
-│   ├── admin-dashboard.ejs — Dashboard (embedded layout)
-│   ├── pricing.ejs         — Pricing page (standalone)
-│   └── ...                 — Feature-specific admin pages
-├── pages/
-│   ├── landing.ejs         — Landing page
-│   ├── faq.ejs             — FAQ
-│   ├── terms.ejs           — Terms of service
-│   ├── privacy.ejs         — Privacy policy
-│   └── payment/
-│       └── finish.ejs      — Payment completion page
-├── partials/
-│   ├── sidebar.ejs         — Sidebar navigation
-│   ├── header.ejs          — Header bar
-│   └── ...
+│   └── login.ejs            — Halaman login admin (standalone, no layout)
+├── web/
+│   ├── privacy.ejs          — Privacy policy
+│   ├── tos.ejs              — Terms of service
+│   └── faq.ejs              — FAQ
+└── youtube/
+    └── dashboard.ejs        — YouTube dashboard
 ```
 
-### Layout Inheritance
-
-Admin pages that EXTEND `layout.ejs` get the sidebar, header, and CSS/JS includes automatically. Standalone pages (login, pricing) do NOT have access to the `esc()` helper — they must define their own if needed.
-
-```ejs
-<%# admin-dashboard.ejs %>
-<%- include('layout', { title: 'Dashboard' }) %>
-<!-- page content -->
-```
-
-Standalone pages must include all CSS/JS manually and copy the `esc()` helper:
-
-```ejs
-<script>
-function esc(s) {
-  var d = document.createElement('div');
-  d.textContent = s;
-  return d.innerHTML;
-}
-</script>
-```
+> Catatan 2026-08-02 (audit): layout `layout.ejs`, `admin-dashboard.ejs`, `admin-login.ejs`, `pages/landing.ejs`, `partials/` dsb. yang disebut versi lama TIDAK lagi dipakai — dashboard admin kini React SPA (`admin-ui/`), landing = SPA namespace `/`, dan sisa EJS hanya 5 file di atas.
 
 ## Design System
 
-CSS variables defined in `layout.ejs` and `admin-login.ejs`:
+Styling utama kini Tailwind v4 (`admin-ui/`), dengan theme token di `admin-ui/src/index.css` & `admin-ui/src/styles/admin-skin.css`. Blok CSS di bawah adalah referensi palet warna dari versi EJS lama (`layout.ejs` / `admin-login.ejs`) yang sudah tidak dipakai — dipertahankan sebagai catatan warna brand:
 
 ```css
 :root {

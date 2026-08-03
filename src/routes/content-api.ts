@@ -110,7 +110,7 @@ export async function contentApiRoutes(server: FastifyInstance): Promise<void> {
       enableVO = true,
       enableSubtitles = true,
       language = "id",
-    } = request.body as Record<string, string>;
+    } = (request.body ?? {}) as Record<string, string>;
 
     if (!niche || !duration) {
       return reply.status(400).send({ error: "niche and duration required" });
@@ -196,7 +196,7 @@ export async function contentApiRoutes(server: FastifyInstance): Promise<void> {
     const user = await getUser(request, reply);
     if (!user) return;
 
-    const { prompt, category = "general", aspectRatio = "1:1" } = request.body as Record<string, string>;
+    const { prompt, category = "general", aspectRatio = "1:1" } = (request.body ?? {}) as Record<string, string>;
 
     if (!prompt) {
       return reply.status(400).send({ error: "prompt required" });
@@ -248,7 +248,7 @@ export async function contentApiRoutes(server: FastifyInstance): Promise<void> {
     const user = await getUser(request, reply);
     if (!user) return;
 
-    const { idea, title, chapterCount = 10, targetLanguage = "id", productMode = "paid_ebook" } = request.body as Record<string, string>;
+    const { idea, title, chapterCount = 10, targetLanguage = "id", productMode = "paid_ebook" } = (request.body ?? {}) as Record<string, string>;
 
     if (!idea) {
       return reply.status(400).send({ error: "idea required" });
@@ -297,15 +297,22 @@ export async function contentApiRoutes(server: FastifyInstance): Promise<void> {
       return reply.status(400).send({ error: "Invalid format. Use pdf, docx, or epub" });
     }
 
-    const url = ebookService.getDownloadUrl(Number(id), format as "pdf" | "docx" | "epub");
-    return reply.redirect(url);
+    try {
+      const file = await ebookService.download(Number(id), format as "pdf" | "docx" | "epub");
+      reply.header("Content-Type", file.contentType);
+      reply.header("Content-Disposition", `attachment; filename="${file.filename}"`);
+      return reply.send(file.buffer);
+    } catch (err: unknown) {
+      const error = err as Error;
+      return reply.status(500).send({ error: error.message });
+    }
   });
 
   server.post("/api/content/chat", async (request, reply) => {
     const user = await getUser(request, reply);
     if (!user) return;
 
-    const { message } = request.body as { message: string };
+    const { message } = (request.body ?? {}) as { message: string };
 
     if (!message) {
       return reply.status(400).send({ error: "message required" });
@@ -357,7 +364,7 @@ export async function contentApiRoutes(server: FastifyInstance): Promise<void> {
     const user = await getUser(request, reply);
     if (!user) return;
 
-    const body = request.body as Record<string, unknown>;
+    const body = (request.body ?? {}) as Record<string, unknown>;
     const { contentFactoryService } = await import("@/services/content-factory.service.js");
 
     try {
@@ -382,7 +389,7 @@ export async function contentApiRoutes(server: FastifyInstance): Promise<void> {
     const user = await getUser(request, reply);
     if (!user) return;
 
-    const body = request.body as Record<string, unknown>;
+    const body = (request.body ?? {}) as Record<string, unknown>;
     const { contentFactoryService } = await import("@/services/content-factory.service.js");
 
     try {

@@ -17,7 +17,7 @@ import { logger } from '@/utils/logger';
 import { ReferralService } from '@/services/referral.service';
 import { SubscriptionService } from '@/services/subscription.service';
 import { AnalyticsService } from '@/services/analytics.service';
-import { PlanKey, BillingCycle, getPackagesAsync, getSubscriptionPlansAsync } from '@/config/pricing';
+import { PlanKey, BillingCycle, SUBSCRIPTION_PLANS, getPlanPrice, getPackagesAsync, getSubscriptionPlansAsync } from '@/config/pricing';
 import crypto from 'crypto';
 import { Telegraf } from 'telegraf';
 import { secureRandomString } from '@/utils/crypto';
@@ -107,15 +107,32 @@ export class PaymentService {
     gateway: 'midtrans' | 'tripay' | 'duitku' | 'nowpayments';
     paymentMethod?: string;
   }): Promise<{ orderId: string; token: string; redirectUrl: string }> {
-    const packages = await getPackagesAsync();
-    const pkg = packages.find((p) => p.id === params.packageId);
+    // Resolve package: topup package (e.g. "starter") or web subscription (e.g. "sub_pro_monthly")
+    let type: 'topup' | 'subscription' = 'topup';
+    let packageName = params.packageId;
+    let price: number;
+    let credits: number;
 
-    if (!pkg) {
-      throw new ValidationError('Invalid package', 'packageId');
+    if (params.packageId.startsWith('sub_')) {
+      // Web subscription buy — mint like the bot flow (type 'subscription', packageName `${plan}_${cycle}`)
+      const [planKey, billingCycle] = params.packageId.slice(4).split('_') as [PlanKey, BillingCycle | undefined];
+      const plan = SUBSCRIPTION_PLANS[planKey];
+      if (!plan || !billingCycle || (billingCycle !== 'monthly' && billingCycle !== 'annual')) {
+        throw new ValidationError('Invalid package', 'packageId');
+      }
+      type = 'subscription';
+      packageName = `${planKey}_${billingCycle}`;
+      price = getPlanPrice(planKey, billingCycle);
+      credits = plan.monthlyCredits;
+    } else {
+      const packages = await getPackagesAsync();
+      const pkg = packages.find((p) => p.id === params.packageId);
+      if (!pkg) {
+        throw new ValidationError('Invalid package', 'packageId');
+      }
+      price = pkg.priceIdr || 0;
+      credits = pkg.credits + (pkg.bonus || 0);
     }
-
-    const price = pkg.priceIdr || 0;
-    const credits = pkg.credits + (pkg.bonus || 0);
 
     // Generate order ID — ensures uniqueness
     const timestamp = Date.now();
@@ -127,8 +144,8 @@ export class PaymentService {
       data: {
         orderId,
         userId: params.userId,
-        type: 'topup',
-        packageName: params.packageId,
+        type,
+        packageName,
         amountIdr: price,
         creditsAmount: credits,
         gateway: 'unified',
@@ -205,8 +222,11 @@ export class PaymentService {
   static verifyWebhookSignature(body: string, signature: string): boolean {
     const paymentConfig = get1aiPaymentConfig();
     if (!paymentConfig.webhookSecret) {
-      logger.warn('Webhook secret not configured — signature verification skipped');
-      return true;
+      logger.error('Webhook secret not configured — rejecting 1ai-payment webhook (fail-closed)');
+      return false;
+    }
+    if (!signature) {
+      return false;
     }
 
     const expectedSignature = crypto
@@ -214,7 +234,14 @@ export class PaymentService {
       .update(body)
       .digest('hex');
 
-    return signature === expectedSignature;
+    return this.timingSafeEqual(signature, expectedSignature);
+  }
+
+  private static timingSafeEqual(a: string, b: string): boolean {
+    const aBuf = Buffer.from(a);
+    const bBuf = Buffer.from(b);
+    if (aBuf.length !== bBuf.length) return false;
+    return crypto.timingSafeEqual(aBuf, bBuf);
   }
 
   /**

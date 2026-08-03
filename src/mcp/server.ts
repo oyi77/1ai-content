@@ -62,11 +62,12 @@ const TOOLS = [
   },
   {
     name: "1ai-content_get_video_status",
-    description: "Check status of a video generation job",
+    description: "Check status of a video generation job. When a telegramId is supplied, the job is scoped to that user (their job ID only).",
     inputSchema: {
       type: "object",
       properties: {
         jobId: { type: "string", description: "Video job ID to check" },
+        telegramId: { type: "string", description: "User's Telegram ID (optional, scopes lookup to that user)" },
       },
       required: ["jobId"],
     },
@@ -233,9 +234,9 @@ export function createMcpServer(): Server {
         }
 
         case "1ai-content_get_video_status": {
-          const { jobId } = args as { jobId: string };
+          const { jobId, telegramId } = args as { jobId: string; telegramId?: string };
           const video = await prisma.video.findFirst({
-            where: { jobId },
+            where: telegramId ? { jobId, userId: BigInt(telegramId) } : { jobId },
             select: { jobId: true, status: true, videoUrl: true, thumbnailUrl: true, title: true, createdAt: true },
           });
 

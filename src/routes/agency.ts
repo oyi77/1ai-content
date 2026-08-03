@@ -62,7 +62,7 @@ export async function agencyRoutes(server: FastifyInstance): Promise<void> {
       return reply.status(429).send({ error: 'Too many requests. Try again in a minute.' });
     }
 
-    const body = request.body as { name?: string } | undefined;
+    const body = (request.body ?? {}) as { name?: string } | undefined;
     const name = body?.name;
     if (!name || typeof name !== 'string' || name.length > 64) {
       return reply.code(400).send({ error: 'name must be a string up to 64 characters' });

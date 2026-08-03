@@ -5,7 +5,7 @@ Schedules content for auto-publishing across platforms.
 """
 
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from sqlalchemy import select, update, delete, func
@@ -33,10 +33,20 @@ class ContentCalendarService:
     ) -> dict:
         """Schedule a content piece."""
         async with get_async_session() as session:
+            raw = scheduled_at if isinstance(scheduled_at, str) else None
+            if raw is not None:
+                dt = datetime.fromisoformat(raw)
+            else:
+                dt = scheduled_at
+            # content_calendar.scheduled_at is TIMESTAMP WITHOUT TIME ZONE;
+            # strip tzinfo (normalize to UTC) to avoid asyncpg DataError on
+            # aware datetimes from ISO-8601 strings with a Z/offset suffix.
+            if getattr(dt, "tzinfo", None) is not None:
+                dt = dt.astimezone(timezone.utc).replace(tzinfo=None)
             entry = ContentCalendar(
                 user_id=user_id,
                 topic=topic,
-                scheduled_at=datetime.fromisoformat(scheduled_at) if isinstance(scheduled_at, str) else scheduled_at,
+                scheduled_at=dt,
                 platform=platform,
                 content_type=content_type,
                 caption=caption,

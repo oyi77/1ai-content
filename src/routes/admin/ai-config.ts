@@ -14,10 +14,10 @@ import { logger } from "@/utils/logger";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 
-const aiTasksBodySchema = zodToJsonSchema(z.object({}), "aiTasksBody");
-const aiConfigTaskBodySchema = zodToJsonSchema(z.object({}), "aiConfigTaskBody");
-const aiConfigPromptBodySchema = zodToJsonSchema(z.object({}), "aiConfigPromptBody");
-const aiConfigChatBodySchema = zodToJsonSchema(z.object({}), "aiConfigChatBody");
+const aiTasksBodySchema = zodToJsonSchema(z.object({}).passthrough(), "aiTasksBody");
+const aiConfigTaskBodySchema = zodToJsonSchema(z.object({}).passthrough(), "aiConfigTaskBody");
+const aiConfigPromptBodySchema = zodToJsonSchema(z.object({}).passthrough(), "aiConfigPromptBody");
+const aiConfigChatBodySchema = zodToJsonSchema(z.object({}).passthrough(), "aiConfigChatBody");
 const customProviderIdParamSchema = zodToJsonSchema(z.object({ id: z.string().uuid() }), "customProviderIdParam");
 const customProviderUpdateBodySchema = zodToJsonSchema(z.object({}).passthrough(), "customProviderUpdateBody");
 const customProviderTestBodySchema = zodToJsonSchema(z.object({ model: z.string().optional() }), "customProviderTestBody");
@@ -78,9 +78,9 @@ export async function registerAIConfigRoutes(
 
   server.post('/api/admin/ai-config/reset', async (request, reply) => {
     if (!await verifyAdmin(request, reply)) return;
-    await AIConfigService.updateTasksConfig({});
-    await AIConfigService.updatePromptsConfig({});
-    await AIConfigService.updateChatConfig({});
+    await AIConfigService.resetTasksConfig();
+    await AIConfigService.resetPromptsConfig();
+    await AIConfigService.resetChatConfig();
     return reply.send({ ok: true });
   });
 
@@ -303,7 +303,7 @@ interface ModelEntry {
       adminChatRateMap.set(ip, { count: 1, resetAt: now + 60_000 });
     }
 
-    const { message, model: requestedModel } = request.body as { message?: string; model?: string };
+    const { message, model: requestedModel } = (request.body ?? {}) as { message?: string; model?: string };
     if (!message || typeof message !== "string" || message.trim().length === 0) {
       return reply.status(400).send({ error: "Message is required" });
     }

@@ -15,6 +15,8 @@ const MODEL_OPTIONS = [
 interface SSEEvent {
   type: string;
   payload?: Record<string, unknown>;
+  step?: string;
+  message?: string;
 }
 
 async function streamGenerateBook(
@@ -22,7 +24,7 @@ async function streamGenerateBook(
   onEvent: (event: SSEEvent) => void,
   signal: AbortSignal,
 ): Promise<void> {
-  const res = await fetch(`${PY_API}/bookshelf/generate`, {
+  const res = await fetch(`${PY_API}/text/book`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -165,17 +167,22 @@ export default function BookshelfPage() {
           section_model: sectionModel,
         },
         (event) => {
-          if (event.type === "progress" && event.payload) {
-            const msg = (event.payload.step || event.payload.message || "") as string;
+          const payload = {
+            ...(event.payload || {}),
+            step: event.payload?.step || event.step,
+            message: event.payload?.message || event.message,
+          };
+          if (event.type === "progress") {
+            const msg = (payload.step || payload.message || "") as string;
             if (msg) setProgressMsgs((prev) => [...prev, msg]);
           }
-          if (event.type === "complete" && event.payload) {
-            const bookTitle = (event.payload.title || event.payload.bookId || "Book") as string;
+          if (event.type === "complete") {
+            const bookTitle = (payload.title || payload.bookId || "Book") as string;
             setToast({ message: `Book generated: ${bookTitle}`, type: "success" });
             loadBooks();
           }
-          if (event.type === "error" && event.payload) {
-            const errMsg = (event.payload.message || "Generation failed") as string;
+          if (event.type === "error") {
+            const errMsg = (payload.message || "Generation failed") as string;
             setToast({ message: errMsg, type: "error" });
           }
         },

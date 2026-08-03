@@ -181,16 +181,28 @@ export function createRateLimiter(config: RateLimitConfig) {
  * Pre-built rate limiters for web API
  */
 
+// Auth operations (register/login/verify): 10 requests per minute.
+// IP-keyed — these endpoints are unauthenticated, so there is no request.user yet.
+export const authLimiter = createRateLimiter({
+  max: 10,
+  windowMs: 60_000,
+  keyPrefix: "ratelimit:auth",
+});
+
+// Password reset flow (forgot/reset): 5 requests per minute, IP-keyed.
+export const authPasswordLimiter = createRateLimiter({
+  max: 5,
+  windowMs: 60_000,
+  keyPrefix: "ratelimit:auth:password",
+});
+
 // Payment operations: 10 requests per minute
 export const paymentLimiter = createRateLimiter({
   max: 10,
   windowMs: 60_000,
   keyPrefix: "ratelimit:payment",
-  keyGenerator: (request) => {
-    const user = (request as unknown as Record<string, unknown>).user as Record<string, unknown> | undefined;
-    const identifier = user?.telegramId || user?.id || request.ip || "unknown";
-    return `${identifier}`;
-  },
+  // IP-keyed — Fastify Request carries no user context here (request.user is never set in src),
+  // so keying on user would collapse every request to the same "unknown" bucket.
 });
 
 // Withdrawal operations: 10 requests per minute
@@ -198,11 +210,8 @@ export const withdrawalLimiter = createRateLimiter({
   max: 10,
   windowMs: 60_000,
   keyPrefix: "ratelimit:withdraw",
-  keyGenerator: (request) => {
-    const user = (request as unknown as Record<string, unknown>).user as Record<string, unknown> | undefined;
-    const identifier = user?.telegramId || user?.id || request.ip || "unknown";
-    return `${identifier}`;
-  },
+  // IP-keyed — Fastify Request carries no user context here (request.user is never set in src),
+  // so keying on user would collapse every request to the same "unknown" bucket.
 });
 
 // Video/image generation: 30 requests per minute
@@ -210,11 +219,8 @@ export const generationLimiter = createRateLimiter({
   max: 30,
   windowMs: 60_000,
   keyPrefix: "ratelimit:generation",
-  keyGenerator: (request) => {
-    const user = (request as unknown as Record<string, unknown>).user as Record<string, unknown> | undefined;
-    const identifier = user?.telegramId || user?.id || request.ip || "unknown";
-    return `${identifier}`;
-  },
+  // IP-keyed — Fastify Request carries no user context here (request.user is never set in src),
+  // so keying on user would collapse every request to the same "unknown" bucket.
 });
 
 // Read operations: 60 requests per minute
@@ -222,9 +228,6 @@ export const readLimiter = createRateLimiter({
   max: 60,
   windowMs: 60_000,
   keyPrefix: "ratelimit:read",
-  keyGenerator: (request) => {
-    const user = (request as unknown as Record<string, unknown>).user as Record<string, unknown> | undefined;
-    const identifier = user?.telegramId || user?.id || request.ip || "unknown";
-    return `${identifier}`;
-  },
+  // IP-keyed — Fastify Request carries no user context here (request.user is never set in src),
+  // so keying on user would collapse every request to the same "unknown" bucket.
 });

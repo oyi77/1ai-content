@@ -9,7 +9,7 @@ export default function Engagement() {
 
   const [commentText, setCommentText] = useState("");
   const [platform, setPlatform] = useState("instagram");
-  const [tone, setTone] = useState("friendly");
+  const [profileId, setProfileId] = useState("");
   const [reply, setReply] = useState("");
   const [generating, setGenerating] = useState(false);
   const [genErr, setGenErr] = useState("");
@@ -33,7 +33,7 @@ export default function Engagement() {
     setReply("");
     setGenErr("");
     try {
-      const res = await generateReply({ comment_text: commentText, platform, tone });
+      const res = await generateReply({ comment_text: commentText, platform, profile_id: profileId });
       setReply(res.reply || res.text || "");
     } catch (err: unknown) {
       setGenErr(String(err));
@@ -81,18 +81,12 @@ export default function Engagement() {
               { value: "facebook", label: "Facebook" },
             ]}
           />
-          <Select
-            label="Tone"
-            name="tone"
-            value={tone}
-            onChange={(e) => setTone(e.target.value)}
-            options={[
-              { value: "friendly", label: "Friendly" },
-              { value: "professional", label: "Professional" },
-              { value: "witty", label: "Witty" },
-              { value: "empathetic", label: "Empathetic" },
-              { value: "enthusiastic", label: "Enthusiastic" },
-            ]}
+          <Input
+            label="Profile ID"
+            name="profileId"
+            value={profileId}
+            onChange={(e) => setProfileId(e.target.value)}
+            required
           />
           <Button type="submit" variant="primary" loading={generating}>
             Generate Reply

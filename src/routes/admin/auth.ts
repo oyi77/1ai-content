@@ -87,7 +87,7 @@ export function registerLoginRoutes(server: FastifyInstance) {
     }
 
     const ADMIN_PASSWORD = getConfig().ADMIN_PASSWORD;
-    const { password } = request.body as { password: string };
+    const { password } = (request.body ?? {}) as { password: string };
     if (password && timingSafeCompare(password, ADMIN_PASSWORD)) {
       await redis.del(rateLimitKey);
       const token = makeAdminToken(ADMIN_PASSWORD);

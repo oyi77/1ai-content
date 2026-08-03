@@ -20,6 +20,7 @@ import { UserService } from "@/services/user.service";
 import { emailService } from "@/utils/email";
 import { getConfig } from "@/config/env";
 import { logger } from "@/utils/logger";
+import { authLimiter, authPasswordLimiter } from "@/middleware/rateLimit";
 
 const SALT_ROUNDS = 10;
 
@@ -32,9 +33,9 @@ function getJwtExpiresIn(): string {
 
 export async function authEmailRoutes(server: FastifyInstance): Promise<void> {
   // ── POST /auth/email/register ──
-  server.post("/auth/email/register", async (request, reply) => {
+  server.post("/auth/email/register", { preHandler: authLimiter }, async (request, reply) => {
     try {
-      const { email, password, firstName } = request.body as {
+      const { email, password, firstName } = (request.body ?? {}) as {
         email?: string;
         password?: string;
         firstName?: string;
@@ -85,9 +86,9 @@ export async function authEmailRoutes(server: FastifyInstance): Promise<void> {
   });
 
   // ── POST /auth/email/login ──
-  server.post("/auth/email/login", async (request, reply) => {
+  server.post("/auth/email/login", { preHandler: authLimiter }, async (request, reply) => {
     try {
-      const { email, password } = request.body as { email?: string; password?: string };
+      const { email, password } = (request.body ?? {}) as { email?: string; password?: string };
 
       if (!email || !password) {
         return reply.status(400).send({ error: "Email and password are required" });
@@ -138,9 +139,9 @@ export async function authEmailRoutes(server: FastifyInstance): Promise<void> {
   });
 
   // ── POST /auth/email/verify-email ──
-  server.post("/auth/email/verify-email", async (request, reply) => {
+  server.post("/auth/email/verify-email", { preHandler: authLimiter }, async (request, reply) => {
     try {
-      const { token } = request.body as { token?: string };
+      const { token } = (request.body ?? {}) as { token?: string };
 
       if (!token) {
         return reply.status(400).send({ error: "Verification token is required" });
@@ -162,9 +163,9 @@ export async function authEmailRoutes(server: FastifyInstance): Promise<void> {
   });
 
   // ── POST /auth/email/forgot-password ──
-  server.post("/auth/email/forgot-password", async (request, reply) => {
+  server.post("/auth/email/forgot-password", { preHandler: authPasswordLimiter }, async (request, reply) => {
     try {
-      const { email } = request.body as { email?: string };
+      const { email } = (request.body ?? {}) as { email?: string };
 
       if (!email) {
         return reply.status(400).send({ error: "Email is required" });
@@ -193,9 +194,9 @@ export async function authEmailRoutes(server: FastifyInstance): Promise<void> {
   });
 
   // ── POST /auth/email/reset-password ──
-  server.post("/auth/email/reset-password", async (request, reply) => {
+  server.post("/auth/email/reset-password", { preHandler: authPasswordLimiter }, async (request, reply) => {
     try {
-      const { token, password } = request.body as { token?: string; password?: string };
+      const { token, password } = (request.body ?? {}) as { token?: string; password?: string };
 
       if (!token || !password) {
         return reply.status(400).send({ error: "Token and password are required" });

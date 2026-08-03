@@ -15,7 +15,7 @@ import { logger } from '@/utils/logger';
 import { ValidationError, ProviderError } from '@/utils/app-errors';
 import { getConfig } from '@/config/env';
 import { promisify } from 'util';
-import { exec as execCallback } from 'child_process';
+import { exec as execCallback, execFile as execFileCallback } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import {
@@ -26,6 +26,7 @@ import {
 } from '@/config/audio-subtitle-engine';
 
 const exec = promisify(execCallback);
+const execFile = promisify(execFileCallback);
 
 function getAudioDir(): string {
   const dir = getConfig().AUDIO_DIR || '/tmp/audio';
@@ -96,11 +97,11 @@ export class AudioVOService {
 
       logger.info(`🎙️ Generating TTS: voice=${edgeVoice}, text=${text.slice(0, 50)}...`);
 
-      // Use edge-tts CLI — reliable, generates both audio + VTT subtitles
-      const escapedText = text.replace(/"/g, '\\"');
-      await exec(
-        `edge-tts --voice "${edgeVoice}" --text "${escapedText}" ` +
-        `--write-media "${audioPath}" --write-subtitles "${vttPath}"`,
+      // Use edge-tts CLI — reliable, generates both audio + VTT subtitles.
+      // Pass text as a separate argv entry so it is never interpreted by the shell.
+      await execFile(
+        'edge-tts',
+        ['--voice', edgeVoice, '--text', text, '--write-media', audioPath, '--write-subtitles', vttPath],
         { timeout: 60000 }
       );
 

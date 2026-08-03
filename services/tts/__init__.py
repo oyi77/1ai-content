@@ -12,3 +12,8 @@ Usage:
     engine = TTSEngine()
     result = engine.synthesize("Halo, selamat pagi!", voice="id-ID-ArdiNeural")
 """
+
+from services.tts.engine import TTSEngine
+
+__all__ = ["TTSEngine"]
+

@@ -76,13 +76,16 @@ export async function analyzeInput(input: string, type: InputType): Promise<Anal
 
 async function analyzeYouTube(url: string): Promise<AnalysisResult> {
   // Use yt-dlp to get channel/video info
-  const { execSync } = await import("child_process");
+  const { execFileSync } = await import("child_process");
   try {
-    const raw = execSync(
-      `python3 -m yt_dlp --dump-json --no-download --flat-playlist "${url}" 2>/dev/null | head -1`,
+    const raw = execFileSync(
+      "python3",
+      ["-m", "yt_dlp", "--dump-json", "--no-download", "--flat-playlist", url],
       { timeout: 30000, encoding: "utf-8" },
     );
-    const data = JSON.parse(raw);
+    // --flat-playlist emits one JSON object per line; keep the first non-empty line
+    const firstLine = raw.split("\n").find((l) => l.trim()) || "";
+    const data = JSON.parse(firstLine);
     return {
       type: "youtube",
       source: url,
@@ -116,13 +119,15 @@ async function analyzeYouTube(url: string): Promise<AnalysisResult> {
 }
 
 async function analyzeTikTok(url: string): Promise<AnalysisResult> {
-  const { execSync } = await import("child_process");
+  const { execFileSync } = await import("child_process");
   try {
-    const raw = execSync(
-      `python3 -m yt_dlp --dump-json --no-download "${url}" 2>/dev/null`,
+    const raw = execFileSync(
+      "python3",
+      ["-m", "yt_dlp", "--dump-json", "--no-download", url],
       { timeout: 30000, encoding: "utf-8" },
     );
-    const data = JSON.parse(raw);
+    const firstLine = raw.split("\n").find((l) => l.trim()) || "";
+    const data = JSON.parse(firstLine);
     return {
       type: "tiktok",
       source: url,

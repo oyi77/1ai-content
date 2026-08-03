@@ -263,6 +263,24 @@ class PipelineOrchestrator:
                 else None
             )
 
+            from services.ebook.pipeline.style_guide import StyleGuide
+
+            style_guide_obj = (
+                style_guide
+                if isinstance(style_guide, StyleGuide)
+                else (
+                    StyleGuide(
+                        **{
+                            k: v
+                            for k, v in style_guide.items()
+                            if k in StyleGuide.__dataclass_fields__
+                        }
+                    )
+                    if isinstance(style_guide, dict)
+                    else None
+                )
+            )
+
             manuscript_engine.generate(
                 project_id=project_id,
                 outline=outline,
@@ -273,6 +291,7 @@ class PipelineOrchestrator:
                 manuscript_model=manuscript_model,
                 quality_level=quality_level,
                 style_ctx=style_ctx,
+                style_guide=style_guide_obj,
             )
             self.repo.set_metadata(project_id, "stage:manuscript", "completed")
         else:
@@ -398,13 +417,33 @@ class PipelineOrchestrator:
                 if report.get("passed", False):
                     logger.info("post_qa_retry_succeeded", attempt=attempt + 1)
                     break
-            else:
-                if not report.get("passed", False):
-                    logger.warning("post_qa_retry_exhausted", project_id=project_id)
-                    self.repo.update_project_status(project_id, "failed")
-                    return {"success": False, "error": "QA failed after retries"}
+            if not report.get("passed", False):
+                logger.warning("post_qa_retry_exhausted", project_id=project_id)
+                self.repo.update_project_status(project_id, "failed")
+                return {"success": False, "error": "QA failed after retries"}
 
-        # Export
+        # Rebuild manuscript.md after any post-QA retries: QA reads the per-chapter
+        # files, but DOCX/EPUB export reads manuscript.md, which would otherwise be
+        # stale and silently drop regenerated content.
+        if report.get("passed", False):
+            manuscript_md = project_dir / "manuscript.md"
+            manuscript_json_path = project_dir / "manuscript.json"
+            chapters_dir = project_dir / "chapters"
+            if manuscript_json_path.exists():
+                with open(manuscript_json_path) as f:
+                    _mdata = json.load(f)
+                _parts = []
+                for _ch in _mdata.get("chapters", []):
+                    _num = _ch.get("chapter")
+                    _title = _ch.get("title") or f"Chapter {_num}"
+                    _fname = chapters_dir / f"{_num}.md"
+                    if _fname.exists():
+                        _parts.append(
+                            f"\n\n---\n\n## Chapter {_num}: {_title}\n\n{_fname.read_text()}"
+                        )
+                if _parts:
+                    manuscript_md.write_text("".join(_parts))
+
         if not progress["export"]:
             if on_progress:
                 on_progress(95, "Exporting to DOCX and PDF...")

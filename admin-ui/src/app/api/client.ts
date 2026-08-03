@@ -56,8 +56,11 @@ export const api = {
   // ── Payments ──────────────────────────────────────────
   // Backend: GET /api/my/transactions → flat array
   getBilling: async () => {
-    const transactions = await request<any[]>("GET", "/api/my/transactions");
-    return { transactions, credits: 0 };
+    const [transactions, user] = await Promise.all([
+      request<any[]>("GET", "/api/my/transactions"),
+      request<any>("GET", "/api/user"),
+    ]);
+    return { transactions, credits: user?.credits ?? 0 };
   },
 
   // Unified backend: POST /api/payment/create { packageId, gateway }
@@ -93,7 +96,7 @@ export const api = {
   // Backend returns { referralCode, referralLink, referralCount, commissionEarned, ... }
   getReferral: async () => {
     const data = await request<any>("GET", "/api/referral");
-    return { code: data.referralCode, earnings: data.commissionEarned, count: data.referralCount };
+    return { code: data.referralCode, link: data.referralLink, earnings: data.commissionEarned, count: data.referralCount };
   },
 
   // ── Transfer ──────────────────────────────────────────

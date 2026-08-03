@@ -351,54 +351,40 @@ Flow:
 ### 3A. Single Post (Manual)
 
 ```
-User: /publish video.mp4 --platforms fb,x,ig,tiktok,yt
+User: /publish
+Bot: Menu tombol publish_to_<platform> (TikTok/IG/FB/YouTube/X) untuk akun yang sudah terhubung
+User: tap publish_to_<platform>
+Bot: Upload konten terakhir (session lastVideoPath) → POST /posts → status
 
 Flow:
 ┌─────────────────────────────────────────────────────────────────┐
-│  PUBLISHING PIPELINE                                             │
+│  PUBLISH PIPELINE (via 1ai-social bridge :8200)                  │
 │                                                                  │
-│  Step 1: Prepare Content                                        │
-│  ├─ Upload video to temporary storage                          │
-│  ├─ Generate platform-specific captions                        │
-│  │   ├─ Facebook: Long caption + hashtags + link              │
-│  │   ├─ X: Short caption (280 chars) + hashtags               │
-│  │   ├─ Instagram: Caption + hashtags + location              │
-│  │   ├─ TikTok: Caption + hashtags + sounds                  │
-│  │   └─ YouTube: Title + description + tags                   │
-│  └─ Generate platform-specific thumbnails                      │
+│  Step 1: Check Connected Accounts                                │
+│  ├─ GET /accounts (header X-User-Id)                             │
+│  └─ Jika tidak ada → reply "Ketik /connect dulu"                 │
 │                                                                  │
-│  Step 2: Post via CloakBrowser CDP                              │
-│  ├─ For each platform:                                          │
-│  │   ├─ Launch CloakBrowser profile                            │
-│  │   ├─ Connect via Playwright CDP                             │
-│  │   ├─ Navigate to platform                                    │
-│  │   ├─ Upload video                                            │
-│  │   ├─ Fill caption + hashtags                                │
-│  │   ├─ Click publish                                          │
-│  │   └─ Stop profile                                            │
-│  └─ Collect results (success/failure per platform)              │
+│  Step 2: Pick Platform (inline keyboard)                         │
+│  └─ Callback publish_to_<platform> per akun terhubung            │
 │                                                                  │
-│  Step 3: Track & Report                                         │
-│  ├─ Log to database                                             │
-│  ├─ Update post tracker                                         │
-│  └─ Send summary to Telegram                                    │
+│  Step 3: Publish Last Content                                    │
+│  ├─ Jika session.lastVideoPath kosong → arahkan buat konten      │
+│  ├─ Upload media: POST /media/upload (form-data file)            │
+│  └─ Publish: POST /posts {platform, media_url, content}          │
 │                                                                  │
-│  Output:                                                        │
-│  ├─ Facebook: 30 posts (30 profiles) ✅                        │
-│  ├─ X: 13 posts (13 profiles) ✅                               │
-│  ├─ Instagram: N posts ✅                                       │
-│  ├─ TikTok: N posts ✅                                         │
-│  └─ YouTube: N posts ✅                                        │
+│  Output: Post ID + status per platform ✅                        │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 **Files:**
-- `services/cloak_adapter/__init__.py` — CloakBrowser adapter
-- `src/services/postautomation.service.ts` — Post automation
+- `src/commands/social-vilona.commands.ts` — connect/publish/schedule commands & callbacks
+- 1ai-social (`SOCIAL_SERVICE_URL` :8200) — OAuth, upload media & posting
 
 ---
 
 ### 3B. Batch Post (Factory Mode)
+
+> ⚠️ 2026-08-02 (audit): `/factory` TIDAK terdaftar di bot listener (`src/commands/index.ts`) — bukan command aktif. Section ini dipertahankan sebagai catatan desain mode produksi massal, BUKAN alur yang berjalan saat ini.
 
 ```
 User: /factory @lofigirl 10
@@ -508,6 +494,8 @@ Flow:
 
 ### 5A. Auto-Schedule
 
+> ⚠️ 2026-08-02 (audit): `/schedule` TIDAK mem-parse argumen waktu (`/schedule 09:00 daily`). Realita: reply info + tombol (Open Calendar admin · Setup AutoPilot); jadwal aktual via `/calendar schedule <topic> | <YYYY-MM-DD HH:MM>` dan `/autopilot create <niche>`. Diagram di bawah = desain lama, tidak berlaku.
+
 ```
 User: /schedule 09:00 daily
 
@@ -537,15 +525,20 @@ Flow:
 ```
 
 **Files:**
-- `src/services/postautomation.service.ts` — Scheduling
-- Cron job in Hermes scheduler
+- `src/commands/social-vilona.commands.ts` — `scheduleCommand` (`/schedule` = info + tombol; TIDAK parse argumen — jadwal via `/calendar schedule`)
+- `src/commands/tiktok-automation/calendar.ts` — `/calendar schedule <topic> | <YYYY-MM-DD HH:MM>`
+- `src/commands/tiktok-automation/autopilot.ts` — `/autopilot status` / `/autopilot create <niche>`
 
 ---
 
 ### 5B. Auto-Pilot (Full Automation)
 
 ```
-User: /autopilot start
+> Catatan 2026-08-02 (audit): `/autopilot` TIDAK punya sub-command `start`. Sub-command nyata: `bare`/`status` = tampilkan status, `create <niche>` = buat job autopilot (lihat `src/commands/tiktok-automation/autopilot.ts`). Diagram di bawah = desain alur 24/7 yang diinginkan, BUKAN antarmuka perintah.
+
+User: /autopilot
+User: /autopilot status
+User: /autopilot create <niche>
 
 Flow:
 ┌─────────────────────────────────────────────────────────────────┐
@@ -576,55 +569,70 @@ Flow:
 
 ## 📱 COMPLETE TELEGRAM COMMANDS
 
+> Catatan 2026-08-02 (audit): tabel di bawah diverifikasi dari `src/commands/index.ts` — daftar otoritatif bot utama (`src/index.ts`). Perintah `/suno /voice /music /loop /analyze /storyboard` HANYA terdaftar di `src/content-bot.ts`, entry yang TIDAK di-wire ke `package.json`/`ecosystem.config.js`/`Dockerfile` → TIDAK aktif di produksi (orphan). `/thumbnail /benchmark /gap /strategy /compose /remix /factory /status /history` TIDAK punya handler sama sekali (fictional).
+
+### User & Account
+
+| Command | Description |
+|---------|-------------|
+| `/start` `/menu` `/dashboard` | Main menu / dashboard (alias) |
+| `/help` | Guide lengkap |
+| `/profile` `/settings` `/videos` | Profil, pengaturan, daftar video |
+| `/subscription` | Langganan / kuota |
+| `/topup` `/pricing` `/referral` | Top-up kredit, harga, referral |
+| `/send` `/cancel` `/delete_account` | Kirim, batalkan, hapus akun |
+| `/support` | Kontak dukungan |
+
 ### Content Creation
 
-| Command | Description | Example |
-|---------|-------------|---------|
-| `/create <prompt>` | Generate AI video | `/create romantic beach sunset` |
-| `/suno <prompt>` | Generate song (Suno AI) | `/suno lo-fi chill beats` |
-| `/voice <text>` | Generate voiceover | `/voice Beli sekarang di Shopee!` |
-| `/music <theme>` | Generate background music | `/music corporate upbeat` |
-| `/thumbnail <prompt>` | Generate thumbnail | `/thumbnail beach sunset` |
-| `/loop <audio>` | Create looping video | `/loop chill.mp3 --duration 1h` |
+| Command | Description |
+|---------|-------------|
+| `/create <prompt>` | Generate AI video |
+| `/image` | Menu generate foto (produk/logo/dst) |
+| `/ebook` `/ebooks` | Buat / list ebook |
+| `/carousel` | Buat TikTok carousel |
+| `/clip` `/edit` `/rework` `/regen` | Clip, edit, rework, regenerate video |
+| `/repurpose` `/remeta` | Repurpose / re-metadata |
+| `/scrape` | Scrape content |
 
-### Content Analysis
+### AI Assistant & Analysis
 
-| Command | Description | Example |
-|---------|-------------|---------|
-| `/analyze <channel>` | Full channel analysis | `/analyze @lofigirl` |
-| `/benchmark <ch1> <ch2>` | Compare channels | `/benchmark @ch1 @ch2` |
-| `/gap <niche>` | Find content gaps | `/gap affiliate marketing` |
-| `/viral <niche>` | Find viral content | `/viral fitness` |
-| `/strategy <channel>` | Get content strategy | `/strategy @channel` |
+| Command | Description |
+|---------|-------------|
+| `/chat` `/ask` | Chat dengan AI (OmniRoute) |
+| `/prompts` `/prompt` | Prompt library |
+| `/daily` | Daily prompt |
+| `/trending` | Trending content |
+| `/fingerprint` | Fingerprint akun |
+| `/viral` | Cari viral videos |
 
-### Content Editing
+### Automation & Publishing
 
-| Command | Description | Example |
-|---------|-------------|---------|
-| `/compose <video>` | Compose final video | `/compose video.mp4 --voice vo.mp3` |
-| `/remix <url>` | Clone & improve | `/remix https://youtube.com/...` |
-| `/factory <channel> <n>` | Generate N videos like channel | `/factory @lofigirl 10` |
+| Command | Description |
+|---------|-------------|
+| `/autopilot` | Status AutoPilot |
+| `/autopilot status` | Status detail |
+| `/autopilot create <niche>` | Buat job AutoPilot baru |
+| `/calendar` | Content calendar |
+| `/abtest` | A/B test konten |
+| `/connect` | Hubungkan akun sosial (1ai-social bridge, port 8200) |
+| `/publish` | Publikasi konten terakhir ke akun terhubung (menu button `publish_to_<platform>`) |
+| `/schedule` | Jadwalkan posting |
+| `/yt` `/youtube` | Menu workflow YouTube (button) |
 
-### Publishing
+### Admin
 
-| Command | Description | Example |
-|---------|-------------|---------|
-| `/publish <video>` | Post to all sosmed | `/publish video.mp4` |
-| `/publish fb <video>` | Post to Facebook only | `/publish fb video.mp4` |
-| `/publish x <video>` | Post to X only | `/publish x video.mp4` |
-| `/publish ig <video>` | Post to Instagram only | `/publish ig video.mp4` |
-| `/publish tiktok <video>` | Post to TikTok only | `/publish tiktok video.mp4` |
-| `/publish yt <video>` | Post to YouTube only | `/publish yt video.mp4` |
+| Command | Description |
+|---------|-------------|
+| `/broadcast` | Broadcast ke semua user |
+| `/system_status` | Status sistem |
+| `/grant_credits` `/deduct_credits` | Kelola kredit user |
+| `/payment_settings` `/admin` | Pengaturan pembayaran (alias) |
 
-### Automation
+### ⚠️ Tidak aktif / tidak terdaftar
 
-| Command | Description | Example |
-|---------|-------------|---------|
-| `/schedule <cron>` | Auto-post schedule | `/schedule 09:00 daily` |
-| `/autopilot start` | Start full automation | `/autopilot start` |
-| `/autopilot stop` | Stop automation | `/autopilot stop` |
-| `/status` | Dashboard status | `/status` |
-| `/history` | Post history | `/history` |
+- **Orphan** (`src/content-bot.ts` — tidak di-wire ke runtime): `/suno`, `/voice`, `/music`, `/loop`, `/analyze`, `/storyboard`
+- **Fictional** (tidak ada handler di codebase): `/thumbnail`, `/benchmark`, `/gap`, `/strategy`, `/compose`, `/remix`, `/factory`, `/status`, `/history`
 
 ---
 

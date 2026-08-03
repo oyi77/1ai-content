@@ -54,7 +54,7 @@ export async function financeRoutes(server: FastifyInstance): Promise<void> {
     const user = await getUser(request, reply);
     if (!user) return;
     try {
-      const { packageId, gateway } = request.body as Record<string, string>;
+      const { packageId, gateway } = (request.body ?? {}) as Record<string, string>;
       if (!packageId || !gateway)
         return reply.status(400).send({ error: "packageId and gateway required" });
       const result = await PaymentService.createTransaction({
@@ -121,7 +121,7 @@ td{padding:8px;border-bottom:1px solid #eee}.total{font-size:24px;font-weight:bo
     const user = await getUser(request, reply);
     if (!user) return;
     try {
-      const { recipientUsername, amount } = request.body as Record<string, string>;
+      const { recipientUsername, amount } = (request.body ?? {}) as Record<string, string>;
       if (!recipientUsername || !amount || isNaN(Number(amount)) || Number(amount) < 50) {
         return reply.status(400).send({ error: "Invalid parameters. Minimum transfer is 50 credits." });
       }
@@ -189,7 +189,7 @@ td{padding:8px;border-bottom:1px solid #eee}.total{font-size:24px;font-weight:bo
     const user = await getUser(request, reply);
     if (!user) return;
     try {
-      const { action } = request.body as { action: "convert_credits" | "sell_admin" };
+      const { action } = (request.body ?? {}) as { action: "convert_credits" | "sell_admin" };
       if (action !== "convert_credits" && action !== "sell_admin") {
         return reply.status(400).send({ error: "action must be convert_credits or sell_admin" });
       }
@@ -267,7 +267,7 @@ td{padding:8px;border-bottom:1px solid #eee}.total{font-size:24px;font-weight:bo
     const user = await getUser(request, reply);
     if (!user) return;
     try {
-      const { plan, cycle, gateway } = request.body as { plan: string; cycle: string; gateway?: string };
+      const { plan, cycle, gateway } = (request.body ?? {}) as { plan: string; cycle: string; gateway?: string };
 
       if (!(plan in SUBSCRIPTION_PLANS) || !["monthly", "annual"].includes(cycle)) {
         return reply.status(400).send({ error: "Invalid plan or cycle" });

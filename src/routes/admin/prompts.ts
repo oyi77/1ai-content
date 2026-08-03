@@ -59,7 +59,7 @@ export async function registerPromptsRoutes(server: FastifyInstance) {
   server.post("/api/admin-prompts", {
     schema: { body: createPromptBodySchema },
   }, async (request, reply) => {
-    const { niche, title, prompt } = request.body as { niche: string; title: string; prompt: string };
+    const { niche, title, prompt } = (request.body ?? {}) as { niche: string; title: string; prompt: string };
     const created = await prisma.savedPrompt.create({
       data: {
         userId: BigInt(0),
@@ -80,7 +80,7 @@ export async function registerPromptsRoutes(server: FastifyInstance) {
     },
   }, async (request, reply) => {
     const id = Number((request.params as { id: string }).id);
-    const { title, prompt, niche } = request.body as { title?: string; prompt?: string; niche?: string };
+    const { title, prompt, niche } = (request.body ?? {}) as { title?: string; prompt?: string; niche?: string };
     try {
       await prisma.savedPrompt.update({
         where: { id },

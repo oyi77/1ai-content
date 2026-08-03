@@ -20,6 +20,16 @@
   --color-info: #3b82f6;
 }
 
+:root {
+  --surface: #111118;
+  --bg: #0d0d16;
+  --bg2: #111127;
+  --border: #2a2a3a;
+  --muted: #9ca3af;
+  --text: #f1f1f1;
+  --accent: #a855f7;
+}
+
 /*
   Base layer styles
 */

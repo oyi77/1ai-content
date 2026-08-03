@@ -32,6 +32,7 @@ from pydantic import BaseModel, Field
 
 from services.di import get_looping, get_remetadata_engine, get_repurpose_engine, get_storyboard
 from services.api_models import ReMetadataRequest, RepurposeRequest
+from services.remetadata.engine import normalize_color_shift
 
 router = APIRouter(prefix="", tags=["content-pipeline"])
 
@@ -203,7 +204,7 @@ async def remeta_content(req: ReMetadataRequest):
             watermark=req.watermark or None,
             position=req.position,
             speed=req.speed if req.speed > 0 else None,
-            color_shift=req.color_shift,
+            color_shift=normalize_color_shift(req.color_shift),
             niche=req.niche,
             platform=req.platform,
             language=req.language,

@@ -180,7 +180,7 @@ export async function registerSettingsRoutes(server: FastifyInstance) {
   });
 
   server.post("/api/settings/referral", async (request, reply) => {
-    const body = request.body as { sellRate?: number; buyRate?: number };
+    const body = (request.body ?? {}) as { sellRate?: number; buyRate?: number };
     if (!body || (body.sellRate === undefined && body.buyRate === undefined)) {
       return reply.status(400).send({ error: "sellRate or buyRate required" });
     }
@@ -318,7 +318,7 @@ export async function registerSettingsRoutes(server: FastifyInstance) {
   });
 
   server.post("/api/referral/complete-cashout", async (request, reply) => {
-    const { transactionId } = request.body as { transactionId: string };
+    const { transactionId } = (request.body ?? {}) as { transactionId: string };
     if (!transactionId) {
       return reply.status(400).send({ error: "transactionId is required" });
     }

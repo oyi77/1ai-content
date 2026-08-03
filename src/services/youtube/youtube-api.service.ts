@@ -153,13 +153,11 @@ export async function getAnalytics(
     const stats = statsRes.data.items?.[0]?.statistics;
     if (!stats) return null;
 
-    return {
-      views: Number(stats.viewCount || 0),
-      ctr: 0,
-      avgViewPct: 0,
-      avdSeconds: 0,
-      trafficSrc: {},
-    };
+    // The `statistics` part only carries view/like counts — ctr, avgViewPct,
+    // avdSeconds and trafficSrc cannot be derived from it. Return null (caller
+    // treats null as "no analytics" → normal) instead of fabricating zeros.
+    logger.warn(`[yt-api] No analytics data for ${videoId} — statistics-only response; returning null instead of fabricating zeros`);
+    return null;
   } catch (err) {
     logger.error(`[yt-api] Analytics failed for ${videoId}: ${err}`);
     return null;

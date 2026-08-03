@@ -9,7 +9,11 @@ export default function LoginPage() {
   const verifyToken = searchParams.get("token");
 
   const [mode, setMode] = useState<"login" | "register" | "forgot" | "verify">(
-    verifyToken ? "verify" : "login"
+    verifyToken
+      ? "verify"
+      : searchParams.get("register") === "1"
+        ? "register"
+        : "login"
   );
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

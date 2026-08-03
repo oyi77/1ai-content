@@ -36,7 +36,7 @@ export async function pageRoutes(server: FastifyInstance): Promise<void> {
 
   // ── FAQ ──
   server.get("/faq", async (_request, reply) => {
-    return reply.view("web/faq.ejs", { botUsername: getConfig().BOT_TOKEN?.split(':')[0] || 'bot' });
+    return reply.view("web/faq.ejs", { botUsername: getConfig().BOT_USERNAME || "vilona_content_bot" });
   });
 
   // ── Terms of Service ──

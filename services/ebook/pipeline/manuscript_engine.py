@@ -173,6 +173,12 @@ class ManuscriptEngine:
                 if meta["chapter"] == chapter_num:
                     meta["word_count"] = len(new_content.split())
 
+        # Splice retried chapters into the manuscript so fixes reach the exported file
+        for chapter_num, new_content in retry_fixes.items():
+            idx = 2 * (chapter_num - 1) + 1
+            if 0 <= idx < len(manuscript_content):
+                manuscript_content[idx] = new_content
+
         manuscript_file = project_dir / "manuscript.md"
         with open(manuscript_file, "w") as f:
             f.write("".join(manuscript_content))
@@ -356,6 +362,20 @@ class ManuscriptEngine:
             else StyleContext(tone=strategy.get("tone", "conversational"))
         )
 
+        style_guide = None
+        style_guide_path = project_dir / "style_guide.json"
+        if style_guide_path.exists():
+            from services.ebook.pipeline.style_guide import StyleGuide
+
+            style_guide_data = _json.loads(style_guide_path.read_text())
+            style_guide = StyleGuide(
+                **{
+                    k: v
+                    for k, v in style_guide_data.items()
+                    if k in StyleGuide.__dataclass_fields__
+                }
+            )
+
         chapters = outline.get("chapters", [])
         if chapter_idx >= len(chapters):
             log.warning("chapter_idx_out_of_range", chapter_idx=chapter_idx)
@@ -376,6 +396,7 @@ class ManuscriptEngine:
             strategy=strategy,
             style_ctx=style_ctx,
             extra_instruction=extra_instruction,
+            style_guide=style_guide,
         )
 
         chapter_path = project_dir / "chapters" / f"{chapter_idx + 1}.md"

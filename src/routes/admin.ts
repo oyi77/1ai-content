@@ -114,6 +114,7 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
       url.startsWith("/api/admin-config") || url.startsWith("/api/referral/") ||
       url.startsWith("/api/books") || url.startsWith("/api/comics") ||
       url.startsWith("/api/movies") || url.startsWith("/api/queue/") ||
+      url.startsWith("/api/landing-config") || url.startsWith("/api/v3") ||
       url.startsWith("/api/subscriptions") ||
       url.startsWith("/api/interceptions") || url.startsWith("/api/intercept/") ||
       url === "/admin/interceptions" ||
@@ -208,7 +209,7 @@ function registerQueueRoutes(server: FastifyInstance) {
   });
 
   server.post("/api/queue/clean", async (request, reply) => {
-    const { queue: queueName, olderThanHours = 24 } = request.body as { queue?: string; olderThanHours?: number };
+    const { queue: queueName, olderThanHours = 24 } = (request.body ?? {}) as { queue?: string; olderThanHours?: number };
     const queue = queueName ? getQueueByName(queueName) : videoQueue;
     if (!queue) return reply.status(400).send({ error: "Invalid queue name" });
     try {
@@ -254,7 +255,7 @@ function registerInlineApiRoutes(server: FastifyInstance) {
   });
 
   server.post("/api/payment-settings", async (request, reply) => {
-    const body = request.body as { action: string; gateway?: string; value?: string };
+    const body = (request.body ?? {}) as { action: string; gateway?: string; value?: string };
     try {
       if (body.action === "set_default") { await PaymentSettingsService.setDefaultGateway(body.gateway!); return { success: true }; }
       if (body.action === "toggle_gateway") {
@@ -339,7 +340,7 @@ function registerInlineApiRoutes(server: FastifyInstance) {
   server.post("/api/users/:id/credits", { preHandler: validate({ params: idParamSchema, body: creditsBodySchema }) }, async (request, reply) => {
     try {
       const telegramId = BigInt((request.params as { id: string }).id);
-      const body = request.body as { amount: number; reason: string };
+      const body = (request.body ?? {}) as { amount: number; reason: string };
       const user = await prisma.user.update({
         where: { telegramId }, data: { creditBalance: { increment: body.amount } },
       });
@@ -359,7 +360,7 @@ function registerInlineApiRoutes(server: FastifyInstance) {
   server.post("/api/users/:id/ban", { preHandler: validate({ params: idParamSchema, body: z.object({ banned: z.boolean(), reason: z.string().min(1).max(500), durationDays: z.number().int().min(0).max(3650).optional() }) }) }, async (request, reply) => {
     try {
       const telegramId = BigInt((request.params as { id: string }).id);
-      const body = request.body as { banned: boolean; reason?: string };
+      const body = (request.body ?? {}) as { banned: boolean; reason?: string };
       const user = await prisma.user.update({
         where: { telegramId },
         data: { isBanned: body.banned, banReason: body.reason, bannedAt: body.banned ? new Date() : null },
@@ -401,7 +402,7 @@ function registerInlineApiRoutes(server: FastifyInstance) {
 
   server.post("/api/subscriptions/:id/extend", { preHandler: validate({ params: idParamSchema, body: extendSubscriptionSchema }) }, async (request, reply) => {
     const id = BigInt((request.params as { id: string }).id);
-    const days = Math.min(Math.max(1, (request.body as { days?: number }).days || 30), 365);
+    const days = Math.min(Math.max(1, ((request.body ?? {}) as { days?: number }).days || 30), 365);
     const sub = await prisma.subscription.findUnique({ where: { id } });
     if (!sub) return reply.status(404).send({ error: "Subscription not found" });
     if (sub.status !== "active") return reply.status(400).send({ error: "Subscription is not active" });

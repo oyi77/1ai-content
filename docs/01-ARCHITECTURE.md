@@ -2,7 +2,7 @@
 
 ## Overview
 
-1ai-content is a multi-service content platform: a **Fastify HTTP server** (port 3002) serves EJS views, a React admin SPA, and a customer-facing React SPA. A **Python FastAPI server** (port 8767) handles media processing (video, audio, bookshelf generation). An **nginx reverse proxy** (port 6969, managed by cf-router) routes everything from `content.aitradepulse.com` to the correct backend.
+1ai-content is a multi-service content platform: a **Fastify HTTP server** (port 3002) serves a single consolidated React SPA (`admin-ui/`) covering Landing `/`, Admin `/admin/*`, and Customer `/app/*`, plus a few standalone EJS pages (admin login, privacy/tos/faq, youtube dashboard). A **Python FastAPI server** (port 8767) handles media processing (video, audio, ebook generation). An **nginx reverse proxy** (port 6969, managed by cf-router) routes everything from `content.aitradepulse.com` to the correct backend.
 
 ```
 User → content.aitradepulse.com:443
@@ -137,10 +137,11 @@ FastAPI server on port 8767. Proxied via nginx at `/api/py/*` → `http://127.0.
 
 **Key endpoint groups:**
 - `/research/generate-book` — SSE-streamed book generation
-- `/bookshelf/generate` — Bookshelf pipeline generation (blocking POST)
 - `/loop/video/{filename}` — Serves generated video files
-- `/download/*` — TikTok/YouTube downloaders
-- `/media/*` — Image/media processing
+- `/download/video`, `/download/profile` — Video & profile downloads
+- `/text/book`, `/text/ebook` — Ebook generation (pengganti `/bookshelf/generate` yang sudah mati)
+
+> Catatan 2026-08-02 (audit): router `/media/*` dan `/bookshelf/*` TIDAK ADA di `services/routers/` — endpoint lama `download/tiktok`, `download/youtube`, `media/analyze`, `bookshelf/*` sudah tidak ada; referensi di tabel ini dikoreksi.
 
 ## React SPAs
 
@@ -200,7 +201,7 @@ location / {
    → verifyAdmin() checks: cookie token exists and is valid?
        → No → 401 Unauthorized (or redirect to login)
 6. If authenticated: SPA catch-all at /admin/* → reply.sendFile("index.html")
-7. React Router reads basename=/admin, pathname=/dashboard → renders Dashboard component
+7. React Router (tanpa basename) membaca pathname `/admin/dashboard` → namespace `/admin/*` di-mount di `main.tsx` → AdminApp merender Dashboard component
 8. Dashboard component fetches /api/stats?...
 9. Fastify matches GET /api/stats route → auth hook fires again (startsWith /api/stats)
    → authenticated → handler returns JSON
@@ -219,7 +220,7 @@ Prisma schema at `prisma/schema.prisma`. Key models:
 
 ## Telegram Bot Integration
 
-The bot (grammY) handles:
+The bot (Telegraf) handles:
 - `/start` → user registration in webhook/polling mode
 - Credit top-up (connected to payment gateways: Midtrans, Tripay, Duitku)
 - Content creation commands

@@ -17,7 +17,7 @@ export async function registerPersonaRoutes(
 
   server.post('/api/personas', async (request, reply) => {
     if (!await verifyAdmin(request, reply)) return;
-    const body = request.body as {
+    const body = (request.body ?? {}) as {
       id: string;
       allowedNiches?: string[] | string;
       allowedPresets?: string[];
@@ -35,7 +35,7 @@ export async function registerPersonaRoutes(
 
   server.post("/api/admin/welcome-message", { preHandler: validate({ body: welcomeMessageSchema }) }, async (request, reply) => {
     await verifyAdmin(request, reply);
-    const { message } = request.body as { message?: string };
+    const { message } = (request.body ?? {}) as { message?: string };
     if (!message) return reply.status(400).send({ error: "Message required" });
     await PaymentSettingsService.setPricingConfig(
       "system",

@@ -33,7 +33,8 @@ const FALLBACK_ELEMENTS = [
  */
 export function getFallbackResult(mediaType: 'video' | 'image'): AnalysisResult {
   return {
-    success: true,
+    success: false,
+    error: 'All vision providers failed',
     prompt: FALLBACK_TEMPLATES[mediaType] || FALLBACK_TEMPLATES.image,
     style: 'commercial',
     elements: [...FALLBACK_ELEMENTS],

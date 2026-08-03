@@ -8,6 +8,7 @@ import { BotContext } from '@/types';
 import { logger } from '@/utils/logger';
 import { getConfig } from '@/config/env';
 import { getQueueStats } from '@/config/queue';
+import { prisma } from '@/config/database';
 
 /**
  * Check if user is admin
@@ -30,7 +31,12 @@ export async function adminSystemStatusCommand(ctx: BotContext): Promise<void> {
 
   try {
     const queueStats = await getQueueStats();
-    
+
+    const [userCount, videos24h] = await Promise.all([
+      prisma.user.count(),
+      prisma.video.count({ where: { createdAt: { gte: new Date(Date.now() - 24 * 3600 * 1000) } } }),
+    ]).catch((): [number, number] => [0, 0]);
+
     await ctx.reply(
       '📊 *System Status*\n\n' +
       '*OpenClaw Core:* 🟢 Connected\n' +
@@ -40,9 +46,9 @@ export async function adminSystemStatusCommand(ctx: BotContext): Promise<void> {
       `• Video Queue: ${queueStats.video.waiting} waiting, ${queueStats.video.active} active\n` +
       `• Payment Queue: ${queueStats.payment.waiting} waiting, ${queueStats.payment.active} active\n` +
       `• Notification Queue: ${queueStats.notification.waiting} waiting, ${queueStats.notification.active} active\n\n` +
-      '*Active Users:* 1,234\n' +
-      '*Videos Generated (24h):* 567\n' +
-      '*Error Rate:* 0.3%',
+      '*Active Users:* ' + userCount + '\n' +
+      '*Videos Generated (24h):* ' + videos24h + '\n' +
+      '*Uptime:* ' + Math.floor(process.uptime() / 60) + ' min',
       { parse_mode: 'Markdown' }
     );
   } catch (error) {

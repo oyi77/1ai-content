@@ -251,7 +251,7 @@ export class OmniRouteService {
 
       return { success: true, content, model: usedModel };
     } catch (error) {
-      const errMsg = (error as any).response?.data?.(error as Error)?.message || (error as Error).message || 'Unknown error';
+      const errMsg = (error as any)?.response?.data?.message ?? (error as Error)?.message ?? 'Unknown error';
       logger.error('OmniRoute chat error:', errMsg);
       return { success: false, error: errMsg };
     }
@@ -304,7 +304,7 @@ export class OmniRouteService {
       if (!content) return { success: false, error: 'Empty response from vision model' };
       return { success: true, content, model: response.data?.model || DEFAULT_MODEL };
     } catch (error) {
-      const errMsg = (error as any).response?.data?.(error as Error)?.message || (error as Error).message || 'Unknown error';
+      const errMsg = (error as any)?.response?.data?.message ?? (error as Error)?.message ?? 'Unknown error';
       logger.error('OmniRoute analyzeImageUrl error:', errMsg);
       return { success: false, error: errMsg };
     }
@@ -345,7 +345,7 @@ export class OmniRouteService {
 
       return { success: true, content, model: usedModel };
     } catch (error) {
-      const errMsg = (error as any).response?.data?.(error as Error)?.message || (error as Error).message || 'Unknown error';
+      const errMsg = (error as any)?.response?.data?.message ?? (error as Error)?.message ?? 'Unknown error';
       logger.error('OmniRoute analyzeImage error:', errMsg);
       return { success: false, error: errMsg };
     }

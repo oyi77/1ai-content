@@ -269,6 +269,11 @@ export async function getVideoCreditCostAsync(durationSeconds: number): Promise<
   else if (durationSeconds <= 30) unitKey = 'VIDEO_30S';
   else if (durationSeconds <= 60) unitKey = 'VIDEO_60S';
 
+  if (durationSeconds > 120) {
+    // Custom duration tiered pricing (mirror sync getVideoCreditCost)
+    return getCustomDurationCreditCost(durationSeconds);
+  }
+
   // Read from unit_cost category (same as getUnitCostAsync)
   const units = await getUnitCostAsync(unitKey);
   return units / 10; // Convert units to credits

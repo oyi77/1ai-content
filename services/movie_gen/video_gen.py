@@ -26,6 +26,21 @@ def _ffmpeg(*args: str, **kwargs) -> subprocess.CompletedProcess:
     return result
 
 
+def _get_video_duration(path) -> Optional[float]:
+    """Return the media duration in seconds, or None if it cannot be probed."""
+    try:
+        result = subprocess.run(
+            ["ffprobe", "-v", "quiet", "-show_entries", "format=duration",
+             "-of", "csv=p=0", str(path)],
+            capture_output=True, text=True, timeout=30,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return float(result.stdout.strip())
+    except Exception:
+        pass
+    return None
+
+
 def _ensure1920x1080(image_path: str, output_path: str) -> str:
     """Resize/resample image to 1920x1080, return output path."""
     _ffmpeg("-i", image_path, "-vf", "scale=1920:1080:force_original_aspect_ratio=1,pad=1920:1080:(ow-iw)/2:(oh-ih)/2",
@@ -144,7 +159,11 @@ def _concat_with_crossfade(
     concat_file = tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False, dir="/tmp")
     for seg_path in segment_paths:
         concat_file.write(f"file '{seg_path}'\n")
-        concat_file.write(f"duration {fade_duration}\n")
+        # Only emit an explicit duration when we know the real one; a fixed
+        # 0.5s duration would truncate every segment to half a second.
+        seg_dur = _get_video_duration(seg_path)
+        if seg_dur is not None:
+            concat_file.write(f"duration {seg_dur}\n")
     concat_file.close()
 
     try:

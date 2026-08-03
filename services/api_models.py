@@ -4,7 +4,7 @@ Pydantic request models for 1AI-Content Factory API.
 Extracted from services/api.py to keep the route file focused on wiring.
 """
 
-from typing import Optional
+from typing import Optional, Union
 
 from pydantic import BaseModel, Field
 from services.db.models import ContentType
@@ -14,8 +14,8 @@ class TTSRequest(BaseModel):
     text: str
     language: str = "en"
     voice: str = "default"
-    rate: Optional[float] = None
-    pitch: Optional[float] = None
+    rate: Optional[str] = None
+    pitch: Optional[str] = None
 
 
 class AnalyzeRequest(BaseModel):
@@ -120,7 +120,7 @@ class ReMetadataRequest(BaseModel):
     watermark: Optional[str] = None
     position: str = "bottom"
     speed: float = 1.0
-    color_shift: str = "none"
+    color_shift: Optional[Union[bool, str]] = "none"
     niche: str = "general"
     platform: str = "tiktok"
     language: str = "en"

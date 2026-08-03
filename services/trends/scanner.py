@@ -57,6 +57,10 @@ class TrendScanner:
         self._last_scan = time.time()
         return result
 
+    def scan_all(self, niche: str = "", region: str = "ID") -> dict:
+        """Alias of scan_now — full scan of all sources (youtube/google/reddit/tiktok)."""
+        return self.scan_now(niche, region)
+
     def start_background_scan(self) -> None:
         """Start background scanner thread (called once at startup)."""
         if self._bg_thread and self._bg_thread.is_alive():

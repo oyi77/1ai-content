@@ -18,7 +18,8 @@ Sumber kebenaran skema database (Prisma + PostgreSQL) beserta seed, migrasi, dan
 |---|---|
 | `schema.prisma` (1276 baris) | 7 enum: `UserTier` (free/basic/lite/pro/agency), `VideoStatus`, `TransactionStatus`, `Platform`, `Niche`, `TransactionType` (topup/welcome_bonus/refund/subscription), `PaymentGateway` (tripay/duitku/nowpayments/stars/midtrans/system). ±50 model. Field kunci: `User.tier` **String** (bukan enum), creditBalance Decimal, referralTier Int, utmSource/utmMedium/utmCampaign/utmContent/lpVariant, fbc/fbp/ttclid, fraudScore, isBanned, lastActivityAt; `Transaction` status String + expiredAt default NOW()+30min + statusHistory Json; `Video` creditsUsed, styles String[], providerChain, favorited, expiresAt 30 hari; `Commission.tier` Int |
 | `seed.ts` | Upsert user idempotent: telegramId `BigInt(228956686)`, username Oyi77, firstName WhoMe, creditBalance 100.0, tier `'premium'` |
-| `migrations/` | 6 folder: `20240319_enhanced_video_system`, `20260315194752_init`, `20260401_add_subscription_credits`, `20260401_add_template_videos`, `20260401_add_video_favorited`, `20260406000000_add_user_mode` |
+| `migrations/` | 6 folder (sesuai disk): `20260315194752_init`, `20260316_enhanced_video_system`, `20260401_add_subscription_credits`, `20260401_add_template_videos`, `20260401_add_video_favorited`, `20260406000000_add_user_mode` |
+| `scripts/prisma-reconcile.sh` (repo root) | Doc-only helper: `prisma migrate resolve --applied` untuk 6 migrasi + `migrate diff` dry-run (dengan `--shadow-database-url` opsional). TIDAK menyentuh DB — verifikasi manual sebelum dijalankan |
 | `migrations/ecosystem_tracking.sql` | SQL **manual** (bukan migrasi Prisma) — lihat Issue #3 |
 | `migration_lock.toml` | `provider = "postgresql"` |
 | `README.md` | Model utama: User, Transaction, Video, Commission, Subscription, AuditLog; commands `db:generate`, `migrate:dev`, `migrate:prod`, `migrate:status`, `db:studio`, `db:seed` |

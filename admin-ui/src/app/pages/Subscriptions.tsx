@@ -5,13 +5,19 @@ export default function Subscriptions() {
   const [plans, setPlans] = useState<any[]>([]);
   const [current, setCurrent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [reload, setReload] = useState(0);
 
   useEffect(() => {
+    setLoading(true);
+    setError(null);
     api.getSubscriptions().then((d) => {
       setPlans(d.plans ?? []);
       setCurrent(d.current ?? null);
-    }).catch(() => {}).finally(() => setLoading(false));
-  }, []);
+    }).catch((e: any) => {
+      setError(e?.message || "Failed to load subscriptions. Please try again.");
+    }).finally(() => setLoading(false));
+  }, [reload]);
 
   const handleSubscribe = async (planId: string) => {
     try {
@@ -21,11 +27,21 @@ export default function Subscriptions() {
       setPlans(d.plans ?? []);
       setCurrent(d.current ?? null);
     } catch (e: any) {
-      alert(e.message);
+      setError(e?.message || "Subscription failed. Please try again.");
     }
   };
 
   if (loading) return <div className="loading-spinner">Loading plans...</div>;
+
+  if (error) {
+    return (
+      <div className="card" style={{ textAlign: "center", padding: 40, borderColor: "#ff5c5c" }}>
+        <div style={{ fontSize: "3rem", marginBottom: 12 }}>⚠️</div>
+        <p style={{ color: "#ff8a8a", marginBottom: 16 }}>{error}</p>
+        <button className="btn btn-primary" onClick={() => setReload((r) => r + 1)}>Retry</button>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -38,7 +54,7 @@ export default function Subscriptions() {
             {current.name || "Active Plan"}
           </div>
           <div style={{ color: "#8888aa", fontSize: "0.85rem" }}>
-            {current.status} · {current.creditsPerMonth || 0} credits/month
+            {current.status} · {current.monthlyCredits || 0} credits/month
           </div>
         </div>
       )}
@@ -55,10 +71,10 @@ export default function Subscriptions() {
           }}>
             <div className="card-title">{plan.name || "Plan"}</div>
             <div style={{ fontSize: "2rem", fontWeight: 700, color: "white", marginBottom: 4 }}>
-              {plan.price ? `$${plan.price}` : "Free"}
+              {plan.monthlyPriceIdr ? `Rp${plan.monthlyPriceIdr.toLocaleString("id-ID")}` : "Free"}
             </div>
             <div style={{ color: "#8888aa", fontSize: "0.85rem", marginBottom: 16 }}>
-              {plan.creditsPerMonth || 0} credits/month
+              {plan.monthlyCredits || 0} credits/month
             </div>
             <ul style={{
               listStyle: "none", padding: 0, margin: "0 0 20px",

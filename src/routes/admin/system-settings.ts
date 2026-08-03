@@ -43,7 +43,7 @@ export async function registerSystemSettingsRoutes(server: FastifyInstance, veri
   server.post("/api/settings/exchange-rate", {
     schema: { body: exchangeRateBodySchema },
   }, async (request, reply) => {
-    const { rate } = request.body as { rate: string };
+    const { rate } = (request.body ?? {}) as { rate: string };
     const numRate = Number(rate);
     await prisma.pricingConfig.upsert({
       where: { category_key: { category: "system", key: "exchange_rate" } },
@@ -87,7 +87,7 @@ export async function registerSystemSettingsRoutes(server: FastifyInstance, veri
   server.post("/api/settings/pixels", {
     schema: { body: pixelConfigBodySchema },
   }, async (request, reply) => {
-    const body = request.body as Record<string, unknown>;
+    const body = (request.body ?? {}) as Record<string, unknown>;
     const config = {
       fbPixelId: (body.fbPixelId as string) || "",
       ga4Id: (body.ga4Id as string) || "",

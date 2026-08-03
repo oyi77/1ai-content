@@ -73,8 +73,6 @@ export async function carouselCommand(ctx: BotContext): Promise<void> {
       await ctx.reply('Mau posting carousel ini?', {
         reply_markup: {
           inline_keyboard: [
-            [{ text: '📤 Post ke TikTok', callback_data: `carousel_publish_${result.job_id}` }],
-            [{ text: '✏️ Edit Caption', callback_data: `carousel_edit_caption_${result.job_id}` }],
             [{ text: '🔄 Buat Ulang', callback_data: 'carousel_regenerate' }],
             [{ text: '🏠 Menu', callback_data: 'menu_main' }],
           ],

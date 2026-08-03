@@ -43,7 +43,7 @@ export async function registerFanpageRoutes(server: FastifyInstance) {
 
   // ── API: Create page ───────────────────────────────────────
   server.post("/api/fanpages", async (request, reply) => {
-    const body = request.body as Record<string, unknown>;
+    const body = (request.body ?? {}) as Record<string, unknown>;
 
     // Validate required fields
     const userId = String(body.userId ?? "");

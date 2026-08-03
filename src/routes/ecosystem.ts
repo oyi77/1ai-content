@@ -39,7 +39,7 @@ export async function ecosystemRoutes(server: FastifyInstance): Promise<void> {
    * Receive publish results from 1ai-social
    */
   server.post<{ Body: PublishResultWebhook }>('/webhook/publish-result', { preHandler: [ecosystemWebhookAuth] }, async (request, reply) => {
-    const { contentId, userId, results } = request.body;
+    const { contentId, userId, results } = request.body ?? {};
 
     logger.info({
       msg: 'Publish result received',
@@ -78,7 +78,7 @@ export async function ecosystemRoutes(server: FastifyInstance): Promise<void> {
    * Receive conversion events from 1ai-affiliate
    */
   server.post<{ Body: ConversionWebhook }>('/webhook/conversion-update', { preHandler: [ecosystemWebhookAuth] }, async (request, reply) => {
-    const conversion = request.body;
+    const conversion = request.body ?? {};
 
     logger.info({
       msg: 'Conversion received',

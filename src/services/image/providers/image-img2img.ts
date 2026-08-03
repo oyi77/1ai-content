@@ -481,7 +481,11 @@ export async function generateViaSegmindImg2Img(
       width: getDims(params).width,
       height: getDims(params).height,
     },
-    { timeout: 90000, responseType: "arraybuffer" },
+    {
+      headers: { "x-api-key": getConfig().SEGMIND_API_KEY || "", "Content-Type": "application/json" },
+      timeout: 90000,
+      responseType: "arraybuffer",
+    },
   );
 
   if (response.data && String(response.headers["content-type"] || "").includes("image")) {

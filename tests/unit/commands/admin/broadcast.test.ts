@@ -25,6 +25,10 @@ jest.mock("@/utils/logger", () => ({
   },
 }));
 
+jest.mock("@/config/queue", () => ({
+  addNotificationJob: jest.fn(),
+}));
+
 describe("Admin Broadcast Command", () => {
   let ctx: ReturnType<typeof createMockContext>;
   let prisma: any;

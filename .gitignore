@@ -58,3 +58,4 @@ public/hero-comparison.png
 services/projects/model_stats_*.json
 services/projects/token_calibration.json
 services/data/ebook/projects.db
+config/tiktok_cookies.txt

@@ -7,7 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [3.0.0] - 2024-XX-XX
+> **⚠️ DRAFT — bukan riwayat rilis yang sebenarnya.** File ini berisi draft
+> catatan rilis yang belum disusun sesuai proses. Riwayat rilis aktual ada di
+> git history (commit terakhir `f2c66e5`, 2026-08-02). Jangan jadikan konten di
+> bawah sebagai dasar pengambilan keputusan rilis tanpa memverifikasi ke git.
+
+## [3.0.0] - 2024-XX-XX (draft)
 
 ### 🎉 Major Release - Production Ready
 

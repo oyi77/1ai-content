@@ -90,6 +90,11 @@ async def _download_cascade(video_url: str, category: str, tmpdir: str, vid_id: 
     Returns {file_path, file_type, status, reason, tmpdir}.
     """
     is_tiktok = "tiktok.com" in video_url
+    if not is_tiktok:
+        host = video_url.split("://", 1)[-1].split("/", 1)[0] or "unknown"
+        return {"file_path": None, "file_type": "none", "status": "failed",
+                "reason": f"unsupported_platform: only tiktok.com links are supported (got {host})",
+                "tmpdir": tmpdir}
     errors: list[str] = []
 
     # ── Reusable client with per-method timeout handled by _try ─────

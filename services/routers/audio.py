@@ -43,8 +43,8 @@ class TTSRequest(BaseModel):
     text: str
     language: str = "id"
     voice: Optional[str] = None
-    rate: Optional[float] = None
-    pitch: Optional[float] = None
+    rate: Optional[str] = None
+    pitch: Optional[str] = None
 
 
 # ── Music generation ────────────────────────────────────────────

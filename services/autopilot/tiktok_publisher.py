@@ -10,6 +10,7 @@ Usage:
     result = pub.run_scheduled_job(job)
 """
 
+import glob
 import json
 import os
 import random
@@ -146,7 +147,7 @@ class AutoPilotTikTokPublisher:
 
             # Step 3: Publish via CloakBrowser
             if auto_publish and tiktok_profile_id:
-                media_path = content_result.get("media_path") or content_result.get("video_path")
+                media_path = self._resolve_media_path(content_result)
 
                 if media_path and os.path.exists(media_path):
                     tags = [h.lstrip("#") for h in hashtags[:5]]
@@ -165,7 +166,7 @@ class AutoPilotTikTokPublisher:
             else:
                 result["published"] = False
                 result["ready_to_publish"] = True
-                result["media_path"] = content_result.get("media_path") or content_result.get("video_path")
+                result["media_path"] = self._resolve_media_path(content_result)
 
             result["success"] = True
             result["content_result"] = {
@@ -221,3 +222,29 @@ class AutoPilotTikTokPublisher:
             platform="tiktok",
             language=language,
         )
+
+    def _resolve_media_path(self, content_result: dict) -> str:
+        """Extract a publishable media path from a generator result.
+
+        FacelessEngine returns ``output_path``; CarouselAssembler returns
+        ``slides`` (rendered image paths) and ``output_dir``. Falls back to
+        globbing ``output_dir`` for common image types. Returns "" when nothing
+        usable is found (caller reports the missing media).
+        """
+        for key in ("media_path", "video_path", "output_path"):
+            path = content_result.get(key)
+            if path:
+                return path
+
+        slides = content_result.get("slides") or []
+        if slides:
+            return slides[0]
+
+        output_dir = content_result.get("output_dir", "")
+        if output_dir and os.path.isdir(output_dir):
+            for ext in ("*.png", "*.jpg", "*.jpeg"):
+                matches = glob.glob(os.path.join(output_dir, ext))
+                if matches:
+                    return matches[0]
+
+        return ""

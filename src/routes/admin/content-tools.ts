@@ -38,7 +38,7 @@ export async function registerContentToolsRoutes(server: FastifyInstance) {
   // Save a generated book
   server.post("/api/books", async (request, reply) => {
     const { title, subject, full_markdown, sections, stats } =
-      request.body as {
+      (request.body ?? {}) as {
         title: string;
         subject?: string;
         full_markdown: string;
@@ -85,7 +85,7 @@ export async function registerContentToolsRoutes(server: FastifyInstance) {
   // Save a generated comic
   server.post("/api/comics", async (request, reply) => {
     const { title, format, language, prompt, script, num_episodes, total_pages, output_dir, cover_path, stats } =
-      request.body as {
+      (request.body ?? {}) as {
         title: string;
         format?: string;
         language?: string;
@@ -152,7 +152,7 @@ export async function registerContentToolsRoutes(server: FastifyInstance) {
   // Save a generated movie
   server.post("/api/movies", async (request, reply) => {
     const { title, genre, num_scenes, duration, prompt, script, video_path, cover_path, output_dir, stats, status, metadata } =
-      request.body as {
+      (request.body ?? {}) as {
         title: string;
         genre?: string;
         num_scenes?: number;

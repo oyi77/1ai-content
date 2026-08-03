@@ -12,3 +12,8 @@ Usage:
     gen = MusicGenerator()
     result = gen.generate_bgm("upbeat corporate")
 """
+
+from services.music.generator import MusicGenerator
+
+__all__ = ["MusicGenerator"]
+

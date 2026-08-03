@@ -21,7 +21,8 @@ export async function handleNavigationCallbacks(ctx: BotContext, data: string): 
   }
 
   // ── MAIN MENU ───────────────────────────────────────────────────────────────
-  if (data === "main_menu") {
+  // back_dashboard from ebook (:ebook.py) routes to the same main dashboard menu
+  if (data === "main_menu" || data === "back_dashboard") {
     await ctx.answerCbQuery();
     // Always reset state and clear generate session so user isn't stuck in a previous flow
     if (ctx.session) {

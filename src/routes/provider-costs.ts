@@ -83,7 +83,7 @@ export function registerProviderCostRoutes(server: FastifyInstance): void {
   server.put<{ Params: { key: string } }>("/api/admin/provider-costs/:key", async (request, reply) => {
     const { key } = request.params;
     try {
-      const { costUsd, metadata } = request.body as {
+      const { costUsd, metadata } = (request.body ?? {}) as {
         costUsd: number;
         metadata?: Record<string, any>;
       };

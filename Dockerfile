@@ -39,6 +39,13 @@ COPY . .
 # Build TypeScript
 RUN npm run build
 
+# Generate Prisma client (production stage re-installs deps without prisma CLI)
+RUN npx prisma generate
+
+# Install + build admin-ui frontend (single consolidated SPA for /, /admin/*, /app/*)
+# admin-ui/node_modules and admin-ui/dist are excluded via .dockerignore
+RUN cd admin-ui && npm ci && npm run build
+
 # =============================================================================
 # STAGE 3: Production
 # =============================================================================
@@ -60,8 +67,13 @@ RUN apk add --no-cache dumb-init
 # Copy production dependencies from dependencies stage
 COPY --from=dependencies --chown=nodejs:nodejs /app/node_modules ./node_modules
 
+# Copy Prisma-generated client engine into production layers (npm ci --only=production has no prisma CLI)
+COPY --from=builder --chown=nodejs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
+
 # Copy built application from builder stage
 COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
+COPY --from=builder --chown=nodejs:nodejs /app/admin-ui/dist ./admin-ui/dist
+COPY --from=builder --chown=nodejs:nodejs /app/public ./public
 COPY --from=builder --chown=nodejs:nodejs /app/config ./config
 COPY --from=builder --chown=nodejs:nodejs /app/package.json ./
 

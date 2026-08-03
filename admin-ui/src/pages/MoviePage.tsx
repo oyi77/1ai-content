@@ -32,6 +32,7 @@ const STYLES = [
 interface SSEEvent {
   type: string;
   payload?: Record<string, unknown>;
+  message?: string;
 }
 
 async function streamGenerateMovie(
@@ -39,7 +40,7 @@ async function streamGenerateMovie(
   onEvent: (event: SSEEvent) => void,
   signal: AbortSignal,
 ): Promise<void> {
-  const res = await fetch(`${PY_API}/movie/generate`, {
+  const res = await fetch(`${PY_API}/video/movie`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -197,7 +198,7 @@ export default function MoviePage() {
     abortRef.current = ac;
 
     const onEvent = (event: SSEEvent) => {
-      const payload = event.payload || {};
+      const payload = { ...(event.payload || {}), ...(event.message ? { message: event.message } : {}) };
       switch (event.type) {
         case "progress":
           setProgressMsgs((p) => [...p, (payload.message as string) || ""]);
@@ -225,7 +226,7 @@ export default function MoviePage() {
           genre: genre !== "general" ? genre : undefined,
           language,
           num_scenes: numScenes,
-          format,
+          style: format,
         },
         onEvent,
         ac.signal,

@@ -6,7 +6,7 @@ import type { StoryboardScene } from "../../api/client";
 export default function Storyboard() {
   const [prompt, setPrompt] = useState("");
   const [style, setStyle] = useState("cinematic");
-  const [numScenes, setNumScenes] = useState(8);
+  const [numScenes, setNumScenes] = useState(6);
   const [aspectRatio, setAspectRatio] = useState("16:9");
   const [creating, setCreating] = useState(false);
   const [scenes, setScenes] = useState<StoryboardScene[]>([]);
@@ -64,8 +64,10 @@ export default function Storyboard() {
           label="Number of Scenes"
           name="numScenes"
           type="number"
+          min={2}
+          max={6}
           value={String(numScenes)}
-          onChange={(e) => setNumScenes(Number(e.target.value))}
+          onChange={(e) => setNumScenes(Math.min(6, Math.max(2, Number(e.target.value))))}
           required
         />
         <Select

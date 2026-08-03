@@ -23,7 +23,13 @@ Prometheus collects metrics from the bot and stores them for querying.
 
 Grafana visualizes metrics from Prometheus in dashboards.
 
-**Port**: 3002 (default)
+**Port**: 3002 (default; container :3000)
+
+> ⚠️ **Port collision**: the compose `grafana` service maps host `3002:3000`
+> (`docker-compose.yml`), which collides with the bot running on host `:3002`
+> (PM2 `1ai-content`, NODE_ENV=production). Before enabling the `monitoring`
+> profile on a production host, change the map to a free port (e.g. `"3003:3000"`)
+> for both `grafana` and this README.
 
 **Default Login**: admin/admin
 
@@ -49,7 +55,7 @@ docker-compose --profile monitoring up -d
 
 # Access services
 # Prometheus: http://localhost:9090
-# Grafana: http://localhost:3002
+# Grafana: http://localhost:3002 (⚠️ collides with bot :3002 — see note above; use :3003 after fixing docker-compose.yml)
 ```
 
 ## 📝 Adding Custom Metrics

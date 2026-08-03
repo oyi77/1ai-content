@@ -13,12 +13,17 @@ RED='\033[0;31m'
 NC='\033[0m'
 
 # Service URLs
-CONTENT_URL="http://127.0.0.1:3000"
+CONTENT_URL="http://127.0.0.1:3002"
 SOCIAL_URL="http://127.0.0.1:8200"
 AFFILIATE_URL="http://127.0.0.1:3001"
 
-# Test API key (should match ECOSYSTEM_API_KEY in .env)
-API_KEY="berkahkarya-ecosystem-2026-secure-key"
+# API key (must match ECOSYSTEM_API_KEY in .env — the bot requires it,
+# src/routes/ecosystem.ts reads it via env at startup)
+API_KEY="${ECOSYSTEM_API_KEY:-}"
+if [ -z "$API_KEY" ]; then
+  echo "ERROR: ECOSYSTEM_API_KEY is not set — export it (same value as .env) before running."
+  exit 1
+fi
 
 # ══════════════════════════════════════════════════════════════════════
 # Helper Functions
@@ -52,14 +57,14 @@ test_endpoint() {
   
   if [ "$method" = "GET" ]; then
     response=$(curl -s -w "\n%{http_code}" "$url" \
-      -H "X-Service-Key: $API_KEY" \
+      -H "X-Api-Key: $API_KEY" \
       -H "X-Service-Name: 1ai-content" \
       -H "X-Timestamp: $timestamp" \
       -H "X-Signature: $signature")
   else
     response=$(curl -s -w "\n%{http_code}" -X POST "$url" \
       -H "Content-Type: application/json" \
-      -H "X-Service-Key: $API_KEY" \
+      -H "X-Api-Key: $API_KEY" \
       -H "X-Service-Name: 1ai-content" \
       -H "X-Timestamp: $timestamp" \
       -H "X-Signature: $signature" \

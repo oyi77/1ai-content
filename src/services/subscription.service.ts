@@ -70,7 +70,7 @@ export class SubscriptionService {
       },
     });
     // Track subscription credits separately (field added in migration, available after prisma generate)
-    await prisma.$executeRaw`UPDATE "users" SET "subscription_credits" = "subscription_credits" + ${creditsToGrant} WHERE "telegramId" = ${telegramId}`;
+    await prisma.$executeRaw`UPDATE "users" SET "subscription_credits" = "subscription_credits" + ${creditsToGrant} WHERE "telegram_id" = ${telegramId}`;
 
     logger.info(`Subscription created: ${plan}/${billingCycle} for user ${telegramId}`);
     return subscription;
@@ -195,11 +195,9 @@ export class SubscriptionService {
       // Only remove subscription-granted credits, preserve purchased credits
       const user = await prisma.user.findUnique({
         where: { telegramId: sub.userId },
-        select: { id: true, creditBalance: true },
+        select: { id: true, creditBalance: true, subscriptionCredits: true },
       });
-      // subscriptionCredits available after prisma generate with updated schema
-      const userRecord = user as unknown as Record<string, unknown>;
-      const subCredits = Math.min((userRecord?.subscriptionCredits as number) || 0, Number(user?.creditBalance || 0));
+      const subCredits = Math.min(Number(user?.subscriptionCredits || 0), Number(user?.creditBalance || 0));
       await prisma.user.update({
         where: { telegramId: sub.userId },
         data: {
@@ -208,7 +206,7 @@ export class SubscriptionService {
           creditExpiresAt: null,
         },
       });
-      await prisma.$executeRaw`UPDATE "users" SET "subscription_credits" = 0 WHERE "telegramId" = ${sub.userId}`;
+      await prisma.$executeRaw`UPDATE "users" SET "subscription_credits" = 0 WHERE "telegram_id" = ${sub.userId}`;
       logger.info(`Subscription expired for user ${sub.userId} (removed ${subCredits} sub credits, preserved purchased)`);
     }
 

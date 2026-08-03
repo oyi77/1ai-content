@@ -28,7 +28,7 @@ export async function registerFreeTrialRoutes(server: FastifyInstance, verifyAdm
   server.post("/api/settings/free-trial", {
     schema: { body: freeTrialBodySchema },
   }, async (request, reply) => {
-    const body = request.body as Record<string, unknown>;
+    const body = (request.body ?? {}) as Record<string, unknown>;
     await prisma.pricingConfig.upsert({
       where: { category_key: { category: "free_trial", key: "config" } },
       create: {

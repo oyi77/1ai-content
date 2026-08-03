@@ -47,8 +47,14 @@ async def calendar_list(user_id: int, status: Optional[str] = None, platform: Op
 async def calendar_delete(entry_id: str, user_id: int = 0):
     """Delete a calendar entry."""
     try:
+        try:
+            eid = int(entry_id)
+        except ValueError:
+            raise HTTPException(status_code=422, detail=f"Invalid entry_id: {entry_id}")
         cal = get_calendar()
-        result = await cal.delete_entry(user_id, int(entry_id))
+        result = await cal.delete_entry(user_id, eid)
         return {"success": result}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
