@@ -4,43 +4,161 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Login — 1AI Content</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/public/design-system.css">
+  <style>
+    * { box-sizing: border-box; }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-bg);
+      background-image:
+        radial-gradient(1200px 600px at 10% -10%, rgba(168,85,247,0.18), transparent 60%),
+        radial-gradient(900px 500px at 110% 20%, rgba(99,102,241,0.16), transparent 60%),
+        radial-gradient(700px 500px at 50% 120%, rgba(34,211,238,0.10), transparent 60%);
+      color: var(--color-text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-6);
+    }
+
+    .auth-card {
+      width: 100%;
+      max-width: 26rem;
+      background: var(--color-card);
+      border: 1px solid var(--color-border-strong);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-xl);
+      padding: var(--space-8) var(--space-8) var(--space-6);
+    }
+
+    .auth-brand {
+      font-size: var(--text-3xl);
+      font-weight: var(--font-bold);
+      margin: 0 0 var(--space-2);
+      text-align: center;
+      line-height: var(--line-tight);
+      background: var(--color-grad-text);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: transparent;
+    }
+
+    .auth-sub {
+      margin: 0 0 var(--space-8);
+      text-align: center;
+      color: var(--color-muted);
+      font-size: var(--text-base);
+    }
+
+    .auth-form { display: flex; flex-direction: column; gap: var(--space-6); }
+
+    .auth-field { display: flex; flex-direction: column; gap: var(--space-2); }
+
+    .auth-label {
+      font-size: var(--text-sm);
+      font-weight: var(--font-medium);
+      color: var(--color-dim);
+    }
+
+    .auth-input {
+      width: 100%;
+      padding: var(--space-3) var(--space-4);
+      background: var(--color-bg-elevated);
+      color: var(--color-text);
+      border: 1px solid var(--color-border-strong);
+      border-radius: var(--radius-md);
+      font-family: var(--font-sans);
+      font-size: var(--text-base);
+      outline: none;
+      transition: border-color var(--duration-fast) var(--ease-out),
+                  box-shadow var(--duration-fast) var(--ease-out);
+    }
+    .auth-input:focus {
+      border-color: var(--color-accent);
+      box-shadow: 0 0 0 3px var(--color-accent-light);
+    }
+    .auth-input::placeholder { color: var(--color-muted); }
+
+    .auth-btn {
+      width: 100%;
+      padding: var(--space-3) var(--space-4);
+      background: var(--color-grad);
+      color: var(--color-text-inverse);
+      border: none;
+      border-radius: var(--radius-md);
+      font-family: var(--font-sans);
+      font-size: var(--text-base);
+      font-weight: var(--font-semibold);
+      cursor: pointer;
+      transition: background var(--duration-normal) var(--ease-out),
+                  transform var(--duration-fast) var(--ease-out),
+                  box-shadow var(--duration-normal) var(--ease-out);
+    }
+    .auth-btn:hover {
+      background: var(--color-grad-hover);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-glow);
+    }
+    .auth-btn:active { transform: translateY(0) scale(0.99); }
+    .auth-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--color-accent-light), var(--shadow-glow); }
+
+    .auth-alert {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      margin-top: var(--space-5);
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-md);
+      font-size: var(--text-sm);
+      line-height: var(--line-normal);
+    }
+    .auth-alert.hidden { display: none; }
+
+    .auth-error { background: var(--color-danger-light); border: 1px solid var(--color-danger); color: var(--color-danger); }
+    .auth-success { background: var(--color-success-light); border: 1px solid var(--color-success); color: var(--color-success); }
+
+    .hidden { display: none !important; }
+  </style>
 </head>
-<body class="bg-gradient-to-br from-gray-900 to-gray-800 text-white min-h-screen flex items-center justify-center">
-  <div class="w-full max-w-md">
-    <div class="bg-gray-800 rounded-lg shadow-2xl p-8">
-      <h1 class="text-3xl font-bold mb-2 text-center">1AI Content</h1>
-      <p class="text-gray-400 text-center mb-8">Admin Dashboard</p>
-      
-      <form id="loginForm" onsubmit="handleLogin(event)">
-        <div class="mb-6">
-          <label for="password" class="block text-sm font-medium mb-2">Password</label>
-          <input 
-            type="password" 
-            id="password" 
-            name="password" 
-            class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 text-white"
-            placeholder="Enter admin password"
-            required
-            autofocus
-          >
-        </div>
-        
-        <button 
-          type="submit" 
-          class="w-full bg-blue-600 hover:bg-blue-700 font-medium py-2 px-4 rounded-lg transition duration-200"
+<body>
+  <div class="auth-card">
+    <h1 class="auth-brand">1AI Content</h1>
+    <p class="auth-sub">Admin Dashboard</p>
+
+    <form class="auth-form" id="loginForm" onsubmit="handleLogin(event)">
+
+      <div class="auth-field">
+        <label class="auth-label" for="password">Password</label>
+        <input
+          class="auth-input"
+          type="password"
+          id="password"
+          name="password"
+          placeholder="Enter admin password"
+          required
+          autofocus
         >
-          Login
-        </button>
-      </form>
-      
-      <div id="error" class="mt-4 p-3 bg-red-900 border border-red-700 rounded-lg hidden text-sm">
-        <span id="errorText"></span>
       </div>
-      
-      <div id="success" class="mt-4 p-3 bg-green-900 border border-green-700 rounded-lg hidden text-sm">
-        ✅ Login successful! Redirecting...
-      </div>
+
+      <button class="auth-btn" type="submit">Login</button>
+    </form>
+
+    <div id="error" class="auth-alert auth-error hidden">
+      <span id="errorText"></span>
+    </div>
+
+    <div id="success" class="auth-alert auth-success hidden">
+      ✅ Login successful! Redirecting...
     </div>
   </div>
 
@@ -50,9 +168,8 @@
       const password = document.getElementById('password').value;
       const errorDiv = document.getElementById('error');
       const successDiv = document.getElementById('success');
-      
+
       try {
-        // Verify password is correct
         const response = await fetch('/admin/login', {
           method: 'POST',
           headers: {
@@ -77,7 +194,6 @@
         document.getElementById('errorText').textContent = 'Network error: ' + error.message;
       }
     }
-
   </script>
 </body>
 </html>
