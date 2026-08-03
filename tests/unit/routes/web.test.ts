@@ -342,20 +342,25 @@ describe("Web Routes", () => {
   });
 
   describe("GET /", () => {
-    it("should render landing page", async () => {
-      (mockGetPackagesAsync as any).mockResolvedValue([]);
-      (mockGetSubscriptionPlansAsync as any).mockResolvedValue({});
+    it("should serve the admin-ui SPA when the build exists", async () => {
+      mockExistsSync.mockReturnValue(true);
       const handler = routes.get["/"];
       const request = createMockRequest();
       const reply = createMockReply();
       await handler(request, reply);
-      expect(reply.view).toHaveBeenCalledWith(
-        "web/landing.ejs",
-        expect.objectContaining({
-          landingConfig: expect.any(Object),
-          packages: expect.any(Array),
-          botUsername: expect.any(String),
-        }),
+      expect(reply.type).toHaveBeenCalledWith("text/html");
+      expect(reply.send).toHaveBeenCalled();
+    });
+
+    it("should fail loudly with 500 when the admin-ui build is missing", async () => {
+      mockExistsSync.mockReturnValue(false);
+      const handler = routes.get["/"];
+      const request = createMockRequest();
+      const reply = createMockReply();
+      await handler(request, reply);
+      expect(reply.status).toHaveBeenCalledWith(500);
+      expect(reply.send).toHaveBeenCalledWith(
+        expect.stringContaining("admin-ui build missing"),
       );
     });
   });

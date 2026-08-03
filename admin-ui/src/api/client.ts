@@ -48,23 +48,9 @@ export async function postJson<T>(url: string, body: unknown): Promise<T> {
   return res.json();
 }
 
-// ── Auth helpers (cookie-based, credentials: include) ──
-
-export async function checkAuth(): Promise<{ authenticated: boolean }> {
-  const res = await fetch(`${API_BASE}/api/admin/check-auth`, { credentials: "include" });
-  return res.json();
-}
-
-export async function login(password: string): Promise<{ success: boolean }> {
-  const res = await fetch(`${API_BASE}/admin/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({ password }),
-  });
-  if (!res.ok) return { success: false };
-  return res.json();
-}
+// ── Auth helper (cookie-based, credentials: include) ──
+// Admin login is server-rendered EJS at /admin/login (pre-SPA gate);
+// only logout needs to run inside the SPA.
 
 export async function logout(): Promise<void> {
   await fetch(`${API_BASE}/api/admin/logout`, { method: "POST", credentials: "include" });

@@ -10,68 +10,29 @@ import * as fs from "fs";
 import * as path from "path";
 import { prisma } from "@/config/database";
 import { getConfig } from "@/config/env";
-import { getPackagesAsync } from "@/config/pricing";
-
-interface Testimonial {
-  stars?: number;
-  text: string;
-  name?: string;
-  role?: string;
-  avatar?: string;
-}
 
 export async function pageRoutes(server: FastifyInstance): Promise<void> {
   // ── Landing (React SPA via admin-ui single bundle) ──
+  // Satu-satunya sumber kebenaran landing: admin-ui/dist. Gagal keras (500)
+  // bila build tidak ada, agar dev tidak diam-diam menyajikan duplikat usang.
   const LANDING_INDEX = path.join(process.cwd(), "admin-ui", "dist", "index.html");
-  if (fs.existsSync(LANDING_INDEX)) {
-    server.get("/", async (_request, reply) => {
-      // Baca per-request agar hasil rebuild admin-ui langsung terlihat tanpa restart
-      const landingHtml = fs.readFileSync(LANDING_INDEX, "utf-8");
-      return reply.type("text/html").send(landingHtml);
-    });
-  } else {
-    // Fallback: render EJS landing if React build not present
-    server.get("/", async (request, reply) => {
-      const { redis } = require("../../config/redis");
-      let landingConfig: Record<string, unknown> = {};
-      try {
-        const data = await redis.get("admin:landing_config");
-        if (data) landingConfig = JSON.parse(data);
-      } catch {
-        /* ignore */
-      }
-
-      const packages = await getPackagesAsync();
-
-      const langParam = (request.query as Record<string, string>).lang;
-      const acceptLang = request.headers["accept-language"] || "";
-      let currentLang = langParam || (acceptLang.startsWith("en") ? "en" : "id");
-      if (!["id", "en"].includes(currentLang)) currentLang = "id";
-
-      let testimonials = [];
-      if (landingConfig.testimonials) {
-        if (Array.isArray(landingConfig.testimonials)) {
-          testimonials = landingConfig.testimonials;
-        } else if (typeof landingConfig.testimonials === "object") {
-          const lc = landingConfig.testimonials as Record<string, unknown>;
-          testimonials = (lc[currentLang] || lc["id"] || []) as Array<Testimonial>;
-        }
-      }
-
-      return reply.view("web/landing.ejs", {
-        landingConfig,
-        testimonials,
-        packages,
-        currentLang,
-        botUsername: getConfig().BOT_USERNAME || "vilona_content_bot",
-        siteUrl: getConfig().WEBHOOK_URL || 'https://saas.aitradepulse.com',
-        fbPixelId: getConfig().FACEBOOK_PIXEL_ID || "",
-        ga4Id: getConfig().GA4_TRACKING_ID || "",
-        ttPixelId: getConfig().TIKTOK_PIXEL_ID || "",
-        ogImageUrl: landingConfig?.heroImageUrl || landingConfig?.ogImageUrl || null,
-      });
-    });
-  }
+  server.get("/", async (_request, reply) => {
+    if (!fs.existsSync(LANDING_INDEX)) {
+      return reply
+        .status(500)
+        .type("text/html")
+        .send(
+          "<!doctype html><html><head><meta charset=\"utf-8\"/><title>admin-ui build missing</title></head>" +
+            "<body style=\"font-family:system-ui,sans-serif;padding:2rem;background:#0a0a1a;color:#fff\">" +
+            "<h1>admin-ui build missing</h1>" +
+            "<p>Run <code>npm run build</code> in <code>admin-ui/</code> to generate the landing bundle.</p>" +
+            "</body></html>",
+        );
+    }
+    // Baca per-request agar hasil rebuild admin-ui langsung terlihat tanpa restart
+    const landingHtml = fs.readFileSync(LANDING_INDEX, "utf-8");
+    return reply.type("text/html").send(landingHtml);
+  });
 
   // ── FAQ ──
   server.get("/faq", async (_request, reply) => {

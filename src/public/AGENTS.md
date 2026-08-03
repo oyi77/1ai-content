@@ -24,7 +24,7 @@ Aset statis web (favicon) di dalam `src/` — diserve oleh `src/routes/web/pages
 - Serviced by: `src/routes/web/pages.ts:101-107` (favicon).
 
 ## Issue Spesifik
-1. **LOW — [RESOLVED] duplikasi aset**: `hero-tiktok-showcase.png` dulunya ada di `src/public/` DAN `public/` root; file di `src/public/` dihapus 2026-08-02 (byte-identik dengan root). `public/hero-tiktok-showcase.png` tetap diserve oleh route `/public/` dan dipakai `src/views/web/landing.ejs:12,17,1263`.
+1. **LOW — [RESOLVED] duplikasi aset**: `hero-tiktok-showcase.png` dulunya ada di `src/public/` DAN `public/` root; file di `src/public/` dihapus 2026-08-02 (byte-identik dengan root). `public/hero-tiktok-showcase.png` tetap diserve oleh route `/public/` (`src/index.ts:338-340`) dan dipakai `admin-ui/index.html` (og:image) serta `scripts/seed.ts:63` (`heroImageUrl`). `landing.ejs` (konsumen lama) DIHAPUS 2026-08-03 — landing kini React SPA (`admin-ui/dist`).
 2. **LOW — orphan `hero-comparison.png`**: grep `hero-comparison` di `src/`, `admin-ui/`, `config/`, `public/` → no match; kemungkinan sisa aset tidak dipakai. [INFERENSI — belum diverifikasi penuh, dibiarkan agar tidak menghilangkan fitur].
 3. Tidak ada issue runtime (aset statis).
 

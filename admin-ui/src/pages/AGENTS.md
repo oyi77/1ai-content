@@ -9,7 +9,7 @@ Halaman-halaman SPA, satu file per route. Pola umum: setiap halaman memanggil he
 
 **Status: partial** — jumlah baris dan route diverifikasi, tetapi hanya ~5 halaman (Login, Settings, ConfigPage, AiConfigPage, dll.) yang diaudit detail. Deskripsi halaman lain berdasarkan nama file + route, belum dibaca isinya.
 
-## Key Files (35 halaman, total 12.099 baris)
+## Key Files (34 halaman, total 11.998 baris — `Login.tsx` 104 baris DIHAPUS 2026-08-03)
 
 | File | Baris | Route |
 |------|------:|-------|
@@ -47,7 +47,6 @@ Halaman-halaman SPA, satu file per route. Pola umum: setiap halaman memanggil he
 | `Payments.tsx` | 116 | `/payments` |
 | `Tools.tsx` | 109 | `/tools` |
 | `Content.tsx` | 105 | `/content` |
-| `Login.tsx` | 104 | (tidak terdaftar — lihat Issue di bawah) |
 
 ## Subdirectories
 
@@ -63,8 +62,7 @@ Halaman-halaman SPA, satu file per route. Pola umum: setiap halaman memanggil he
 - Semua data via `../api/client.ts`; jangan duplikasi logika fetch di halaman.
 
 ### Issue Terverifikasi di Direktori Ini
-- **[HIGH]** `Login.tsx:98` — default password "admin" ditampilkan hardcoded di UI.
-- **[MEDIUM]** `Login.tsx` tidak terdaftar di `../App.tsx` dan tidak di-import; satu-satunya referensi adalah link `<a href="/admin/login">` di `Settings.tsx:112`. [INFERENSI] server-side login atau dead code.
+- **[RESOLVED 2026-08-03]** `Login.tsx` DIHAPUS — dead code (tidak terdaftar di `App.tsx`, zero imports; `/admin/login` dilayani server-side via `src/views/admin/login.ejs`). Issue HIGH "default password" + MEDIUM "tidak terdaftar" ikut terhapus.
 - **[LOW]** `ConfigPage.tsx:86-146` — menampilkan daftar nama env key (BOT_TOKEN, ADMIN_PASSWORD, DATABASE_URL, OMNIROUTE_API_KEY, MIDTRANS_SERVER_KEY, AWS_SECRET_ACCESS_KEY, dll.); hanya nama, tanpa nilai, dan `ConfigPage.tsx:613-614` menampilkan nilai sensitive sebagai masked — pastikan tetap begitu saat mengubah halaman ini.
 - **[LOW]** `Settings.tsx:112` — link `/admin/login` menuju URL tanpa route SPA.
 

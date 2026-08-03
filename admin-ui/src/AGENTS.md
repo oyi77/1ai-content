@@ -13,7 +13,7 @@ Source code SPA admin React: entry point, routing, satu file API client, kompone
 |------|-----------|
 | `main.tsx` | Entry point (10 baris): StrictMode, import `index.css` + `styles/admin-skin.css`, render `App` |
 | `App.tsx` | Layout route wrapper + semua route (~41 route, lihat daftar lengkap di bawah); `"/"` → `Navigate` ke `/dashboard` |
-| `api/client.ts` | Satu file (1.427 baris): `API_BASE = ""`, `fetchJson`/`postJson`/`checkAuth`/`login`/`logout`, lalu helper per-fitur (pricing, calendar, trending, ab-test, carousel, remeta, repurpose, research, tts, music/suno+musicgen, captions, analyze, loop, autopilot, cloak, engagement, video, render-ad, storyboard, pinterest, fanpage, env/runtime config, api-keys, personas, system health, token-stats, videos/books/comics/movies, ai-config + custom-providers + models-catalog + ai-chat, admin-prompts, intercept, users/search) |
+| `api/client.ts` | Satu file (1.427 baris): `API_BASE = ""`, `fetchJson`/`postJson`/`logout`, lalu helper per-fitur (pricing, calendar, trending, ab-test, carousel, remeta, repurpose, research, tts, music/suno+musicgen, captions, analyze, loop, autopilot, cloak, engagement, video, render-ad, storyboard, pinterest, fanpage, env/runtime config, api-keys, personas, system health, token-stats, videos/books/comics/movies, ai-config + custom-providers + models-catalog + ai-chat, admin-prompts, intercept, users/search) — `login`/`checkAuth` DIHAPUS 2026-08-03 (zero consumers; admin login server-rendered via `/admin/login` EJS) |
 | `components/Layout.tsx` | Breadcrumb + header + `Outlet` |
 | `components/Sidebar.tsx` | 8 kategori navigasi; ikon SVG inline via `dangerouslySetInnerHTML` (line 163) — konten statis sehingga aman |
 | `components/UI.tsx` | Input/Textarea/Select/Button/Tab/Spinner/StatusBadge/Toast |
@@ -40,9 +40,9 @@ Source code SPA admin React: entry point, routing, satu file API client, kompone
 - Ikon sidebar via SVG string (bukan JSX element) — jaga konsistensi.
 
 ### Issue Spesifik (verifikasi 2026-08-02)
-- **[HIGH]** `pages/Login.tsx:98` — "Default password: `admin`" hardcoded di UI. Backend `/admin/login` (dipanggil via `login()` di `client.ts:58-67`) di luar scope — verifikasi apakah default benar aktif sebelum menghapus tampilan ini.
+- **[RESOLVED 2026-08-03]** `pages/Login.tsx` DIHAPUS — dead code (tidak terdaftar di `App.tsx`, zero imports; `Settings.tsx:112` hanya `<a href="/admin/login">` yang dilayani EJS server-side). Issue HIGH "Default password `admin`" dan MEDIUM "Login.tsx tidak direferensikan" ikut terhapus.
 - **[MEDIUM]** `api/client.ts` — `user_id=0` hardcoded: baris 214, 230, 306, 320, 324, 329. [INFERENSI] scope global/admin; verifikasi backend.
-- **[MEDIUM]** `pages/Login.tsx` tidak direferensikan sebagai komponen: `App.tsx` tidak punya route `/login` dan tidak ada import; `pages/Settings.tsx:112` hanya `<a href="/admin/login">`. [INFERENSI] server-side login atau dead code.
+- **[LOW]** `components/UI.tsx` memakai warna slate/purple langsung, bertentangan dengan token `admin-skin.css` yang dipakai `Layout.tsx`/`Sidebar.tsx` — pilih satu sumber kebenaran styling.
 - **[LOW]** `components/UI.tsx` memakai warna slate/purple langsung, bertentangan dengan token `admin-skin.css` yang dipakai `Layout.tsx`/`Sidebar.tsx`/`Login.tsx` — pilih satu sumber kebenaran styling.
 - **[LOW]** `client.ts:948` & `:958` (fanpage PUT/DELETE) tidak mencantumkan `credentials: "include"` eksplisit — non-issue fungsional saat ini karena same-origin mengirim cookie secara default, tetapi rapuh bila `API_BASE` berubah.
 
