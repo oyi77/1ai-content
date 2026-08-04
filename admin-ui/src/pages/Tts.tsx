@@ -69,7 +69,7 @@ export default function Tts() {
   };
 
   const audioUrl = result?.success && result.filename
-    ? `${window.location.origin}/api/py/tts/audio/${encodeURIComponent(result.filename)}`
+    ? `${window.location.origin}/api/py/audio/speech/media/${encodeURIComponent(result.filename)}`
     : null;
 
   const voiceOptions = voices.map((v) => {

@@ -41,7 +41,7 @@ export default function Music() {
 
   function buildAudioUrl(data: MusicResponse): string | null {
     if (!data.success) return null;
-    if (data.filename) return `${window.location.origin}/api/py/tts/audio/${data.filename}`;
+    if (data.filename) return `${window.location.origin}/api/py/audio/speech/media/${data.filename}`;
     if (data.audio_url || data.url) return data.audio_url || data.url || null;
     if (data.file) return `${window.location.origin}/api/py/${data.file.replace(/^\//, "")}`;
     return null;

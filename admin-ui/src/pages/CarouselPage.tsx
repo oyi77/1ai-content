@@ -68,7 +68,7 @@ export default function CarouselPage() {
       });
       setResult(data);
       if (data.success) {
-        showToast(`${data.slide_count || 0} slides generated!`);
+        showToast(`${data.slide_count || data.slides?.length || 0} slides generated!`);
       } else {
         showToast(data.error || "Generation failed", "error");
       }
@@ -101,7 +101,7 @@ export default function CarouselPage() {
     return "#1a1a24";
   };
 
-  const contentSlides = result?.content?.slides || [];
+  const contentSlides = result?.slides || result?.content?.slides || [];
 
   return (
     <div>
@@ -174,13 +174,10 @@ export default function CarouselPage() {
                 <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-500/20 text-green-400">
                   {result.slide_count || contentSlides.length} slides generated
                 </span>
-                {result.job_id && (
-                  <span className="ml-2 text-xs text-slate-500">Job: {result.job_id}</span>
-                )}
               </div>
 
-              {result.content?.title && (
-                <div className="text-lg font-bold text-slate-100 mb-3">{result.content.title}</div>
+              {(result.title || result.content?.title) && (
+                <div className="text-lg font-bold text-slate-100 mb-3">{result.title || result.content.title}</div>
               )}
 
               {contentSlides.length > 0 && (
@@ -199,7 +196,7 @@ export default function CarouselPage() {
                 </div>
               )}
 
-              {result.slides && result.slides.length > 0 && (
+              {Array.isArray(result.slides) && result.slides.length > 0 && typeof result.slides[0] === "string" && (
                 <div className="text-xs text-slate-500 mt-3">
                   Files: {result.slides.length} PNG files saved
                 </div>
@@ -212,7 +209,7 @@ export default function CarouselPage() {
                 </div>
               )}
 
-              {result.hashtags && result.hashtags.length > 0 && (
+              {Array.isArray(result.hashtags) && result.hashtags.length > 0 && (
                 <div className="mt-2 text-sm text-purple-400">
                   {result.hashtags.join(" ")}
                 </div>

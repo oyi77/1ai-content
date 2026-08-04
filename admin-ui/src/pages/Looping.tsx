@@ -54,7 +54,7 @@ export default function Looping() {
 
   const videoUrl =
     result?.success && result.filename
-      ? `${window.location.origin}/api/py/loop/video/${result.filename}`
+      ? `${window.location.origin}/api/py/video/loop/video/${result.filename}`
       : null;
 
   return (

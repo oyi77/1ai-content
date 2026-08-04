@@ -331,13 +331,17 @@ export interface CarouselContent {
 
 export interface CarouselGenerateResponse {
   success: boolean;
+  title?: string;
+  slides?: Array<CarouselSlide>;
+  caption?: string;
+  hashtags?: string | string[];
+  cover_text?: string;
+  error?: string;
+  // legacy fields (pre-consolidation <carousel/create> shape) — retained for
+  // defensive dual-read during migration; modern /image/carousel omits them
   content?: CarouselContent;
   slide_count?: number;
   job_id?: string;
-  slides?: string[];
-  caption?: string;
-  hashtags?: string[];
-  error?: string;
 }
 
 export interface CarouselTemplatesResponse {
@@ -352,11 +356,11 @@ export async function generateCarousel(body: {
   platform: string;
   language: string;
 }): Promise<CarouselGenerateResponse> {
-  return postJson("/api/py/carousel/create", body);
+  return postJson("/api/py/image/carousel", body);
 }
 
 export async function fetchCarouselTemplates(): Promise<CarouselTemplatesResponse> {
-  return fetchJson<CarouselTemplatesResponse>("/api/py/carousel/templates");
+  return fetchJson<CarouselTemplatesResponse>("/api/py/image/carousel/templates");
 }
 
 // ── Remeta API ──
@@ -382,7 +386,7 @@ export async function processRemeta(body: {
   niche: string;
   platform: string;
 }): Promise<RemetaResponse> {
-  return postJson("/api/py/remeta", body);
+  return postJson("/api/py/video/remeta", body);
 }
 
 // ── Repurpose API ──
@@ -417,7 +421,7 @@ export async function repurposeContent(body: {
   watermark_text?: string;
   add_subtitles: boolean;
 }): Promise<RepurposeResponse> {
-  return postJson("/api/py/repurpose", body);
+  return postJson("/api/py/video/repurpose", body);
 }
 
 // ── Research API ──
@@ -501,7 +505,7 @@ export interface TTSResponse {
 
 export async function fetchTTSVoices(language?: string): Promise<TTSVoice[]> {
   const params = language ? `?language=${encodeURIComponent(language)}` : "";
-  return fetchJson(`/api/py/tts/voices${params}`);
+  return fetchJson(`/api/py/audio/speech/voices${params}`);
 }
 
 export async function generateTTS(body: {
@@ -511,7 +515,7 @@ export async function generateTTS(body: {
   rate?: string;
   pitch?: string;
 }): Promise<TTSResponse> {
-  return postJson("/api/py/tts/synthesize", body);
+  return postJson("/api/py/audio/speech", body);
 }
 
 // ── Music API ──
@@ -532,7 +536,7 @@ export async function generateSuno(body: {
   lyrics?: string;
   instrumental?: boolean;
 }): Promise<MusicResponse> {
-  return postJson("/api/py/suno/generate", body);
+  return postJson("/api/py/audio/music", { ...body, engine: "suno", duration_seconds: 60 });
 }
 
 export async function generateMusicGen(body: {
@@ -541,15 +545,15 @@ export async function generateMusicGen(body: {
   engine: string;
   style?: string;
 }): Promise<MusicResponse> {
-  return postJson("/api/py/music/generate", body);
+  return postJson("/api/py/audio/music", body);
 }
 
 export async function generateSunoLofi(): Promise<MusicResponse> {
-  return postJson("/api/py/suno/lofi?mood=chill", {});
+  return postJson("/api/py/audio/music/lofi?mood=chill", {});
 }
 
 export async function generateSunoBgm(): Promise<MusicResponse> {
-  return postJson("/api/py/suno/bgm?theme=corporate", {});
+  return postJson("/api/py/audio/music/bgm?theme=corporate", {});
 }
 
 // ── Captions API ──
@@ -571,11 +575,11 @@ export interface CaptionGenerateResponse {
 }
 
 export async function fetchCaptionStyles(): Promise<CaptionStylesResponse> {
-  return fetchJson("/api/py/captions/styles");
+  return fetchJson("/api/py/text/caption/styles");
 }
 
 export async function fetchCaptionPresets(): Promise<CaptionPresetsResponse> {
-  return fetchJson("/api/py/captions/presets");
+  return fetchJson("/api/py/text/caption/presets");
 }
 
 export async function generateCaption(body: {
@@ -584,7 +588,7 @@ export async function generateCaption(body: {
   language: string;
   hashtag_count: number;
 }): Promise<CaptionGenerateResponse> {
-  return postJson("/api/py/captions/generate", body);
+  return postJson("/api/py/text/caption", body);
 }
 
 // ── Analyze API ──
@@ -672,7 +676,7 @@ export async function createLoopVideo(body: {
   colors?: string;
   image_path?: string;
 }): Promise<LoopCreateResponse> {
-  return postJson("/api/py/loop/create", body);
+  return postJson("/api/py/video/loop", body);
 }
 
 // ── Autopilot API ──
@@ -823,7 +827,7 @@ export async function renderAd(data: {
   hook_text?: string;
   cta_text?: string;
 }): Promise<RenderAdResponse> {
-  return postJson("/api/py/content/render-ad", data);
+  return postJson("/api/py/video/ad", data);
 }
 
 // ── Storyboard API ──
@@ -857,10 +861,10 @@ export async function createStoryboard(data: {
   num_scenes: number;
   aspect_ratio: string;
 }): Promise<StoryboardCreateResponse> {
-  return postJson("/api/py/storyboard/create", data);
+  return postJson("/api/py/image/storyboard", data);
 }
 
-export const STORYBOARD_IMAGE_BASE = "/api/py/storyboard/image/";
+export const STORYBOARD_IMAGE_BASE = "/api/py/image/storyboard/image/";
 
 // ── Pinterest API ──
 

@@ -160,10 +160,10 @@ def test_python_api():
 
     get_endpoints = [
         "/health",
-        "/carousel/styles",
-        "/carousel/templates",
-        "/captions/styles",
-        "/captions/presets",
+        "/image/carousel/styles",
+        "/image/carousel/templates",
+        "/text/caption/styles",
+        "/text/caption/presets",
         "/trending/cached",
         "/trending/status",
         "/calendar/list/0",
