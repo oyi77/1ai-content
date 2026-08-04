@@ -174,3 +174,173 @@ class VideoRegenerateRequest(BaseModel):
     url: str
     platform: str = "facebook"
     options: VideoRegenerateOptions = VideoRegenerateOptions()
+
+
+class ClipperClipRequest(BaseModel):
+    """Clip a source video into highlight segments (ClipperEngine.clip_video)."""
+    source: str
+    num_clips: int = 5
+    clip_duration: int = 60
+    platform: str = "tiktok"
+    language: Optional[str] = None
+    reframe_vertical: bool = True
+    add_subtitles: bool = True
+    add_thumbnails: bool = True
+
+
+class FacelessGenerateRequest(BaseModel):
+    """Generate a faceless video from a topic (FacelessEngine.generate_video)."""
+    topic: str
+    style: str = "educational"
+    platform: str = "tiktok"
+    language: str = "id"
+    num_scenes: int = 6
+    use_ab_split: bool = True
+    add_captions: bool = True
+    bgm_path: Optional[str] = None
+
+
+class FacelessProductRequest(BaseModel):
+    """Generate a faceless product promo video (FacelessEngine.generate_product_video)."""
+    product_name: str
+    product_desc: str
+    price: str = ""
+    style: str = "pain_point"
+    platform: str = "tiktok"
+    language: str = "id"
+
+
+class FacelessBatchRequest(BaseModel):
+    """Batch-generate faceless videos from a clone plan (FacelessEngine.batch_generate)."""
+    clone_plan: dict
+    platform: str = "tiktok"
+    language: str = "id"
+    max_videos: int = 10
+
+
+class BrandSetRequest(BaseModel):
+    """Set per-user brand settings (BrandSettings.set_brand)."""
+    user_id: str
+    name: str = ""
+    logo_path: Optional[str] = None
+    watermark_path: Optional[str] = None
+    primary_color: str = "#FF6B35"
+    secondary_color: str = "#004E89"
+    font_style: str = "default"
+    tagline: str = ""
+    platforms: list[str] = Field(default_factory=list)
+
+
+class BrandWatermarkRequest(BaseModel):
+    """Apply a user's watermark to a video (BrandSettings.apply_watermark)."""
+    video_path: str
+    user_id: str
+    output_path: str
+
+
+# ── Content-type gaps (Phase 1-3): podcast / newsletter / article / infographic / meme / subtitles / screen-rec / interactive ──
+
+class PodcastSegment(BaseModel):
+    """One spoken segment of a podcast episode (PodcastEngine.generate)."""
+    speaker: str = "narrator"
+    text: str
+    voice: Optional[str] = None
+    rate: Optional[str] = None
+
+
+class PodcastRequest(BaseModel):
+    """Generate a podcast episode: TTS per segment + ffmpeg concat (+ optional BGM bed)."""
+    title: str = "Podcast Episode"
+    segments: list[PodcastSegment]
+    music_style: Optional[str] = None
+    language: str = "id"
+    output_dir: Optional[str] = None
+
+
+class NewsletterRequest(BaseModel):
+    """Generate an HTML email newsletter from a topic (NewsletterEngine.generate)."""
+    topic: str
+    audience: str = "general"
+    sections: int = Field(default=3, ge=1, le=10)
+    tone: str = "professional"
+    language: str = "en"
+    brand_name: str = "1AI Content"
+    cta_url: Optional[str] = None
+
+
+class ArticleRequest(BaseModel):
+    """Generate a long-form article (ArticleEngine.generate)."""
+    topic: str
+    keywords: Optional[list[str]] = None
+    audience: str = "general"
+    length_words: int = Field(default=800, ge=200, le=5000)
+    language: str = "en"
+    tone: str = "informative"
+    format: str = "html"  # html | markdown
+
+
+class InfographicDataPoint(BaseModel):
+    """One labeled numeric data point (InfographicEngine.generate)."""
+    label: str
+    value: float
+
+
+class InfographicRequest(BaseModel):
+    """Render a data-point infographic PNG (InfographicEngine.generate)."""
+    title: str
+    data_points: list[InfographicDataPoint]
+    chart_kind: str = "bar"  # bar | stat
+    theme: str = "dark"      # dark | light
+    output_dir: Optional[str] = None
+
+
+class MemeRequest(BaseModel):
+    """Render a meme PNG (MemeEngine.generate)."""
+    template_id: str = "default"
+    top_text: str = ""
+    bottom_text: str = ""
+    image_url: Optional[str] = None
+    output_dir: Optional[str] = None
+
+
+class SubtitleSegment(BaseModel):
+    """One subtitle caption window (SubtitlesEngine.burn)."""
+    start: float = Field(ge=0)
+    end: float = Field(ge=0)
+    text: str
+    style: Optional[str] = None
+
+
+class CaptionsMultiRequest(BaseModel):
+    """Burn subtitle segments onto a video (SubtitlesEngine.burn)."""
+    video_path: str
+    segments: list[SubtitleSegment]
+    style: str = "default"
+    font_size: int = Field(default=24, ge=8, le=120)
+    output_dir: Optional[str] = None
+
+
+class ScreenRecRequest(BaseModel):
+    """Record the X display (or region) with optional narration (ScreenRecEngine.capture)."""
+    duration: int = Field(default=10, ge=1, le=600)
+    region: Optional[str] = None  # "WxH+X+Y" | None = fullscreen
+    fps: int = Field(default=15, ge=1, le=60)
+    narration: Optional[str] = None
+    voice: Optional[str] = None
+    allow_headless: bool = False
+    output_dir: Optional[str] = None
+
+
+class InteractiveNode(BaseModel):
+    """One branching-video node; choices are target node ids (InteractiveEngine.build)."""
+    id: str
+    text: str
+    choices: list[str] = Field(default_factory=list)
+    media: Optional[str] = None
+
+
+class InteractiveRequest(BaseModel):
+    """Build an interactive/branching video manifest (InteractiveEngine.build)."""
+    title: str
+    start_id: str
+    nodes: list[InteractiveNode]

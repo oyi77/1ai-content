@@ -85,6 +85,17 @@ from services.routers.text import router as text_router
 from services.routers.image import router as image_router
 from services.routers.compat import router as compat_router
 from services.routers.content import router as content_router
+from services.routers.clipper import clipper_router
+from services.routers.faceless import faceless_router
+from services.routers.brand import brand_router
+from services.routers.podcast import podcast_router
+from services.routers.newsletter import newsletter_router
+from services.routers.article import article_router
+from services.routers.infographic import infographic_router
+from services.routers.meme import meme_router
+from services.routers.subtitles import subtitles_router
+from services.routers.screenrec import screenrec_router
+from services.routers.interactive import interactive_router
 from services.ebook.generator import EbookContentGenerator
 
 
@@ -107,6 +118,17 @@ registry.add_router(text_router)
 registry.add_router(image_router)
 registry.add_router(compat_router)
 registry.add_router(content_router)
+registry.add_router(clipper_router)
+registry.add_router(faceless_router)
+registry.add_router(brand_router)
+registry.add_router(podcast_router)
+registry.add_router(newsletter_router)
+registry.add_router(article_router)
+registry.add_router(infographic_router)
+registry.add_router(meme_router)
+registry.add_router(subtitles_router)
+registry.add_router(screenrec_router)
+registry.add_router(interactive_router)
 registry.register(EbookContentGenerator(), prefix="/text/ebook")
 
 

@@ -141,6 +141,7 @@ test("POST", "/audio/music", "Generate music (minimal)", body={"prompt":"test be
 test("POST", "/audio/music/bgm", "Generate BGM", params={"theme":"corporate"}, timeout=TIMEOUT_SLOW)
 test("POST", "/audio/music/lofi", "Generate lo-fi", params={"mood":"chill"}, timeout=TIMEOUT_SLOW)
 test("POST", "/audio/speech", "Synthesize speech", body={"text":"Hello world this is a test","voice":"alloy"}, timeout=TIMEOUT_SLOW)
+test("POST", "/audio/podcast", "Generate podcast episode", body={"title":"Smoke podcast","segments":[{"speaker":"narrator","text":"Hello this is a smoke test segment"}]}, allow_422=True, timeout=TIMEOUT_SLOW)
 
 # ════════════════════════════════════════════════════════════════
 # 3. TEXT LAYER
@@ -152,6 +153,8 @@ test("POST", "/text/hook/critique", "Critique hook", body={"hook_text":"You won'
 test("GET", "/text/caption/styles", "List caption styles")
 test("GET", "/text/caption/presets", "List caption presets")
 test("POST", "/text/caption", "Generate caption", body={"text":"A relaxing summer day","style":"story"})
+test("POST", "/text/newsletter", "Generate newsletter", body={"topic":"AI productivity trends","audience":"general"}, allow_422=True, timeout=TIMEOUT_SLOW)
+test("POST", "/text/article", "Generate article", body={"topic":"AI productivity trends","keywords":["AI"]}, allow_422=True, timeout=TIMEOUT_SLOW)
 
 # Ebook endpoints
 test("GET", "/text/ebook/health", "Ebook health check")
@@ -167,6 +170,8 @@ test("GET", "/image/carousel/templates", "List carousel templates")
 test("GET", "/image/carousel/templates/default", "Get carousel template 'default'")
 test("POST", "/image/carousel", "Generate carousel", body={"topic":"Social media marketing tips","num_slides":5}, timeout=TIMEOUT_SLOW)
 test("POST", "/image/storyboard", "Generate storyboard", body={"prompt":"A hero rescuing a cat from a tree"}, timeout=TIMEOUT_SLOW)
+test("POST", "/infographic/generate", "Generate infographic PNG", body={"title":"Quarterly Growth","data_points":[{"label":"Q1","value":10},{"label":"Q2","value":25},{"label":"Q3","value":40}]}, timeout=15)
+test("POST", "/meme/generate", "Generate meme PNG", body={"top_text":"this is fine","bottom_text":""}, timeout=15)
 
 # ════════════════════════════════════════════════════════════════
 # 5. VIDEO LAYER
@@ -178,6 +183,9 @@ test("POST", "/video/remeta", "Re-render with metadata", body={"source":"test.mp
 test("POST", "/video/repurpose", "Repurpose content", body={"source":"test.mp4"}, allow_422=True, timeout=TIMEOUT_SLOW)
 test("POST", "/video/ad", "Render ad video", body={"product_name":"TestProduct","category":"food","description":"A test product"}, timeout=TIMEOUT_SLOW)
 test("POST", "/video/transforms", "Generate transforms", body={"video_url":"https://example.com/test.mp4"}, allow_422=True, timeout=TIMEOUT_SLOW)
+test("POST", "/video/subtitles", "Burn subtitle segments", body={"video_path":"test.mp4","segments":[{"text":"Hello world","start":0,"end":1}],"style":"default"}, allow_422=True, timeout=TIMEOUT_SLOW)
+test("POST", "/video/screen-rec", "Record screen", body={"duration":2}, allow_422=True, timeout=TIMEOUT_SLOW)
+test("POST", "/video/interactive", "Build interactive video manifest", body={"title":"Branch","start_id":"start","nodes":[{"id":"start","text":"Intro","choices":["end"]},{"id":"end","text":"Outro","choices":[]}]}, timeout=15)
 
 # ════════════════════════════════════════════════════════════════
 # 6. DOWNLOAD / TIKWM LAYER
@@ -308,6 +316,8 @@ layer_map = {
     "/audio": "Audio",
     "/text": "Text",
     "/image": "Image",
+    "/infographic": "Image",
+    "/meme": "Image",
     "/video": "Video",
     "/download": "Download/TikWM",
     "/tikwm": "Download/TikWM",

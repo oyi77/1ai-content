@@ -7,11 +7,11 @@ status: complete
 # AGENTS.md — services/
 
 ## Tujuan Folder Ini
-Kumpulan layanan Python mandiri (FastAPI) yang melayani pipeline media & konten. API utama berjalan di port **8767** (`run_api.py`), menyediakan endpoint `/health`, `/audio/*`, `/text/*`, `/image/*`, `/video/*`, `/download/*`, `/research/*`, `/trending/*`, `/analyze/*`, `/cloak/*`, `/autopilot/*`, `/calendar/*`, `/ab-test/*`, `/text/ebook` (ebook generator DI-ABSORB ke API ini — port 8765 mati, `services/ebook/` tetap library internal). DI-MANAGE SYSTEMD `1ai-content.service` (`Restart=always`, enabled) — JANGAN tambah manajer duplikat (PM2 media-api sudah dihapus, lihat root `AGENTS.md` Prioritas #9). Dipanggil oleh bot TS (`src/`) via HTTP dan oleh pipeline antar-service Python.
+Kumpulan layanan Python mandiri (FastAPI) yang melayani pipeline media & konten. API utama berjalan di port **8767** (`run_api.py`), menyediakan endpoint `/health`, `/audio/*`, `/text/*`, `/image/*`, `/infographic/*`, `/meme/*`, `/video/*`, `/download/*`, `/research/*`, `/trending/*`, `/analyze/*`, `/cloak/*`, `/autopilot/*`, `/calendar/*`, `/ab-test/*`, `/text/ebook` (ebook generator DI-ABSORB ke API ini — port 8765 mati, `services/ebook/` tetap library internal). Build-out 2026-08-04 (content-gaps): +8 unit — `/audio/podcast`, `/text/newsletter`, `/text/article`, `/infographic/generate`, `/meme/generate`, `/video/subtitles`, `/video/screen-rec`, `/video/interactive`. DI-MANAGE SYSTEMD `1ai-content.service` (`Restart=always`, enabled) — JANGAN tambah manajer duplikat (PM2 media-api sudah dihapus, lihat root `AGENTS.md` Prioritas #9). Dipanggil oleh bot TS (`src/`) via HTTP dan oleh pipeline antar-service Python.
 
 ## Ekspor / Interface Utama
 - `run_api.py` — entry point: load `.env` root lalu `services/.env`, siapkan `sys.path` (`~/.hermes/scripts`, project root), lalu `uvicorn.run("api:app", host="127.0.0.1", port=8767)` (`run_api.py:34-37`)
-- `api.py` — aplikasi FastAPI; router di-mount via `registry.add_router(...)` (`api.py:67-107`) dan `registry.register(EbookContentGenerator(), prefix="/text/ebook")` (`api.py:104`)
+- `api.py` — aplikasi FastAPI; router di-mount via `registry.add_router(...)` (`api.py:69-115` — 30 router) dan `registry.register(EbookContentGenerator(), prefix="/text/ebook")` (`api.py:104`)
 - `generator.py` — base class `ContentGenerator` / `GeneratorInfo` (kontrak service konten)
 - `api_models.py` — model request/response bersama
 - `di.py`, `utils.py` — dependency injection & helper bersama
@@ -30,6 +30,7 @@ Tiap folder layanan punya `AGENTS.md` sendiri (tujuan, interface, issue, rekomen
 |---|---|
 | `ab_testing/` | A/B testing konten: buat test, varian via LLM (OmniRoute), metrik engagement, statistik pemenang; state tabel `ABTest` (Postgres via Prisma/SQLAlchemy) |
 | `analysis/` | Analisis kanal YouTube: info kanal/video/transkrip, analisis performa, bandingkan kanal; butuh `yt-dlp` eksternal |
+| `article/` | Generator artikel panjang dari topik: outline → draft (LLM OmniRoute, fallback template deterministik) → markdown; `POST /text/article` |
 | `autopilot/` | Otomasi penerbitan konten berjadwal: orchestrator (faceless → SEO → cloak publish), scheduler in-memory, publisher TikTok via CloakBrowser — SyntaxError lama sudah diperbaiki (lihat Issue Spesifik) |
 | `bookshelf/` | Generasi buku otomatis dari topik: generate → struktur → tulis per-bab → assemble markdown → PDF opsional; OmniRoute/Groq atau Ollama lokal |
 | `brand/` | Identitas brand: warna/watermark per brand, watermark via ffmpeg, intro frame |
@@ -42,22 +43,29 @@ Tiap folder layanan punya `AGENTS.md` sendiri (tujuan, interface, issue, rekomen
 | `db/` | Lapisan akses DB (PostgreSQL via SQLAlchemy async): `__init__.py` (re-export helper) + `models.py` (model + session/engine) — default kredensial lama sudah dihapus (lazy-raise, lihat Issue Spesifik) |
 | `download/` | Unduh video (TikTok): cascade provider → oEmbed/placeholder; scraping halaman TikTok; slideshow → video |
 | `ebook/` | Generator ebook AI (pipeline intake → QA → safety, cover, export DOCX/PDF/EPUB) — library internal DI-ABSORB ke media-api :8767 (`/text/ebook`); detail lengkap di `ebook/AGENTS.md` |
+| `infographic/` | Infografik PNG dari data points (Pillow murni): judul, bar chart, aksen warna; `POST /infographic/generate` |
+| `interactive/` | Video interaktif/branching: build manifest JSON (node, choices, media) untuk player branching; `POST /video/interactive` |
 | `engagement/` | Auto-reply komentar media sosial (platform cloak): template Bahasa Indonesia, limit harian, posting balasan |
 | `faceless/` | Pipeline video faceless: script (LLM) → TTS → stock footage → compose scene → stitch → captions → BGM; jalur khusus video produk |
 | `looping/` | Video loop dari audio: background visual (ffmpeg filters), audio crossfade, durasi default 1 jam |
+| `meme/` | Meme PNG dari template + teks atas/bawah (Pillow murni); `POST /meme/generate` |
 | `media/` | [INFERENSI STRUKTUR] output media: `movies/movie_<run_id>/{audio,images}` — cocok dengan `DEFAULT_OUTPUT_DIR` `movie_gen/engine.py` |
 | `money-printer-turbo/` | **KOSONG** — folder kosong, tidak ada kode; tidak punya AGENTS.md |
 | `movie_gen/` | Film pendek dari prompt: script (LLM) → gambar scene (Pillow) → narasi (TTS) → BGM → assemble (ffmpeg); env `COMIC_*` |
 | `music/` | BGM 3-lapis: Suno API → audiocraft (MusicGen) → fallback ffmpeg (tone sintetik); preset tema BGM & mood lofi; output `/tmp/music_output` |
+| `newsletter/` | Newsletter dari topik: headline → sections (LLM OmniRoute, fallback template deterministik) → markdown; `POST /text/newsletter` |
 | `pinterest/` | Scraper Pinterest (`PinterestScraper`, `__init__.py:51`) + poster Facebook (`auto_poster.py`) |
+| `podcast/` | Episode podcast: TTS multi-segmen (`di.get_tts()`) + BGM (`di.get_music()`) + concat/mix ffmpeg → MP3; `POST /audio/podcast` |
 | `projects/` | [INFERENSI STRUKTUR] data runtime pipeline ebook: `model_stats_*.json`, `token_calibration.json`, subfolder per project (outline, strategy, style guide, toc) |
 | `remetadata/` | Engine remetadata video: judul/deskripsi/tag/waktu posting + tulis ulang via ffmpeg → `/tmp/remetadata_output` (`engine.py:48`) |
 | `remotion-ads/` | Proyek Node/TypeScript (package `remotion-product-ads`, remotion ^4.0.484): komposisi `ProductAd` (450 frame, 30fps, 1080x1920) & `ProductAd-Hook` (90 frame) |
 | `remotion/` | Bridge Python→Node: kirim JSON payload ke `src/render.ts` proyek remotion-ads, interpretasi hasil render |
 | `repurpose/` | Repurposing video: konten multi-format (klip, subtitle, overlay, BGM, posting sosial); dua engine tumpang tindih — `engine.py` (monolitik) vs `cascade.py` (refactor); `__init__.py` ekspor dari `cascade.py` |
+| `screenrec/` | Rekaman layar via ffmpeg x11grab dengan headless guard (non-X → `{success: false}`); `POST /video/screen-rec` |
 | `research/` | Riset niche pasar buku: niche, brief buku, peta bahasa; LLM OmniRoute (fallback Ollama) |
-| `routers/` | Layer routing FastAPI: 19 file router, semua di-mount di `api.py:67-107` |
+| `routers/` | Layer routing FastAPI: 30 file router (22 legacy + 8 content-gaps 2026-08-04), semua di-mount di `api.py:69-115` via `registry.add_router(...)` |
 | `storyboard/` | Storyboard visual: scenario (LLM) + gambar per scene, layout HTML dengan gambar inline base64 |
+| `subtitles/` | Burn-in subtitle multi-gaya: segmen → ffmpeg drawtext + preset gaya (`font_size`, style); `POST /video/subtitles` |
 | `trends/` | Engine tren: YouTube/Google/Reddit/TikTok → analisis LLM → SEO (judul, caption, hashtag, waktu posting) |
 | `tts/` | Text-to-speech: edge-tts atau MeloTTS (auto-probe engine), output `/tmp/tts_output` (`engine.py:31`) |
 
@@ -99,4 +107,5 @@ if not DATABASE_URL:
 - `services/tests/conftest.py:10-12` men-set `OMNIROUTE_API_KEY="sk-test-key"` — placeholder test, bukan secret asli (aman, tidak perlu redaksi).
 - `run_api.py:31-32` mencetak panjang `PINTEREST_COOKIES` dan 20 karakter pertama `PINTEREST_CSRF` ke stdout — kebocoran parsial token ke log; pertimbangkan menghapus print tersebut.
 
+> Last updated: 2026-08-04 — content-gaps build-out: +8 unit engine+router (article, infographic, interactive, meme, newsletter, podcast, screenrec, subtitles) dengan 8 endpoint baru (`/audio/podcast`, `/text/newsletter`, `/text/article`, `/infographic/generate`, `/meme/generate`, `/video/subtitles`, `/video/screen-rec`, `/video/interactive`); `api.py` kini 30 router (`api.py:69-115`); pytest services 582 passed / 1 skipped; smoke_test.py +8 endpoint (layer_map tambah `/infographic`+`/meme` → Image). Detail: `docs/plans/content-gaps.md`.
 > Last updated: 2026-08-02 — fase eksekusi swarm: Issue Spesifik Critical (db/models.py) & High (autopilot SyntaxError) ditandai SUDAH DIPERBAIKI + patch dipindah ke "SUDAH DITERAPKAN"; verifikasi literal: py_compile OK, pytest services 526 passed / 1 skipped. Update runtime: ebook absorbed ke :8767 (`/text/ebook`), media-api di-manage systemd `1ai-content.service` (PM2 duplikat dihapus — lihat root AGENTS.md Prioritas #9).
