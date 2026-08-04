@@ -11,7 +11,7 @@ Kumpulan layanan Python mandiri (FastAPI) yang melayani pipeline media & konten.
 
 ## Ekspor / Interface Utama
 - `run_api.py` — entry point: load `.env` root lalu `services/.env`, siapkan `sys.path` (`~/.hermes/scripts`, project root), lalu `uvicorn.run("api:app", host="127.0.0.1", port=8767)` (`run_api.py:34-37`)
-- `api.py` — aplikasi FastAPI; router di-mount via `registry.add_router(...)` (`api.py:69-115` — 30 router) dan `registry.register(EbookContentGenerator(), prefix="/text/ebook")` (`api.py:104`)
+- `api.py` — aplikasi FastAPI; router di-mount via `registry.add_router(...)` (`api.py:69-115` — 28 router) dan `registry.register(EbookContentGenerator(), prefix="/text/ebook")` (`api.py:104`)
 - `generator.py` — base class `ContentGenerator` / `GeneratorInfo` (kontrak service konten)
 - `api_models.py` — model request/response bersama
 - `di.py`, `utils.py` — dependency injection & helper bersama
@@ -63,7 +63,7 @@ Tiap folder layanan punya `AGENTS.md` sendiri (tujuan, interface, issue, rekomen
 | `repurpose/` | Repurposing video: konten multi-format (klip, subtitle, overlay, BGM, posting sosial); dua engine tumpang tindih — `engine.py` (monolitik) vs `cascade.py` (refactor); `__init__.py` ekspor dari `cascade.py` |
 | `screenrec/` | Rekaman layar via ffmpeg x11grab dengan headless guard (non-X → `{success: false}`); `POST /video/screen-rec` |
 | `research/` | Riset niche pasar buku: niche, brief buku, peta bahasa; LLM OmniRoute (fallback Ollama) |
-| `routers/` | Layer routing FastAPI: 30 file router (22 legacy + 8 content-gaps 2026-08-04), semua di-mount di `api.py:69-115` via `registry.add_router(...)` |
+| `routers/` | Layer routing FastAPI: 28 file router (20 legacy + 8 content-gaps 2026-08-04), semua di-mount di `api.py:69-115` via `registry.add_router(...)` |
 | `storyboard/` | Storyboard visual: scenario (LLM) + gambar per scene, layout HTML dengan gambar inline base64 |
 | `subtitles/` | Burn-in subtitle multi-gaya: segmen → ffmpeg drawtext + preset gaya (`font_size`, style); `POST /video/subtitles` |
 | `trends/` | Engine tren: YouTube/Google/Reddit/TikTok → analisis LLM → SEO (judul, caption, hashtag, waktu posting) |
@@ -107,5 +107,6 @@ if not DATABASE_URL:
 - `services/tests/conftest.py:10-12` men-set `OMNIROUTE_API_KEY="sk-test-key"` — placeholder test, bukan secret asli (aman, tidak perlu redaksi).
 - `run_api.py:31-32` mencetak panjang `PINTEREST_COOKIES` dan 20 karakter pertama `PINTEREST_CSRF` ke stdout — kebocoran parsial token ke log; pertimbangkan menghapus print tersebut.
 
+> Last updated: 2026-08-05 — legacy shim routers REMOVED: `routers/compat.py` (10 endpoint legacy: `/tts/*`, `/music/*`, `/suno/*`, `/captions/*`) & `routers/content.py` (12 endpoint legacy: `/carousel/*`, `/loop/*`, `/repurpose`, `/regenerate`, `/remeta`, `/storyboard/*`, `/content/render-ad`) dihapus setelah SEMUA caller dimigrasi ke modern setara (bot src/ via generic `/api/py` proxy; admin-ui Tts/Music/CarouselPage/Looping + client.ts; public/miniapp.html dengan fix repurpose camelCase→snake_case; tests/e2e path swap). `api.py` import+`add_router` (L86-87,119-120) dihapus; kakas legacy path kini BENAR-BENAR 404 (divalidasi live smoke 13/13); `api.py` kini 28 router (20 legacy + 8 content-gaps); pytest services 566 passed / 1 skipped (was 582 — delta = shim-router test hilang). Commit `61f86df`. Plan notes: `docs/plans/content-gaps.md` L7/98.
 > Last updated: 2026-08-04 — content-gaps build-out: +8 unit engine+router (article, infographic, interactive, meme, newsletter, podcast, screenrec, subtitles) dengan 8 endpoint baru (`/audio/podcast`, `/text/newsletter`, `/text/article`, `/infographic/generate`, `/meme/generate`, `/video/subtitles`, `/video/screen-rec`, `/video/interactive`); `api.py` kini 30 router (`api.py:69-115`); pytest services 582 passed / 1 skipped; smoke_test.py +8 endpoint (layer_map tambah `/infographic`+`/meme` → Image). Detail: `docs/plans/content-gaps.md`.
 > Last updated: 2026-08-02 — fase eksekusi swarm: Issue Spesifik Critical (db/models.py) & High (autopilot SyntaxError) ditandai SUDAH DIPERBAIKI + patch dipindah ke "SUDAH DITERAPKAN"; verifikasi literal: py_compile OK, pytest services 526 passed / 1 skipped. Update runtime: ebook absorbed ke :8767 (`/text/ebook`), media-api di-manage systemd `1ai-content.service` (PM2 duplikat dihapus — lihat root AGENTS.md Prioritas #9).
