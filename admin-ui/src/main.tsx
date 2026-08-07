@@ -7,6 +7,8 @@ import "./styles/admin-skin.css";
 const AdminApp = lazy(() => import("./App"));
 const CustomerApp = lazy(() => import("./app/App"));
 const Landing = lazy(() => import("./landing/App"));
+const ArticleList = lazy(() => import("./articles/List"));
+const ArticleDetail = lazy(() => import("./articles/Detail"));
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
   state = { hasError: false };
@@ -51,6 +53,8 @@ createRoot(document.getElementById("root")!).render(
         >
           <Routes>
             <Route path="/" element={<Landing />} />
+            <Route path="/articles" element={<ArticleList />} />
+            <Route path="/articles/:slug" element={<ArticleDetail />} />
             <Route path="/admin/*" element={<AdminApp />} />
             <Route path="/app/*" element={<CustomerApp />} />
           </Routes>

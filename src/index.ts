@@ -366,7 +366,7 @@ async function main() {
     }
     logger.info("✅ Routes registered");
 
-    // SPA fallback — hanya /app/*; /admin/* ditangani catch-all di src/routes/admin.ts
+    // SPA fallback — /app/* (customer SPA) & /articles* (landing artikel); /admin/* ditangani catch-all di src/routes/admin.ts
     const spaDist = path.join(process.cwd(), 'admin-ui', 'dist');
     // Whitelist ekstensi statis — path SPA valid berakhiran dot-token (mis. /app/foo.bar) harus tetap dapat index.html
     const SPA_STATIC_EXT = /\.(?:js|mjs|cjs|css|png|jpe?g|gif|svg|webp|ico|avif|woff2?|ttf|eot|otf|map|json|txt|md|xml|pdf|mp4|webm|mp3|wav|ogg|html?)$/i;
@@ -374,7 +374,7 @@ async function main() {
       const pathname = new URL(request.url, 'http://localhost').pathname;
       const isSpaRoute =
         (request.method === 'GET' || request.method === 'HEAD') &&
-        pathname.startsWith('/app/') &&
+        (pathname.startsWith('/app/') || pathname.startsWith('/articles')) &&
         !SPA_STATIC_EXT.test(pathname);
       if (isSpaRoute) {
         return reply.sendFile('index.html', spaDist);

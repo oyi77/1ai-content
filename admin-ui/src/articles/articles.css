@@ -1,0 +1,93 @@
+/* Shared styles for the /articles routes.
+   Self-contained: the landing chunk's classes (.glow-card, .nav-link,
+   .gradient-text, …) are NOT loaded on these routes, so everything an
+   article page needs lives here or as inline Tailwind tokens. */
+
+.article-page {
+  background: #0a0a1a;
+  min-height: 100vh;
+}
+
+.article-gradient-text {
+  background: linear-gradient(135deg, #a855f7, #7c3aed);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.article-card {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.article-card:hover {
+  box-shadow: 0 0 30px rgba(168, 85, 247, 0.15);
+  transform: translateY(-4px);
+}
+
+/* Typography for rendered article content (html or markdown output).
+   Scoped under .article-prose so it never leaks into the app chrome. */
+.article-prose {
+  color: #d1d5db;
+  font-size: 1rem;
+  line-height: 1.8;
+  word-break: break-word;
+}
+.article-prose h1,
+.article-prose h2,
+.article-prose h3,
+.article-prose h4,
+.article-prose h5,
+.article-prose h6 {
+  color: #f1f5f9;
+  font-weight: 700;
+  line-height: 1.35;
+  margin: 1.75em 0 0.6em;
+}
+.article-prose h1 { font-size: 1.9rem; }
+.article-prose h2 { font-size: 1.5rem; }
+.article-prose h3 { font-size: 1.25rem; }
+.article-prose h4 { font-size: 1.1rem; }
+.article-prose p { margin: 0 0 1.1em; }
+.article-prose a { color: #c084fc; text-decoration: underline; }
+.article-prose strong { color: #f1f5f9; font-weight: 700; }
+.article-prose em { font-style: italic; }
+.article-prose ul,
+.article-prose ol { margin: 0 0 1.1em; padding-left: 1.5em; }
+.article-prose ul { list-style: disc; }
+.article-prose ol { list-style: decimal; }
+.article-prose li { margin: 0.35em 0; }
+.article-prose code {
+  background: rgba(168, 85, 247, 0.12);
+  color: #e9d5ff;
+  border: 1px solid rgba(168, 85, 247, 0.2);
+  border-radius: 6px;
+  padding: 0.1em 0.4em;
+  font-size: 0.875em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.article-prose pre {
+  background: #111118;
+  border: 1px solid #2a2a3a;
+  border-radius: 10px;
+  padding: 1em 1.25em;
+  overflow-x: auto;
+  margin: 0 0 1.2em;
+}
+.article-prose pre code {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: #e5e7eb;
+  font-size: 0.875rem;
+}
+.article-prose blockquote {
+  border-left: 3px solid #a855f7;
+  background: rgba(168, 85, 247, 0.06);
+  margin: 0 0 1.2em;
+  padding: 0.6em 1em;
+  color: #c4b5fd;
+}
+.article-prose hr {
+  border: none;
+  border-top: 1px solid #2a2a3a;
+  margin: 2em 0;
+}

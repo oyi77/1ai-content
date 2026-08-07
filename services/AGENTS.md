@@ -30,7 +30,7 @@ Tiap folder layanan punya `AGENTS.md` sendiri (tujuan, interface, issue, rekomen
 |---|---|
 | `ab_testing/` | A/B testing konten: buat test, varian via LLM (OmniRoute), metrik engagement, statistik pemenang; state tabel `ABTest` (Postgres via Prisma/SQLAlchemy) |
 | `analysis/` | Analisis kanal YouTube: info kanal/video/transkrip, analisis performa, bandingkan kanal; butuh `yt-dlp` eksternal |
-| `article/` | Generator artikel panjang dari topik: outline → draft (LLM OmniRoute, fallback template deterministik) → markdown; `POST /text/article` |
+| `article/` | Generator artikel panjang dari topik: outline → draft (LLM OmniRoute, fallback template deterministik) → HTML/markdown; `POST /text/article` (persisted ke sqlite `article.sqlite`) + `GET /text/articles` (list) & `GET /text/articles/{slug}` (detail) — lihat `article/AGENTS.md` |
 | `autopilot/` | Otomasi penerbitan konten berjadwal: orchestrator (faceless → SEO → cloak publish), scheduler in-memory, publisher TikTok via CloakBrowser — SyntaxError lama sudah diperbaiki (lihat Issue Spesifik) |
 | `bookshelf/` | Generasi buku otomatis dari topik: generate → struktur → tulis per-bab → assemble markdown → PDF opsional; OmniRoute/Groq atau Ollama lokal |
 | `brand/` | Identitas brand: warna/watermark per brand, watermark via ffmpeg, intro frame |

@@ -41,10 +41,21 @@ const STEPS = [
   { num: "03", title: "Dapatkan Video", desc: "AI memproses dan menghasilkan video siap posting dalam hitungan menit." },
 ];
 
+interface ArticleMeta {
+  slug: string;
+  title: string;
+  meta_description?: string;
+  language?: string;
+  format?: string;
+  word_count?: number;
+  created_at?: string;
+}
+
 export default function Landing() {
   const [pricing, setPricing] = useState<Pricing[]>(FALLBACK_PRICING);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [scrolled, setScrolled] = useState(false);
+  const [articles, setArticles] = useState<ArticleMeta[]>([]);
 
   useEffect(() => {
     fetch("/api/packages")
@@ -64,6 +75,16 @@ export default function Landing() {
         if (list.length >= 3) setPricing(list);
       })
       .catch(() => { /* use fallback */ });
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/py/text/articles?limit=3")
+      .then((r) => r.json())
+      .then((data) => {
+        const list = (data?.articles || []) as ArticleMeta[];
+        setArticles(list.slice(0, 3));
+      })
+      .catch(() => { /* leave section hidden */ });
   }, []);
 
   useEffect(() => {
@@ -97,6 +118,7 @@ export default function Landing() {
             <a href="#features" className="nav-link no-underline text-sm" style={{ color: "rgba(255,255,255,0.6)" }}>Fitur</a>
             <a href="#pricing" className="nav-link no-underline text-sm" style={{ color: "rgba(255,255,255,0.6)" }}>Harga</a>
             <a href="#faq" className="nav-link no-underline text-sm" style={{ color: "rgba(255,255,255,0.6)" }}>FAQ</a>
+            <a href="/articles" className="nav-link no-underline text-sm" style={{ color: "rgba(255,255,255,0.6)" }}>Artikel</a>
           </div>
           <div className="flex items-center gap-3">
             <a
@@ -314,6 +336,57 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* ---- Artikel Terbaru ---- */}
+      {articles.length > 0 && (
+        <section id="artikel" className="py-24" style={{ background: "#111127" }}>
+          <div className="max-w-6xl mx-auto px-4">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl sm:text-4xl font-bold mb-4">
+                <span className="gradient-text">Artikel Terbaru</span>
+              </h2>
+              <p className="text-lg max-w-xl mx-auto" style={{ color: "rgba(255,255,255,0.55)" }}>
+                Wawasan, tips, dan panduan konten dari 1AI Content.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {articles.map((a) => (
+                <a
+                  key={a.slug}
+                  href={`/articles/${encodeURIComponent(a.slug)}`}
+                  className="glow-card block rounded-xl p-6 no-underline transition-all"
+                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}
+                >
+                  <div className="text-xs mb-3" style={{ color: "rgba(168,85,247,0.8)" }}>
+                    {a.language ? a.language.toUpperCase() : "ID"}
+                    {a.word_count ? ` · ${a.word_count} kata` : ""}
+                  </div>
+                  <h3 className="text-lg font-bold mb-2" style={{ color: "#f1f5f9" }}>{a.title}</h3>
+                  {a.meta_description && (
+                    <p className="text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.55)" }}>
+                      {a.meta_description}
+                    </p>
+                  )}
+                  {a.created_at && (
+                    <div className="mt-4 text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
+                      {new Date(a.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
+                    </div>
+                  )}
+                </a>
+              ))}
+            </div>
+            <div className="text-center mt-10">
+              <a
+                href="/articles"
+                className="inline-block no-underline text-sm font-semibold px-6 py-3 rounded-lg transition-all"
+                style={{ color: "#c084fc", border: "1px solid rgba(168,85,247,0.3)" }}
+              >
+                Lihat Semua Artikel →
+              </a>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* ---- CTA ---- */}
       <section className="py-24" style={{ background: "var(--grad)" }}>
         <div className="max-w-3xl mx-auto px-4 text-center">
@@ -352,6 +425,7 @@ export default function Landing() {
                 <a href="#features" className="text-xs no-underline nav-link" style={{ color: "rgba(255,255,255,0.5)" }}>Fitur</a>
                 <a href="#pricing" className="text-xs no-underline nav-link" style={{ color: "rgba(255,255,255,0.5)" }}>Harga</a>
                 <a href="#faq" className="text-xs no-underline nav-link" style={{ color: "rgba(255,255,255,0.5)" }}>FAQ</a>
+                <a href="/articles" className="text-xs no-underline nav-link" style={{ color: "rgba(255,255,255,0.5)" }}>Artikel</a>
               </div>
             </div>
             <div>
