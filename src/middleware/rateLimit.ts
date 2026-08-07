@@ -99,6 +99,14 @@ export function createRateLimiter(config: RateLimitConfig) {
     request: FastifyRequest,
     reply: FastifyReply,
   ): Promise<void> {
+    // E2E escape hatch: the Playwright webServer (:3111) sets
+    // RATE_LIMIT_DISABLED=1 so full-suite browser specs (multiple
+    // register+login cycles from one IP) don't trip the per-minute buckets.
+    // Jest e2e (tests/e2e/admin-auth.e2e.test.ts:178) does NOT set it, so the
+    // 429 path stays covered. Never set this in production.
+    if (process.env.RATE_LIMIT_DISABLED === "1") {
+      return;
+    }
     // Generate unique key for this client
     const baseKey = keyGenerator
       ? keyGenerator(request)

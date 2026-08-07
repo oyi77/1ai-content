@@ -25,7 +25,12 @@ export default defineConfig({
     reuseExistingServer: true,
     env: {
       ADMIN_PASSWORD,
+      BOT_TOKEN: 'placeholder', // WAJIB: mencegah e2e memuat BOT_TOKEN asli dari .env (import 'dotenv/config' line 1)
+      //          → isPlaceholderToken (src/index.ts:82) true → skip setWebhook & deleteWebhook.
+      //          Tanpa ini, server test membuka instance bot ke-2 pada token PROD + FORCE_POLLING
+      //          → deleteWebhook({drop_pending_updates}) menghapus webhook prod (bot jadi tuli ~1 hari).
       NODE_ENV: 'test',
+      RATE_LIMIT_DISABLED: '1', // e2e: skip IP-keyed per-minute limiters (register+login cycles trip 10/min)
       FORCE_POLLING: 'true',
       PORT: '3111', // default app :3000 (src/config/env.ts:27) — override wajib
       DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/1ai_content_test',

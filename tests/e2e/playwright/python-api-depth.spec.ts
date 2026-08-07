@@ -182,13 +182,28 @@ test.describe('Python API — error handling', () => {
     expect(body).toMatchObject({ detail: 'Method Not Allowed' });
   });
 
-  test('POST /api/py/text/ebook/projects (GET-only) returns 405 or 500', async ({ request }) => {
-    // FastAPI returns 405 for some routes and 500 for others when method mismatches
+  test('POST /api/py/text/ebook/projects creates a project', async ({ request }) => {
+    // Generator CRUD registers POST {prefix}/projects (services/routers/__init__.py).
+    // ProjectInput requires idea (>=10 chars), chapter_count (3-50), target_language.
     const response = await request.post(PROXY_BASE + '/api/py/text/ebook/projects', {
-      data: {},
+      data: {
+        idea: 'A beginner guide to container gardening',
+        chapter_count: 3,
+        target_language: 'en',
+      },
       headers: { 'Content-Type': 'application/json' },
     });
-    expect([405, 500]).toContain(response.status());
+    expect(response.status()).toBe(200);
+    const body = await response.json();
+    expect(body).toHaveProperty('project_id');
+  });
+
+  test('POST /api/py/text/ebook/projects with no body returns 422', async ({ request }) => {
+    // params: dict is a required body → FastAPI 422 when the body is missing.
+    const response = await request.post(PROXY_BASE + '/api/py/text/ebook/projects', {
+      headers: { 'Content-Type': 'application/json' },
+    });
+    expect(response.status()).toBe(422);
   });
 });
 

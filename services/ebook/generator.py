@@ -78,8 +78,15 @@ class EbookContentGenerator(ContentGenerator):
             validated = ProjectInput(**params)
         except ValidationError as e:
             raise HTTPException(status_code=422, detail=e.errors())
+        # `title` is optional in the API contract (ProjectInput.title=None).
+        # Derive one from the idea when omitted — same rule as ProjectIntake._generate_title —
+        # because ebook_projects.title is NOT NULL (services/ebook/db/models.py:52).
+        title = validated.title
+        if not title:
+            words = validated.idea.split()
+            title = " ".join(words[:5]) + "..." if len(words) > 5 else validated.idea
         project_id = self._repo.create_project(
-            title=validated.title,
+            title=title,
             idea=validated.idea,
             product_mode=validated.product_mode,
             target_language=validated.target_language,
