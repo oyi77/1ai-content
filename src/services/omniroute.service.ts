@@ -209,7 +209,8 @@ export class OmniRouteService {
       AIConfigService.getChatConfig(),
       AIConfigService.getPromptsConfig(),
     ]);
-    const DEFAULT_MODEL = chatCfg.defaultModel || config.OMNIROUTE_DEFAULT_MODEL || 'antigravity/gemini-2.5-flash';
+    // Env override wins; else AI config (DB/Redis), else hardcoded fallback (see .env.example).
+    const DEFAULT_MODEL = config.OMNIROUTE_DEFAULT_MODEL || chatCfg.defaultModel || 'antigravity/gemini-2.5-flash';
     const systemPrompt = prompts.botPersona || BERKAHKARYA_SYSTEM_PROMPT;
     const history = this.conversationHistory.get(userId) || [];
 
@@ -228,7 +229,7 @@ export class OmniRouteService {
         messages: messagesWithSystem,
         temperature: 0.7,
         max_tokens: 4096,
-      });
+      }, { timeout: 120_000 }); // agnes TTFT ~50s; 30s client default would ETIMEDOUT
 
       const content = response.data?.choices?.[0]?.message?.content || '';
       const usedModel = response.data?.model || model || DEFAULT_MODEL;
@@ -273,7 +274,7 @@ export class OmniRouteService {
   async listModels(): Promise<string[]> {
     try {
       const response = await this.client.get('/models', { timeout: 10000 });
-      return (response.data?.data || []).map((m: { id: string }) => m.id).slice(0, 30);
+      return (response.data?.data || []).map((m: { id: string }) => m.id);
     } catch {
       return [];
     }
@@ -285,7 +286,7 @@ export class OmniRouteService {
   async analyzeImageUrl(imageUrl: string, prompt: string, model?: string): Promise<ChatResponse> {
     const config = getConfig();
     const chatCfg = await AIConfigService.getChatConfig();
-    const DEFAULT_MODEL = chatCfg.defaultModel || config.OMNIROUTE_DEFAULT_MODEL || 'antigravity/gemini-2.5-flash';
+    const DEFAULT_MODEL = config.OMNIROUTE_DEFAULT_MODEL || chatCfg.defaultModel || 'antigravity/gemini-2.5-flash';
     try {
       const response = await this.client.post('/chat/completions', {
         model: model || DEFAULT_MODEL,
@@ -313,7 +314,7 @@ export class OmniRouteService {
   async analyzeImage(base64Data: string, mimeType: string, prompt: string, model?: string): Promise<ChatResponse> {
     const config = getConfig();
     const chatCfg = await AIConfigService.getChatConfig();
-    const DEFAULT_MODEL = chatCfg.defaultModel || config.OMNIROUTE_DEFAULT_MODEL || 'antigravity/gemini-2.5-flash';
+    const DEFAULT_MODEL = config.OMNIROUTE_DEFAULT_MODEL || chatCfg.defaultModel || 'antigravity/gemini-2.5-flash';
     try {
       const response = await this.client.post('/chat/completions', {
         model: model || DEFAULT_MODEL,

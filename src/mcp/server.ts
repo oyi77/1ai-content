@@ -224,7 +224,7 @@ export function createMcpServer(): Server {
             enableVO: true,
             enableSubtitles: true,
             language: "id",
-            chatId: 0,
+            chatId: Number(telegramId),
             creditCost,
           });
 
@@ -299,9 +299,26 @@ export function createMcpServer(): Server {
 
         case "1ai-content_ai_chat": {
           const { telegramId, message } = args as { telegramId: string; message: string };
+
+          const user = await UserService.findByTelegramId(BigInt(telegramId));
+          if (!user) {
+            return { content: [{ type: "text", text: "User not found" }], isError: true };
+          }
+
+          const cost = 0.2; // matches prompt-command chat cost (prompts.ts)
+          const balance = Number(user.creditBalance || 0);
+          if (balance < cost) {
+            return { content: [{ type: "text", text: JSON.stringify({ error: "Insufficient credits", required: cost, balance }) }], isError: true };
+          }
+
           const ai = getOmniRouteService();
           const response = await ai.chat(telegramId, message);
-          return { content: [{ type: "text", text: JSON.stringify({ response: response.content, model: response.model }, null, 2) }] };
+
+          if (response.success) {
+            await UserService.deductCredits(user.telegramId, cost);
+            return { content: [{ type: "text", text: JSON.stringify({ response: response.content, model: response.model }, null, 2) }] };
+          }
+          return { content: [{ type: "text", text: response.error || "Chat generation failed" }], isError: true };
         }
 
         case "1ai-content_get_niches": {
