@@ -155,6 +155,8 @@ test("GET", "/text/caption/presets", "List caption presets")
 test("POST", "/text/caption", "Generate caption", body={"text":"A relaxing summer day","style":"story"})
 test("POST", "/text/newsletter", "Generate newsletter", body={"topic":"AI productivity trends","audience":"general"}, allow_422=True, timeout=TIMEOUT_SLOW)
 test("POST", "/text/article", "Generate article", body={"topic":"AI productivity trends","keywords":["AI"]}, allow_422=True, timeout=TIMEOUT_SLOW)
+test("GET", "/text/articles", "List saved articles")
+test("GET", "/text/articles/__missing__", "Get missing article (404)", expect_status=404)
 
 # Ebook endpoints
 test("GET", "/text/ebook/health", "Ebook health check")

@@ -1,5 +1,6 @@
 """Shared fixtures for 1ai-content Python service tests."""
 import os
+import tempfile
 
 import pytest
 from fastapi.testclient import TestClient
@@ -9,6 +10,11 @@ os.environ.setdefault(
 )
 os.environ.setdefault(
     "OMNIROUTE_API_KEY", "sk-test-key"
+)
+# Keep any accidental ArticleStore writes out of the repo data dir.
+os.environ.setdefault(
+    "ARTICLES_DB_PATH",
+    os.path.join(tempfile.gettempdir(), "1ai-content-test-articles.sqlite"),
 )
 
 # Import the app after setting env vars to respect defaults
