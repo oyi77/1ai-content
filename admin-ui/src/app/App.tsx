@@ -13,6 +13,7 @@ import Settings from "./pages/Settings";
 import ImageGenerator from "./pages/ImageGenerator";
 import LoginPage from "./pages/LoginPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import OnboardingWizard from "./pages/OnboardingWizard";
 import ProtectedRoute from "./auth/ProtectedRoute";
 import { AuthProvider } from "./auth/AuthContext";
 
@@ -31,6 +32,7 @@ export default function CustomerApp() {
 
         {/* Protected routes with sidebar */}
         <Route element={<ProtectedRoute />}>
+          <Route path="onboarding" element={<OnboardingWizard />} />
           <Route element={<Layout />}>
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />

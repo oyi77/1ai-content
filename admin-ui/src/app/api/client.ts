@@ -39,11 +39,22 @@ export const api = {
     request("PATCH", "/api/user/settings", { firstName: data.name }),
 
   // Backend: PATCH /api/user/settings  (field notificationsEnabled, not notifications)
-  updateSettings: (data: { language?: string; notifications?: boolean }) =>
+  updateSettings: (data: {
+    language?: string;
+    notifications?: boolean;
+    selectedNiche?: string;
+    userMode?: string;
+  }) =>
     request("PATCH", "/api/user/settings", {
       language: data.language,
       notificationsEnabled: data.notifications,
+      selectedNiche: data.selectedNiche,
+      userMode: data.userMode,
     }),
+
+  // Backend: POST /api/user/bonus/welcome → { granted, creditBalance }
+  claimWelcomeBonus: () =>
+    request<{ granted: boolean; creditBalance: number }>("POST", "/api/user/bonus/welcome"),
 
   // ── Videos ────────────────────────────────────────────
   getVideos: () => request<{ videos: any[] }>("GET", "/api/user/videos"),

@@ -111,7 +111,7 @@ test.describe('Customer SPA', () => {
 
   // ── Login with valid credentials via browser UI ─────────────────────────
 
-  test('login with valid credentials redirects to dashboard', async ({ page }) => {
+  test('login with valid credentials redirects to onboarding wizard for new users', async ({ page }) => {
     // Create a user via API first
     const { email } = await registerAndLogin(page.request);
 
@@ -129,7 +129,46 @@ test.describe('Customer SPA', () => {
       (res) => res.url().includes('/auth/email/login') && res.status() === 200,
     );
 
-    // Should navigate to dashboard after login
+    // Fresh users land on the onboarding wizard, not the dashboard
+    await expect(page).toHaveURL(/\/app\/onboarding/);
+
+    // Wizard first screen (persona selection) should render
+    await expect(page.locator('h1')).toHaveText('Selamat datang di 1AI Content');
+    await expect(page.getByText('Pilih profil kamu')).toBeVisible();
+  });
+
+  // ── Onboarded user skips wizard and lands on dashboard ──────────────────
+
+  test('onboarded user redirects to dashboard after login', async ({ page }) => {
+    // Create a user via API and complete onboarding (niche + persona + bonus)
+    const { token, email } = await registerAndLogin(page.request);
+
+    const settingsRes = await page.request.patch('/api/user/settings', {
+      headers: { Authorization: `Bearer ${token}` },
+      data: { selectedNiche: 'beauty_skincare', userMode: 'content_creator' },
+    });
+    expect(settingsRes.status()).toBe(200);
+
+    const bonusRes = await page.request.post('/api/user/bonus/welcome', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(bonusRes.status()).toBe(200);
+
+    await page.goto('/app/login');
+
+    // Fill login form
+    await page.locator('input[type="email"]').fill(email);
+    await page.locator('input[type="password"]').fill('TestPass123!');
+
+    // Submit
+    await page.getByRole('button', { name: 'Sign In' }).click();
+
+    // Wait for the login API response
+    await page.waitForResponse(
+      (res) => res.url().includes('/auth/email/login') && res.status() === 200,
+    );
+
+    // Onboarded users bounce straight to the dashboard
     await expect(page).toHaveURL(/\/app\/dashboard/);
 
     // Dashboard should render content

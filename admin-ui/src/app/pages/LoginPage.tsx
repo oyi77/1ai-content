@@ -53,7 +53,7 @@ export default function LoginPage() {
       const data = await res.json();
       if (!res.ok) { setError(data.error); return; }
       setAuthToken(data.token);
-      navigate("/app/dashboard", { replace: true });
+      navigate("/app/onboarding", { replace: true });
     } catch { setError("Network error"); }
   };
 

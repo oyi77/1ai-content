@@ -581,6 +581,9 @@ describe("Web Routes", () => {
         emailVerified: false,
         dailyFreeUsed: null,
         dailyFreeResetAt: null,
+        selectedNiche: null,
+        userMode: null,
+        welcomeBonusUsed: false,
         createdAt: expect.any(Date),
       });
     });

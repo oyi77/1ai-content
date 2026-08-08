@@ -10,6 +10,8 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { prisma } from "@/config/database";
 import { UserService } from "@/services/user.service";
 import { VideoService } from "@/services/video.service";
+import { NICHE_CONFIG, resolveNicheKey } from "@/config/niches";
+import { PERSONA_IDS } from "@/config/personas";
 import { logger } from "@/utils/logger";
 import { readLimiter } from "@/middleware/rateLimit";
 import { tryApiKeyAuth } from "@/middleware/api-auth";
@@ -32,6 +34,9 @@ export async function userRoutes(server: FastifyInstance): Promise<void> {
       emailVerified: user.emailVerifiedAt != null,
       dailyFreeUsed: user.dailyFreeUsed,
       dailyFreeResetAt: user.dailyFreeResetAt,
+      selectedNiche: user.selectedNiche ?? null,
+      userMode: user.userMode ?? null,
+      welcomeBonusUsed: user.welcomeBonusUsed ?? false,
       createdAt: user.createdAt,
     };
   });
@@ -61,10 +66,12 @@ export async function userRoutes(server: FastifyInstance): Promise<void> {
   server.patch("/api/user/settings", async (request, reply) => {
     const user = await getUser(request, reply);
     if (!user) return;
-    const { language, notificationsEnabled, firstName } = (request.body ?? {}) as {
+    const { language, notificationsEnabled, firstName, selectedNiche, userMode } = (request.body ?? {}) as {
       language?: string;
       notificationsEnabled?: boolean;
       firstName?: string;
+      selectedNiche?: string;
+      userMode?: string;
     };
     const validLangs = ["id", "en", "ru", "zh"];
     const data: Record<string, unknown> = {};
@@ -81,10 +88,41 @@ export async function userRoutes(server: FastifyInstance): Promise<void> {
     if (notificationsEnabled !== undefined) {
       data.notificationsEnabled = Boolean(notificationsEnabled);
     }
+    if (selectedNiche !== undefined) {
+      if (typeof selectedNiche !== "string" || selectedNiche.length > 64)
+        return reply.status(400).send({ error: "Invalid niche" });
+      const canonical = resolveNicheKey(selectedNiche);
+      if (!NICHE_CONFIG[canonical as keyof typeof NICHE_CONFIG])
+        return reply.status(400).send({ error: "Invalid niche" });
+      data.selectedNiche = canonical;
+    }
+    if (userMode !== undefined) {
+      const modes = PERSONA_IDS as readonly string[];
+      if (typeof userMode !== "string" || !modes.includes(userMode))
+        return reply.status(400).send({ error: "Invalid user mode" });
+      data.userMode = userMode;
+    }
     if (Object.keys(data).length === 0)
       return reply.status(400).send({ error: "No settings to update" });
     await prisma.user.update({ where: { uuid: user.uuid }, data });
     return { ok: true };
+  });
+
+  // ── POST /api/user/bonus/welcome ──
+  server.post("/api/user/bonus/welcome", async (request, reply) => {
+    const user = await getUser(request, reply);
+    if (!user) return;
+    try {
+      const granted = await UserService.grantWelcomeBonus(user.telegramId);
+      const fresh = await prisma.user.findUnique({
+        where: { uuid: user.uuid },
+        select: { creditBalance: true },
+      });
+      return { granted, creditBalance: fresh?.creditBalance ?? user.creditBalance };
+    } catch (error) {
+      logger.error("Welcome bonus error:", error);
+      return reply.status(500).send({ error: "Failed to claim welcome bonus" });
+    }
   });
 
   // ── GET /api/user/videos ──

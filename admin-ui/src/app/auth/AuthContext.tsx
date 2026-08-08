@@ -9,6 +9,9 @@ interface User {
   name: string;
   credits: number;
   isPremium: boolean;
+  selectedNiche: string | null;
+  userMode: string | null;
+  welcomeBonusUsed: boolean;
 }
 
 interface AuthContextType {
@@ -61,6 +64,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           name: data.firstName ?? "",
           credits: data.credits ?? 0,
           isPremium: (data.tier ?? "free") === "pro" || (data.tier ?? "free") === "agency",
+          selectedNiche: data.selectedNiche ?? null,
+          userMode: data.userMode ?? null,
+          welcomeBonusUsed: data.welcomeBonusUsed ?? false,
         });
       } else {
         logout();
