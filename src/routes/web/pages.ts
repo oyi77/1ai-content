@@ -31,7 +31,12 @@ export async function pageRoutes(server: FastifyInstance): Promise<void> {
     }
     // Baca per-request agar hasil rebuild admin-ui langsung terlihat tanpa restart
     const landingHtml = fs.readFileSync(LANDING_INDEX, "utf-8");
-    return reply.type("text/html").send(landingHtml);
+    // HTML harus selalu revalidated (no-cache) — aset ber-hash ganti nama tiap build;
+    // index.html basi = referensi aset mati -> browser menolak style/script (mime application/json + strict MIME checking)
+    return reply
+      .header("Cache-Control", "no-cache, must-revalidate")
+      .type("text/html")
+      .send(landingHtml);
   });
 
   // ── FAQ ──
