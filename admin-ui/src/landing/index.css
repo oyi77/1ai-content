@@ -1,20 +1,52 @@
 @import "tailwindcss";
 
+/* ---- Design tokens (Tailwind v4 @theme) ----
+   Defines brand colors + font so utilities like bg-surface,
+   text-accent-2, border-accent/25 are generated. Custom tokens
+   MERGE with the default palette (slate, white, ... remain usable). */
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --color-surface: #0a0a1a;
+  --color-surface-2: #111127;
+  --color-surface-3: #050510;
+  --color-accent: #a855f7;
+  --color-accent-2: #c084fc;
+  --color-accent-3: #7c3aed;
+}
+
+/* ---- Legacy brand tokens (plain CSS vars, used by custom classes / inline styles) ---- */
 :root {
   --accent: #a855f7;
   --accent-2: #c084fc;
+  --accent-3: #7c3aed;
+  --bg: #0a0a1a;
   --grad: linear-gradient(135deg, #a855f7, #7c3aed);
   --grad-hover: linear-gradient(135deg, #c084fc, #8b5cf6);
   --glow: 0 0 40px rgba(168, 85, 247, 0.3);
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+html {
+  scroll-behavior: smooth;
+}
 
+/* NOTE: no unlayered universal reset here. Tailwind v4 preflight
+   (inside @layer base) already resets box-sizing/margins, but because
+   it is LAYERED, every Tailwind spacing utility (p-*, m-*, gap-*, ...)
+   still wins. An unlayered `* { margin:0; padding:0 }` would kill all
+   spacing utilities — that was the landing breakage. */
 body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background: var(--bg, #0a0a1a);
+  font-family: var(--font-sans);
+  background: var(--bg);
   color: #f1f5f9;
   -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+
+/* Fluid hero display type */
+.hero-title {
+  font-size: clamp(2.5rem, 5.5vw, 4.5rem);
+  line-height: 1.06;
+  letter-spacing: -0.03em;
 }
 
 .gradient-text {
@@ -70,9 +102,6 @@ body {
 .hero-gradient {
   background: radial-gradient(ellipse 80% 60% at 50% -20%, rgba(168,85,247,0.15) 0%, transparent 70%);
 }
-
-/* Smooth scroll */
-html { scroll-behavior: smooth; }
 
 @media (max-width: 640px) {
   .hero-gradient {

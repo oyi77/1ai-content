@@ -41,6 +41,12 @@ const STEPS = [
   { num: "03", title: "Dapatkan Video", desc: "AI memproses dan menghasilkan video siap posting dalam hitungan menit." },
 ];
 
+const HERO_STATS = [
+  { value: "7+", label: "Niche Siap Pakai" },
+  { value: "2-3", label: "Menit Proses" },
+  { value: "1M+", label: "Video Dibuat" },
+];
+
 interface ArticleMeta {
   slug: string;
   title: string;
@@ -94,27 +100,27 @@ export default function Landing() {
   }, []);
 
   return (
-    <div className="min-h-screen" style={{ background: "#0a0a1a" }}>
+    <div className="min-h-screen bg-surface text-slate-100">
       {/* ---- Nav ---- */}
       <nav
-        className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
+        className="fixed inset-x-0 top-0 z-50 transition-all duration-300"
         style={{
           background: scrolled ? "rgba(10,10,26,0.9)" : "transparent",
           backdropFilter: scrolled ? "blur(12px)" : "none",
           borderBottom: scrolled ? "1px solid rgba(255,255,255,0.06)" : "none",
         }}
       >
-        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
           <a href="/" className="flex items-center gap-2 no-underline">
             <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-sm font-bold"
               style={{ background: "var(--grad)" }}
             >
               1
             </div>
-            <span className="font-bold text-lg" style={{ color: "#f1f5f9" }}>1AI Content</span>
+            <span className="text-lg font-bold" style={{ color: "#f1f5f9" }}>1AI Content</span>
           </a>
-          <div className="hidden sm:flex items-center gap-6">
+          <div className="hidden items-center gap-6 sm:flex">
             <a href="#features" className="nav-link no-underline text-sm" style={{ color: "rgba(255,255,255,0.6)" }}>Fitur</a>
             <a href="#pricing" className="nav-link no-underline text-sm" style={{ color: "rgba(255,255,255,0.6)" }}>Harga</a>
             <a href="#faq" className="nav-link no-underline text-sm" style={{ color: "rgba(255,255,255,0.6)" }}>FAQ</a>
@@ -123,14 +129,14 @@ export default function Landing() {
           <div className="flex items-center gap-3">
             <a
               href="/app/login"
-              className="no-underline text-sm font-semibold px-4 py-2 rounded-lg transition-all"
+              className="no-underline rounded-lg px-4 py-2 text-sm font-semibold transition-all"
               style={{ color: "#c084fc", border: "1px solid rgba(168,85,247,0.3)" }}
             >
               Masuk
             </a>
             <a
               href="/app/login?register=1"
-              className="no-underline text-sm font-semibold px-5 py-2 rounded-lg text-white transition-all pulse-glow"
+              className="pulse-glow no-underline rounded-lg px-5 py-2 text-sm font-semibold text-white transition-all"
               style={{ background: "var(--grad)" }}
             >
               Daftar Gratis
@@ -140,64 +146,136 @@ export default function Landing() {
       </nav>
 
       {/* ---- Hero ---- */}
-      <section className="hero-gradient min-h-[85vh] flex items-center pt-16">
-        <div className="max-w-6xl mx-auto px-4 py-20 text-center">
-          <div
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold mb-8"
-            style={{ background: "rgba(168,85,247,0.1)", color: "#c084fc", border: "1px solid rgba(168,85,247,0.2)" }}
-          >
-            🔥 AI Content Creation Platform
-          </div>
-          <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold leading-tight mb-6 tracking-tight">
-            Ubah Ide Jadi{" "}
-            <span className="gradient-text">Konten Viral</span>
-          </h1>
-          <p className="text-lg sm:text-xl max-w-2xl mx-auto mb-10" style={{ color: "rgba(255,255,255,0.55)" }}>
-            Platform AI yang mengubah foto produk jadi video iklan profesional, konten media sosial, 
-            dan materi pemasaran. Langsung dari Telegram atau web. Mulai gratis.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <a
-              href="/app/login?register=1"
-              className="no-underline text-lg font-bold px-8 py-3.5 rounded-xl text-white transition-all pulse-glow"
-              style={{ background: "var(--grad)" }}
+      <section className="hero-gradient relative flex min-h-[92vh] items-center overflow-hidden pt-20 pb-16 sm:pt-24">
+        <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-14 px-4 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-12">
+          {/* Copy */}
+          <div className="text-center lg:text-left">
+            <div
+              className="mb-6 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold"
+              style={{ background: "rgba(168,85,247,0.1)", color: "#c084fc", border: "1px solid rgba(168,85,247,0.2)" }}
             >
-              Mulai Gratis →
-            </a>
-            <a
-              href="#features"
-              className="no-underline text-lg font-semibold px-8 py-3.5 rounded-xl transition-all"
-              style={{ color: "#f1f5f9", border: "1px solid rgba(255,255,255,0.15)" }}
-            >
-              Lihat Fitur
-            </a>
+              🔥 AI Content Creation Platform
+            </div>
+            <h1 className="hero-title mb-6 font-extrabold">
+              Ubah Ide Jadi{" "}
+              <span className="gradient-text">Konten Viral</span>
+            </h1>
+            <p className="mx-auto mb-10 max-w-2xl text-base sm:text-lg lg:mx-0" style={{ color: "rgba(255,255,255,0.55)" }}>
+              Platform AI yang mengubah foto produk jadi video iklan profesional, konten media sosial,
+              dan materi pemasaran. Langsung dari Telegram atau web. Mulai gratis.
+            </p>
+            <div className="flex flex-col items-center justify-center gap-4 sm:flex-row lg:justify-start">
+              <a
+                href="/app/login?register=1"
+                className="pulse-glow no-underline rounded-xl px-8 py-3.5 text-lg font-bold text-white transition-all"
+                style={{ background: "var(--grad)" }}
+              >
+                Mulai Gratis →
+              </a>
+              <a
+                href="#features"
+                className="no-underline rounded-xl px-8 py-3.5 text-lg font-semibold transition-all"
+                style={{ color: "#f1f5f9", border: "1px solid rgba(255,255,255,0.15)" }}
+              >
+                Lihat Fitur
+              </a>
+            </div>
+            {/* Stats */}
+            <div className="mt-12 grid grid-cols-3 gap-4 border-t border-white/5 pt-8">
+              {HERO_STATS.map((s) => (
+                <div key={s.label} className="text-center lg:text-left">
+                  <div className="gradient-text text-2xl font-extrabold sm:text-3xl">{s.value}</div>
+                  <div className="mt-1 text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="mt-12 flex items-center justify-center gap-6 sm:gap-10 text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>
-            <span>🎯 7+ Niche Siap Pakai</span>
-            <span>⚡ Proses 2-3 Menit</span>
-            <span>📱 Bisa dari Telegram</span>
+
+          {/* Visual — simulated video player */}
+          <div className="relative mx-auto w-full max-w-md lg:max-w-none">
+            <div aria-hidden className="absolute -inset-6 rounded-[2rem] blur-3xl" style={{ background: "rgba(168,85,247,0.18)" }} />
+            <div className="gradient-border relative overflow-hidden rounded-2xl shadow-2xl" style={{ background: "#0d0d20" }}>
+              {/* Browser chrome */}
+              <div className="flex items-center gap-1.5 border-b border-white/5 px-4 py-3">
+                <span className="h-2.5 w-2.5 rounded-full bg-red-400/80" />
+                <span className="h-2.5 w-2.5 rounded-full bg-yellow-400/80" />
+                <span className="h-2.5 w-2.5 rounded-full bg-green-400/80" />
+                <span className="ml-3 text-[11px] font-medium tracking-wide" style={{ color: "rgba(255,255,255,0.4)" }}>
+                  1ai-content — preview
+                </span>
+              </div>
+              {/* Player stage */}
+              <div
+                className="relative flex aspect-video items-center justify-center overflow-hidden"
+                style={{ background: "linear-gradient(135deg, rgba(168,85,247,0.25), rgba(17,17,39,0.9) 55%, rgba(124,58,237,0.25))" }}
+              >
+                <div aria-hidden className="absolute inset-6 rounded-full border border-white/10" />
+                <div aria-hidden className="absolute inset-16 rounded-full border border-white/5" />
+                <div className="relative flex flex-col items-center gap-4">
+                  <button
+                    type="button"
+                    aria-label="Putar video"
+                    className="pulse-glow flex h-16 w-16 items-center justify-center rounded-full text-white transition-transform hover:scale-105"
+                    style={{ background: "var(--grad)" }}
+                  >
+                    <svg viewBox="0 0 24 24" className="ml-1 h-6 w-6 fill-current" aria-hidden="true">
+                      <path d="M8 5.14v13.72L19 12 8 5.14z" />
+                    </svg>
+                  </button>
+                  <span
+                    className="rounded-full border border-white/10 bg-black/40 px-3 py-1 text-[11px] font-semibold backdrop-blur"
+                    style={{ color: "rgba(255,255,255,0.8)" }}
+                  >
+                    F&B · 15 detik · TikTok 9:16
+                  </span>
+                </div>
+              </div>
+              {/* Player bar */}
+              <div className="border-t border-white/5 px-4 py-3">
+                <div className="h-1 w-full overflow-hidden rounded-full bg-white/10">
+                  <div className="h-full w-2/3 rounded-full" style={{ background: "var(--grad)" }} />
+                </div>
+                <div className="mt-2 flex items-center justify-between text-[10px] font-medium" style={{ color: "rgba(255,255,255,0.35)" }}>
+                  <span>01:12</span>
+                  <span>01:45</span>
+                </div>
+              </div>
+            </div>
+            {/* Floating chips */}
+            <div
+              className="absolute -left-3 top-[22%] hidden rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold shadow-xl backdrop-blur sm:block"
+              style={{ background: "rgba(10,10,26,0.9)", color: "rgba(255,255,255,0.8)" }}
+            >
+              🎬 Video siap diposting
+            </div>
+            <div
+              className="absolute -right-2 bottom-[26%] hidden rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold shadow-xl backdrop-blur sm:block"
+              style={{ background: "rgba(10,10,26,0.9)", color: "rgba(255,255,255,0.8)" }}
+            >
+              ⚡ Selesai dalam 2 menit
+            </div>
           </div>
         </div>
       </section>
 
       {/* ---- Features ---- */}
-      <section id="features" className="py-24" style={{ background: "var(--bg2, #111127)" }}>
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Semua yang Anda Butuhkan</h2>
-            <p className="text-lg max-w-xl mx-auto" style={{ color: "rgba(255,255,255,0.55)" }}>
+      <section id="features" className="bg-surface-2 py-16 sm:py-24">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="mb-14 text-center sm:mb-16">
+            <h2 className="mb-4 text-3xl font-bold sm:text-4xl">Semua yang Anda Butuhkan</h2>
+            <p className="mx-auto max-w-xl text-lg" style={{ color: "rgba(255,255,255,0.55)" }}>
               Dari pembuatan video hingga analisis performa — lengkap dalam satu platform.
             </p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map((f, i) => (
               <div
                 key={i}
                 className="glow-card rounded-xl p-6"
                 style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}
               >
-                <div className="text-3xl mb-4">{f.icon}</div>
-                <h3 className="text-lg font-bold mb-2">{f.title}</h3>
+                <div className="mb-4 text-3xl">{f.icon}</div>
+                <h3 className="mb-2 text-lg font-bold">{f.title}</h3>
                 <p className="text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.55)" }}>{f.desc}</p>
               </div>
             ))}
@@ -206,24 +284,26 @@ export default function Landing() {
       </section>
 
       {/* ---- How It Works ---- */}
-      <section className="py-24" style={{ background: "#0a0a1a" }}>
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Cara Kerja</h2>
+      <section className="bg-surface py-16 sm:py-24">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6">
+          <div className="mb-14 text-center sm:mb-16">
+            <h2 className="mb-4 text-3xl font-bold sm:text-4xl">Cara Kerja</h2>
             <p className="text-lg" style={{ color: "rgba(255,255,255,0.55)" }}>
               3 langkah sederhana untuk hasil profesional
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="relative grid grid-cols-1 gap-10 md:grid-cols-3 md:gap-8">
+            <div aria-hidden className="absolute left-[16%] right-[16%] top-7 hidden h-px md:block"
+              style={{ background: "linear-gradient(90deg, transparent, rgba(168,85,247,0.4), transparent)" }} />
             {STEPS.map((s, i) => (
-              <div key={i} className="text-center">
+              <div key={i} className="relative text-center">
                 <div
-                  className="w-14 h-14 rounded-xl flex items-center justify-center text-lg font-bold mx-auto mb-5"
-                  style={{ background: "rgba(168,85,247,0.12)", color: "#c084fc" }}
+                  className="relative z-10 mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl text-lg font-bold"
+                  style={{ background: "rgba(168,85,247,0.12)", color: "#c084fc", border: "1px solid rgba(168,85,247,0.25)" }}
                 >
                   {s.num}
                 </div>
-                <h3 className="text-lg font-bold mb-2">{s.title}</h3>
+                <h3 className="mb-2 text-lg font-bold">{s.title}</h3>
                 <p className="text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.55)" }}>{s.desc}</p>
               </div>
             ))}
@@ -232,47 +312,47 @@ export default function Landing() {
       </section>
 
       {/* ---- Pricing ---- */}
-      <section id="pricing" className="py-24" style={{ background: "var(--bg2, #111127)" }}>
-        <div className="max-w-5xl mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Pilihan Paket</h2>
+      <section id="pricing" className="bg-surface-2 py-16 sm:py-24">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6">
+          <div className="mb-14 text-center sm:mb-16">
+            <h2 className="mb-4 text-3xl font-bold sm:text-4xl">Pilihan Paket</h2>
             <p className="text-lg" style={{ color: "rgba(255,255,255,0.55)" }}>
               Mulai gratis. Upgrade kapan saja.
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             {pricing.map((pkg, i) => {
               const isPopular = pkg.popular || pkg.name.toLowerCase() === "pro";
               return (
                 <div
                   key={i}
-                  className="rounded-2xl overflow-hidden transition-all glow-card"
+                  className="glow-card relative overflow-hidden rounded-2xl transition-all md:-translate-y-0"
                   style={{
                     background: isPopular ? "linear-gradient(135deg, rgba(168,85,247,0.08), rgba(124,58,237,0.04))" : "rgba(255,255,255,0.04)",
-                    border: isPopular ? "1px solid rgba(168,85,247,0.3)" : "1px solid rgba(255,255,255,0.06)",
-                    position: "relative",
+                    border: isPopular ? "1px solid rgba(168,85,247,0.35)" : "1px solid rgba(255,255,255,0.06)",
+                    boxShadow: isPopular ? "0 20px 60px -20px rgba(168,85,247,0.35)" : "none",
                   }}
                 >
                   {isPopular && (
                     <div
-                      className="text-center text-xs font-bold py-2 uppercase tracking-wider"
+                      className="py-2 text-center text-xs font-bold uppercase tracking-wider"
                       style={{ background: "var(--grad)", color: "#fff" }}
                     >
                       Paling Populer
                     </div>
                   )}
-                  <div className="p-6">
-                    <h3 className="text-xl font-bold mb-2">{pkg.name}</h3>
+                  <div className="p-6 sm:p-7">
+                    <h3 className="mb-2 text-xl font-bold">{pkg.name}</h3>
                     <div className="mb-6">
                       <span className="text-4xl font-extrabold">
                         {pkg.price === 0 ? "Gratis" : `Rp${pkg.price.toLocaleString("id-ID")}`}
                       </span>
                       {pkg.price > 0 && <span className="text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>/bln</span>}
                     </div>
-                    <div className="text-sm mb-6" style={{ color: "rgba(255,255,255,0.5)" }}>
+                    <div className="mb-6 text-sm" style={{ color: "rgba(255,255,255,0.5)" }}>
                       {pkg.credits} kredit
                     </div>
-                    <ul className="space-y-3 mb-8">
+                    <ul className="mb-8 space-y-3">
                       {pkg.features.map((f, j) => (
                         <li key={j} className="flex items-start gap-2 text-sm">
                           <span style={{ color: "#22c55e" }}>✓</span>
@@ -282,7 +362,7 @@ export default function Landing() {
                     </ul>
                     <a
                       href={pkg.price === 0 ? "/app/login?register=1" : "/app/login"}
-                      className="block text-center font-bold py-3 rounded-xl no-underline transition-all"
+                      className="block rounded-xl py-3 text-center font-bold no-underline transition-all"
                       style={{
                         background: isPopular ? "var(--grad)" : "rgba(255,255,255,0.06)",
                         color: isPopular ? "#fff" : "#f1f5f9",
@@ -300,10 +380,10 @@ export default function Landing() {
       </section>
 
       {/* ---- FAQ ---- */}
-      <section id="faq" className="py-24" style={{ background: "#0a0a1a" }}>
-        <div className="max-w-3xl mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Pertanyaan Umum</h2>
+      <section id="faq" className="bg-surface py-16 sm:py-24">
+        <div className="mx-auto max-w-3xl px-4 sm:px-6">
+          <div className="mb-12 text-center">
+            <h2 className="mb-4 text-3xl font-bold sm:text-4xl">Pertanyaan Umum</h2>
           </div>
           <div className="space-y-3">
             {FAQS.map((faq, i) => {
@@ -311,12 +391,12 @@ export default function Landing() {
               return (
                 <div
                   key={i}
-                  className="rounded-xl overflow-hidden transition-all"
+                  className="overflow-hidden rounded-xl transition-all"
                   style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
                 >
                   <button
                     onClick={() => setOpenFaq(isOpen ? null : i)}
-                    className="w-full flex items-center justify-between p-5 text-left font-semibold text-sm cursor-pointer"
+                    className="flex w-full cursor-pointer items-center justify-between p-5 text-left text-sm font-semibold"
                     style={{ background: "transparent", color: "#f1f5f9", border: "none" }}
                   >
                     {faq.q}
@@ -338,17 +418,17 @@ export default function Landing() {
 
       {/* ---- Artikel Terbaru ---- */}
       {articles.length > 0 && (
-        <section id="artikel" className="py-24" style={{ background: "#111127" }}>
-          <div className="max-w-6xl mx-auto px-4">
-            <div className="text-center mb-16">
-              <h2 className="text-3xl sm:text-4xl font-bold mb-4">
+        <section id="artikel" className="bg-surface-2 py-16 sm:py-24">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+            <div className="mb-14 text-center sm:mb-16">
+              <h2 className="mb-4 text-3xl font-bold sm:text-4xl">
                 <span className="gradient-text">Artikel Terbaru</span>
               </h2>
-              <p className="text-lg max-w-xl mx-auto" style={{ color: "rgba(255,255,255,0.55)" }}>
+              <p className="mx-auto max-w-xl text-lg" style={{ color: "rgba(255,255,255,0.55)" }}>
                 Wawasan, tips, dan panduan konten dari 1AI Content.
               </p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
               {articles.map((a) => (
                 <a
                   key={a.slug}
@@ -356,11 +436,11 @@ export default function Landing() {
                   className="glow-card block rounded-xl p-6 no-underline transition-all"
                   style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}
                 >
-                  <div className="text-xs mb-3" style={{ color: "rgba(168,85,247,0.8)" }}>
+                  <div className="mb-3 text-xs" style={{ color: "rgba(168,85,247,0.8)" }}>
                     {a.language ? a.language.toUpperCase() : "ID"}
                     {a.word_count ? ` · ${a.word_count} kata` : ""}
                   </div>
-                  <h3 className="text-lg font-bold mb-2" style={{ color: "#f1f5f9" }}>{a.title}</h3>
+                  <h3 className="mb-2 text-lg font-bold" style={{ color: "#f1f5f9" }}>{a.title}</h3>
                   {a.meta_description && (
                     <p className="text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.55)" }}>
                       {a.meta_description}
@@ -374,10 +454,10 @@ export default function Landing() {
                 </a>
               ))}
             </div>
-            <div className="text-center mt-10">
+            <div className="mt-10 text-center">
               <a
                 href="/articles"
-                className="inline-block no-underline text-sm font-semibold px-6 py-3 rounded-lg transition-all"
+                className="inline-block rounded-lg px-6 py-3 text-sm font-semibold no-underline transition-all"
                 style={{ color: "#c084fc", border: "1px solid rgba(168,85,247,0.3)" }}
               >
                 Lihat Semua Artikel →
@@ -388,17 +468,17 @@ export default function Landing() {
       )}
 
       {/* ---- CTA ---- */}
-      <section className="py-24" style={{ background: "var(--grad)" }}>
-        <div className="max-w-3xl mx-auto px-4 text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={{ color: "#0a0a1a" }}>
+      <section className="py-16 sm:py-24" style={{ background: "var(--grad)" }}>
+        <div className="mx-auto max-w-3xl px-4 text-center sm:px-6">
+          <h2 className="mb-4 text-3xl font-bold sm:text-4xl" style={{ color: "#0a0a1a" }}>
             Siap Membuat Konten Viral?
           </h2>
-          <p className="text-lg mb-8" style={{ color: "rgba(0,0,0,0.6)" }}>
+          <p className="mb-8 text-lg" style={{ color: "rgba(0,0,0,0.6)" }}>
             Daftar gratis, dapatkan 3 kredit untuk mencoba. Tidak perlu kartu kredit.
           </p>
           <a
             href="/app/login?register=1"
-            className="inline-block font-bold px-10 py-4 rounded-xl no-underline transition-all"
+            className="inline-block rounded-xl px-10 py-4 font-bold no-underline transition-all"
             style={{ background: "#0a0a1a", color: "#fff" }}
           >
             Mulai Sekarang →
@@ -408,11 +488,11 @@ export default function Landing() {
 
       {/* ---- Footer ---- */}
       <footer style={{ background: "#050510", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
-        <div className="max-w-6xl mx-auto px-4 py-12">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
+        <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+          <div className="mb-10 grid grid-cols-2 gap-8 md:grid-cols-4">
             <div className="col-span-2 md:col-span-1">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold text-white" style={{ background: "var(--grad)" }}>1</div>
+              <div className="mb-4 flex items-center gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg text-xs font-bold text-white" style={{ background: "var(--grad)" }}>1</div>
                 <span className="font-bold">1AI Content</span>
               </div>
               <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.35)" }}>
@@ -420,25 +500,25 @@ export default function Landing() {
               </p>
             </div>
             <div>
-              <h4 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: "rgba(255,255,255,0.4)" }}>Produk</h4>
+              <h4 className="mb-4 text-xs font-semibold uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.4)" }}>Produk</h4>
               <div className="flex flex-col gap-2">
-                <a href="#features" className="text-xs no-underline nav-link" style={{ color: "rgba(255,255,255,0.5)" }}>Fitur</a>
-                <a href="#pricing" className="text-xs no-underline nav-link" style={{ color: "rgba(255,255,255,0.5)" }}>Harga</a>
-                <a href="#faq" className="text-xs no-underline nav-link" style={{ color: "rgba(255,255,255,0.5)" }}>FAQ</a>
-                <a href="/articles" className="text-xs no-underline nav-link" style={{ color: "rgba(255,255,255,0.5)" }}>Artikel</a>
+                <a href="#features" className="nav-link text-xs no-underline" style={{ color: "rgba(255,255,255,0.5)" }}>Fitur</a>
+                <a href="#pricing" className="nav-link text-xs no-underline" style={{ color: "rgba(255,255,255,0.5)" }}>Harga</a>
+                <a href="#faq" className="nav-link text-xs no-underline" style={{ color: "rgba(255,255,255,0.5)" }}>FAQ</a>
+                <a href="/articles" className="nav-link text-xs no-underline" style={{ color: "rgba(255,255,255,0.5)" }}>Artikel</a>
               </div>
             </div>
             <div>
-              <h4 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: "rgba(255,255,255,0.4)" }}>Hukum</h4>
+              <h4 className="mb-4 text-xs font-semibold uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.4)" }}>Hukum</h4>
               <div className="flex flex-col gap-2">
-                <a href="/terms" className="text-xs no-underline nav-link" style={{ color: "rgba(255,255,255,0.5)" }}>Syarat & Ketentuan</a>
-                <a href="/privacy" className="text-xs no-underline nav-link" style={{ color: "rgba(255,255,255,0.5)" }}>Kebijakan Privasi</a>
+                <a href="/terms" className="nav-link text-xs no-underline" style={{ color: "rgba(255,255,255,0.5)" }}>Syarat & Ketentuan</a>
+                <a href="/privacy" className="nav-link text-xs no-underline" style={{ color: "rgba(255,255,255,0.5)" }}>Kebijakan Privasi</a>
               </div>
             </div>
             <div>
-              <h4 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: "rgba(255,255,255,0.4)" }}>Kontak</h4>
+              <h4 className="mb-4 text-xs font-semibold uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.4)" }}>Kontak</h4>
               <div className="flex flex-col gap-2">
-                <a href="https://t.me/vilona_content_bot" target="_blank" rel="noopener noreferrer" className="text-xs no-underline nav-link" style={{ color: "rgba(255,255,255,0.5)" }}>
+                <a href="https://t.me/vilona_content_bot" target="_blank" rel="noopener noreferrer" className="nav-link text-xs no-underline" style={{ color: "rgba(255,255,255,0.5)" }}>
                   Telegram Bot
                 </a>
               </div>

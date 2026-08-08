@@ -60,3 +60,5 @@ services/projects/token_calibration.json
 services/data/ebook/projects.db
 services/data/article.sqlite
 config/tiktok_cookies.txt
+# E2E-generated movie artifacts
+services/media/movies/
