@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { api } from "../api/client";
@@ -88,9 +88,14 @@ export default function OnboardingWizard() {
   const [saving, setSaving] = useState(false);
   const [bonusState, setBonusState] = useState<"idle" | "claimed" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
+  // Sesi aktif sudah mengklaim bonus → jangan redirect sebelum step Bonus
+  // sempat render sukses. Ref dibaca sinkron saat render (bukan state),
+  // dan di-reset saat komponen remount (kunjungan baru → tetap redirect).
+  const claimedRef = useRef(false);
 
-  // Sudah onboarding lengkap → langsung ke dashboard.
-  if (user?.selectedNiche && user?.welcomeBonusUsed) {
+  // Sudah onboarding lengkap → langsung ke dashboard (hanya kunjungan baru;
+  // setelah klaim di sesi ini, claimedRef mencegah redirect prematur).
+  if (!claimedRef.current && user?.selectedNiche && user?.welcomeBonusUsed) {
     return <Navigate to="/app/dashboard" replace />;
   }
 
@@ -117,6 +122,7 @@ export default function OnboardingWizard() {
     setError(null);
     try {
       await api.claimWelcomeBonus();
+      claimedRef.current = true; // sebelum refreshUser() memicu re-render
       await refreshUser();
       setBonusState("claimed");
     } catch (e: any) {

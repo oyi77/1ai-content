@@ -4,8 +4,11 @@ function getToken(): string | null {
   return localStorage.getItem("token");
 }
 
-function headers(): Record<string, string> {
-  const h: Record<string, string> = { "Content-Type": "application/json" };
+function headers(body?: unknown): Record<string, string> {
+  const h: Record<string, string> = {};
+  // Fastify rejects empty bodies with Content-Type: application/json
+  // (FST_ERR_CTP_EMPTY_JSON_BODY 400) — only set it when a body is sent.
+  if (body !== undefined) h["Content-Type"] = "application/json";
   const t = getToken();
   if (t) h["Authorization"] = `Bearer ${t}`;
   return h;
@@ -14,8 +17,8 @@ function headers(): Record<string, string> {
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     method,
-    headers: headers(),
-    body: body ? JSON.stringify(body) : undefined,
+    headers: headers(body),
+    body: body !== undefined ? JSON.stringify(body) : undefined,
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
