@@ -10,6 +10,7 @@ import { prisma } from "@/config/database";
 import { PaymentService } from "@/services/payment.service";
 import { PaymentSettingsService } from "@/services/payment-settings.service";
 import { UserService } from "@/services/user.service";
+import { SubscriptionService } from "@/services/subscription.service";
 import {
   getPackagesAsync, getUnitCostAsync,
   getSubscriptionPlansAsync, getPlanPrice,
@@ -258,8 +259,16 @@ td{padding:8px;border-bottom:1px solid #eee}.total{font-size:24px;font-weight:bo
   });
 
   // ── GET /api/subscriptions ──
-  server.get("/api/subscriptions", async () => {
-    return getSubscriptionPlansAsync();
+  // Authenticated: returns { plans, current } for the customer SPA.
+  // plans is the plan catalog (Record<PlanKey, PlanConfig>), current is the
+  // user's active Subscription row (null when none).
+  server.get("/api/subscriptions", async (request, reply) => {
+    const user = await getUser(request, reply);
+    if (!user) return;
+    return {
+      plans: await getSubscriptionPlansAsync(),
+      current: await SubscriptionService.getActiveSubscription(user.telegramId),
+    };
   });
 
   // ── POST /api/subscription/buy ──

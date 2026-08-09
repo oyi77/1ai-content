@@ -91,11 +91,20 @@ export const api = {
     }),
 
   // ── Subscriptions ─────────────────────────────────────
-  // Backend: GET /api/subscriptions → Record<string, plan> (dict, key=plan id)
+  // Backend: GET /api/subscriptions → { plans: Record<string, plan>, current: Subscription | null }
+  // plans is a dict keyed by plan id; current is the active Subscription row
+  // (has `plan`, `status`, `billingCycle` — enrich name/credits from the plan dict).
   getSubscriptions: async () => {
-    const dict = await request<Record<string, any>>("GET", "/api/subscriptions");
+    const data = await request<{ plans: Record<string, any>; current: any }>("GET", "/api/subscriptions");
+    const dict = data.plans ?? {};
     const plans = Object.entries(dict).map(([id, plan]) => ({ id, ...plan }));
-    return { plans, current: null };
+    const current = data.current ?? null;
+    if (current && dict[current.plan]) {
+      current.planId = current.plan;
+      current.name = dict[current.plan].name ?? current.plan;
+      current.monthlyCredits = dict[current.plan].monthlyCredits ?? 0;
+    }
+    return { plans, current };
   },
 
   // Backend: POST /api/subscription/buy { plan, cycle, gateway }

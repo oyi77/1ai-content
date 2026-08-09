@@ -127,6 +127,7 @@ All require auth (via `onRequest` hook).
 | GET | `/api/transactions` | User's transactions |
 | POST | `/api/referral` | Referral code handling |
 | GET/POST | `/api/p2p` | Peer-to-peer credit transfer |
+| GET | `/api/subscriptions` | Subscription plans + current (auth: Bearer JWT, returns `{ plans, current }`) |
 | POST | `/api/subscriptions` | Subscription management |
 | GET | `/payment/finish` | Payment completion page |
 

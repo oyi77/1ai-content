@@ -110,6 +110,13 @@ jest.mock('../../src/services/user.service', () => ({
   },
 }));
 
+jest.mock('../../src/services/subscription.service', () => ({
+  SubscriptionService: {
+    getActiveSubscription: jest.fn().mockResolvedValue(null),
+    cancelSubscription: jest.fn().mockResolvedValue(undefined),
+  },
+}));
+
 jest.mock('../../src/config/pricing', () => ({
   getPackagesAsync: jest.fn().mockResolvedValue([
     { id: 'starter', credits: 50, priceIdr: 25000, bonus: 0 },
@@ -214,10 +221,27 @@ describe('Web API Endpoints', () => {
   // ── GET /api/subscriptions ──
 
   describe('GET /api/subscriptions', () => {
-    it('returns subscription plans object', async () => {
+    it('returns 401 without Authorization header', async () => {
       const res = await request(app.server).get('/api/subscriptions');
+      expect(res.status).toBe(401);
+    });
+
+    it('returns 401 with a malformed token', async () => {
+      const res = await request(app.server)
+        .get('/api/subscriptions')
+        .set('Authorization', 'Bearer not.a.valid.token');
+      expect(res.status).toBe(401);
+    });
+
+    it('returns plans and current when a valid JWT is supplied', async () => {
+      isolatedUserService.findByUuid.mockResolvedValueOnce(mockUser);
+      const token = makeUserToken();
+      const res = await request(app.server)
+        .get('/api/subscriptions')
+        .set('Authorization', `Bearer ${token}`);
       expect(res.status).toBe(200);
-      expect(typeof res.body).toBe('object');
+      expect(res.body.plans).toBeDefined();
+      expect(res.body.current).toBeNull();
     });
   });
 

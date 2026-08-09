@@ -44,16 +44,22 @@ test('GET /api/packages each package has id, name, and price fields', async ({ r
 
 // ─── /api/subscriptions ───────────────────────────────────────────────────────
 
-test('GET /api/subscriptions returns 200', async ({ request }) => {
+test('GET /api/subscriptions without Authorization header returns 401', async ({ request }) => {
   const response = await request.get('/api/subscriptions');
-  expect(response.status()).toBe(200);
+  expect([401, 403]).toContain(response.status());
 });
 
-test('GET /api/subscriptions returns an array or object', async ({ request }) => {
+test('GET /api/subscriptions with invalid Bearer token returns 401', async ({ request }) => {
+  const response = await request.get('/api/subscriptions', {
+    headers: { Authorization: 'Bearer invalid.jwt.token' },
+  });
+  expect([401, 403]).toContain(response.status());
+});
+
+test('GET /api/subscriptions 401 response is JSON', async ({ request }) => {
   const response = await request.get('/api/subscriptions');
   const body = await response.json();
-  // Could be array or object keyed by plan name
-  expect(typeof body === 'object' && body !== null).toBe(true);
+  expect(body.error).toBe('Unauthorized');
 });
 
 // ─── /auth/telegram ───────────────────────────────────────────────────────────
@@ -124,7 +130,9 @@ test('GET /api/packages response has JSON content type', async ({ request }) => 
   expect(response.headers()['content-type']).toContain('application/json');
 });
 
-test('GET /api/subscriptions response has JSON content type', async ({ request }) => {
-  const response = await request.get('/api/subscriptions');
+test('GET /api/subscriptions 401 response has JSON content type', async ({ request }) => {
+  const response = await request.get('/api/subscriptions', {
+    headers: { Authorization: 'Bearer invalid.jwt.token' },
+  });
   expect(response.headers()['content-type']).toContain('application/json');
 });
