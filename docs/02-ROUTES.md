@@ -92,8 +92,9 @@ All require auth (via `onRequest` hook).
 | GET | `/privacy` | Privacy policy |
 | GET | `/sw.js` | Service Worker |
 | GET | `/manifest.json` | PWA manifest |
-| GET | `/robots.txt` | Robots exclusion |
-| GET | `/sitemap.xml` | Sitemap |
+| GET | `/payment/finish` | Payment finish page |
+| GET | `/app` | Redirect ke React SPA `/app/` |
+| GET | `/app/mini` | Telegram Mini App |
 
 ### Auth routes (`web/auth.ts`)
 | Method | Path | Description |

@@ -96,7 +96,7 @@ It calls the **ebook generation service** in `services/ebook/` (absorbed into me
 | `EBOOK_API_URL` | `http://localhost:8767` | Base URL of ebook generator (media-api) |
 | `EBOOK_API_KEY` | (empty) | Optional authentication key |
 
-To start the ebook service alongside the bot, see `services/ebook/AGENTS.md`. Entry point: `EbookContentGenerator` (`services/ebook/generator.py`), diregistrasi di `services/api.py` (port 8767; `api_port=8765` di `services/ebook/config.py`).
+To start the ebook service alongside the bot, see `services/ebook/AGENTS.md`. Entry point: `EbookContentGenerator` (`services/ebook/generator.py`), diregistrasi di `services/api.py` (prefix `/text/ebook`, port 8767). Port standalone lama (8765/8501) sudah dihapus dari `docker-compose.yml` — `api_port`/`ui_port` di `services/ebook/config.py` dikomentari (LEGACY).
 
 Ebook generation runs inside the media-api (`services/api.py`, port 8767) — no separate service in `docker-compose.yml`.
 
@@ -144,7 +144,7 @@ npm run start
 | [01-ARCHITECTURE.md](docs/01-ARCHITECTURE.md) | System architecture & design patterns |
 | [02-ROUTES.md](docs/02-ROUTES.md) | API & bot routes |
 | [03-SECURITY.md](docs/03-SECURITY.md) | Security policies & procedures |
-| [04-FRONTEND.md](docs/04-FRONTEND.md) | Frontend SaaS (Vue SPAs) |
+| [04-FRONTEND.md](docs/04-FRONTEND.md) | Frontend SaaS — React SPA `admin-ui/` (3 namespace: `/`, `/admin/*`, `/app/*`) |
 | [05-TESTING.md](docs/05-TESTING.md) | Testing conventions |
 | [06-EXECUTION.md](docs/06-EXECUTION.md) | Deployment guides & CI/CD |
 | [AGENTS.md](docs/AGENTS.md) | Docs conventions |
@@ -162,26 +162,27 @@ See [`.env.example`](.env.example) for complete configuration.
 NODE_ENV=production
 BOT_TOKEN=your_telegram_bot_token
 WEBHOOK_SECRET=your_webhook_secret
-WEBHOOK_URL=https://api.openclaw.ai/webhook
+WEBHOOK_URL=https://api-saas.aitradepulse.com/webhook/telegram
 
 # Database
-DATABASE_URL=postgresql://user:pass@localhost:5432/openclaw
+DATABASE_URL=postgresql://user:password@localhost:5432/1ai_content
 REDIS_URL=redis://localhost:6379
 
-# AI APIs
+# AI APIs (9-tier video fallback + image + prompt AI — lihat .env.example)
 GEMINIGEN_API_KEY=xxx
 KLING_API_KEY=xxx
-RUNWAY_API_KEY=xxx
+BYTEPLUS_API_KEY=xxx
 
 # Payment
 MIDTRANS_SERVER_KEY=xxx
 MIDTRANS_CLIENT_KEY=xxx
 TRIPAY_API_KEY=xxx
 
-# Storage
-AWS_ACCESS_KEY_ID=xxx
-AWS_SECRET_ACCESS_KEY=xxx
-S3_BUCKET=openclaw-assets
+# Ecosystem
+ECOSYSTEM_API_KEY=your_ecosystem_api_key_here
+SOCIAL_SERVICE_URL=http://127.0.0.1:8200
+AFFILIATE_SERVICE_URL=http://127.0.0.1:3001
+TRACKING_URL=https://track.aitradepulse.com
 ```
 
 ### Feature Flags
@@ -189,10 +190,10 @@ S3_BUCKET=openclaw-assets
 Feature flags dapat dikonfigurasi via admin dashboard atau environment variables:
 
 ```bash
-# Enable/disable features
-FEATURE_MULTI_ANGLE=true
-FEATURE_VOICE_CLONING=true
-FEATURE_TEAM_WORKSPACE=false
+# Enable/disable features (didefinisikan di src/config/env.ts)
+FEATURE_PAYMENT=true
+FEATURE_REFERRAL=true
+FEATURE_VIDEO_GENERATION=true
 ```
 
 ---
@@ -227,13 +228,13 @@ See [docs/06-EXECUTION.md](docs/06-EXECUTION.md) for detailed deployment guides.
 
 ```bash
 # Bot health
-curl https://api.openclaw.ai/health
+curl https://content.aitradepulse.com/health
 
-# Database health
-curl https://api.openclaw.ai/health/db
+# Database health (admin-protected)
+curl https://content.aitradepulse.com/health/db
 
-# Queue status
-curl https://api.openclaw.ai/health/queue
+# Queue status (admin-protected)
+curl https://content.aitradepulse.com/health/queue
 ```
 
 ### Metrics
@@ -298,15 +299,12 @@ See [CHANGELOG.md](CHANGELOG.md) untuk riwayat perubahan lengkap.
 
 | Channel | Link |
 |---------|------|
-| Documentation | [docs.openclaw.ai](https://docs.openclaw.ai) |
-| Discord | [discord.gg/openclaw](https://discord.gg/openclaw) |
-| Email | support@openclaw.ai |
-| Telegram | [@openclaw_support](https://t.me/openclaw_support) |
+| Documentation | [content.aitradepulse.com](https://content.aitradepulse.com) |
+| Telegram Bot | [@vilona_content_bot](https://t.me/vilona_content_bot) |
 
 ### Emergency Contacts
 
-- **Technical On-Call**: `+62-xxx-xxxx-xxxx`
-- **Security Issues**: `security@openclaw.ai`
+- **Security Issues**: laporkan lewat Telegram bot di atas (bukan email publik).
 
 ---
 
@@ -314,7 +312,7 @@ See [CHANGELOG.md](CHANGELOG.md) untuk riwayat perubahan lengkap.
 
 This project is proprietary and confidential. Unauthorized copying, distribution, or use is strictly prohibited.
 
-© 2024 OpenClaw. All rights reserved.
+© 2026 1AI Content. All rights reserved.
 
 ---
 

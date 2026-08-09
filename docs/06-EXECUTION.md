@@ -190,10 +190,12 @@ curl -s http://localhost:3002/admin/ | grep -o '<title>[^<]*</title>'
 ### 1. Server Won't Start (Port Conflict)
 
 ```bash
-sudo ss -tlnp | grep 3002    # See what's on port 3002
-systemctl --user status 1ai-content   # Check systemd status
-journalctl --user -u 1ai-content -n 50  # Recent logs
-pm2 list                     # Check PM2
+sudo ss -tlnp | grep 3002    # See what's on port 3002 (bot TS)
+pm2 status 1ai-content       # PM2 status bot TS :3002
+pm2 logs 1ai-content --lines 50   # Recent bot logs
+# Media-api Python :8767 — DI-MANAGE systemd (bukan PM2; unit system scope)
+systemctl status 1ai-content
+journalctl -u 1ai-content -n 50   # atau: tail -f /var/log/1ai-content.log
 ```
 
 ### 2. 404 on Admin Routes

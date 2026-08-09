@@ -569,7 +569,7 @@ Flow:
 
 ## 📱 COMPLETE TELEGRAM COMMANDS
 
-> Catatan 2026-08-02 (audit): tabel di bawah diverifikasi dari `src/commands/index.ts` — daftar otoritatif bot utama (`src/index.ts`). Perintah `/suno /voice /music /loop /analyze /storyboard` HANYA terdaftar di `src/content-bot.ts`, entry yang TIDAK di-wire ke `package.json`/`ecosystem.config.js`/`Dockerfile` → TIDAK aktif di produksi (orphan). `/thumbnail /benchmark /gap /strategy /compose /remix /factory /status /history` TIDAK punya handler sama sekali (fictional).
+> Catatan 2026-08-02 (audit, diperbarui 2026-08-10): tabel di bawah diverifikasi dari `src/commands/index.ts` — daftar otoritatif bot utama (`src/index.ts`). Perintah `/suno /voice /music /loop /analyze /storyboard` TIDAK aktif di produksi — satu-satunya entry `src/content-bot.ts` yang mendaftarkannya SUDAH DIHAPUS (audit dead-code 2026-08-03) sehingga perintah tersebut kini tidak punya handler sama sekali. `/thumbnail /benchmark /gap /strategy /compose /remix /factory /status /history` TIDAK punya handler sama sekali (fictional).
 
 ### User & Account
 
@@ -631,8 +631,7 @@ Flow:
 
 ### ⚠️ Tidak aktif / tidak terdaftar
 
-- **Orphan** (`src/content-bot.ts` — tidak di-wire ke runtime): `/suno`, `/voice`, `/music`, `/loop`, `/analyze`, `/storyboard`
-- **Fictional** (tidak ada handler di codebase): `/thumbnail`, `/benchmark`, `/gap`, `/strategy`, `/compose`, `/remix`, `/factory`, `/status`, `/history`
+- **Fictional** (tidak ada handler di codebase): `/suno`, `/voice`, `/music`, `/loop`, `/analyze`, `/storyboard` (entry `src/content-bot.ts` dihapus 2026-08-03), `/thumbnail`, `/benchmark`, `/gap`, `/strategy`, `/compose`, `/remix`, `/factory`, `/status`, `/history`
 
 ---
 
