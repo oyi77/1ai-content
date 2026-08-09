@@ -8,11 +8,20 @@ pass/fail and a layer-by-layer summary.
 import sys
 import json
 import time
+import os
 import requests
 
 BASE = "http://127.0.0.1:8767"
 TIMEOUT_FAST = 10    # endpoints that should respond instantly
 TIMEOUT_SLOW = 120   # generation endpoints that may take a while
+
+# Shared-secret for the Python enforce_api_key gate (gap-1). Attach it to every
+# request when set in the environment; when unset the gate fails open and
+# behavior is unchanged (negative tests still expect 404, not 401).
+_SESSION = requests.Session()
+_API_KEY = os.environ.get("EBOOK_API_KEY")
+if _API_KEY:
+    _SESSION.headers.update({"X-API-Key": _API_KEY})
 
 results = []
 failures = 0
@@ -35,11 +44,11 @@ def test(method: str, path: str, desc: str, *,
     start = time.time()
     try:
         if method == "GET":
-            r = requests.get(url, params=params, timeout=timeout)
+            r = _SESSION.get(url, params=params, timeout=timeout)
         elif method == "POST":
-            r = requests.post(url, params=params, json=body, timeout=timeout)
+            r = _SESSION.post(url, params=params, json=body, timeout=timeout)
         elif method == "DELETE":
-            r = requests.delete(url, params=params, timeout=timeout)
+            r = _SESSION.delete(url, params=params, timeout=timeout)
         else:
             raise SmokeError(f"Unknown method {method}")
 

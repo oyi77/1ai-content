@@ -110,7 +110,11 @@ class ContentFactoryService {
     this.client = axios.create({
       baseURL: this.baseUrl,
       timeout: 300_000, // 5 min — video/loop generation can be slow
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        // media-api :8767 requires X-API-Key when EBOOK_API_KEY is set (security: gap-1)
+        'X-API-Key': getConfig().EBOOK_API_KEY || '',
+      },
     });
   }
 

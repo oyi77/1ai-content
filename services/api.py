@@ -131,24 +131,43 @@ registry.register(EbookContentGenerator(), prefix="/text/ebook")
 
 
 # ══════════════════════════════════════════════════════════════
-# EBOOK API KEY ENFORCEMENT (optional) — prefix /text/ebook/*
+# API KEY ENFORCEMENT (optional) — SEMUA route kecuali allowlist publik.
 # Aktif HANYA jika env EBOOK_API_KEY diset (default .env.example:
 # "Optional API key"). Jika env tidak diset, request dibiarkan
-# lewat (default = open) agar tidak memutus alur legacy. TS sudah
-# selalu mengirim header X-API-Key (src/services/ebook.service.ts).
+# lewat (default = open) agar tidak memutus alur legacy. TS selalu
+# mengirim header X-API-Key (src/services/ebook.service.ts,
+# content-factory.service.ts, tiktok-automation.service.ts).
 # Perbandingan memakai secrets.compare_digest (timing-safe).
+# PUBLIC_ALLOWLIST: path anonim untuk health probe + konten landing
+# publik (GET /text/articles). Sinkron dgn allowlist proxy /api/py
+# di src/index.ts (security: gap-1).
 # ══════════════════════════════════════════════════════════════
 
+# Endpoint publik: probe infra + baca artikel landing (hanya GET).
+PUBLIC_ALLOWLIST = {"/health"}
+
+
+def _is_public(path: str, method: str) -> bool:
+    if path in PUBLIC_ALLOWLIST:
+        return True
+    if path == "/text/articles" and method == "GET":
+        return True
+    return False
+
+
 @app.middleware("http")
-async def enforce_ebook_api_key(request: Request, call_next):
+async def enforce_api_key(request: Request, call_next):
     expected = os.getenv("EBOOK_API_KEY")
-    if expected and request.url.path.startswith("/text/ebook"):
-        provided = request.headers.get("X-API-Key", "")
-        if not provided or not secrets.compare_digest(provided, expected):
-            return JSONResponse(
-                status_code=401,
-                content={"detail": "Unauthorized: missing or invalid X-API-Key"},
-            )
+    if not expected:
+        return await call_next(request)
+    if _is_public(request.url.path, request.method):
+        return await call_next(request)
+    provided = request.headers.get("X-API-Key", "")
+    if not provided or not secrets.compare_digest(provided, expected):
+        return JSONResponse(
+            status_code=401,
+            content={"detail": "Unauthorized: missing or invalid X-API-Key"},
+        )
     return await call_next(request)
 
 

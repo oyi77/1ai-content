@@ -7,7 +7,7 @@
 
 import "dotenv/config";
 
-import { initConfig } from "@/config/env";
+import { getConfig, initConfig } from "@/config/env";
 const appConfig = initConfig();
 
 import { Telegraf } from "telegraf";
@@ -31,6 +31,7 @@ import { agencyRoutes } from "@/routes/agency";
 import { contentApiRoutes } from "@/routes/content-api";
 import { youtubeDashboardRoutes } from "@/routes/youtube/dashboard.route";
 import { verifyAdmin } from "@/routes/admin/auth";
+import { createRateLimiter } from "@/middleware/rateLimit";
 import { analyticsRoutes } from "@/routes/analytics-api";
 import { ecosystemRoutes } from "@/routes/ecosystem";
 import { PaymentService } from "@/services/payment.service";
@@ -300,14 +301,50 @@ async function main() {
     });
 
     // Reverse proxy /api/py/* to Python FastAPI server on port 8767
+    // ── SECURITY GATE (security: gap-1) ─────────────────────────────────
+    // /api/py exposes generation + social-posting endpoints. Gate here +
+    // at the Python layer (services/api.py enforce_api_key middleware):
+    //  - rate limit 120/min/IP (RATE_LIMIT_DISABLED=1 honored by Playwright e2e)
+    //  - public allowlist: infra health probe + landing article reads (GET)
+    //  - everything else requires an admin session (Basic / cookie / ?token)
+    const pyApiLimiter = createRateLimiter({
+      max: 120,
+      windowMs: 60_000,
+      keyPrefix: "ratelimit:pypi",
+    });
     await app.register(fastifyHttpProxy, {
       upstream: 'http://127.0.0.1:8767',
       prefix: '/api/py',
       rewritePrefix: '/',
       http: {},             // Force HTTP/1.1 (Node.js native) — undici's bodyTimeout kills SSE streams
-      preHandler(request, _reply, done) {
+      preHandler: async (request, reply) => {
         (request as any).raw.setTimeout(180_000);
-        done();
+
+        // Upstream shared-secret seam: Python's enforce_api_key gate (gap-1)
+        // requires X-API-Key on every non-allowlisted call. The three TS
+        // services send it via getConfig().EBOOK_API_KEY — the proxy must too,
+        // else setting EBOOK_API_KEY in prod 401s every browser call.
+        // Inject server-side (never trust a caller-supplied value). reply-from
+        // snapshots { ...req.headers } at forward time, so this reaches :8767.
+        request.headers["x-api-key"] = getConfig().EBOOK_API_KEY || "";
+
+        // 1) Rate limit (escape hatch: RATE_LIMIT_DISABLED=1 in e2e)
+        await pyApiLimiter(request, reply);
+        if (reply.sent) return;
+
+        // 2) Public allowlist (must mirror PUBLIC_ALLOWLIST in services/api.py)
+        const urlPath = (request.url || "").split("?")[0];
+        const method = (request.method || "GET").toUpperCase();
+        if (
+          urlPath === "/api/py/health" ||
+          (method === "GET" && urlPath === "/api/py/text/articles")
+        ) {
+          return;
+        }
+
+        // 3) Everything else requires an admin session
+        await verifyAdmin(request, reply);
+        if (reply.sent) return; // verifyAdmin already replied 401 / redirect
       },
     });
     logger.info("🔄 /api/py reverse proxy registered");
