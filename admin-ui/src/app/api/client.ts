@@ -59,6 +59,11 @@ export const api = {
   claimWelcomeBonus: () =>
     request<{ granted: boolean; creditBalance: number }>("POST", "/api/user/bonus/welcome"),
 
+  // Backend: POST /auth/email/change-password (Bearer JWT required)
+  // Body { currentPassword, newPassword }; returns { message }
+  changePassword: (currentPassword: string, newPassword: string) =>
+    request<{ message: string }>("POST", "/auth/email/change-password", { currentPassword, newPassword }),
+
   // ── Videos ────────────────────────────────────────────
   getVideos: () => request<{ videos: any[] }>("GET", "/api/user/videos"),
   createVideo: (data: any) => request("POST", "/api/video/create", data),

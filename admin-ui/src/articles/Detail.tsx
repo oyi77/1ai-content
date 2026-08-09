@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import DOMPurify from "dompurify";
 import { markdownToHtml } from "./markdown";
 import { formatDate } from "./List";
 import "./articles.css";
@@ -124,12 +125,14 @@ export default function ArticleDetail() {
             {article.format === "html" ? (
               <div
                 className="article-prose"
-                dangerouslySetInnerHTML={{ __html: article.content }}
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.content) }}
               />
             ) : (
               <div
                 className="article-prose"
-                dangerouslySetInnerHTML={{ __html: markdownToHtml(article.content) }}
+                dangerouslySetInnerHTML={{
+                  __html: DOMPurify.sanitize(markdownToHtml(article.content)),
+                }}
               />
             )}
           </article>

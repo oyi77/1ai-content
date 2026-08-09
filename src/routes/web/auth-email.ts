@@ -6,6 +6,7 @@
  * POST /auth/email/verify-email   — confirm email via token
  * POST /auth/email/forgot-password — request password reset
  * POST /auth/email/reset-password  — execute password reset
+ * POST /auth/email/change-password — rotate password while logged in (JWT required)
  *
  * Keeps Telegram auth (auth.ts) fully intact. Email-only users get a
  * synthetic BigInt telegramId so all 17 child-model FKs continue to work.
@@ -222,6 +223,60 @@ export async function authEmailRoutes(server: FastifyInstance): Promise<void> {
     } catch (error) {
       logger.error("Password reset failed", { error });
       return reply.status(500).send({ error: "Password reset failed" });
+    }
+  });
+
+  // ── POST /auth/email/change-password ──
+  // Requires a valid email-auth JWT (Bearer). Rejects Telegram-native accounts
+  // (passwordHash === null) and never echoes the hash back.
+  server.post("/auth/email/change-password", { preHandler: authPasswordLimiter }, async (request, reply) => {
+    try {
+      const { currentPassword, newPassword } = (request.body ?? {}) as {
+        currentPassword?: string;
+        newPassword?: string;
+      };
+
+      const authHeader = request.headers.authorization;
+      if (!authHeader?.startsWith("Bearer ")) {
+        return reply.status(401).send({ error: "Unauthorized" });
+      }
+
+      let decoded: { userId?: string };
+      try {
+        decoded = jwt.verify(authHeader.substring(7), getJwtSecret()) as { userId?: string };
+      } catch {
+        return reply.status(401).send({ error: "Invalid token" });
+      }
+
+      if (!currentPassword || !newPassword) {
+        return reply.status(400).send({ error: "Current and new password are required" });
+      }
+
+      if (newPassword.length < 6) {
+        return reply.status(400).send({ error: "Password must be at least 6 characters" });
+      }
+
+      const user = await UserService.findByUuid(decoded.userId!);
+      if (!user) {
+        return reply.status(404).send({ error: "User not found" });
+      }
+
+      if (user.passwordHash === null) {
+        return reply.status(400).send({ error: "No email password set for this account" });
+      }
+
+      const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+      if (!valid) {
+        return reply.status(401).send({ error: "Current password is incorrect" });
+      }
+
+      const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+      await UserCrudService.resetPassword(user.email!, passwordHash);
+
+      return { message: "Password changed successfully" };
+    } catch (error) {
+      logger.error("Change password failed", { error });
+      return reply.status(500).send({ error: "Password change failed" });
     }
   });
 }

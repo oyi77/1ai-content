@@ -34,7 +34,7 @@ export async function registerPersonaRoutes(
 
 
   server.post("/api/admin/welcome-message", { preHandler: validate({ body: welcomeMessageSchema }) }, async (request, reply) => {
-    await verifyAdmin(request, reply);
+    if (!await verifyAdmin(request, reply)) return;
     const { message } = (request.body ?? {}) as { message?: string };
     if (!message) return reply.status(400).send({ error: "Message required" });
     await PaymentSettingsService.setPricingConfig(
