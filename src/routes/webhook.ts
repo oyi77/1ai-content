@@ -112,7 +112,10 @@ export async function webhookRoutes(server: FastifyInstance, options: WebhookOpt
       }
 
       const body = (request.body ?? {}) as Record<string, unknown>;
-      const signature = request.headers['x-signature'] as string;
+      // Tripay signs the raw JSON body with HMAC-SHA256 using the merchant
+      // private key and sends it in the X-Callback-Signature header.
+      // x-signature is kept as a fallback for legacy clients.
+      const signature = (request.headers['x-callback-signature'] || request.headers['x-signature']) as string;
       const expectedSignature = crypto
         .createHmac('sha256', tripayPrivateKey)
         .update(JSON.stringify(body))
@@ -120,21 +123,22 @@ export async function webhookRoutes(server: FastifyInstance, options: WebhookOpt
 
       if (!signature || !timingSafeCompare(signature, expectedSignature)) {
         logger.warn('Invalid Tripay signature', { received: signature, expected: expectedSignature });
-        return reply.status(401).send({ error: 'Invalid signature' });
+        return reply.status(401).send({ success: false, message: 'Invalid signature' });
       }
 
       logger.info('Tripay webhook received:', body);
       const statusMap: Record<string, string> = {
-        'PAID': 'success', 'EXPIRED': 'failed', 'FAILED': 'failed', 'CANCELLED': 'failed',
+        'PAID': 'success', 'EXPIRED': 'failed', 'FAILED': 'failed',
+        'CANCELLED': 'failed', 'REFUND': 'failed',
       };
       const result = await PaymentService.handleNotification({
-        order_id: String(body.merchant_ref),
-        status_code: String(body.status_code || '200'),
-        gross_amount: String(body.amount || '0'),
-        signature_key: String(body.signature),
-        transaction_status: statusMap[String(body.status)] || 'pending',
-        payment_type: String(body.payment_method),
-      }, String(body.signature));
+        order_id: String(body.merchant_ref || ''),
+        status: statusMap[String(body.status)] || 'pending',
+        gateway: 'tripay',
+        payment_method: String(body.payment_method || ''),
+        paid_at: null,
+        amount: Number(body.total_amount ?? body.amount ?? 0),
+      }, signature, { skipSignature: true });
 
       // Notify user on payment failure/expiry
       if ((body.status === 'EXPIRED' || body.status === 'FAILED' || body.status === 'CANCELLED') && body.merchant_ref && bot) {
@@ -152,7 +156,8 @@ export async function webhookRoutes(server: FastifyInstance, options: WebhookOpt
         } catch { /* best-effort notification */ }
       }
 
-      return { ok: result.success };
+      // Tripay requires {"success": true} to stop callback retries (3x).
+      return reply.send({ ok: result.success, success: result.success, message: result.message });
     } catch (error) {
       logger.error('Tripay webhook error:', error);
       sendAdminAlert('critical', 'Tripay Webhook Error', { error: String(error) });

@@ -279,7 +279,7 @@ describe('Payment Webhook Endpoints', () => {
   // ── Tripay webhook ──
 
   describe('POST /webhook/tripay', () => {
-    it('returns 401 when x-signature header is missing', async () => {
+    it('returns 401 when x-callback-signature header is missing', async () => {
       const body = { merchant_ref: 'TRP-001', status: 'PAID', amount: 50000 };
       const res = await request(app.server)
         .post('/webhook/tripay')
@@ -287,32 +287,36 @@ describe('Payment Webhook Endpoints', () => {
       expect(res.status).toBe(401);
     });
 
-    it('returns 401 when x-signature is wrong', async () => {
+    it('returns 401 when x-callback-signature is wrong', async () => {
       const body = { merchant_ref: 'TRP-001', status: 'PAID', amount: 50000 };
       const res = await request(app.server)
         .post('/webhook/tripay')
-        .set('x-signature', 'bad-signature')
+        .set('x-callback-signature', 'bad-signature')
         .send(body);
       expect(res.status).toBe(401);
     });
 
-    it('returns 200 ok:true when x-signature is valid', async () => {
+    it('returns 200 ok:true when x-callback-signature is valid and forwards normalized event', async () => {
       const body = {
         merchant_ref: 'TRP-001',
         status: 'PAID',
-        amount: 50000,
-        status_code: 200,
+        total_amount: 50000,
         payment_method: 'BRIVA',
-        signature: 'some-tripay-sig',
       };
       const sig = tripaySignature(body);
 
       const res = await request(app.server)
         .post('/webhook/tripay')
-        .set('x-signature', sig)
+        .set('x-callback-signature', sig)
         .send(body);
 
       expect(res.status).toBe(200);
+      expect(res.body).toEqual(expect.objectContaining({ ok: true, success: true }));
+      expect(isolatedPaymentService.handleNotification).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'success', order_id: 'TRP-001', gateway: 'tripay' }),
+        sig,
+        { skipSignature: true },
+      );
     });
 
     it('passes EXPIRED status through PaymentService.handleNotification', async () => {
@@ -320,20 +324,19 @@ describe('Payment Webhook Endpoints', () => {
         merchant_ref: 'TRP-002',
         status: 'EXPIRED',
         amount: 25000,
-        status_code: 200,
         payment_method: 'BRIVA',
-        signature: 'tripay-sig',
       };
       const sig = tripaySignature(body);
 
       await request(app.server)
         .post('/webhook/tripay')
-        .set('x-signature', sig)
+        .set('x-callback-signature', sig)
         .send(body);
 
       expect(isolatedPaymentService.handleNotification).toHaveBeenCalledWith(
-        expect.objectContaining({ transaction_status: 'failed' }),
-        'tripay-sig',
+        expect.objectContaining({ status: 'failed', gateway: 'tripay' }),
+        sig,
+        { skipSignature: true },
       );
     });
   });

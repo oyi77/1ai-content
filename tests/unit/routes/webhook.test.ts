@@ -502,7 +502,7 @@ describe("Webhook Routes", () => {
         process.env.TRIPAY_PRIVATE_KEY!,
       );
 
-      const request = createMockRequest(body, { "x-signature": signature });
+      const request = createMockRequest(body, { "x-callback-signature": signature });
       const reply = createMockReply();
 
       (mockPaymentServiceHandleNotification as any).mockResolvedValue({
@@ -510,17 +510,21 @@ describe("Webhook Routes", () => {
         message: "Notification processed",
       });
 
-      const result = await tripayHandler()(request, reply);
+      await tripayHandler()(request, reply);
 
       expect(mockPaymentServiceHandleNotification).toHaveBeenCalledWith({
-        order_id: body.reference,
-        status_code: "200",
-        gross_amount: "50000",
-        signature_key: body.signature,
-        transaction_status: "success",
-        payment_type: body.payment_method,
-      }, "");
-      expect(result).toEqual({ ok: true });
+        order_id: String(body.merchant_ref || ""),
+        status: "success",
+        gateway: "tripay",
+        payment_method: "BCA",
+        paid_at: null,
+        amount: 50000,
+      }, signature, { skipSignature: true });
+      expect(reply.send).toHaveBeenCalledWith({
+        ok: true,
+        success: true,
+        message: "Notification processed",
+      });
       expect(mockLogger.info).toHaveBeenCalledWith(
         "Tripay webhook received:",
         body,
@@ -538,22 +542,25 @@ describe("Webhook Routes", () => {
       };
 
       const request = createMockRequest(body, {
-        "x-signature": "invalid-signature",
+        "x-callback-signature": "invalid-signature",
       });
       const reply = createMockReply();
 
-      const result = await tripayHandler()(request, reply);
+      await tripayHandler()(request, reply);
 
       expect(mockPaymentServiceHandleNotification).not.toHaveBeenCalled();
       expect(reply.status).toHaveBeenCalledWith(401);
-      expect(reply.send).toHaveBeenCalledWith({ error: "Invalid signature" });
+      expect(reply.send).toHaveBeenCalledWith({
+        success: false,
+        message: "Invalid signature",
+      });
       expect(mockLogger.warn).toHaveBeenCalledWith(
         "Invalid Tripay signature",
         expect.objectContaining({ received: "invalid-signature" }),
       );
     });
 
-    it("should map PAID status to success", async () => {
+    it("should accept legacy x-signature header as fallback", async () => {
       const body = {
         reference: "TP-123456789",
         merchant_ref: "TP-123456789",
@@ -579,8 +586,50 @@ describe("Webhook Routes", () => {
       await tripayHandler()(request, reply);
 
       expect(mockPaymentServiceHandleNotification).toHaveBeenCalledWith(
-        expect.objectContaining({ transaction_status: "success" }),
-        "",
+        expect.objectContaining({
+          order_id: "TP-123456789",
+          status: "success",
+          gateway: "tripay",
+        }),
+        signature,
+        { skipSignature: true },
+      );
+      expect(reply.send).toHaveBeenCalledWith({
+        ok: true,
+        success: true,
+        message: "Notification processed",
+      });
+    });
+
+    it("should map PAID status to success", async () => {
+      const body = {
+        reference: "TP-123456789",
+        merchant_ref: "TP-123456789",
+        status: "PAID",
+        status_code: 200,
+        amount: 50000,
+        signature: "",
+        payment_method: "BCA",
+      };
+      const signature = generateTripaySignature(
+        body,
+        process.env.TRIPAY_PRIVATE_KEY!,
+      );
+
+      const request = createMockRequest(body, { "x-callback-signature": signature });
+      const reply = createMockReply();
+
+      (mockPaymentServiceHandleNotification as any).mockResolvedValue({
+        success: true,
+        message: "Notification processed",
+      });
+
+      await tripayHandler()(request, reply);
+
+      expect(mockPaymentServiceHandleNotification).toHaveBeenCalledWith(
+        expect.objectContaining({ status: "success", gateway: "tripay" }),
+        signature,
+        { skipSignature: true },
       );
     });
 
@@ -598,7 +647,7 @@ describe("Webhook Routes", () => {
         process.env.TRIPAY_PRIVATE_KEY!,
       );
 
-      const request = createMockRequest(body, { "x-signature": signature });
+      const request = createMockRequest(body, { "x-callback-signature": signature });
       const reply = createMockReply();
 
       (mockPaymentServiceHandleNotification as any).mockResolvedValue({
@@ -609,8 +658,9 @@ describe("Webhook Routes", () => {
       await tripayHandler()(request, reply);
 
       expect(mockPaymentServiceHandleNotification).toHaveBeenCalledWith(
-        expect.objectContaining({ transaction_status: "failed" }),
-        "",
+        expect.objectContaining({ status: "failed", gateway: "tripay" }),
+        signature,
+        { skipSignature: true },
       );
     });
 
@@ -628,7 +678,7 @@ describe("Webhook Routes", () => {
         process.env.TRIPAY_PRIVATE_KEY!,
       );
 
-      const request = createMockRequest(body, { "x-signature": signature });
+      const request = createMockRequest(body, { "x-callback-signature": signature });
       const reply = createMockReply();
 
       (mockPaymentServiceHandleNotification as any).mockResolvedValue({
@@ -639,8 +689,9 @@ describe("Webhook Routes", () => {
       await tripayHandler()(request, reply);
 
       expect(mockPaymentServiceHandleNotification).toHaveBeenCalledWith(
-        expect.objectContaining({ transaction_status: "failed" }),
-        "",
+        expect.objectContaining({ status: "failed", gateway: "tripay" }),
+        signature,
+        { skipSignature: true },
       );
     });
 
@@ -658,7 +709,7 @@ describe("Webhook Routes", () => {
         process.env.TRIPAY_PRIVATE_KEY!,
       );
 
-      const request = createMockRequest(body, { "x-signature": signature });
+      const request = createMockRequest(body, { "x-callback-signature": signature });
       const reply = createMockReply();
 
       (mockPaymentServiceHandleNotification as any).mockResolvedValue({
@@ -669,8 +720,9 @@ describe("Webhook Routes", () => {
       await tripayHandler()(request, reply);
 
       expect(mockPaymentServiceHandleNotification).toHaveBeenCalledWith(
-        expect.objectContaining({ transaction_status: "failed" }),
-        "",
+        expect.objectContaining({ status: "failed", gateway: "tripay" }),
+        signature,
+        { skipSignature: true },
       );
     });
 
@@ -688,7 +740,7 @@ describe("Webhook Routes", () => {
         process.env.TRIPAY_PRIVATE_KEY!,
       );
 
-      const request = createMockRequest(body, { "x-signature": signature });
+      const request = createMockRequest(body, { "x-callback-signature": signature });
       const reply = createMockReply();
 
       (mockPaymentServiceHandleNotification as any).mockResolvedValue({
@@ -699,8 +751,9 @@ describe("Webhook Routes", () => {
       await tripayHandler()(request, reply);
 
       expect(mockPaymentServiceHandleNotification).toHaveBeenCalledWith(
-        expect.objectContaining({ transaction_status: "pending" }),
-        "",
+        expect.objectContaining({ status: "pending", gateway: "tripay" }),
+        signature,
+        { skipSignature: true },
       );
     });
 
@@ -717,7 +770,7 @@ describe("Webhook Routes", () => {
         process.env.TRIPAY_PRIVATE_KEY!,
       );
 
-      const request = createMockRequest(body, { "x-signature": signature });
+      const request = createMockRequest(body, { "x-callback-signature": signature });
       const reply = createMockReply();
 
       (mockPaymentServiceHandleNotification as any).mockResolvedValue({
@@ -728,8 +781,9 @@ describe("Webhook Routes", () => {
       await tripayHandler()(request, reply);
 
       expect(mockPaymentServiceHandleNotification).toHaveBeenCalledWith(
-        expect.objectContaining({ status_code: "200" }),
-        "",
+        expect.objectContaining({ status: "success", gateway: "tripay" }),
+        signature,
+        { skipSignature: true },
       );
     });
 
@@ -746,7 +800,7 @@ describe("Webhook Routes", () => {
         process.env.TRIPAY_PRIVATE_KEY!,
       );
 
-      const request = createMockRequest(body, { "x-signature": signature });
+      const request = createMockRequest(body, { "x-callback-signature": signature });
       const reply = createMockReply();
 
       (mockPaymentServiceHandleNotification as any).mockResolvedValue({
@@ -757,8 +811,9 @@ describe("Webhook Routes", () => {
       await tripayHandler()(request, reply);
 
       expect(mockPaymentServiceHandleNotification).toHaveBeenCalledWith(
-        expect.objectContaining({ gross_amount: "0" }),
-        "",
+        expect.objectContaining({ status: "success", gateway: "tripay", amount: 0 }),
+        signature,
+        { skipSignature: true },
       );
     });
 
@@ -777,7 +832,7 @@ describe("Webhook Routes", () => {
         process.env.TRIPAY_PRIVATE_KEY!,
       );
 
-      const request = createMockRequest(body, { "x-signature": signature });
+      const request = createMockRequest(body, { "x-callback-signature": signature });
       const reply = createMockReply();
 
       const error = new Error("Database error");
@@ -1441,7 +1496,7 @@ describe("Webhook Routes", () => {
         process.env.TRIPAY_PRIVATE_KEY!,
       );
 
-      const request = createMockRequest(body, { "x-signature": signature });
+      const request = createMockRequest(body, { "x-callback-signature": signature });
       const reply = createMockReply();
 
       (mockPaymentServiceHandleNotification as any).mockResolvedValue({
@@ -1449,13 +1504,25 @@ describe("Webhook Routes", () => {
         message: "Notification processed",
       });
 
-      const result = await routes.post["/webhook/tripay"](request, reply);
+      await routes.post["/webhook/tripay"](request, reply);
 
       expect(mockPaymentServiceHandleNotification).toHaveBeenCalledWith(
-        expect.objectContaining({ gross_amount: "999999999" }),
-        "",
+        expect.objectContaining({
+          order_id: "",
+          status: "success",
+          gateway: "tripay",
+          amount: 999999999,
+          payment_method: "BCA",
+          paid_at: null,
+        }),
+        signature,
+        { skipSignature: true },
       );
-      expect(result).toEqual({ ok: true });
+      expect(reply.send).toHaveBeenCalledWith({
+        ok: true,
+        success: true,
+        message: "Notification processed",
+      });
     });
   });
 });
