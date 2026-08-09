@@ -18,7 +18,7 @@ const API_KEY_REGISTRY: Record<string, string> = {
   SILICONFLOW_API_KEY: 'SiliconFlow', FALAI_API_KEY: 'Fal.ai',
   KIE_API_KEY: 'Kie.ai', PIAPI_API_KEY: 'PiAPI', GEMINIGEN_API_KEY: 'GeminiGen',
   LINGYAAI_API_KEY: 'LingyaAI', GETGOAPI_API_KEY: 'GetGoAPI', APIYI_API_KEY: 'APIyi',
-  ZAI_API_KEY: 'Z.ai', DID_API_KEY: 'D-ID', RUNWARE_API_KEY: 'Runware',
+  ZAI_API_KEY: 'Z.ai', D_ID_API_KEY: 'D-ID', RUNWARE_API_KEY: 'Runware',
   WAVESPEED_API_KEY: 'WaveSpeed', TOGETHER_API_KEY: 'Together AI',
   SEGMIND_API_KEY: 'Segmind', NVIDIA_API_KEY: 'NVIDIA',
   MIDTRANS_SERVER_KEY: 'Midtrans Server', MIDTRANS_CLIENT_KEY: 'Midtrans Client',

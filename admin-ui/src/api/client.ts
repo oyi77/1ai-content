@@ -999,7 +999,14 @@ export async function fetchApiKeys(): Promise<ApiKeyEntry[]> {
 }
 
 export async function updateApiKey(name: string, value: string): Promise<{ ok: boolean }> {
-  return postJson<{ ok: boolean }>(`/api/admin/api-keys/${encodeURIComponent(name)}`, { value });
+  const res = await fetch(`/api/admin/api-keys/${encodeURIComponent(name)}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ value }),
+  });
+  if (!res.ok) throw new Error(`PUT api-key failed: ${res.status}`);
+  return res.json();
 }
 
 export async function deleteApiKey(name: string): Promise<{ ok: boolean }> {
@@ -1243,11 +1250,23 @@ export async function createCustomProvider(data: CustomProviderUpdate): Promise<
 }
 
 export async function updateCustomProvider(id: string, data: CustomProviderUpdate): Promise<CustomProvider> {
-  return postJson<CustomProvider>(`/api/admin/custom-providers/${encodeURIComponent(id)}`, data);
+  const res = await fetch(`/api/admin/custom-providers/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(`PUT custom-provider failed: ${res.status}`);
+  return res.json();
 }
 
 export async function deleteCustomProvider(id: string): Promise<{ ok: boolean }> {
-  return postJson<{ ok: boolean }>(`/api/admin/custom-providers/${encodeURIComponent(id)}`, {});
+  const res = await fetch(`/api/admin/custom-providers/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error(`DELETE custom-provider failed: ${res.status}`);
+  return res.json();
 }
 
 export async function fetchCustomProviderModels(id: string): Promise<FetchModelsResult> {
