@@ -262,6 +262,16 @@ async function main() {
       reply.header('X-Frame-Options', 'DENY');
       reply.header('X-XSS-Protection', '1; mode=block');
       reply.header('Referrer-Policy', 'strict-origin-when-cross-origin');
+      reply.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+      // CSP: first-party inline scripts/styles required by EJS views (faq/login)
+      // and React inline styles; blocks remote script injection + frame embedding.
+      reply.header(
+        'Content-Security-Policy',
+        "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; " +
+          "img-src 'self' data: blob: https:; font-src 'self' data:; " +
+          "connect-src 'self' https: wss: ws: blob:; media-src 'self' blob: https:; " +
+          "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; worker-src 'self' blob:",
+      );
     });
 
     // ── CORS (onRequest to avoid conflicts with SSE/raw responses) ──

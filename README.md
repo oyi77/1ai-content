@@ -80,7 +80,7 @@ OpenClaw Bot memungkinkan pengguna untuk:
                         │
 ┌───────────────────────▼─────────────────────────────────────┐
 │                 EBOOK SERVICE (FastAPI)                     │
-│     Sibling `ebook/` directory - port 8765                  │
+│     Sibling `services/ebook/` directory - port 8767          │
 │  AI-powered ebook generation: outline → manuscript → QA   │
 │  → cover → export (DOCX/PDF)                                │
 └─────────────────────────────────────────────────────────────┘
@@ -89,16 +89,16 @@ OpenClaw Bot memungkinkan pengguna untuk:
 ### Ebook Generation Service
 
 The `/ebook` Telegram command is handled by `src/commands/ebook.ts` and `src/services/ebook.service.ts`.
-It calls the **sibling `ebook/` FastAPI service** (default `http://localhost:8765`).
+It calls the **ebook generation service** in `services/ebook/` (absorbed into media-api; default `http://localhost:8767`).
 
 | Env Var | Default | Purpose |
 |---------|---------|---------|
-| `EBOOK_API_URL` | `http://localhost:8765` | Base URL of ebook FastAPI service |
+| `EBOOK_API_URL` | `http://localhost:8767` | Base URL of ebook generator (media-api) |
 | `EBOOK_API_KEY` | (empty) | Optional authentication key |
 
 To start the ebook service alongside the bot, see `services/ebook/AGENTS.md`. Entry point: `EbookContentGenerator` (`services/ebook/generator.py`), diregistrasi di `services/api.py` (port 8767; `api_port=8765` di `services/ebook/config.py`).
 
-Atau jalankan service `ebook` pada root `docker-compose.yml`.
+Ebook generation runs inside the media-api (`services/api.py`, port 8767) — no separate service in `docker-compose.yml`.
 
 ---
 

@@ -47,7 +47,7 @@ def test_list_projects_returns_project_list():
 
     assert result["count"] == 2
     assert len(result["projects"]) == 2
-    repo.list_projects.assert_called_once_with(limit=20)
+    repo.list_projects.assert_called_once_with(limit=20, owner=None)
 
 
 def test_list_projects_returns_empty_when_no_projects():
@@ -66,7 +66,7 @@ def test_list_projects_respects_limit_parameter():
     with patch("services.ebook.mcp.server._get_repo", return_value=repo):
         server.tool_list_projects(limit=5)
 
-    repo.list_projects.assert_called_once_with(limit=5)
+    repo.list_projects.assert_called_once_with(limit=5, owner=None)
 
 
 # ---------------------------------------------------------------------------
