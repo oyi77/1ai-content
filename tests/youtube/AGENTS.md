@@ -27,7 +27,7 @@ Tidak ada ekspor publik — folder berisi file test saja.
 
 | File | Yang Diuji |
 |------|-----------|
-| `config.test.ts` | Getter `@/config/youtube.config`: `getTier1Duration=15`, `getTier2Duration=30`, `getTier3Duration=60`, `getBreakoutCtrThreshold≈0.08`, `getRecoveryThreshold≈0.80`, `getDailyApiQuota=10000`, `getMinSampleRate=44100`, `getMinVideoWidth=1920`, `getMaxTitleLength=100`; konstanta `NICHE_VERTICALS` (`folklore_history`, `music`, `true_crime`) |
+| `config.test.ts` | Getter `@/config/youtube.config`: `getTier1Duration=15`, `getTier2Duration=30`, `getTier3Duration=60`, `getRecoveryThreshold≈0.80`, `getMinSampleRate=44100`, `getMinVideoWidth=1920`, `getMaxTitleLength=100`; konstanta `NICHE_VERTICALS` (`folklore_history`, `music`, `true_crime`) |
 | `quality-gate.test.ts` | `validateSeo` / `runQualityGate` dari `@/services/youtube/quality-gate.service` |
 | `quarantine.test.ts` | `checkQuarantineEligibility` dari `@/services/youtube/quarantine.service` (mock `prisma.ytChannel` / `ytPublishedVideo` / `ytVideoMetrics` / `ytQuarantineLog`) |
 | `script-writer.test.ts` | `generateScript` dari `@/services/youtube/script-writer.service` |
@@ -44,7 +44,7 @@ Tidak ada ekspor publik — folder berisi file test saja.
 ## Issue Spesifik
 
 - `types.test.ts` hanya assert modul bisa di-require, tanpa memverifikasi isi tipe (assertion lemah).
-- Test bergantung pada nilai konstanta konfigurasi (mis. `getDailyApiQuota=10000`) — jika konstanta berubah, test harus ikut berubah.
+- Test bergantung pada nilai konstanta konfigurasi (mis. `getTier1Duration=15`) — jika konstanta berubah, test harus ikut berubah.
 
 ## Rekomendasi Perbaikan Scoped
 

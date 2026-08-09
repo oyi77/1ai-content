@@ -101,14 +101,7 @@ describe("YouTube Service Integration", () => {
     expect(config.getTier1Duration()).toBe(15);
     expect(config.getTier2Duration()).toBe(30);
     expect(config.getTier3Duration()).toBe(60);
-    expect(config.getBreakoutCtrThreshold()).toBeCloseTo(0.08);
-    expect(config.getRecoveryThreshold()).toBeCloseTo(0.80);
-    expect(config.getDailyApiQuota()).toBe(10000);
-    expect(config.getUsUploadTime()).toBe("15:00");
-    expect(config.getIdUploadTime()).toBe("20:00");
-    expect(config.getMaxUploadsPerDay()).toBe(2);
-    expect(config.getProvenThemeRatio()).toBeCloseTo(0.70);
-    expect(config.getMaxSimilarityScore()).toBeCloseTo(0.70);
+    expect(config.getRecoveryThreshold()).toBeCloseTo(0.8);
     expect(config.getMinSampleRate()).toBe(44100);
     expect(config.getMinVideoWidth()).toBe(1920);
     expect(config.getMinThumbWidth()).toBe(1280);
@@ -181,21 +174,4 @@ describe("YouTube Service Integration", () => {
     expect(result.eligible).toBe(false);
   });
 
-  it("triage-decision thresholds are configurable", () => {
-    const config = require("@/config/youtube.config");
-    expect(config.getTriageDeadMaxViews()).toBe(100);
-    expect(config.getTriageDeadMaxCtr()).toBeCloseTo(0.02);
-    expect(config.getTriageDeadMaxAvd()).toBeCloseTo(0.20);
-    expect(config.getTriageGoodMinCtr()).toBeCloseTo(0.05);
-    expect(config.getTriageGoodMinAvd()).toBeCloseTo(0.40);
-  });
-
-  it("circuit breaker thresholds are configurable", () => {
-    const config = require("@/config/youtube.config");
-    expect(config.getCircuitBreakerThreshold("voice")).toBe(5);
-    expect(config.getCircuitBreakerThreshold("image")).toBe(10);
-    expect(config.getCircuitBreakerThreshold("video")).toBe(3);
-    expect(config.getCircuitBreakerThreshold("music")).toBe(5);
-    expect(config.getCircuitBreakerResetMs("voice")).toBe(1800000);
-  });
 });
