@@ -44,8 +44,8 @@ Application source code. Telegram bot utama, MCP server, Fastify HTTP server, Bu
 
 ### Medium
 - `cron.ts` duplikat cron inline `index.ts:156-200`; tidak dipanggil siapa pun (dead code, risiko drift).
-- `mcp/server.ts:299-304` (`1ai-content_ai_chat`) — `getOmniRouteService().chat(telegramId, message)` tanpa credit check.
-- `mcp/server.ts:188-233` (`1ai-content_create_video`) — mengirim `chatId: 0` → hasil tidak terkirim ke user.
+- ~~`mcp/server.ts:299-304` (`1ai-content_ai_chat`) — tanpa credit check~~ RESOLVED 2026-08-09: credit gate aktif (`cost = 0.2`, balance check, `deductCredits` — server.ts:311-322).
+- ~~`mcp/server.ts:188-233` (`1ai-content_create_video`) — `chatId: 0`~~ RESOLVED 2026-08-09: kini `chatId: Number(telegramId)` (server.ts:230) + validasi user (`findByTelegramId`) + credit gate (`getVideoCreditCostAsync`, balance check, `deductCredits`).
 - `repositories/*` — komentar "proof-of-concept", tidak diimpor modul mana pun → dead code.
 - `services/AGENTS.md` lama hanya mendokumentasikan 41 dari 76 file `*.service.ts` (35 tidak terdaftar).
 

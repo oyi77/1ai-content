@@ -243,11 +243,17 @@ export async function executeImageGeneration(
           ? `🖼️ *Sample Image (Demo)*\n\n_Description: ${description}_\n\n⚠️ This is a placeholder image. AI generation is temporarily unavailable.\nThe actual product will generate images matching your description.`
           : t('msg.image_success', lang2, { description, modeInfo });
 
-        let photoSource: string | { source: Buffer };
+        let photoSource: string | { source: Buffer; filename: string; contentType: string };
         let isBase64 = false;
         if (result.imageUrl!.startsWith("data:")) {
-          const base64Data = result.imageUrl!.split(",")[1];
-          photoSource = { source: Buffer.from(base64Data, "base64") };
+          const mime = /^data:([^;,]+)[;,]/.exec(result.imageUrl!)?.[1] ?? "image/png";
+          const extMatch = /^image\/(png|jpe?g|webp|gif)$/i.exec(mime);
+          const ext = extMatch ? (extMatch[1] === "jpeg" ? "jpg" : extMatch[1].toLowerCase()) : "png";
+          photoSource = {
+            source: Buffer.from(result.imageUrl!.split(",")[1], "base64"),
+            filename: `photo.${ext}`,
+            contentType: mime,
+          };
           isBase64 = true;
         } else {
           photoSource = result.imageUrl!;
