@@ -27,8 +27,7 @@ import { healthCheckRoutes } from "@/routes/health";
 import { webhookRoutes } from "@/routes/webhook";
 import { adminRoutes } from "@/routes/admin";
 import { webRoutes } from "@/routes/web";
-import { agencyRoutes } from "@/routes/agency";
-import { contentApiRoutes } from "@/routes/content-api";
+import { apiGatewayRoutes } from "@/routes/api-gateway";
 import { youtubeDashboardRoutes } from "@/routes/youtube/dashboard.route";
 import { verifyAdmin } from "@/routes/admin/auth";
 import { createRateLimiter } from "@/middleware/rateLimit";
@@ -397,8 +396,7 @@ async function main() {
     } catch (e) {
       logger.warn({ msg: 'admin-ui/dist/assets not found — SPA assets unavailable; landing page served from admin-ui/dist or EJS via src/routes/web/pages.ts', err: String(e) });
     }
-    await app.register(agencyRoutes, { prefix: '/api' });
-    await app.register(contentApiRoutes);
+    await app.register(apiGatewayRoutes);
     await app.register(async (adminApi) => {
       adminApi.addHook("onRequest", verifyAdmin);
       await youtubeDashboardRoutes(adminApi);

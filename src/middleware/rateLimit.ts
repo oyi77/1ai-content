@@ -239,3 +239,12 @@ export const readLimiter = createRateLimiter({
   // IP-keyed — Fastify Request carries no user context here (request.user is never set in src),
   // so keying on user would collapse every request to the same "unknown" bucket.
 });
+
+// Machine-facing API (agency keys + content REST): 120 requests per minute, IP-keyed.
+// Both route groups are token-authenticated but previously unlimited — same budget
+// as the /api/py media-api proxy gate. IP-keyed for the same reason as readLimiter.
+export const apiLimiter = createRateLimiter({
+  max: 120,
+  windowMs: 60_000,
+  keyPrefix: "ratelimit:api",
+});
