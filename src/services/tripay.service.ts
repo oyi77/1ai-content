@@ -323,7 +323,7 @@ export class TripayService {
     }
   }
 
-  private static generateSignature(merchantRef: string, amount: number): string {
+  public static generateSignature(merchantRef: string, amount: number): string {
     const config = getConfig();
     return crypto
       .createHmac('sha256', config.TRIPAY_PRIVATE_KEY || '')

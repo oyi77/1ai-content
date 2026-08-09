@@ -18,6 +18,7 @@ import crypto from 'crypto';
 
 const TEST_WEBHOOK_SECRET = 'test-webhook-secret';
 const TEST_TRIPAY_PRIVATE_KEY = 'test-tripay-private-key';
+const TEST_TRIPAY_MERCHANT_CODE = 'T1234';
 const TEST_MIDTRANS_SERVER_KEY = 'test-midtrans-server-key';
 const TEST_NOWPAYMENTS_IPN_SECRET = 'test-nowpayments-ipn-secret';
 const TEST_DUITKU_MERCHANT_CODE = 'D1234';
@@ -25,6 +26,7 @@ const TEST_DUITKU_API_KEY = 'test-duitku-api-key';
 
 process.env.WEBHOOK_SECRET = TEST_WEBHOOK_SECRET;
 process.env.TRIPAY_PRIVATE_KEY = TEST_TRIPAY_PRIVATE_KEY;
+process.env.TRIPAY_MERCHANT_CODE = TEST_TRIPAY_MERCHANT_CODE;
 process.env.MIDTRANS_SERVER_KEY = TEST_MIDTRANS_SERVER_KEY;
 process.env.NOWPAYMENTS_IPN_SECRET = TEST_NOWPAYMENTS_IPN_SECRET;
 process.env.DUITKU_MERCHANT_CODE = TEST_DUITKU_MERCHANT_CODE;
@@ -43,6 +45,7 @@ jest.mock('../../src/config/env', () => ({
     JWT_SECRET: 'test-jwt-secret-for-e2e',
     WEBHOOK_SECRET: 'test-webhook-secret',
     TRIPAY_PRIVATE_KEY: 'test-tripay-private-key',
+    TRIPAY_MERCHANT_CODE: 'T1234',
     MIDTRANS_SERVER_KEY: 'test-midtrans-server-key',
     NOWPAYMENTS_IPN_SECRET: 'test-nowpayments-ipn-secret',
     DUITKU_MERCHANT_CODE: 'D1234',
@@ -134,10 +137,10 @@ function midtransSignature(orderId: string, statusCode: string, grossAmount: str
     .digest('hex');
 }
 
-function tripaySignature(body: object): string {
+function tripaySignature(body: { merchant_ref?: string; amount?: number }): string {
   return crypto
     .createHmac('sha256', TEST_TRIPAY_PRIVATE_KEY)
-    .update(JSON.stringify(body))
+    .update(TEST_TRIPAY_MERCHANT_CODE + (body.merchant_ref || '') + (body.amount || 0))
     .digest('hex');
 }
 
@@ -301,6 +304,7 @@ describe('Payment Webhook Endpoints', () => {
         merchant_ref: 'TRP-001',
         status: 'PAID',
         total_amount: 50000,
+        amount: 50000,
         payment_method: 'BRIVA',
       };
       const sig = tripaySignature(body);

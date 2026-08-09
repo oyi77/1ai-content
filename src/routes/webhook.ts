@@ -8,6 +8,7 @@ import { sendAdminAlert } from '@/services/admin-alert.service';
 import { PaymentService } from '@/services/payment.service';
 import { DuitkuService } from '@/services/duitku.service';
 import { NowPaymentsService } from '@/services/nowpayments.service';
+import { TripayService } from '@/services/tripay.service';
 import { UserService } from '@/services/user.service';
 import { t } from '@/i18n/translations';
 import crypto from 'crypto';
@@ -112,14 +113,14 @@ export async function webhookRoutes(server: FastifyInstance, options: WebhookOpt
       }
 
       const body = (request.body ?? {}) as Record<string, unknown>;
-      // Tripay signs the raw JSON body with HMAC-SHA256 using the merchant
-      // private key and sends it in the X-Callback-Signature header.
+      // Tripay signs `${merchantCode}${merchantRef}${amount}` with HMAC-SHA256
+      // using the merchant private key, sent in the X-Callback-Signature header.
       // x-signature is kept as a fallback for legacy clients.
       const signature = (request.headers['x-callback-signature'] || request.headers['x-signature']) as string;
-      const expectedSignature = crypto
-        .createHmac('sha256', tripayPrivateKey)
-        .update(JSON.stringify(body))
-        .digest('hex');
+      const expectedSignature = TripayService.generateSignature(
+        String(body.merchant_ref || ''),
+        Number(body.amount ?? 0),
+      );
 
       if (!signature || !timingSafeCompare(signature, expectedSignature)) {
         logger.warn('Invalid Tripay signature', { received: signature, expected: expectedSignature });
@@ -131,6 +132,10 @@ export async function webhookRoutes(server: FastifyInstance, options: WebhookOpt
         'PAID': 'success', 'EXPIRED': 'failed', 'FAILED': 'failed',
         'CANCELLED': 'failed', 'REFUND': 'failed',
       };
+      // skipSignature stays true: PaymentService.verifyWebhookSignature computes
+      // HMAC with the generic 1ai-payment webhookSecret, which cannot validate
+      // Tripay signatures — the TripayService.generateSignature check above is
+      // the authoritative verification for this endpoint.
       const result = await PaymentService.handleNotification({
         order_id: String(body.merchant_ref || ''),
         status: statusMap[String(body.status)] || 'pending',

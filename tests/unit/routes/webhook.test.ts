@@ -75,6 +75,7 @@ const mockBot = {
 process.env.WEBHOOK_SECRET = "test-webhook-secret";
 process.env.MIDTRANS_SERVER_KEY = "test-midtrans-server-key";
 process.env.TRIPAY_PRIVATE_KEY = "test-tripay-private-key";
+process.env.TRIPAY_MERCHANT_CODE = "test-tripay-merchant-code";
 process.env.NOWPAYMENTS_IPN_SECRET = "test-nowpayments-ipn-secret";
 
 import { webhookRoutes } from "@/routes/webhook";
@@ -120,10 +121,16 @@ function generateMidtransSignature(
     .digest("hex");
 }
 
+// Tripay signs `${merchantCode}${merchantRef}${amount}` with HMAC-SHA256 using
+// the merchant private key — mirrors TripayService.generateSignature.
 function generateTripaySignature(body: any, privateKey: string): string {
   return crypto
     .createHmac("sha256", privateKey)
-    .update(JSON.stringify(body))
+    .update(
+      (process.env.TRIPAY_MERCHANT_CODE || "") +
+        (body.merchant_ref || "") +
+        Number(body.amount ?? 0),
+    )
     .digest("hex");
 }
 
