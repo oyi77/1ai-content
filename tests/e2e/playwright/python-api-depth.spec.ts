@@ -13,6 +13,17 @@ import { test, expect } from '@playwright/test';
 const PROXY_BASE = ''; // relative — Playwright request uses location.origin
 const PY_API_BASE = process.env.PY_API_BASE ?? 'http://127.0.0.1:8767'; // direct Python server base (configurable)
 
+// ─── Admin auth for the /api/py proxy gate ──────────────────────────────────
+// The TS proxy preHandler (src/index.ts) runs verifyAdmin (src/routes/admin/auth.ts)
+// for every /api/py/* request outside the public allowlist (/health,
+// GET /text/articles). The :3111 webServer boots with the SAME ADMIN_PASSWORD
+// env as this spec process, so Basic auth with that password passes the gate —
+// this is the documented pass-through idiom from f06c16a (Basic/`?token=` 422).
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? '';
+const ADMIN_BASIC = 'Basic ' + Buffer.from(`:${ADMIN_PASSWORD}`, 'utf8').toString('base64');
+
+test.use({ extraHTTPHeaders: { Authorization: ADMIN_BASIC } });
+
 // ─── Health —──────────────────────────────────────────────────────────────────
 
 test.describe('Python API — health', () => {
