@@ -181,7 +181,9 @@ TRIPAY_API_KEY=xxx
 # Ecosystem
 ECOSYSTEM_API_KEY=your_ecosystem_api_key_here
 SOCIAL_SERVICE_URL=http://127.0.0.1:8200
+SOCIAL_SERVICE_KEY=your_ecosystem_api_key_here
 AFFILIATE_SERVICE_URL=http://127.0.0.1:3001
+AFFILIATE_SERVICE_KEY=your_ecosystem_api_key_here
 TRACKING_URL=https://track.aitradepulse.com
 ```
 

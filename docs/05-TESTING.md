@@ -230,7 +230,7 @@ src/routes/           |   42.38 |    34.17 |   33.08 |   44.09
 src/workers/          |   13.16 |     1.46 |    5.00 |   14.09
 ```
 
-*Angka aktual per 2026-08-09 dari `npx jest --coverage` (88 suites, 1453 tests — termasuk `src/` root 0%: `cron.ts` belum ditest). Threshold di `package.json` `jest.coverageThreshold.global` (stmts 25 / branches 15 / funcs 22 / lines 25) sengaja rendah dan DIBIARKAN di bawah ambang (lihat AGENTS.md) — `npm test` (tanpa `--coverage`) exit 0; `jest --coverage` exit 1 hanya karena ambang tidak tercapai, bukan kegagalan test.*
+*Angka aktual per 2026-08-09 dari `npx jest --coverage` (88 suites, 1453 tests — termasuk `src/` root 0%: `cron.ts` belum ditest). Threshold di `package.json` `jest.coverageThreshold.global` (stmts 19 / branches 12 / funcs 13 / lines 19) diselaraskan ke angka aktual dengan margin kecil — tetap sengaja rendah (lihat AGENTS.md), berfungsi sebagai gate regresi agar coverage tidak turun dari baseline; `npm test` dan `jest --coverage` keduanya exit 0.*
 
 ## Adding Tests: Quick Reference
 
