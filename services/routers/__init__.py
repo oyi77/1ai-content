@@ -40,24 +40,24 @@ def register_generator_routes(
         return await gen.health()
 
     @router.get("/projects")
-    async def list_projects(limit: int = 100):
-        return await gen.list()
+    async def list_projects(limit: int = 100, owner: str | None = None):
+        return await gen.list(owner=owner)
 
     @router.post("/projects")
-    async def create_project(params: dict):
-        return await gen.create(params)
+    async def create_project(params: dict, owner: str | None = None):
+        return await gen.create(params, owner=owner)
 
     @router.get("/projects/{project_id}")
-    async def get_project(project_id: str):
-        return await gen.get(project_id)
+    async def get_project(project_id: str, owner: str | None = None):
+        return await gen.get(project_id, owner=owner)
 
     @router.get("/projects/{project_id}/status")
-    async def get_status(project_id: str):
-        return await gen.status(project_id)
+    async def get_status(project_id: str, owner: str | None = None):
+        return await gen.status(project_id, owner=owner)
 
     @router.delete("/projects/{project_id}")
-    async def delete_project(project_id: str):
-        ok = await gen.delete(project_id)
+    async def delete_project(project_id: str, owner: str | None = None):
+        ok = await gen.delete(project_id, owner=owner)
         if not ok:
             from fastapi import HTTPException
 
@@ -65,16 +65,16 @@ def register_generator_routes(
         return {"deleted": project_id}
 
     @router.post("/projects/{project_id}/generate")
-    async def generate(project_id: str):
-        return await gen.generate(project_id)
+    async def generate(project_id: str, owner: str | None = None):
+        return await gen.generate(project_id, owner=owner)
 
     @router.put("/projects/{project_id}")
-    async def update_project(project_id: str, params: dict):
-        return await gen.update(project_id, params)
+    async def update_project(project_id: str, params: dict, owner: str | None = None):
+        return await gen.update(project_id, params, owner=owner)
 
     @router.post("/projects/{project_id}/cancel")
-    async def cancel_generation(project_id: str):
-        return await gen.cancel(project_id)
+    async def cancel_generation(project_id: str, owner: str | None = None):
+        return await gen.cancel(project_id, owner=owner)
 
     # ── Extra generator-specific routes ────────────────────────────
     for method, path, handler in generator.extra_routes():

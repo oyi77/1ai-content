@@ -73,7 +73,7 @@ class ProjectIntake:
         self.repo.set_target_languages(
             project_id, target_languages or [target_language]
         )
-        return self.repo.get_project(project_id)
+        return self.repo.get_project_unscoped(project_id)
 
     def _generate_title(self, idea: str) -> str:
         words = idea.split()

@@ -76,6 +76,16 @@ export class EbookService {
   }
 
   /**
+   * Serialize the tenant owner (Telegram user id) as a query param.
+   * Only appended when defined — a caller without owner context sees
+   * legacy rows only (owner IS NULL), never another user's projects.
+   */
+  private ownerQS(prefix: "?" | "&", owner?: string | number): string {
+    if (owner === undefined || owner === null) return "";
+    return `${prefix}owner=${encodeURIComponent(String(owner))}`;
+  }
+
+  /**
    * Health check for ebook API
    */
   async healthCheck(): Promise<boolean> {
@@ -90,9 +100,9 @@ export class EbookService {
   /**
    * Create a new ebook project
    */
-  async createProject(req: CreateEbookRequest): Promise<EbookProject> {
+  async createProject(req: CreateEbookRequest, owner?: string | number): Promise<EbookProject> {
     try {
-      const resp = await this.client.post("/text/ebook/projects", {
+      const resp = await this.client.post(`/text/ebook/projects${this.ownerQS("?", owner)}`, {
         idea: req.idea,
         title: req.title || null,
         chapter_count: req.chapter_count,
@@ -112,9 +122,9 @@ export class EbookService {
   /**
    * Get project details
    */
-  async getProject(projectId: number): Promise<EbookProject> {
+  async getProject(projectId: number, owner?: string | number): Promise<EbookProject> {
     try {
-      const resp = await this.client.get(`/text/ebook/projects/${projectId}`);
+      const resp = await this.client.get(`/text/ebook/projects/${projectId}${this.ownerQS("?", owner)}`);
       return resp.data;
     } catch (err: unknown) {
       const error = err as Error;
@@ -126,9 +136,9 @@ export class EbookService {
   /**
    * Start ebook generation
    */
-  async generate(projectId: number): Promise<void> {
+  async generate(projectId: number, owner?: string | number): Promise<void> {
     try {
-      await this.client.post(`/text/ebook/projects/${projectId}/generate`);
+      await this.client.post(`/text/ebook/projects/${projectId}/generate${this.ownerQS("?", owner)}`);
       logger.info(`Ebook generation started: ${projectId}`);
     } catch (err: unknown) {
       const error = err as Error;
@@ -140,9 +150,9 @@ export class EbookService {
   /**
    * Get generation status
    */
-  async getStatus(projectId: number): Promise<EbookStatus> {
+  async getStatus(projectId: number, owner?: string | number): Promise<EbookStatus> {
     try {
-      const resp = await this.client.get(`/text/ebook/projects/${projectId}/status`);
+      const resp = await this.client.get(`/text/ebook/projects/${projectId}/status${this.ownerQS("?", owner)}`);
       return resp.data;
     } catch (err: unknown) {
       const error = err as Error;
@@ -154,9 +164,9 @@ export class EbookService {
   /**
    * Get exported ebook content
    */
-  async getExport(projectId: number): Promise<EbookExport> {
+  async getExport(projectId: number, owner?: string | number): Promise<EbookExport> {
     try {
-      const resp = await this.client.get(`/text/ebook/projects/${projectId}/export`);
+      const resp = await this.client.get(`/text/ebook/projects/${projectId}/export${this.ownerQS("?", owner)}`);
       return resp.data;
     } catch (err: unknown) {
       const error = err as Error;
@@ -172,7 +182,8 @@ export class EbookService {
    */
   async download(
     projectId: number,
-    format: "pdf" | "docx" | "epub"
+    format: "pdf" | "docx" | "epub",
+    owner?: string | number
   ): Promise<{ buffer: Buffer; contentType: string; filename: string }> {
     const contentTypeMap: Record<string, string> = {
       docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -182,7 +193,7 @@ export class EbookService {
 
     try {
       const resp = await this.client.get(
-        `/text/ebook/projects/${projectId}/download/${format}`,
+        `/text/ebook/projects/${projectId}/download/${format}${this.ownerQS("?", owner)}`,
         { responseType: "arraybuffer" }
       );
       return {
@@ -201,17 +212,17 @@ export class EbookService {
    * Get download URL for ebook file (clean URL, never embeds the API key).
    * Used only as a fallback when direct file delivery is unavailable.
    */
-  getDownloadUrl(projectId: number, format: "pdf" | "docx" | "epub"): string {
+  getDownloadUrl(projectId: number, format: "pdf" | "docx" | "epub", owner?: string | number): string {
     const baseUrl = getConfig().EBOOK_API_URL;
-    return `${baseUrl}/text/ebook/projects/${projectId}/download/${format}`;
+    return `${baseUrl}/text/ebook/projects/${projectId}/download/${format}${this.ownerQS("?", owner)}`;
   }
 
   /**
    * List all projects
    */
-  async listProjects(limit: number = 10): Promise<EbookProject[]> {
+  async listProjects(limit: number = 10, owner?: string | number): Promise<EbookProject[]> {
     try {
-      const resp = await this.client.get(`/text/ebook/projects?limit=${limit}`);
+      const resp = await this.client.get(`/text/ebook/projects?limit=${limit}${this.ownerQS("&", owner)}`);
       return resp.data;
     } catch (err: unknown) {
       const error = err as Error;
@@ -225,13 +236,14 @@ export class EbookService {
    */
   async waitForCompletion(
     projectId: number,
+    owner?: string | number,
     maxWaitMs: number = 600000,
     pollIntervalMs: number = 5000
   ): Promise<EbookStatus> {
     const startTime = Date.now();
 
     while (Date.now() - startTime < maxWaitMs) {
-      const status = await this.getStatus(projectId);
+      const status = await this.getStatus(projectId, owner);
 
       if (status.status === "completed" || status.db_status === "completed") {
         return status;

@@ -8,7 +8,7 @@ that each ProjectRepository manages its own per-db-path engine.
 import os
 from pathlib import Path
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.engine import Engine
 
 
@@ -41,3 +41,14 @@ def create_tables(engine: Engine) -> None:
     from services.ebook.db.models import Base
 
     Base.metadata.create_all(bind=engine)
+
+    # Tenant scoping backfill: ebook_projects predates the owner column, and
+    # create_all() never ALTERs existing tables. Existing rows keep NULL owner
+    # (owned by nobody, backward compatible); new rows always carry owner.
+    inspector = inspect(engine)
+    tables = {t for t in inspector.get_table_names()}
+    if "ebook_projects" in tables:
+        columns = {col["name"] for col in inspector.get_columns("ebook_projects")}
+        if "owner" not in columns:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE ebook_projects ADD COLUMN owner VARCHAR"))

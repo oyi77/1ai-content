@@ -164,7 +164,7 @@ class ComicsOrchestrator:
 
     def _get_project(self, project_id: int) -> dict:
         repo = ProjectRepository(self.db_path)
-        project = repo.get_project(project_id)
+        project = repo.get_project_unscoped(project_id)
         if project is None:
             raise ValueError(f"Project {project_id} not found")
         return project

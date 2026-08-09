@@ -41,9 +41,9 @@ _progress_lock = threading.Lock()
 # ---------------------------------------------------------------------------
 
 
-def tool_list_projects(limit: int = 20) -> dict:
+def tool_list_projects(limit: int = 20, owner: str | None = None) -> dict:
     repo = _get_repo()
-    projects = repo.list_projects(limit=limit)
+    projects = repo.list_projects(limit=limit, owner=owner)
     return {"projects": projects, "count": len(projects)}
 
 
@@ -53,6 +53,7 @@ def tool_create_project(
     product_mode: str = "lead_magnet",
     target_language: str = "en",
     chapter_count: int = 5,
+    owner: str | None = None,
 ) -> dict:
     repo = _get_repo()
     project_id = repo.create_project(
@@ -61,14 +62,15 @@ def tool_create_project(
         product_mode=product_mode,
         target_language=target_language,
         chapter_count=chapter_count,
+        owner=owner,
     )
-    project = repo.get_project(project_id)
+    project = repo.get_project(project_id, owner=owner)
     return project
 
 
-def tool_generate(project_id: int) -> dict:
+def tool_generate(project_id: int, owner: str | None = None) -> dict:
     repo = _get_repo()
-    project = repo.get_project(project_id)
+    project = repo.get_project(project_id, owner=owner)
     if project is None:
         return {"error": f"Project {project_id} not found"}
 
@@ -120,9 +122,9 @@ def tool_generate(project_id: int) -> dict:
     return {"project_id": project_id, "message": "Generation started"}
 
 
-def tool_get_status(project_id: int) -> dict:
+def tool_get_status(project_id: int, owner: str | None = None) -> dict:
     repo = _get_repo()
-    project = repo.get_project(project_id)
+    project = repo.get_project(project_id, owner=owner)
     if project is None:
         return {"error": f"Project {project_id} not found"}
 
@@ -134,11 +136,11 @@ def tool_get_status(project_id: int) -> dict:
     return {"project_id": project_id, "db_status": project["status"], **progress}
 
 
-def tool_get_export_info(project_id: int) -> dict:
+def tool_get_export_info(project_id: int, owner: str | None = None) -> dict:
     import base64
 
     repo = _get_repo()
-    project = repo.get_project(project_id)
+    project = repo.get_project(project_id, owner=owner)
     if project is None:
         return {"error": f"Project {project_id} not found"}
 
@@ -246,7 +248,7 @@ def tool_read_file(project_id: int, filename: str) -> dict:
 TOOLS = [
     {
         "name": "ebook_list_projects",
-        "description": "List all ebook projects with their status",
+        "description": "List ebook projects with their status",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -254,7 +256,11 @@ TOOLS = [
                     "type": "integer",
                     "description": "Max results to return",
                     "default": 20,
-                }
+                },
+                "telegramId": {
+                    "type": "string",
+                    "description": "Owner's Telegram ID — returns only this user's scoped projects; omit for legacy (unscoped) projects",
+                },
             },
         },
     },
@@ -292,6 +298,10 @@ TOOLS = [
                     "default": 5,
                     "description": "Number of chapters",
                 },
+                "telegramId": {
+                    "type": "string",
+                    "description": "Owner's Telegram ID — scopes the project to this user. Omit to create an unscoped project.",
+                },
             },
         },
     },
@@ -302,7 +312,11 @@ TOOLS = [
             "type": "object",
             "required": ["project_id"],
             "properties": {
-                "project_id": {"type": "integer", "description": "Project ID"}
+                "project_id": {"type": "integer", "description": "Project ID"},
+                "telegramId": {
+                    "type": "string",
+                    "description": "Owner's Telegram ID — required to read another user's scoped project; without it only unscoped (legacy) projects resolve",
+                },
             },
         },
     },
@@ -313,7 +327,11 @@ TOOLS = [
             "type": "object",
             "required": ["project_id"],
             "properties": {
-                "project_id": {"type": "integer", "description": "Project ID"}
+                "project_id": {"type": "integer", "description": "Project ID"},
+                "telegramId": {
+                    "type": "string",
+                    "description": "Owner's Telegram ID — required to read another user's scoped project; without it only unscoped (legacy) projects resolve",
+                },
             },
         },
     },
@@ -324,7 +342,11 @@ TOOLS = [
             "type": "object",
             "required": ["project_id"],
             "properties": {
-                "project_id": {"type": "integer", "description": "Project ID"}
+                "project_id": {"type": "integer", "description": "Project ID"},
+                "telegramId": {
+                    "type": "string",
+                    "description": "Owner's Telegram ID — required to read another user's scoped project; without it only unscoped (legacy) projects resolve",
+                },
             },
         },
     },
@@ -378,18 +400,25 @@ TOOLS = [
 ]
 
 TOOL_DISPATCH = {
-    "ebook_list_projects": lambda args: tool_list_projects(limit=args.get("limit", 20)),
+    "ebook_list_projects": lambda args: tool_list_projects(
+        limit=args.get("limit", 20), owner=args.get("telegramId")
+    ),
     "ebook_create_project": lambda args: tool_create_project(
         title=args["title"],
         idea=args["idea"],
         product_mode=args.get("product_mode", "lead_magnet"),
         target_language=args.get("target_language", "en"),
         chapter_count=args.get("chapter_count", 5),
+        owner=args.get("telegramId"),
     ),
-    "ebook_generate": lambda args: tool_generate(project_id=args["project_id"]),
-    "ebook_get_status": lambda args: tool_get_status(project_id=args["project_id"]),
+    "ebook_generate": lambda args: tool_generate(
+        project_id=args["project_id"], owner=args.get("telegramId")
+    ),
+    "ebook_get_status": lambda args: tool_get_status(
+        project_id=args["project_id"], owner=args.get("telegramId")
+    ),
     "ebook_get_export_info": lambda args: tool_get_export_info(
-        project_id=args["project_id"]
+        project_id=args["project_id"], owner=args.get("telegramId")
     ),
     "ebook_research_market": lambda args: tool_research_market(
         query=args["query"],

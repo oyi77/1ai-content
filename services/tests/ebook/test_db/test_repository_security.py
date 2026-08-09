@@ -120,3 +120,55 @@ def test_update_project_blocks_protected_columns(db_with_tables):
 
     with pytest.raises(ValueError, match="Invalid field.*updated_at"):
         repo.update_project(project_id, updated_at="2020-01-01")
+
+
+def test_get_project_hides_other_tenants_projects(db_with_tables):
+    """Owner-scoped rows are invisible to other owners and to no-owner lookups."""
+    from services.ebook.db.repository import ProjectRepository
+
+    repo = ProjectRepository(db_with_tables)
+    project_id = repo.create_project(
+        title="Alice Ebook",
+        idea="Idea",
+        owner="alice",
+    )
+
+    assert repo.get_project(project_id, owner="alice") is not None
+    assert repo.get_project(project_id, owner="bob") is None
+    assert repo.get_project(project_id) is None
+
+
+def test_get_project_reads_legacy_rows_without_owner(db_with_tables):
+    """Legacy (owner IS NULL) rows stay readable without tenant context."""
+    from services.ebook.db.repository import ProjectRepository
+
+    repo = ProjectRepository(db_with_tables)
+    project_id = repo.create_project(
+        title="Legacy Ebook",
+        idea="Idea",
+    )
+
+    assert repo.get_project(project_id) is not None
+    assert repo.get_project(project_id, owner="alice") is not None
+
+
+def test_list_projects_scopes_to_owner_plus_legacy(db_with_tables):
+    """Owner sees own + legacy rows; never other tenants' rows."""
+    from services.ebook.db.repository import ProjectRepository
+
+    repo = ProjectRepository(db_with_tables)
+    repo.create_project(title="Alice 1", idea="Idea", owner="alice")
+    repo.create_project(title="Alice 2", idea="Idea", owner="alice")
+    repo.create_project(title="Bob 1", idea="Idea", owner="bob")
+    legacy_id = repo.create_project(title="Legacy", idea="Idea")
+
+    alice = repo.list_projects(owner="alice")
+    assert [p["title"] for p in alice] == ["Legacy", "Alice 2", "Alice 1"]
+
+    bob = repo.list_projects(owner="bob")
+    assert [p["title"] for p in bob] == ["Legacy", "Bob 1"]
+
+    no_owner = repo.list_projects()
+    assert [p["title"] for p in no_owner] == ["Legacy"]
+
+    assert repo.get_project(legacy_id, owner="bob") is not None

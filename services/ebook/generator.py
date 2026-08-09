@@ -71,7 +71,7 @@ class EbookContentGenerator(ContentGenerator):
             ],
         )
 
-    async def create(self, params: dict) -> dict:
+    async def create(self, params: dict, *, owner: str | None = None) -> dict:
         from pydantic import ValidationError
         from fastapi import HTTPException
         try:
@@ -91,32 +91,33 @@ class EbookContentGenerator(ContentGenerator):
             product_mode=validated.product_mode,
             target_language=validated.target_language,
             chapter_count=validated.chapter_count,
+            owner=owner,
         )
-        project = self._repo.get_project(project_id)
+        project = self._repo.get_project(project_id, owner=owner)
         return {"project_id": project_id, "project": project}
 
-    async def get(self, project_id: str) -> dict:
+    async def get(self, project_id: str, *, owner: str | None = None) -> dict:
         try:
             pid = int(project_id)
         except ValueError:
             from fastapi import HTTPException
             raise HTTPException(status_code=400, detail=f"Invalid project_id: {project_id}")
-        project = self._repo.get_project(pid)
+        project = self._repo.get_project(pid, owner=owner)
         if project is None:
             from fastapi import HTTPException
             raise HTTPException(status_code=404, detail="Project not found")
         return project
 
-    async def list(self) -> list[dict]:
-        return self._repo.list_projects()
+    async def list(self, *, owner: str | None = None) -> list[dict]:
+        return self._repo.list_projects(owner=owner)
 
-    async def status(self, project_id: str) -> dict:
+    async def status(self, project_id: str, *, owner: str | None = None) -> dict:
         try:
             pid = int(project_id)
         except ValueError:
             from fastapi import HTTPException
             raise HTTPException(status_code=400, detail=f"Invalid project_id: {project_id}")
-        project = self._repo.get_project(pid)
+        project = self._repo.get_project(pid, owner=owner)
         if project is None:
             from fastapi import HTTPException
             raise HTTPException(status_code=404, detail="Project not found")
@@ -131,12 +132,12 @@ class EbookContentGenerator(ContentGenerator):
             **progress,
         }
 
-    async def delete(self, project_id: str) -> bool:
+    async def delete(self, project_id: str, *, owner: str | None = None) -> bool:
         try:
             pid = int(project_id)
         except ValueError:
             return False
-        project = self._repo.get_project(pid)
+        project = self._repo.get_project(pid, owner=owner)
         if project is None:
             return False
         self._repo.delete_project(pid)
@@ -153,7 +154,7 @@ class EbookContentGenerator(ContentGenerator):
 
     # ── Content generation lifecycle ────────────────────────────
 
-    async def generate(self, project_id: str) -> dict:
+    async def generate(self, project_id: str, *, owner: str | None = None) -> dict:
         """Start generation in a background thread.  Non-blocking."""
         from services.ebook.pipeline.orchestrator import PipelineOrchestrator
         from services.ebook.pipeline.error_classifier import ErrorClassifier
@@ -163,7 +164,7 @@ class EbookContentGenerator(ContentGenerator):
         except ValueError:
             from fastapi import HTTPException
             raise HTTPException(status_code=400, detail=f"Invalid project_id: {project_id}")
-        project = self._repo.get_project(pid)
+        project = self._repo.get_project(pid, owner=owner)
         if project is None:
             from fastapi import HTTPException
             raise HTTPException(status_code=404, detail="Project not found")
@@ -215,24 +216,32 @@ class EbookContentGenerator(ContentGenerator):
         asyncio.get_running_loop().run_in_executor(None, _run)
         return {"project_id": pid, "message": "Generation started"}
 
-    async def update(self, project_id: str, params: dict) -> dict:
+    async def update(self, project_id: str, params: dict, *, owner: str | None = None) -> dict:
         """Update project parameters (title, config, etc.)."""
         try:
             pid = int(project_id)
         except ValueError:
             from fastapi import HTTPException
             raise HTTPException(status_code=400, detail=f"Invalid project_id: {project_id}")
+        project = self._repo.get_project(pid, owner=owner)
+        if project is None:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=404, detail="Project not found")
         self._repo.update_project(pid, **params)
-        project = self._repo.get_project(pid)
+        project = self._repo.get_project(pid, owner=owner)
         return {"project_id": pid, "project": project}
 
-    async def cancel(self, project_id: str) -> dict:
+    async def cancel(self, project_id: str, *, owner: str | None = None) -> dict:
         """Cancel an in-progress generation."""
         try:
             pid = int(project_id)
         except ValueError:
             from fastapi import HTTPException
             raise HTTPException(status_code=400, detail=f"Invalid project_id: {project_id}")
+        project = self._repo.get_project(pid, owner=owner)
+        if project is None:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=404, detail="Project not found")
         self._progress[pid] = {
             "status": "cancelled",
             "progress": 0,
@@ -243,9 +252,9 @@ class EbookContentGenerator(ContentGenerator):
 
     # ── Export / download (ebook-specific, beyond base interface) ────
 
-    def export_data(self, project_id: int) -> dict:
+    def export_data(self, project_id: int, owner: str | None = None) -> dict:
         """Return export data for a project (strategy, marketing kit, cover image, etc.)."""
-        project = self._repo.get_project(project_id)
+        project = self._repo.get_project(project_id, owner=owner)
         if project is None:
             return {"error": "Project not found"}
 
@@ -289,8 +298,10 @@ class EbookContentGenerator(ContentGenerator):
             "marketing_kit": marketing_kit,
         }
 
-    def download_path(self, project_id: int, fmt: str) -> Path | None:
+    def download_path(self, project_id: int, fmt: str, owner: str | None = None) -> Path | None:
         """Return the path to the exported file for the given format, or None."""
+        if self._repo.get_project(project_id, owner=owner) is None:
+            return None
         project_dir = self._projects_dir / str(project_id)
         file_path = project_dir / "exports" / f"ebook.{fmt}"
         return file_path if file_path.exists() else None
@@ -302,18 +313,18 @@ class EbookContentGenerator(ContentGenerator):
 
         _self = self  # capture for closure
 
-        async def _export(project_id: str) -> dict:
+        async def _export(project_id: str, owner: str | None = None) -> dict:
             from fastapi import HTTPException
             try:
                 pid = int(project_id)
             except ValueError:
                 raise HTTPException(status_code=400, detail=f"Invalid project_id: {project_id}")
-            result = _self.export_data(pid)
+            result = _self.export_data(pid, owner=owner)
             if "error" in result:
                 raise HTTPException(status_code=404, detail=result["error"])
             return result
 
-        async def _download(project_id: str, fmt: str):
+        async def _download(project_id: str, fmt: str, owner: str | None = None):
             if fmt not in ("docx", "pdf", "epub"):
                 from fastapi import HTTPException
                 raise HTTPException(status_code=400, detail="Unsupported format. Use docx, pdf, or epub.")
@@ -322,7 +333,7 @@ class EbookContentGenerator(ContentGenerator):
                 pid = int(project_id)
             except ValueError:
                 raise HTTPException(status_code=400, detail=f"Invalid project_id: {project_id}")
-            file_path = _self.download_path(pid, fmt)
+            file_path = _self.download_path(pid, fmt, owner=owner)
             if file_path is None:
                 from fastapi import HTTPException
                 raise HTTPException(status_code=404, detail=f"File {fmt} not found for project {project_id}")

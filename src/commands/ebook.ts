@@ -220,23 +220,28 @@ export async function handleEbookMode(
   );
 
   try {
+    const ownerId = ctx.from?.id?.toString();
+
     // Create project
-    const project = await ebookService.createProject({
-      idea,
-      title,
-      chapter_count: chapters,
-      target_language: language,
-      product_mode: mode,
-    });
+    const project = await ebookService.createProject(
+      {
+        idea,
+        title,
+        chapter_count: chapters,
+        target_language: language,
+        product_mode: mode,
+      },
+      ownerId
+    );
 
     // Start generation
-    await ebookService.generate(project.id);
+    await ebookService.generate(project.id, ownerId);
 
     // Store project ID for tracking
     ctx.session!.ebookProjectId = project.id;
 
     // Poll for completion in background
-    pollEbookGeneration(ctx, project.id);
+    pollEbookGeneration(ctx, project.id, ownerId);
   } catch (err: unknown) {
     const error = err as Error;
     logger.error("Ebook creation failed:", error);
@@ -251,10 +256,11 @@ export async function handleEbookMode(
  */
 async function pollEbookGeneration(
   ctx: BotContext,
-  projectId: number
+  projectId: number,
+  owner?: string
 ): Promise<void> {
   try {
-    const status = await ebookService.waitForCompletion(projectId);
+    const status = await ebookService.waitForCompletion(projectId, owner);
 
     const keyboard = {
       inline_keyboard: [
@@ -310,7 +316,8 @@ export async function handleEbookDownload(
   const format = parts[3] as "pdf" | "docx" | "epub";
 
   try {
-    const file = await ebookService.download(projectId, format);
+    const ownerId = ctx.from?.id?.toString();
+    const file = await ebookService.download(projectId, format, ownerId);
     await ctx.replyWithDocument(
       { source: file.buffer, filename: file.filename },
       { caption: `📥 Ebook ${format.toUpperCase()} siap.` }
@@ -318,7 +325,11 @@ export async function handleEbookDownload(
   } catch (err: unknown) {
     const error = err as Error;
     logger.warn(`Ebook download via Telegram failed (${projectId} ${format}): ${error.message}`);
-    const url = ebookService.getDownloadUrl(projectId, format);
+    const url = ebookService.getDownloadUrl(
+      projectId,
+      format,
+      ctx.from?.id?.toString()
+    );
     await ctx.reply(
       `📥 Download ebook (${format.toUpperCase()}):\n\n${url}`,
       { parse_mode: "Markdown" }
@@ -336,7 +347,10 @@ export async function handleEbookPreview(
   const projectId = parseInt(data.split("_")[2]);
 
   try {
-    const exportData = await ebookService.getExport(projectId);
+    const exportData = await ebookService.getExport(
+      projectId,
+      ctx.from?.id?.toString()
+    );
 
     let preview = "📖 *Ebook Preview*\n\n";
     preview += `📝 Judul: ${exportData.metadata.title}\n`;
@@ -362,7 +376,10 @@ export async function handleEbookPreview(
  */
 export async function handleEbookList(ctx: BotContext): Promise<void> {
   try {
-    const projects = await ebookService.listProjects(10);
+    const projects = await ebookService.listProjects(
+      10,
+      ctx.from?.id?.toString()
+    );
 
     if (projects.length === 0) {
       await ctx.reply("📭 Anda belum memiliki ebook.", {

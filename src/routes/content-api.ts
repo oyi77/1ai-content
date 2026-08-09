@@ -236,7 +236,7 @@ export async function contentApiRoutes(server: FastifyInstance): Promise<void> {
     if (!user) return;
 
     try {
-      const projects = await ebookService.listProjects(20);
+      const projects = await ebookService.listProjects(20, Number(user.telegramId));
       return { ebooks: projects };
     } catch (err: unknown) {
       const error = err as Error;
@@ -261,9 +261,9 @@ export async function contentApiRoutes(server: FastifyInstance): Promise<void> {
         chapter_count: Number(chapterCount),
         target_language: targetLanguage,
         product_mode: productMode,
-      });
+      }, Number(user.telegramId));
 
-      await ebookService.generate(project.id);
+      await ebookService.generate(project.id, Number(user.telegramId));
 
       return { projectId: project.id, status: "generating", message: "Ebook generation started. Poll /api/content/ebook/:id/status" };
     } catch (err: unknown) {
@@ -279,7 +279,7 @@ export async function contentApiRoutes(server: FastifyInstance): Promise<void> {
     const { id } = request.params as { id: string };
 
     try {
-      const status = await ebookService.getStatus(Number(id));
+      const status = await ebookService.getStatus(Number(id), Number(user.telegramId));
       return status;
     } catch (err: unknown) {
       const error = err as Error;
@@ -298,7 +298,7 @@ export async function contentApiRoutes(server: FastifyInstance): Promise<void> {
     }
 
     try {
-      const file = await ebookService.download(Number(id), format as "pdf" | "docx" | "epub");
+      const file = await ebookService.download(Number(id), format as "pdf" | "docx" | "epub", Number(user.telegramId));
       reply.header("Content-Type", file.contentType);
       reply.header("Content-Disposition", `attachment; filename="${file.filename}"`);
       return reply.send(file.buffer);

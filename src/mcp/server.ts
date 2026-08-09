@@ -97,6 +97,7 @@ const TOOLS = [
         chapterCount: { type: "number", description: "Number of chapters (3-50)" },
         targetLanguage: { type: "string", description: "Language code: id, en, ms, th, vi, tl" },
         productMode: { type: "string", description: "Product mode: lead_magnet, paid_ebook, bonus, authority" },
+        telegramId: { type: "string", description: "Owner's Telegram ID — scopes the project to this user. Omit to create an unscoped project." },
       },
       required: ["idea"],
     },
@@ -108,6 +109,7 @@ const TOOLS = [
       type: "object",
       properties: {
         projectId: { type: "number", description: "Ebook project ID" },
+        telegramId: { type: "string", description: "Owner's Telegram ID — required to read another user's scoped project; without it only unscoped (legacy) projects resolve" },
       },
       required: ["projectId"],
     },
@@ -119,6 +121,7 @@ const TOOLS = [
       type: "object",
       properties: {
         limit: { type: "number", description: "Max ebooks to return (default 10)" },
+        telegramId: { type: "string", description: "Owner's Telegram ID — returns only this user's scoped projects; omit for legacy (unscoped) projects" },
       },
       required: [],
     },
@@ -275,25 +278,25 @@ export function createMcpServer(): Server {
         }
 
         case "1ai-content_create_ebook": {
-          const { idea, title, chapterCount = 10, targetLanguage = "id", productMode = "paid_ebook" } = args as {
-            idea: string; title?: string; chapterCount?: number; targetLanguage?: string; productMode?: string;
+          const { telegramId, idea, title, chapterCount = 10, targetLanguage = "id", productMode = "paid_ebook" } = args as {
+            telegramId?: string; idea: string; title?: string; chapterCount?: number; targetLanguage?: string; productMode?: string;
           };
 
-          const project = await ebookService.createProject({ idea, title, chapter_count: chapterCount, target_language: targetLanguage, product_mode: productMode });
-          await ebookService.generate(project.id);
+          const project = await ebookService.createProject({ idea, title, chapter_count: chapterCount, target_language: targetLanguage, product_mode: productMode }, telegramId);
+          await ebookService.generate(project.id, telegramId);
 
           return { content: [{ type: "text", text: JSON.stringify({ projectId: project.id, status: "generating", message: "Ebook generation started. Use 1ai-content_get_ebook_status to check progress." }, null, 2) }] };
         }
 
         case "1ai-content_get_ebook_status": {
-          const { projectId } = args as { projectId: number };
-          const status = await ebookService.getStatus(projectId);
+          const { telegramId, projectId } = args as { telegramId?: string; projectId: number };
+          const status = await ebookService.getStatus(projectId, telegramId);
           return { content: [{ type: "text", text: JSON.stringify(status, null, 2) }] };
         }
 
         case "1ai-content_list_ebooks": {
-          const { limit = 10 } = args as { limit?: number };
-          const projects = await ebookService.listProjects(limit);
+          const { telegramId, limit = 10 } = args as { telegramId?: string; limit?: number };
+          const projects = await ebookService.listProjects(limit, telegramId);
           return { content: [{ type: "text", text: JSON.stringify({ ebooks: projects }, null, 2) }] };
         }
 

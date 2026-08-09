@@ -50,6 +50,7 @@ class ProjectRecord(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     title = Column(String, nullable=False)
+    owner = Column(String, nullable=True)  # tenant id (Telegram user id); NULL = legacy row
     idea = Column(Text, nullable=False)
     product_mode = Column(String, nullable=False, default="lead_magnet")
     target_language = Column(String, nullable=False, default="en")

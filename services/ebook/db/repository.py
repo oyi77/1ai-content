@@ -8,6 +8,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from services.ebook.db.database import get_engine, create_tables
@@ -28,6 +29,7 @@ def _project_to_dict(record: ProjectRecord) -> dict:
     return {
         "id": record.id,
         "title": record.title,
+        "owner": record.owner,  # tenant id; NULL for legacy rows
         "idea": record.idea,
         "product_mode": record.product_mode,
         "target_language": record.target_language,
@@ -67,6 +69,7 @@ class ProjectRepository:
         product_mode: str = "lead_magnet",
         target_language: str = "en",
         chapter_count: int = 5,
+        owner: str | None = None,
     ) -> int:
         with self._session() as session:
             record = ProjectRecord(
@@ -75,6 +78,7 @@ class ProjectRepository:
                 product_mode=product_mode,
                 target_language=target_language,
                 chapter_count=chapter_count,
+                owner=owner,  # tenant id (Telegram user id); None = legacy/global
                 status=ProjectStatus.DRAFT.value,
             )
             session.add(record)
@@ -83,17 +87,54 @@ class ProjectRepository:
             session.commit()
             return project_id
 
-    def get_project(self, project_id: int) -> Optional[dict]:
+    def get_project(
+        self, project_id: int, owner: str | None = None
+    ) -> Optional[dict]:
+        """Fetch a project, enforcing tenant scope.
+
+        owner=None (no tenant context) may only read legacy rows (owner IS NULL).
+        A project owned by another tenant is treated as not-found.
+        """
+        with self._session() as session:
+            record = session.get(ProjectRecord, project_id)
+            if record is None:
+                return None
+            if record.owner is not None and record.owner != owner:
+                return None
+            return _project_to_dict(record)
+
+    def get_project_unscoped(self, project_id: int) -> Optional[dict]:
+        """Fetch a project by id WITHOUT tenant scoping.
+
+        INTERNAL TRUSTED USE ONLY (pipeline orchestrator, comics orchestrator,
+        intake): these callers run a project that was already ownership-validated
+        at the API/MCP boundary via get_project(project_id, owner=...). Do NOT
+        call from API/MCP boundaries — use get_project(project_id, owner=...) so
+        cross-tenant reads are denied.
+        """
         with self._session() as session:
             record = session.get(ProjectRecord, project_id)
             if record is None:
                 return None
             return _project_to_dict(record)
 
-    def list_projects(self, limit: int = 100) -> list[dict]:
+    def list_projects(
+        self, limit: int = 100, owner: str | None = None
+    ) -> list[dict]:
+        """List projects visible to *owner*: its own + legacy (owner IS NULL).
+
+        owner=None → legacy rows only (safe default: no tenant context must not
+        enumerate other tenants' projects).
+        """
         with self._session() as session:
             records = (
                 session.query(ProjectRecord)
+                .filter(
+                    or_(
+                        ProjectRecord.owner == owner,
+                        ProjectRecord.owner.is_(None),
+                    )
+                )
                 .order_by(ProjectRecord.created_at.desc())
                 .limit(limit)
                 .all()

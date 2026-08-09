@@ -92,7 +92,7 @@ class PipelineOrchestrator:
         manuscript_model: str | None = None,
         quality_level: str = "fast",
     ) -> dict:
-        project = self.repo.get_project(project_id)
+        project = self.repo.get_project_unscoped(project_id)
         if not project:
             raise ValueError(f"Project {project_id} not found")
 

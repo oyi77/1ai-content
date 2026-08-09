@@ -59,7 +59,7 @@ class ContentGenerator(ABC):
     # ── Lifecycle ───────────────────────────────────────────────
 
     @abstractmethod
-    async def create(self, params: dict) -> dict:
+    async def create(self, params: dict, *, owner: str | None = None) -> dict:
         """Start a new generation project.
 
         Args:
@@ -71,7 +71,7 @@ class ContentGenerator(ABC):
         ...
 
     @abstractmethod
-    async def status(self, project_id: str) -> dict:
+    async def status(self, project_id: str, *, owner: str | None = None) -> dict:
         """Get generation status for a project.
 
         Returns:
@@ -82,19 +82,19 @@ class ContentGenerator(ABC):
     # ── Read ────────────────────────────────────────────────────
 
     @abstractmethod
-    async def get(self, project_id: str) -> dict:
+    async def get(self, project_id: str, *, owner: str | None = None) -> dict:
         """Get full project details."""
         ...
 
     @abstractmethod
-    async def list(self) -> list[dict]:
+    async def list(self, *, owner: str | None = None) -> list[dict]:
         """List all projects."""
         ...
 
     # ── Mutate ──────────────────────────────────────────────────
 
     @abstractmethod
-    async def delete(self, project_id: str) -> bool:
+    async def delete(self, project_id: str, *, owner: str | None = None) -> bool:
         """Delete a project and any generated artifacts."""
         ...
 
@@ -113,7 +113,7 @@ class ContentGenerator(ABC):
     # ── Generation trigger ────────────────────────────────────────
 
     @abstractmethod
-    async def generate(self, project_id: str) -> dict:
+    async def generate(self, project_id: str, *, owner: str | None = None) -> dict:
         """Start content generation for a project.
 
         Separates project creation (create) from actual content production.
@@ -124,7 +124,7 @@ class ContentGenerator(ABC):
     # ── Lifecycle mutations ──────────────────────────────────────
 
     @abstractmethod
-    async def update(self, project_id: str, params: dict) -> dict:
+    async def update(self, project_id: str, params: dict, *, owner: str | None = None) -> dict:
         """Update project parameters (title, config, etc.).
 
         Returns updated project details.
@@ -132,7 +132,7 @@ class ContentGenerator(ABC):
         ...
 
     @abstractmethod
-    async def cancel(self, project_id: str) -> dict:
+    async def cancel(self, project_id: str, *, owner: str | None = None) -> dict:
         """Cancel an in-progress generation.
 
         Returns the final state of the cancelled project.
