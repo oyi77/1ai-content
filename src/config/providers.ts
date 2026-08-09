@@ -273,6 +273,20 @@ export const PROVIDER_CONFIG: {
       capabilities: ["talking_head"],
       env: "D_ID_API_KEY",
     },
+    agnes_video: {
+      name: "Agnes Video",
+      priority: 17,
+      timeout: 95000,
+      failureThreshold: 3,
+      recoveryTimeout: 120000,
+      strengths: ["video_generation"],
+      quirks: "Agnes AI async text-to-video generation. Polls up to 90s; agnes-video-v2.0.",
+      avoid: [],
+      tokenLimit: 500,
+      supportsImg2Video: false,
+      maxDuration: 5,
+      env: "AGNES_API_KEYS",
+    },
   },
 
   image: {

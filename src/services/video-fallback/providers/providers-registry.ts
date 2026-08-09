@@ -25,6 +25,7 @@ import {
   generateViaRunware,
   generateViaWaveSpeed,
   generateViaZAI,
+  generateViaAgnes,
   generateViaMPT,
 } from "./video-async";
 
@@ -47,6 +48,7 @@ export function getProviders() {
     { key: "runware", name: "Runware", enabled: !!getConfig().RUNWARE_API_KEY, supportsRefImage: false, maxDuration: 5, generate: generateViaRunware },
     { key: "wavespeed", name: "WaveSpeed", enabled: !!getConfig().WAVESPEED_API_KEY, supportsRefImage: false, maxDuration: 5, generate: generateViaWaveSpeed },
     { key: "zai_video", name: "Z.ai Video", enabled: !!getConfig().ZAI_API_KEY, supportsRefImage: false, maxDuration: 5, generate: generateViaZAI },
+    { key: "agnes_video", name: "Agnes Video", enabled: !!getConfig().AGNES_API_KEYS, supportsRefImage: false, maxDuration: 5, generate: generateViaAgnes },
     { key: "mpt", name: "MoneyPrinterTurbo (Stock Footage)", enabled: !!getConfig().PEXELS_API_KEYS || !!getConfig().PEXELS_API_KEY, supportsRefImage: false, maxDuration: 600, generate: generateViaMPT },
   ];
 }

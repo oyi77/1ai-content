@@ -11,5 +11,6 @@ Unit tests for configuration modules.
 | File | Description |
 |------|-------------|
 | `pricing.test.ts` | Pricing constants and calculations tests |
+| `providers.test.ts` | Provider pool contract tests (PROVIDER_CONFIG.video/image, sorted lists) |
 
 <!-- MANUAL: -->

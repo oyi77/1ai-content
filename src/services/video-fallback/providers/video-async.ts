@@ -642,6 +642,52 @@ async function generateViaZAI(params: VideoFallbackParams): Promise<VideoFallbac
   return { success: true, videoUrl, provider: "zai_video" };
 }
 
+// Round-robin cursor so multiple Agnes accounts (AGNES_API_KEYS, comma-separated)
+// alternate across generations instead of one account taking all the load.
+let agnesKeyIndex = 0;
+
+async function generateViaAgnes(params: VideoFallbackParams): Promise<VideoFallbackResult> {
+  const config = getConfig();
+  const keys = (config.AGNES_API_KEYS || "")
+    .split(",")
+    .map((k) => k.trim())
+    .filter(Boolean);
+  if (keys.length === 0) return { success: false, error: "AGNES_API_KEYS not configured", provider: "agnes_video" };
+
+  const API_KEY = keys[agnesKeyIndex++ % keys.length];
+  const base = (config.AGNES_API_BASE || "https://apihub.agnes-ai.com/v1").replace(/\/+$/, "");
+  const model = config.AGNES_VIDEO_MODEL || "agnes-video-v2.0";
+
+  const resp = await axios.post(
+    `${base}/videos`,
+    { model, prompt: params.prompt },
+    { headers: { Authorization: `Bearer ${API_KEY}`, "Content-Type": "application/json" }, timeout: 60000 },
+  );
+
+  // Some responses complete synchronously with the video already attached.
+  const syncUrl = resp.data?.video_url || resp.data?.url || resp.data?.metadata?.url || resp.data?.output?.url || resp.data?.video?.url;
+  if (syncUrl) return { success: true, videoUrl: syncUrl, provider: "agnes_video" };
+
+  const taskId = resp.data?.video_id || resp.data?.id || resp.data?.task_id || resp.data?.taskId;
+  if (!taskId) throw new ProviderError("Agnes", "no task id");
+
+  const videoUrl = await pollUntilComplete("Agnes", taskId, async (id) => {
+    // The poll endpoint lives at the host ROOT, not under /v1:
+    // GET https://apihub.agnes-ai.com/agnesapi?video_id=<id>
+    const poll = await axios.get(`${new URL(base).origin}/agnesapi`, {
+      params: { video_id: id },
+      headers: { Authorization: `Bearer ${API_KEY}` }, timeout: 10000,
+    });
+    const status = poll.data?.status;
+    if (status === "completed" || status === "succeeded" || status === "done" || status === "finished" || status === "success")
+      // Completed payload carries the video in metadata.url per the official API.
+      return { status: "completed", videoUrl: poll.data?.metadata?.url || poll.data?.video_url || poll.data?.url || poll.data?.output?.url || poll.data?.video?.url || poll.data?.result?.url };
+    if (status === "failed" || status === "error" || status === "expired") throw new ProviderError("Agnes", "generation failed");
+    return { status: "pending" };
+  });
+  return { success: true, videoUrl, provider: "agnes_video" };
+}
+
 async function generateViaOmniRouteVideo(params: VideoFallbackParams): Promise<VideoFallbackResult> {
   const config = getConfig();
   const OMNIROUTE_URL = config.OMNIROUTE_URL;
@@ -739,6 +785,7 @@ export {
   generateViaRunware,
   generateViaWaveSpeed,
   generateViaZAI,
+  generateViaAgnes,
   generateViaOmniRouteVideo,
   generateViaMPT,
 };

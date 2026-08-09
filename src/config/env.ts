@@ -137,6 +137,9 @@ const envSchema = z.object({
   WAVESPEED_API_KEY: z.string().optional(),
   ZAI_API_KEY: z.string().optional(),
   AGENTROUTER_API_KEY: z.string().optional(),
+  AGNES_API_KEYS: z.string().optional(),
+  AGNES_API_BASE: z.string().default("https://apihub.agnes-ai.com/v1"),
+  AGNES_VIDEO_MODEL: z.string().default("agnes-video-v2.0"),
 
   // ── Image Providers (optional) ──
   NVIDIA_API_KEY: z.string().optional(),
@@ -322,6 +325,9 @@ const CONFIG_GROUPS: Record<string, { keys: string[]; sensitive: string[] }> = {
       "RUNWARE_API_KEY",
       "WAVESPEED_API_KEY",
       "ZAI_API_KEY",
+      "AGNES_API_KEYS",
+      "AGNES_API_BASE",
+      "AGNES_VIDEO_MODEL",
     ],
     sensitive: [
       "VEO_API_KEY",
@@ -344,6 +350,7 @@ const CONFIG_GROUPS: Record<string, { keys: string[]; sensitive: string[] }> = {
       "RUNWARE_API_KEY",
       "WAVESPEED_API_KEY",
       "ZAI_API_KEY",
+      "AGNES_API_KEYS",
     ],
   },
   "Audio Generation": {
