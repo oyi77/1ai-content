@@ -1,6 +1,6 @@
 # Service Layer Remediation — 6-Phase Status
 
-**Status**: 6 of 6 phases resolved (5 implemented + runtime-verified 2026-08-10, 1 no-op verified, Phase 6 optional evaluated 2026-08-10 — deliberately not migrated).
+**Status**: 6 of 6 phases resolved (5 implemented + runtime-verified 2026-08-10, 1 no-op verified, Phase 6 executed 2026-08-10 via thin `ContentGenerator` wrappers — see Phase 6).
 
 Last verified: 2026-08-10. All line anchors re-checked against current `master`; Phase 4 runtime-verified on live :8767.
 
@@ -11,7 +11,7 @@ Last verified: 2026-08-10. All line anchors re-checked against current `master`;
 | 3. Type-annotate getters | ✅ Done | All 25 getters return-annotated; `TYPE_CHECKING` block for types |
 | 4. Static imports | ✅ Done | `services/di.py` static imports (242 lines, +0.385s boot); engines kept lazy for singleton safety — see `phase4-static-imports.md` |
 | 5. Dedupe `/health` | ✅ No-op | Single `/health` route; no duplicates exist |
-| 6. Optional ABC hardening | ✅ Evaluated — not migrated | Lifecycle ABC doesn't fit the 3 one-shot sync engines; see Phase 6 decision |
+| 6. Optional ABC hardening | ✅ Executed — wrapper migration | Faceless/Clipper wrapped as thin `ContentGenerator`s (commit `3526537`); engines stay non-subclassed; see Phase 6 |
 
 ---
 
@@ -68,28 +68,63 @@ Verified there is **no duplicate**:
 
 - Single `/health` route from `services/routers/health.py`; `PUBLIC_ALLOWLIST = {"/health"}` (api.py l.147) is a middleware bypass allowlist, not a route.
 - Ebook health lives at `/text/ebook/health` (generator-prefixed path) — distinct, not a duplicate.
-- `services/generator.py` `health_all(generators)` — **deleted 2026-08-10** (was dead code, zero callers in `services/`; the status-doc recommendation from 2026-08-09 was delete, and it was executed). No aggregation wiring planned — `EbookContentGenerator` is the sole registered generator and exposes `/text/ebook/health` directly.
+- `services/generator.py` `health_all(generators)` — **deleted 2026-08-10** (was dead code, zero callers in `services/`; the status-doc recommendation from 2026-08-09 was delete, and it was executed). No aggregation wiring planned — each registered generator exposes its own `{prefix}/health` directly (3 generators since the Phase 6 wrapper migration: `/text/ebook/health`, `/faceless/health`, `/clipper/health`).
 
-## Phase 6 — Optional ABC hardening ✅ Evaluated — deliberately not migrated (2026-08-10)
+## Phase 6 — Optional ABC hardening ✅ Executed — wrapper migration (2026-08-10)
 
 `services/generator.py` is correct and used:
 
 - `ContentGenerator(ABC)` (l.30) with 10 abstract members (`info` l.53, `create` l.61, `status` l.73, `get` l.84, `list` l.89, `delete` l.96, `health` l.103, `generate` l.115, `update` l.126, `cancel` l.134) + concrete `extra_routes` (l.144). (`health_all` module-level helper deleted 2026-08-10 — dead code.)
 - `GeneratorRegistry` (l.173): `add_router` (l.184), `register(generator, *, prefix, tags)` (l.188-204), `wire(app)` (l.206-213, imports `register_generator_routes` from `services.routers`).
-- Sole implementation today: `EbookContentGenerator` (registered at api.py l.130).
+- Implementations today (3): `EbookContentGenerator`, `FacelessContentGenerator`, `ClipperContentGenerator` (registered at api.py l.132-134).
 
-**Decision (2026-08-10) — deliberately NOT migrated.** The ABC is a project-lifecycle contract, and none of the three engines has a lifecycle:
+**Decision (2026-08-10) — override executed via thin wrappers (commit `3526537`).** The original evaluation (below) concluded the three engines should stay non-subclassed; the user's plugin/provider-pattern mandate (every provider must use the modular/plugin/provider pattern) overrode that "do not migrate" call. Resolution: keep the engines as-is and add thin `ContentGenerator` wrappers that satisfy the ABC contract bidirectionally — every provider uses the pattern *and* direct engine callers keep the thin functional routers.
 
-- `ContentGenerator` requires 10 abstract members (`info/create/status/get/list/delete/health/generate/update/cancel`) that `register_generator_routes` (`services/routers/__init__.py`) wires into a lifecycle CRUD surface: `GET/POST {prefix}/projects`, `GET/PUT/DELETE {prefix}/projects/{id}`, `{prefix}/projects/{id}/status`, `{prefix}/projects/{id}/generate`, `{prefix}/projects/{id}/cancel`.
-- `FacelessEngine.generate_video(...)` (`services/faceless/engine.py:65`) and `ClipperEngine.clip_video(...)` (`services/clipper/engine.py:33`) are **one-shot synchronous pipelines** — they block for the full pipeline (script → stock → TTS → compose / download → transcribe → highlights → clips) and return a result dict + files under `/tmp/{faceless,clipper}_output`. No project store, no IDs, no status, no cancellation. A migration would fabricate an in-memory project store (state no consumer would query), a `generate` that holds the HTTP request for minutes (worse than today's thin routers), and a no-op `cancel` lie.
-- `BrandSettings` (`services/brand/settings.py`) is **not a content generator** — a per-user in-memory settings store + watermark/intro helpers. All 10 abstract members would be fiction.
-- The stated gains don't hold: uniform CRUD has no consumer (the revisit condition — "a new consumer needs uniform generator semantics across content types" — is unmet), and health aggregation was already eliminated in Phase 5 (`health_all` deleted as dead code; `EbookContentGenerator` exposes `/text/ebook/health` directly).
-- `EbookContentGenerator` remains the sole, correct implementation (DB-backed project lifecycle). The three engines keep their thin functional routers (`services/routers/{faceless,brand,clipper}.py`), live-verified on :8767 (`faceless/*`, `brand/*`, `clipper/*` in the 98 OpenAPI paths).
-
-Override path: if a consumer later needs uniform generator semantics, execute the migration then — the fabricated lifecycle is not worth shipping today (YAGNI / refuse unnecessary abstractions).
+- Wrappers: `FacelessContentGenerator` (`services/faceless/generator.py`), `ClipperContentGenerator` (`services/clipper/generator.py`) — full 10-member contract, thread-safe in-memory project store (cap 100), lazy engine via `services.di.get_faceless()` / `get_clipper()` (getter names unchanged — public test contract per Phase 4).
+- Cancellation is **cooperative, not a no-op**: both engines accept `progress_cb` / `cancel_check` kwargs and honor them at every stage boundary (`services/faceless/engine.py` l.102-104, 110-111, 130-132, 148-150, 157 — script→TTS→stock→compose; clipper likewise). `generate` runs on a background thread (HTTP request never blocks), `cancel` sets the cancel event the engine polls.
+- The original fabricated-lifecycle concern partially stands and is accepted: the wrapper store is in-memory and ephemeral (projects vanish on restart), and no consumer queries it today — the store exists to satisfy the contract gate, not to serve a product need. `BrandSettings` (`services/brand/settings.py`) remains **not wrapped** — a per-user in-memory settings store; all 10 abstract members would still be fiction.
+- Live-verified on :8767 2026-08-10 (after `sudo -n systemctl restart 1ai-content.service`): `faceless/health`, `clipper/health`, `text/ebook/health` all 200; **110 OpenAPI paths**; full store contract exercised — POST `/faceless/projects` 422 Pydantic `missing` without `topic`, create `faceless_1` with `topic`, GET status `created`, DELETE 200, GET-after-delete 404. Thin functional routers (`services/routers/{faceless,clipper}.py`) coexist with the generator lifecycle routes — dual HTTP surface is intentional (wrapper docstrings), both delegate to the same engine.
+- `EbookContentGenerator` remains the reference implementation (DB-backed project lifecycle); the two wrappers extend the same registration path (`api.py:132-134`). Future: only wrap more providers when the plugin pattern demands it; do not extend store semantics without a consumer.
 
 ---
 
 ## Rollback / safety
 
 Phase 4 is the only phase with a code-change recipe; its rollback is a per-file revert of `services/di.py` plus any engine import lines touched (full recipe in `phase4-static-imports.md`). Phases 1-3 and 5 required no changes (verified complete/no-op), so nothing to roll back.
+
+---
+
+## Security Verification — `/api/py` Gate (2026-08-10)
+
+Cross-check of the two-layer gate protecting the Python media-api (`:8767`) behind the TS bot (`:3002`), exposed live as `content.aitradepulse.com`.
+
+**Architecture.** `content.aitradepulse.com` is a **cloudflared** tunnel to `http://localhost:3002` (verified `/etc/cloudflared/config.yml`, daemon PID 5953; stale `~/.cloudflare-router/config.yml` is only the router-tool regeneration source, not the live mapping). Nginx proxies to `:3002` for `api.`/other hosts — the TS bot is the only reachable app port for this hostname. Two independent gates sit between the internet and `services/api.py`:
+
+1. **Fastify proxy gate** (`src/index.ts` `/api/py/*` ~l.312-359): rate limit 120 req/min/IP, request-body validation, server-side `X-API-Key` injection ("never trust a caller-supplied value"), and an allowlist mirroring the Python gate (`/api/py/health`, GET `/api/py/text/articles`). Non-allowlisted paths → 401 `{"error":"Unauthorized"}` without an admin session.
+2. **FastAPI middleware gate** (`services/api.py` l.147-158): `PUBLIC_ALLOWLIST = {"/health"}` (plus special-case GET `/text/articles`), `enforce_api_key` via `secrets.compare_digest`, 401 JSON. **Env-gated**: if `EBOOK_API_KEY` is unset the middleware passes everything (default-open posture — keeps the legacy caller contract; TS clients always send `X-API-Key`).
+
+**Live + local evidence (probed 2026-08-10, `curl -o /tmp/probe_final_*.txt`):**
+
+| Path | Route | Result |
+|------|-------|--------|
+| LIVE `/api/py/health` | cloudflared → :3002 → :8767 | 200 |
+| LIVE `/api/py/pydocs` | proxy gate | 401 |
+| LIVE `/api/py/docs` | proxy gate | 401 (24B `{"error":"Unauthorized"}`, x-ratelimit headers present) |
+| LIVE `/pydocs` | no route at :3002 | 404 |
+| LOCAL :3002 `/api/py/pydocs` | proxy gate | 401 |
+| LOCAL :3002 `/api/py/docs` | proxy gate | 401 |
+| LOCAL :3002 `/api/py/health` | proxy → uvicorn | 200 (790B uvicorn header) |
+| DIRECT :8767 `/docs` | api.py middleware | 401 (proves `EBOOK_API_KEY` is set in prod) |
+| DIRECT :8767 `/api/py/pydocs` | api.py middleware | 401 unless allowlisted |
+
+`netstat -ltnp` shows `:8767` bound to loopback only (127.0.0.1); `:3002` binds 0.0.0.0 behind the tunnel. Nginx vhosts: `aitradepulse` family → `:3002`.
+
+**Severity: LOW (informational).** No live exposure: `/docs` (and every non-allowlisted path) returns 401 at both layers; loopback-only `:8767` has no off-host route; the default-open posture only matters for a local attacker who can already read `.env`. This is a hardening recommendation, not a live finding.
+
+**Remediation (documented only — no code/config change shipped in this pass):**
+
+1. **Fail closed**: make the FastAPI middleware reject when `EBOOK_API_KEY` is unset (`raise`/`sys.exit` in env loading or middleware explicit 503), instead of default-open. Keep `PUBLIC_ALLOWLIST` as the narrow bypass.
+2. **Allowlist-sync test**: add a unit test asserting `PUBLIC_ALLOWLIST` (api.py) and the `/api/py` proxy allowlist (`src/index.ts`) match — the two lists are maintained by hand today and can drift silently (gap-1: any new public path added on one side must appear on the other).
+3. **Prod `docs_url=None`**: run `uvicorn ... --docs-url None` (or FastAPI `docs_url=None`) in `run_api.py` prod path so `/docs`/`/openapi.json` never render even behind the gate.
+
+**Guardrail note**: `smoke_test.py` negative tests expect 404 on `/pydocs` etc. — with the key set, the gate returns 401 for non-allowlisted proxy paths but 404 remains correct for routes that don't exist at all; the two statuses are orthogonal and both checked in the suite.

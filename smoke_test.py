@@ -15,6 +15,32 @@ BASE = "http://127.0.0.1:8767"
 TIMEOUT_FAST = 10    # endpoints that should respond instantly
 TIMEOUT_SLOW = 120   # generation endpoints that may take a while
 
+# Existing Telegram user id from services/db (avoid empty-string in SQL WHERE)
+def _existing_telegram_id() -> int:
+    try:
+        import asyncio
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from services.db import get_async_session  # type: ignore
+        from sqlalchemy import text
+
+        async def _fetch() -> int | None:
+            async with get_async_session() as session:
+                row = (
+                    await session.execute(
+                        text("SELECT telegram_id FROM users "
+                             "WHERE telegram_id IS NOT NULL LIMIT 1")
+                    )
+                ).fetchone()
+            return int(row[0]) if row else None
+
+        tid = asyncio.run(_fetch())
+        return tid if tid else 1
+    except Exception:
+        return 1
+
+# Real Telegram user id for calendar/ab-test payloads (falls back to 1).
+TEST_USER_ID = _existing_telegram_id()
+
 # Shared-secret for the Python enforce_api_key gate (gap-1). Attach it to every
 # request when set in the environment; when unset the gate fails open and
 # behavior is unchanged (negative tests still expect 404, not 401).
@@ -37,7 +63,8 @@ def test(method: str, path: str, desc: str, *,
          body: dict | None = None,
          params: dict | None = None,
          timeout: int = TIMEOUT_FAST,
-         allow_422: bool = False) -> dict:
+         allow_422: bool = False,
+         expect_sse: bool = False) -> dict:
     """Perform a single smoke test and record the result."""
     global failures, passes
     url = f"{BASE}{path}"
@@ -63,9 +90,13 @@ def test(method: str, path: str, desc: str, *,
             else:
                 issues.append(f"expected {expect_status}, got {status}")
 
-        # Check JSON parseability
+        # Check SSE (streaming) vs JSON parseability
         parsed = {}
-        if expect_json:
+        if expect_sse:
+            ct = r.headers.get("content-type", "")
+            if "text/event-stream" not in ct:
+                issues.append(f"expected SSE stream, got content-type {ct!r}")
+        elif expect_json:
             try:
                 parsed = r.json()
             except Exception:
@@ -161,7 +192,7 @@ test("POST", "/text/hook/batch", "Generate hook batch", body={"category":"defaul
 test("POST", "/text/hook/critique", "Critique hook", body={"hook_text":"You won't believe what happened next"})
 test("GET", "/text/caption/styles", "List caption styles")
 test("GET", "/text/caption/presets", "List caption presets")
-test("POST", "/text/caption", "Generate caption", body={"text":"A relaxing summer day","style":"story"})
+test("POST", "/text/caption", "Generate caption", body={"topic":"A relaxing summer day","style":"story"})
 test("POST", "/text/newsletter", "Generate newsletter", body={"topic":"AI productivity trends","audience":"general"}, allow_422=True, timeout=TIMEOUT_SLOW)
 test("POST", "/text/article", "Generate article", body={"topic":"AI productivity trends","keywords":["AI"]}, allow_422=True, timeout=TIMEOUT_SLOW)
 test("GET", "/text/articles", "List saved articles")
@@ -175,7 +206,7 @@ test("GET", "/text/ebook/projects", "Ebook list projects")
 # 4. IMAGE LAYER
 # ════════════════════════════════════════════════════════════════
 print_layer("Image")
-test("POST", "/image/comic", "Generate comic (SSE)", body={"prompt":"A cat detective solving a mystery","generate_images":False}, timeout=TIMEOUT_SLOW)
+test("POST", "/image/comic", "Generate comic (SSE)", body={"prompt":"A cat detective solving a mystery","generate_images":False}, timeout=TIMEOUT_SLOW, expect_sse=True)
 test("GET", "/image/carousel/styles", "List carousel styles")
 test("GET", "/image/carousel/templates", "List carousel templates")
 test("GET", "/image/carousel/templates/default", "Get carousel template 'default'")
@@ -188,11 +219,11 @@ test("POST", "/meme/generate", "Generate meme PNG", body={"top_text":"this is fi
 # 5. VIDEO LAYER
 # ════════════════════════════════════════════════════════════════
 print_layer("Video")
-test("POST", "/video/movie", "Generate video (SSE)", body={"prompt":"A short peaceful nature scene","style":"slideshow"}, timeout=TIMEOUT_SLOW)
+test("POST", "/video/movie", "Generate video (SSE)", body={"prompt":"A short peaceful nature scene","style":"slideshow"}, timeout=TIMEOUT_SLOW, expect_sse=True)
 test("POST", "/video/loop", "Create loop", body={"audio_path":"test.mp3"}, allow_422=True, timeout=TIMEOUT_SLOW)
 test("POST", "/video/remeta", "Re-render with metadata", body={"source":"test.mp4","brand_name":"TestBrand"}, allow_422=True, timeout=TIMEOUT_SLOW)
 test("POST", "/video/repurpose", "Repurpose content", body={"source":"test.mp4"}, allow_422=True, timeout=TIMEOUT_SLOW)
-test("POST", "/video/ad", "Render ad video", body={"product_name":"TestProduct","category":"food","description":"A test product"}, timeout=TIMEOUT_SLOW)
+test("POST", "/video/ad", "Render ad video", body={"title":"TestProduct","category":"food"}, timeout=TIMEOUT_SLOW)
 test("POST", "/video/transforms", "Generate transforms", body={"video_url":"https://example.com/test.mp4"}, allow_422=True, timeout=TIMEOUT_SLOW)
 test("POST", "/video/subtitles", "Burn subtitle segments", body={"video_path":"test.mp4","segments":[{"text":"Hello world","start":0,"end":1}],"style":"default"}, allow_422=True, timeout=TIMEOUT_SLOW)
 test("POST", "/video/screen-rec", "Record screen", body={"duration":2}, allow_422=True, timeout=TIMEOUT_SLOW)
@@ -265,16 +296,16 @@ test("POST", "/autopilot/run", "Run autopilot", timeout=15)
 # 14. CALENDAR LAYER
 # ════════════════════════════════════════════════════════════════
 print_layer("Calendar")
-test("GET", "/calendar/list/1", "List calendar entries for user 1", timeout=15)
-test("POST", "/calendar/schedule", "Schedule content", body={"user_id":1,"topic":"Test","scheduled_at":"2026-08-01T10:00:00","platform":"tiktok","content_type":"video"}, allow_422=True, timeout=15)
-test("DELETE", "/calendar/delete/0", "Delete calendar entry 0", params={"user_id":1}, allow_422=True, timeout=15)
+test("GET", f"/calendar/list/{TEST_USER_ID}", f"List calendar entries for user {TEST_USER_ID}", timeout=15)
+test("POST", "/calendar/schedule", "Schedule content", body={"user_id":TEST_USER_ID,"topic":"Test","scheduled_at":"2026-08-01T10:00:00","platform":"tiktok","content_type":"video"}, allow_422=True, timeout=15)
+test("DELETE", "/calendar/delete/0", "Delete calendar entry 0", params={"user_id":TEST_USER_ID}, allow_422=True, timeout=15)
 
 # ════════════════════════════════════════════════════════════════
 # 15. A/B TESTING LAYER
 # ════════════════════════════════════════════════════════════════
 print_layer("A/B Testing")
-test("GET", "/ab-test/list/1", "List A/B tests for user 1", timeout=15)
-test("POST", "/ab-test/create", "Create A/B test", body={"user_id":1,"name":"TestAB","topic":"test","platform":"tiktok","content_type":"video"}, timeout=15)
+test("GET", f"/ab-test/list/{TEST_USER_ID}", f"List A/B tests for user {TEST_USER_ID}", timeout=15)
+test("POST", "/ab-test/create", "Create A/B test", body={"user_id":TEST_USER_ID,"name":"TestAB","topic":"test","platform":"tiktok","content_type":"video"}, timeout=15)
 
 # ════════════════════════════════════════════════════════════════
 # 16. NEGATIVE TESTS (legacy endpoints should 404)

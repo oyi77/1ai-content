@@ -12,6 +12,10 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
 
 export default defineConfig({
   testDir: './tests/e2e/playwright',
+  // prod-readonly.spec.ts targets the LIVE domain (content.aitradepulse.com)
+  // via playwright.config.prod.ts — it must never run against the :3111 test
+  // server (it asserts prod-only surface incl. the 401-gated /api/py/docs).
+  testIgnore: /prod-readonly\.spec\.ts/,
   timeout: 30000,
   retries: 1,
   use: {
