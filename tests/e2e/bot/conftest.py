@@ -25,8 +25,8 @@ from telethon.tl.custom import Message
 API_ID = int(os.getenv("TELEGRAM_API_ID", "0"))
 API_HASH = os.getenv("TELEGRAM_API_HASH", "")
 SESSION_PATH = "/home/openclaw/.hermes/workspace/sessions/paijo"
-BOT_USERNAME = "berkahkarya_saas_bot"
-BASE_URL = "http://localhost:3000"
+BOT_USERNAME = "vilona_content_bot"
+BASE_URL = "http://localhost:3002"
 
 # How long (seconds) to poll for a bot reply before giving up
 DEFAULT_TIMEOUT = 20

@@ -16,15 +16,18 @@ import time
 from datetime import datetime
 
 import httpx
+import pytest
 
 BOT_TOKEN = os.getenv("BOT_TOKEN", "")
 BASE = f"https://api.telegram.org/bot{BOT_TOKEN}"
 TEST_CHAT_ID = os.getenv("TEST_CHAT_ID", "")  # Set to your chat ID for live testing
 
 if not BOT_TOKEN:
-    print("❌ BOT_TOKEN env var is not set (or empty).")
-    print("   Run with it set, e.g.:  BOT_TOKEN=<token> python3 tests/e2e/bot/test_bot_e2e.py")
-    sys.exit(1)
+    if __name__ == "__main__":
+        print("❌ BOT_TOKEN env var is not set (or empty).")
+        print("   Run with it set, e.g.:  BOT_TOKEN=<token> python3 tests/e2e/bot/test_bot_e2e.py")
+        sys.exit(1)
+    pytest.skip("BOT_TOKEN env var is not set — live Telegram e2e skipped", allow_module_level=True)
 
 passed = 0
 failed = 0
