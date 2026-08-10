@@ -223,11 +223,11 @@ Run with: `npx playwright test --config playwright.config.prod.ts`
 ```
 File                  | % Stmts | % Branch | % Funcs | % Lines
 ----------------------|---------|----------|---------|-------
-All files             |   19.37 |    12.37 |   13.90 |   19.81
-src/config/           |   57.69 |    36.94 |   37.79 |   58.69
-src/services/         |   39.80 |    25.21 |   32.11 |   40.48
-src/routes/           |   42.38 |    34.17 |   33.08 |   44.09
-src/workers/          |   13.16 |     1.46 |    5.00 |   14.09
+| All files             |   19.54 |    12.50 |   14.10 |   19.98
+| src/config/           |   57.69 |    36.94 |   37.79 |   58.69
+| src/services/         |   42.29 |    26.80 |   35.14 |   42.91
+| src/routes/           |   42.38 |    34.17 |   33.08 |   44.09
+| src/workers/          |   13.16 |     1.46 |    5.00 |   14.09
 ```
 
 *Angka aktual per 2026-08-09 dari `npx jest --coverage` (88 suites, 1453 tests — termasuk `src/` root 0%: `cron.ts` belum ditest). Threshold di `package.json` `jest.coverageThreshold.global` (stmts 19 / branches 12 / funcs 13 / lines 19) diselaraskan ke angka aktual dengan margin kecil — tetap sengaja rendah (lihat AGENTS.md), berfungsi sebagai gate regresi agar coverage tidak turun dari baseline; `npm test` dan `jest --coverage` keduanya exit 0.*

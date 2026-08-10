@@ -4,7 +4,7 @@
 # services
 
 ## Purpose
-Business logic layer with 76 top-level `*.service.ts` files covering video generation, payment processing, AI prompt optimization, user management, analytics, and social media posting. Tabel `Key Files` di bawah non-exhaustive (41 dari 76 terdokumentasi).
+Business logic layer with 70 top-level `*.service.ts` files covering video generation, payment processing, AI prompt optimization, user management, analytics, and social media posting. Tabel `Key Files` di bawah non-exhaustive (37 dari 70 terdokumentasi).
 
 ## Key Files
 
@@ -33,17 +33,13 @@ Business logic layer with 76 top-level `*.service.ts` files covering video gener
 | `scene-consistency.service.ts` | Visual consistency across scenes |
 | `watermark.service.ts` | Watermark application |
 | `omniroute.service.ts` | OmniRoute hybrid routing for chat |
-| `grok-api.service.ts` | Grok AI API integration |
 | `geminigen.service.ts` | Gemini AI generation |
 | `tripay.service.ts` | Tripay payment gateway |
 | `duitku.service.ts` | DuitKu payment gateway |
 | `nowpayments.service.ts` | NOWPayments crypto gateway |
-| `meta-capi.service.ts` | Meta Conversions API tracking |
 | `postautomation.service.ts` | Automated social media posting |
-| `postbridge.service.ts` | Social media post bridging |
 | `campaign.service.ts` | Marketing campaign management |
 | `gamification.service.ts` | Achievement and reward system |
-| `ads.service.ts` | Advertisement management |
 | `saved-prompt.service.ts` | User saved prompt CRUD |
 | `avatar.service.ts` | User avatar management |
 | `vilona-animation.service.ts` | "1AI Content" loading/welcome animation integration (nama internal file tetap, teks sudah re-brand) |
@@ -52,9 +48,9 @@ Business logic layer with 76 top-level `*.service.ts` files covering video gener
 | `admin-alert.service.ts` | Admin notification alerts |
 | `p2p.service.ts` | Peer-to-peer service |
 
-> **Catatan SRC (2026-08-02):** Direktori ini berisi **76 file `*.service.ts`** level-atas (104 rekursif — subfolder `video/`, `youtube/`, `audio/`, `image/`, `video-analysis/`, `content-analysis/`), tapi tabel di atas hanya mendokumentasikan 41. Berikut **35 service yang tidak terdaftar** di tabel (diverifikasi ada di disk, urutan alfabetis):
+> **Catatan SRC (2026-08-02):** Direktori ini berisi **70 file `*.service.ts`** level-atas (86 rekursif — subfolder `video/`, `audio/`, `image/`, `video-analysis/`, `content-analysis/`), tapi tabel di atas hanya mendokumentasikan 37. Berikut **33 service yang tidak terdaftar** di tabel (diverifikasi ada di disk, urutan alfabetis):
 >
-> `admin-config`, `ai-config`, `ai-task-settings`, `balance-checker`, `content-factory`, `content-pipeline`, `content-rework`, `content-webhook`, `custom-provider`, `dynamic-pricing`, `ebook`, `exchange-rate`, `intercept`, `money-printer`, `provider-balance`, `provider-cost-tracker`, `shared-ai-pipeline`, `shared-platform-adapters`, `storyboard-image`, `storyboard-visual`, `template-video`, `tiktok-automation`, `tiktok-social`, `user-credits`, `user-crud`, `user-referral`, `user-stats`, `user-telegram`, `video-clipper`, `video-editor`, `video-library`, `video-lifecycle`, `video-storyboard`, `viral-scanner`, `whitelabel`
+> `admin-config`, `ai-config`, `ai-task-settings`, `balance-checker`, `content-factory`, `content-rework`, `content-webhook`, `custom-provider`, `dynamic-pricing`, `ebook`, `exchange-rate`, `intercept`, `money-printer`, `provider-balance`, `provider-cost-tracker`, `shared-ai-pipeline`, `shared-platform-adapters`, `storyboard-visual`, `template-video`, `tiktok-automation`, `tiktok-social`, `user-credits`, `user-crud`, `user-referral`, `user-stats`, `user-telegram`, `video-clipper`, `video-editor`, `video-library`, `video-lifecycle`, `video-storyboard`, `viral-scanner`, `whitelabel`
 >
 > Sebelum mengubah tabel, jalankan `ls -1 src/services/*.service.ts` untuk daftar lengkap terbaru.
 
