@@ -1,40 +1,41 @@
 """
-Dependency injection — lazy singleton getters for content services.
+Dependency injection — singleton getters for content services.
 
-Each function imports its service module on first call and caches the instance,
-avoiding up-front import cost of every service at module load.
+Service modules are imported eagerly at module load for boot-time determinism
+(static imports, no import cycles at load). Each getter lazily instantiates —
+and caches — its singleton on first call.
 """
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-if TYPE_CHECKING:
-    from services.storyboard.engine import StoryboardEngine
-    from services.tts.engine import TTSEngine
-    from services.music.generator import MusicGenerator
-    from services.looping.engine import LoopingEngine
-    from services.analysis.channel_analyzer import ChannelAnalyzer
-    from services.cloak_adapter import CloakBrowserAdapter
-    from services.pinterest import PinterestScraper
-    from services.carousel.generator import CarouselGenerator
-    from services.content_calendar.content_calendar import ContentCalendarService
-    from services.ab_testing.service import ABTestingService
-    from services.autopilot.orchestrator import AutoPilotOrchestrator
-    from services.engagement import AutoReplyEngine
-    from services.repurpose.engine import RepurposeEngine
-    from services.remetadata.engine import ReMetadataEngine
-    from services.clipper.engine import ClipperEngine
-    from services.faceless.engine import FacelessEngine
-    from services.brand import BrandSettings
-    from services.podcast.engine import PodcastEngine
-    from services.newsletter.engine import NewsletterEngine
-    from services.article.engine import ArticleEngine
-    from services.infographic.engine import InfographicEngine
-    from services.meme.engine import MemeEngine
-    from services.subtitles.engine import SubtitlesEngine
-    from services.screenrec.engine import ScreenRecEngine
-    from services.interactive.engine import InteractiveEngine
+# Static imports — eager module load for boot-time determinism (Phase 4).
+from services.storyboard.engine import StoryboardEngine
+from services.tts.engine import TTSEngine
+from services.music.generator import MusicGenerator
+from services.looping.engine import LoopingEngine
+from services.analysis.channel_analyzer import ChannelAnalyzer
+from services.cloak_adapter import CloakBrowserAdapter
+from services.pinterest import PinterestScraper
+from services.carousel.generator import CarouselGenerator
+from services.content_calendar.content_calendar import ContentCalendarService
+from services.ab_testing.service import ABTestingService
+from services.autopilot.orchestrator import AutoPilotOrchestrator
+from services.engagement import AutoReplyEngine
+from services.repurpose.engine import RepurposeEngine
+from services.remetadata.engine import ReMetadataEngine
+from services.clipper.engine import ClipperEngine
+from services.faceless.engine import FacelessEngine
+from services.brand import BrandSettings
+from services.podcast.engine import PodcastEngine
+from services.newsletter.engine import NewsletterEngine
+from services.article.engine import ArticleEngine
+from services.infographic.engine import InfographicEngine
+from services.meme.engine import MemeEngine
+from services.subtitles.engine import SubtitlesEngine
+from services.screenrec.engine import ScreenRecEngine
+from services.interactive.engine import InteractiveEngine
 
 _instances: dict[str, Any] = {}
 

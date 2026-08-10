@@ -155,21 +155,6 @@ class ContentGenerator(ABC):
         return []
 
 
-async def health_all(generators: list[ContentGenerator]) -> dict[str, Any]:
-    """Aggregate health from all registered generators."""
-    results: dict[str, Any] = {"status": "ok", "generators": {}}
-    for gen in generators:
-        try:
-            h = await gen.health()
-            results["generators"][gen.info.name] = h
-            if h.get("status") != "ok":
-                results["status"] = "degraded"
-        except Exception as e:
-            results["generators"][gen.info.name] = {"status": "down", "error": str(e)}
-            results["status"] = "degraded"
-    return results
-
-
 class GeneratorRegistry:
     """Registry for plain routers + ContentGenerator instances.
 
