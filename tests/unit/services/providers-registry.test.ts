@@ -84,11 +84,12 @@ describe("video fallback registry — agnes_video contract", () => {
       const res = await resP;
       expect(res).toEqual({ success: true, videoUrl: "https://cdn.agnes-ai.com/out.mp4", provider: "agnes_video" });
 
-      // Submit contract: POST {base}/videos with first key round-robin (key-a)
+      // Submit contract: POST {base}/videos with first key round-robin (key-a).
+      // Chain aspect ratio (9:16) → width/height; duration (5s @24fps) → num_frames/frame_rate.
       expect(mockPost).toHaveBeenCalledTimes(1);
       expect(mockPost).toHaveBeenCalledWith(
         "https://apihub.agnes-ai.com/v1/videos",
-        { model: "agnes-video-v2.0", prompt: "a cat" },
+        { model: "agnes-video-v2.0", prompt: "a cat", width: 720, height: 1280, num_frames: 121, frame_rate: 24 },
         expect.objectContaining({ timeout: 60000, headers: expect.objectContaining({ Authorization: "Bearer key-a" }) }),
       );
 
@@ -115,5 +116,40 @@ describe("video fallback registry — agnes_video contract", () => {
     expect(mockPost).toHaveBeenCalledTimes(2);
     const auths = mockPost.mock.calls.map((c) => (c[2] as { headers: { Authorization: string } }).headers.Authorization);
     expect(auths).toEqual(["Bearer key-a", "Bearer key-b"]);
+  });
+
+  it("throws ProviderError('Agnes: no task id') when the create response has no id", async () => {
+    mockConfig.AGNES_API_KEYS = "key-a";
+    mockPost.mockResolvedValue({ data: { status: "queued" } }); // neither sync url nor task id
+
+    const agnes = await getAgnes();
+    await expect(agnes.generate({ prompt: "a cat", duration: 3, aspectRatio: "1:1" })).rejects.toThrow(
+      "Agnes: no task id",
+    );
+    expect(mockGet).not.toHaveBeenCalled(); // never started polling
+  });
+
+  it("throws ProviderError('Agnes: generation failed') when the poll reports failed", async () => {
+    jest.useFakeTimers();
+    try {
+      mockConfig.AGNES_API_KEYS = "key-a";
+      mockPost.mockResolvedValue({ data: { video_id: "task-9" } });
+      mockGet.mockResolvedValue({ data: { status: "failed" } });
+
+      const agnes = await getAgnes();
+      const resP = agnes.generate({ prompt: "a cat", duration: 5, aspectRatio: "16:9" });
+      // Subscribe to the rejection NOW: the poll reports "failed" and rejects resP
+      // while jest.advanceTimersByTimeAsync is still unwinding, so a .rejects matcher
+      // attached on the next line would be too late — jest fails the test on the
+      // unhandled rejection (PromiseRejectionHandledWarning). An explicit .catch
+      // routes the ProviderError into `caught` instead of the process handler.
+      const caught = resP.catch((e: unknown) => e);
+      await jest.advanceTimersByTimeAsync(5000); // first poll fires after POLL_INTERVAL
+      const err = await caught;
+      expect(err).toBeInstanceOf(Error);
+      expect((err as Error).message).toBe("Agnes: generation failed");
+    } finally {
+      jest.useRealTimers();
+    }
   });
 });

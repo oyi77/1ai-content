@@ -642,6 +642,29 @@ async function generateViaZAI(params: VideoFallbackParams): Promise<VideoFallbac
   return { success: true, videoUrl, provider: "zai_video" };
 }
 
+// Agnes Video V2.0 has NO duration/aspect_ratio request fields. Output shape is
+// controlled by width/height (normalized server-side to 480p/720p/1080p presets at
+// 16:9, 9:16, 1:1, 4:3, 3:4 — see response metadata.size_mapping) and by
+// num_frames/frame_rate (seconds = num_frames / frame_rate; 8n+1 rule; max 441).
+// Map the chain's aspectRatio/duration into these native fields instead of
+// forwarding non-existent params (which can 400 "Invalid request").
+function agnesDimensions(aspectRatio?: string): { width: number; height: number } {
+  switch (mapAspectRatioSimple(aspectRatio || "16:9")) {
+    case "9:16":
+      return { width: 720, height: 1280 }; // vertical — TikTok/Reels/Shorts
+    case "1:1":
+      return { width: 720, height: 720 };
+    default:
+      return { width: 1280, height: 720 }; // 16:9 landscape
+  }
+}
+
+function agnesFrames(duration?: number, frameRate = 24): { num_frames: number; frame_rate: number } {
+  // Snap the target frame count to the model's 8n+1 constraint, clamped to <=441.
+  const n = Math.min(55, Math.max(1, Math.round((Math.max(1, Math.round((duration ?? 5) * frameRate)) - 1) / 8)));
+  return { num_frames: 8 * n + 1, frame_rate: frameRate };
+}
+
 // Round-robin cursor so multiple Agnes accounts (AGNES_API_KEYS, comma-separated)
 // alternate across generations instead of one account taking all the load.
 let agnesKeyIndex = 0;
@@ -660,7 +683,7 @@ async function generateViaAgnes(params: VideoFallbackParams): Promise<VideoFallb
 
   const resp = await axios.post(
     `${base}/videos`,
-    { model, prompt: params.prompt },
+    { model, prompt: params.prompt, ...agnesDimensions(params.aspectRatio), ...agnesFrames(params.duration) },
     { headers: { Authorization: `Bearer ${API_KEY}`, "Content-Type": "application/json" }, timeout: 60000 },
   );
 
@@ -684,7 +707,10 @@ async function generateViaAgnes(params: VideoFallbackParams): Promise<VideoFallb
       return { status: "completed", videoUrl: poll.data?.metadata?.url || poll.data?.video_url || poll.data?.url || poll.data?.output?.url || poll.data?.video?.url || poll.data?.result?.url };
     if (status === "failed" || status === "error" || status === "expired") throw new ProviderError("Agnes", "generation failed");
     return { status: "pending" };
-  });
+    // 18 polls × 5s = 90s cap, matching the documented "Polls up to 90s" and
+    // the router timeout (95000). Without this the 60-attempt default would
+    // hold the worker for 300s on a stuck task.
+  }, { maxAttempts: 18, intervalMs: 5000 });
   return { success: true, videoUrl, provider: "agnes_video" };
 }
 
