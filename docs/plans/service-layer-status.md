@@ -1,6 +1,6 @@
 # Service Layer Remediation — 6-Phase Status
 
-**Status**: 5 of 6 phases complete (Phase 4 implemented + runtime-verified 2026-08-10), 1 no-op (verified no duplicates), 1 optional (Phase 6).
+**Status**: 6 of 6 phases resolved (5 implemented + runtime-verified 2026-08-10, 1 no-op verified, Phase 6 optional evaluated 2026-08-10 — deliberately not migrated).
 
 Last verified: 2026-08-10. All line anchors re-checked against current `master`; Phase 4 runtime-verified on live :8767.
 
@@ -11,7 +11,7 @@ Last verified: 2026-08-10. All line anchors re-checked against current `master`;
 | 3. Type-annotate getters | ✅ Done | All 25 getters return-annotated; `TYPE_CHECKING` block for types |
 | 4. Static imports | ✅ Done | `services/di.py` static imports (242 lines, +0.385s boot); engines kept lazy for singleton safety — see `phase4-static-imports.md` |
 | 5. Dedupe `/health` | ✅ No-op | Single `/health` route; no duplicates exist |
-| 6. Optional ABC hardening | ⏳ Optional | ABC correct as-is; faceless/brand/clipper not migrated (deliberate) |
+| 6. Optional ABC hardening | ✅ Evaluated — not migrated | Lifecycle ABC doesn't fit the 3 one-shot sync engines; see Phase 6 decision |
 
 ---
 
@@ -70,7 +70,7 @@ Verified there is **no duplicate**:
 - Ebook health lives at `/text/ebook/health` (generator-prefixed path) — distinct, not a duplicate.
 - `services/generator.py` `health_all(generators)` — **deleted 2026-08-10** (was dead code, zero callers in `services/`; the status-doc recommendation from 2026-08-09 was delete, and it was executed). No aggregation wiring planned — `EbookContentGenerator` is the sole registered generator and exposes `/text/ebook/health` directly.
 
-## Phase 6 — Optional ABC hardening ⏳ Optional
+## Phase 6 — Optional ABC hardening ✅ Evaluated — deliberately not migrated (2026-08-10)
 
 `services/generator.py` is correct and used:
 
@@ -78,7 +78,15 @@ Verified there is **no duplicate**:
 - `GeneratorRegistry` (l.173): `add_router` (l.184), `register(generator, *, prefix, tags)` (l.188-204), `wire(app)` (l.206-213, imports `register_generator_routes` from `services.routers`).
 - Sole implementation today: `EbookContentGenerator` (registered at api.py l.130).
 
-**Optional work**: migrate `FacelessEngine`, `BrandEngine`, `ClipperEngine` to `ContentGenerator` implementations to gain uniform CRUD + health aggregation. This is genuinely optional — their routers (`services/routers/{faceless,brand,clipper}.py`) are thin and functional today, and the ABC is not decaying. Revisit only if a new consumer needs uniform generator semantics across content types.
+**Decision (2026-08-10) — deliberately NOT migrated.** The ABC is a project-lifecycle contract, and none of the three engines has a lifecycle:
+
+- `ContentGenerator` requires 10 abstract members (`info/create/status/get/list/delete/health/generate/update/cancel`) that `register_generator_routes` (`services/routers/__init__.py`) wires into a lifecycle CRUD surface: `GET/POST {prefix}/projects`, `GET/PUT/DELETE {prefix}/projects/{id}`, `{prefix}/projects/{id}/status`, `{prefix}/projects/{id}/generate`, `{prefix}/projects/{id}/cancel`.
+- `FacelessEngine.generate_video(...)` (`services/faceless/engine.py:65`) and `ClipperEngine.clip_video(...)` (`services/clipper/engine.py:33`) are **one-shot synchronous pipelines** — they block for the full pipeline (script → stock → TTS → compose / download → transcribe → highlights → clips) and return a result dict + files under `/tmp/{faceless,clipper}_output`. No project store, no IDs, no status, no cancellation. A migration would fabricate an in-memory project store (state no consumer would query), a `generate` that holds the HTTP request for minutes (worse than today's thin routers), and a no-op `cancel` lie.
+- `BrandSettings` (`services/brand/settings.py`) is **not a content generator** — a per-user in-memory settings store + watermark/intro helpers. All 10 abstract members would be fiction.
+- The stated gains don't hold: uniform CRUD has no consumer (the revisit condition — "a new consumer needs uniform generator semantics across content types" — is unmet), and health aggregation was already eliminated in Phase 5 (`health_all` deleted as dead code; `EbookContentGenerator` exposes `/text/ebook/health` directly).
+- `EbookContentGenerator` remains the sole, correct implementation (DB-backed project lifecycle). The three engines keep their thin functional routers (`services/routers/{faceless,brand,clipper}.py`), live-verified on :8767 (`faceless/*`, `brand/*`, `clipper/*` in the 98 OpenAPI paths).
+
+Override path: if a consumer later needs uniform generator semantics, execute the migration then — the fabricated lifecycle is not worth shipping today (YAGNI / refuse unnecessary abstractions).
 
 ---
 
