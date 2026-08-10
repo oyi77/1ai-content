@@ -96,6 +96,8 @@ from services.routers.subtitles import subtitles_router
 from services.routers.screenrec import screenrec_router
 from services.routers.interactive import interactive_router
 from services.ebook.generator import EbookContentGenerator
+from services.faceless.generator import FacelessContentGenerator
+from services.clipper.generator import ClipperContentGenerator
 
 
 registry.add_router(health_router)
@@ -128,6 +130,8 @@ registry.add_router(subtitles_router)
 registry.add_router(screenrec_router)
 registry.add_router(interactive_router)
 registry.register(EbookContentGenerator(), prefix="/text/ebook")
+registry.register(FacelessContentGenerator(), prefix="/faceless")
+registry.register(ClipperContentGenerator(), prefix="/clipper")
 
 
 # ══════════════════════════════════════════════════════════════

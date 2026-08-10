@@ -40,6 +40,9 @@ class ClipperEngine:
         reframe_vertical: bool = True,
         add_subtitles: bool = True,
         add_thumbnails: bool = True,
+        *,
+        progress_cb=None,
+        cancel_check=None,
     ) -> dict:
         """Full pipeline: source URL/path → multiple viral clips."""
         job_id = f"clip_{int(time.time())}"
@@ -53,6 +56,11 @@ class ClipperEngine:
             if not video_path or not os.path.exists(video_path):
                 return {'success': False, 'error': f'Could not get video: {source}'}
 
+            if progress_cb:
+                progress_cb(15, 'Video resolved')
+            if cancel_check and cancel_check():
+                return {'success': False, 'error': 'cancelled', 'cancelled': True}
+
             # Step 2: Transcribe
             print(f"  📝 Transcribing video...")
             transcript = self.transcriber.transcribe_from_video(video_path, language)
@@ -61,6 +69,11 @@ class ClipperEngine:
 
             print(f"  ✅ Transcribed {len(transcript.get('segments', []))} segments, "
                   f"language: {transcript.get('language', '?')}")
+
+            if progress_cb:
+                progress_cb(40, 'Transcription complete')
+            if cancel_check and cancel_check():
+                return {'success': False, 'error': 'cancelled', 'cancelled': True}
 
             # Step 3: Detect highlights
             print(f"  🔍 Detecting {num_clips} viral moments...")
@@ -74,9 +87,16 @@ class ClipperEngine:
             clips_data = highlights.get('clips', [])
             print(f"  ✅ Found {len(clips_data)} highlight clips")
 
+            if progress_cb:
+                progress_cb(60, 'Highlights detected')
+            if cancel_check and cancel_check():
+                return {'success': False, 'error': 'cancelled', 'cancelled': True}
+
             # Step 4: Process each clip
             results = []
             for i, clip in enumerate(clips_data):
+                if cancel_check and cancel_check():
+                    return {'success': False, 'error': 'cancelled', 'cancelled': True}
                 print(f"\n  🎬 Clip {i+1}/{len(clips_data)}: {clip.get('title', 'Untitled')}")
                 clip_result = self._process_clip(
                     video_path=video_path,
@@ -91,6 +111,11 @@ class ClipperEngine:
                 )
                 results.append(clip_result)
 
+            if progress_cb:
+                progress_cb(90, 'Clips extracted')
+            if cancel_check and cancel_check():
+                return {'success': False, 'error': 'cancelled', 'cancelled': True}
+
             # Step 5: Copy final clips to output
             final_clips = []
             for r in results:
@@ -101,6 +126,9 @@ class ClipperEngine:
                     final_clips.append(r)
 
             success_count = sum(1 for r in final_clips if r.get('success'))
+
+            if progress_cb:
+                progress_cb(100, 'Complete')
 
             return {
                 'success': success_count > 0,

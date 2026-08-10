@@ -72,6 +72,9 @@ class FacelessEngine:
         use_ab_split: bool = True,
         add_captions: bool = True,
         bgm_path: Optional[str] = None,
+        *,
+        progress_cb=None,
+        cancel_check=None,
     ) -> dict:
         """Full pipeline: topic → script → stock → TTS → compose → MP4."""
         preset = PLATFORM_PRESETS.get(platform, PLATFORM_PRESETS['tiktok'])
@@ -96,9 +99,16 @@ class FacelessEngine:
             if not scenes:
                 return {'success': False, 'error': 'No scenes generated'}
 
+            if progress_cb:
+                progress_cb(20, 'Script generated')
+            if cancel_check and cancel_check():
+                return {'success': False, 'error': 'cancelled', 'cancelled': True}
+
             # Step 2: Generate TTS for each scene
             print(f"  🎙️ Generating voiceovers for {len(scenes)} scenes...")
             for i, scene in enumerate(scenes):
+                if cancel_check and cancel_check():
+                    return {'success': False, 'error': 'cancelled', 'cancelled': True}
                 text = scene.get('narration_text', '')
                 if not text:
                     continue
@@ -117,6 +127,11 @@ class FacelessEngine:
                     scene['audio_path'] = ''
                     scene['audio_duration'] = scene.get('duration_seconds', 10)
 
+            if progress_cb:
+                progress_cb(40, 'Voiceovers generated')
+            if cancel_check and cancel_check():
+                return {'success': False, 'error': 'cancelled', 'cancelled': True}
+
             # Step 3: Search & download stock footage
             print(f"  🎬 Searching stock footage...")
             all_keywords = []
@@ -130,10 +145,17 @@ class FacelessEngine:
                 orientation=preset['orientation'],
             )
 
+            if progress_cb:
+                progress_cb(60, 'Stock footage ready')
+            if cancel_check and cancel_check():
+                return {'success': False, 'error': 'cancelled', 'cancelled': True}
+
             # Step 4: Compose each scene
             print(f"  🎞️ Composing {len(scenes)} scenes...")
             scene_paths = []
             for i, scene in enumerate(scenes):
+                if cancel_check and cancel_check():
+                    return {'success': False, 'error': 'cancelled', 'cancelled': True}
                 scene_output = os.path.join(work_dir, f'scene_{i:02d}.mp4')
                 audio_path = scene.get('audio_path', '')
                 duration = scene.get('audio_duration', 10)
@@ -160,6 +182,9 @@ class FacelessEngine:
 
                 if os.path.exists(scene_output):
                     scene_paths.append(scene_output)
+
+            if progress_cb:
+                progress_cb(90, 'Scenes composed')
 
             if not scene_paths:
                 return {'success': False, 'error': 'No scenes composed'}
@@ -205,6 +230,9 @@ class FacelessEngine:
 
             file_size = os.path.getsize(dest) if os.path.exists(dest) else 0
 
+            if progress_cb:
+                progress_cb(100, 'Complete')
+
             return {
                 'success': True,
                 'video_path': dest,
@@ -213,6 +241,7 @@ class FacelessEngine:
                 'scenes_count': len(scenes),
                 'platform': platform,
                 'resolution': resolution,
+                'file_size': file_size,
                 'file_size_mb': round(file_size / 1024 / 1024, 2),
                 'script': script,
             }
@@ -341,6 +370,7 @@ class FacelessEngine:
                 'product': product_name,
                 'scenes_count': len(scenes),
                 'platform': platform,
+                'file_size': file_size,
                 'file_size_mb': round(file_size / 1024 / 1024, 2),
                 'seo': script.get('seo', {}),
                 'script': script,

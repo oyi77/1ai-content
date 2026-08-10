@@ -1,4 +1,5 @@
 coverage/
+data/
 data/*.rdb
 data/redis/
 data/videos/
