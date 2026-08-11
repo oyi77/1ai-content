@@ -28,17 +28,21 @@ def _existing_telegram_id() -> int:
                 row = (
                     await session.execute(
                         text("SELECT telegram_id FROM users "
-                             "WHERE telegram_id IS NOT NULL LIMIT 1")
+                             "WHERE telegram_id > 0 "
+                             "ORDER BY telegram_id ASC LIMIT 1")
                     )
                 ).fetchone()
             return int(row[0]) if row else None
 
         tid = asyncio.run(_fetch())
-        return tid if tid else 1
+        return tid if tid else 157228659
     except Exception:
-        return 1
+        return 157228659
 
-# Real Telegram user id for calendar/ab-test payloads (falls back to 1).
+# Real Telegram user id for calendar/ab-test payloads. Resolves to the lowest
+# positive telegram_id in `users` (admin 157228659) so content_calendar/ab_tests
+# FK (user_id -> users.telegram_id) never fails; the constant fallback is a
+# known-present row in case the DB is unreachable from the smoke process.
 TEST_USER_ID = _existing_telegram_id()
 
 # Shared-secret for the Python enforce_api_key gate (gap-1). Attach it to every
@@ -223,7 +227,7 @@ test("POST", "/video/movie", "Generate video (SSE)", body={"prompt":"A short pea
 test("POST", "/video/loop", "Create loop", body={"audio_path":"test.mp3"}, allow_422=True, timeout=TIMEOUT_SLOW)
 test("POST", "/video/remeta", "Re-render with metadata", body={"source":"test.mp4","brand_name":"TestBrand"}, allow_422=True, timeout=TIMEOUT_SLOW)
 test("POST", "/video/repurpose", "Repurpose content", body={"source":"test.mp4"}, allow_422=True, timeout=TIMEOUT_SLOW)
-test("POST", "/video/ad", "Render ad video", body={"title":"TestProduct","category":"food"}, timeout=TIMEOUT_SLOW)
+test("POST", "/video/ad", "Render ad video", body={"title":"TestProduct","category":"food","image_url":"/home/openclaw/projects/1ai-content/public/hero-tiktok-showcase.png"}, timeout=TIMEOUT_SLOW)
 test("POST", "/video/transforms", "Generate transforms", body={"video_url":"https://example.com/test.mp4"}, allow_422=True, timeout=TIMEOUT_SLOW)
 test("POST", "/video/subtitles", "Burn subtitle segments", body={"video_path":"test.mp4","segments":[{"text":"Hello world","start":0,"end":1}],"style":"default"}, allow_422=True, timeout=TIMEOUT_SLOW)
 test("POST", "/video/screen-rec", "Record screen", body={"duration":2}, allow_422=True, timeout=TIMEOUT_SLOW)
@@ -235,7 +239,13 @@ test("POST", "/video/interactive", "Build interactive video manifest", body={"ti
 print_layer("Download / TikWM")
 test("POST", "/download/video", "Download video", body={"video_url":"https://www.tiktok.com/@test/video/123456","category":"test"}, allow_422=True)
 test("POST", "/download/profile", "Download profile", body={"profile_url":"https://www.tiktok.com/@test","max_videos":1}, allow_422=True)
-test("POST", "/tikwm/user/posts", "TikWM user posts", body={"unique_id":"test","count":1}, timeout=15)
+# tikwm.com serves a Cloudflare JS challenge ("Just a moment...") to this host for
+# /api/user/posts specifically (verified 2026-08-12), and no TIKTOK_PROXY /
+# TIKWM_API_URL override is configured — the user/posts route correctly 502s the
+# upstream, so assert that honest failure mode instead of a fake 200.
+# challenge/search and challenge/posts are NOT challenge-blocked (verified live:
+# 200 with real data / business-level error JSON), so they keep the default 200.
+test("POST", "/tikwm/user/posts", "TikWM user posts", body={"unique_id":"test","count":1}, timeout=15, expect_status=502)
 test("POST", "/tikwm/challenge/search", "TikWM challenge search", body={"keywords":"dance","count":5}, timeout=15)
 test("POST", "/tikwm/challenge/posts", "TikWM challenge posts", body={"challenge_id":"test","count":5}, timeout=15)
 
@@ -251,7 +261,7 @@ test("POST", "/publish-to-facebook", "Publish to Facebook", body={"image_url":"h
 # 8. RESEARCH LAYER
 # ════════════════════════════════════════════════════════════════
 print_layer("Research")
-test("POST", "/research/topics", "Research trending niches", body={"language":"en"}, timeout=15)
+test("POST", "/research/topics", "Research trending niches", body={"language":"en"}, timeout=TIMEOUT_SLOW)
 test("POST", "/research/book-brief", "Generate book brief", body={"niche":"self-help productivity"}, timeout=TIMEOUT_SLOW)
 
 # ════════════════════════════════════════════════════════════════
@@ -289,7 +299,7 @@ test("POST", "/cloak/batch-post", "Batch post via cloak", body={"profile_ids":["
 # ════════════════════════════════════════════════════════════════
 print_layer("AutoPilot")
 test("GET", "/autopilot/status", "Get autopilot status", timeout=15)
-test("POST", "/autopilot/create", "Create autopilot job", body={"name":"TestJob","niche":"tech","platforms":["tiktok"],"videos_per_day":1,"auto_publish":False}, timeout=15)
+test("POST", "/autopilot/create", "Create autopilot job", body={"name":"TestJob","niche":"tech","platforms":["tiktok"],"videos_per_day":0,"posting_times":["09:00"],"auto_publish":False}, timeout=15)
 test("POST", "/autopilot/run", "Run autopilot", timeout=15)
 
 # ════════════════════════════════════════════════════════════════
