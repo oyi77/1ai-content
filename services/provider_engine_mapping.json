@@ -151,8 +151,15 @@
           "provider": "OmniRoute LLM",
           "protocol": "httpx POST /chat/completions",
           "endpoint": "http://127.0.0.1:20128/v1/chat/completions",
-          "auth": "none (local)",
+          "auth": "OMNIROUTE_API_KEY",
           "file": "services/carousel/generator.py"
+        },
+        {
+          "provider": "OmniRoute LLM",
+          "protocol": "httpx POST /chat/completions",
+          "endpoint": "http://127.0.0.1:20128/v1/chat/completions",
+          "auth": "OMNIROUTE_API_KEY",
+          "file": "services/carousel/caption_styles.py"
         }
       ]
     },
@@ -449,7 +456,7 @@
           "provider": "OmniRoute LLM",
           "protocol": "httpx POST /chat/completions",
           "endpoint": "http://127.0.0.1:20128/v1",
-          "auth": "none (local)",
+          "auth": "OMNIROUTE_API_KEY",
           "file": "services/ab_testing/service.py"
         }
       ]

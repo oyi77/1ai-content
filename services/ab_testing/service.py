@@ -17,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from services.db.models import ABTest, ContentType, get_async_session
 
 OMNIRoute_URL = os.getenv("OMNIRoute_URL", "http://127.0.0.1:20128/v1")
+OMNIROUTE_API_KEY = os.getenv("OMNIROUTE_API_KEY", "")
 
 
 class ABTestingService:
@@ -193,9 +194,11 @@ Variasi B: Direct to the point, listicle
 Output JSON: {{"A": {{"description": "...", "tags": ["#tag1"]}}, "B": {{"description": "...", "tags": ["#tag1"]}}}}"""
 
         try:
+            headers = {"Authorization": f"Bearer {OMNIROUTE_API_KEY}"} if OMNIROUTE_API_KEY else {}
             response = httpx.post(
                 f"{OMNIRoute_URL}/chat/completions",
-                json={"model": "default", "messages": [{"role": "user", "content": prompt}], "temperature": 0.9, "max_tokens": 1000},
+                headers=headers,
+                json={"model": "auto/best-chat", "messages": [{"role": "user", "content": prompt}], "temperature": 0.9, "max_tokens": 1000},
                 timeout=30,
             )
             response.raise_for_status()

@@ -11,6 +11,7 @@ import json
 import re
 
 OMNIRoute_URL = os.getenv("OMNIRoute_URL", "http://127.0.0.1:20128/v1")
+OMNIROUTE_API_KEY = os.getenv("OMNIROUTE_API_KEY", "")
 
 CAPTION_STYLES = {
     "hype": {
@@ -133,10 +134,12 @@ Output HANYA format JSON:
 {{"caption": "teks caption lengkap", "hashtags": ["#tag1", "#tag2"]}}"""
 
         try:
+            headers = {"Authorization": f"Bearer {OMNIROUTE_API_KEY}"} if OMNIROUTE_API_KEY else {}
             response = httpx.post(
                 f"{self.api_url}/chat/completions",
+                headers=headers,
                 json={
-                    "model": "default",
+                    "model": "auto/best-chat",
                     "messages": [{"role": "user", "content": prompt}],
                     "temperature": 0.8,
                     "max_tokens": 1000,
