@@ -13,6 +13,7 @@ import os
 import httpx
 
 OMNIRoute_URL = os.getenv("OMNIRoute_URL", "http://127.0.0.1:20128/v1")
+OMNIROUTE_API_KEY = os.getenv("OMNIROUTE_API_KEY", "")
 
 
 class TrendAnalyzer:
@@ -135,14 +136,17 @@ Only return valid JSON, no markdown fences."""
     def _call_llm(self, prompt: str, max_tokens: int = 2000) -> str:
         """Call OmniRoute LLM for analysis."""
         try:
+            headers = {"Authorization": f"Bearer {OMNIROUTE_API_KEY}"} if OMNIROUTE_API_KEY else {}
             resp = httpx.post(
                 f"{self.OMNIRoute_URL}/chat/completions",
                 json={
-                    "model": "auto/best-chat",
+                    "model": "auto/all-working",
                     "messages": [{"role": "user", "content": prompt}],
                     "max_tokens": max_tokens,
                     "temperature": 0.7,
+                    "stream": False,
                 },
+                headers=headers,
                 timeout=60,
             )
             resp.raise_for_status()

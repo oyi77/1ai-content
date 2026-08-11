@@ -433,11 +433,12 @@ async def video_regenerate(req: VideoRegenerateRequest):
         try:
             import httpx
             omni_url = os.getenv("OMNIRoute_URL", "http://127.0.0.1:20128/v1")
+            omni_key = os.getenv("OMNIROUTE_API_KEY", "")
             async with httpx.AsyncClient(timeout=15.0) as llm_client:
                 llm_resp = await llm_client.post(
                     f"{omni_url}/chat/completions",
                     json={
-                        "model": "gemini-2.0-flash",
+                        "model": "auto/all-working",
                         "messages": [{
                             "role": "user",
                             "content": (
@@ -448,7 +449,9 @@ async def video_regenerate(req: VideoRegenerateRequest):
                             ),
                         }],
                         "max_tokens": 200,
+                        "stream": False,
                     },
+                    headers={"Authorization": f"Bearer {omni_key}"} if omni_key else {},
                 )
                 if llm_resp.status_code == 200:
                     content = llm_resp.json().get("choices", [{}])[0].get("message", {}).get("content", "")

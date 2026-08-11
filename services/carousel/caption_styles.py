@@ -139,10 +139,11 @@ Output HANYA format JSON:
                 f"{self.api_url}/chat/completions",
                 headers=headers,
                 json={
-                    "model": "auto/best-chat",
+                    "model": "auto/all-working",
                     "messages": [{"role": "user", "content": prompt}],
                     "temperature": 0.8,
                     "max_tokens": 1000,
+                    "stream": False,
                 },
                 timeout=30,
             )

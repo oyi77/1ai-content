@@ -217,7 +217,7 @@
           "provider": "OmniRoute LLM (script)",
           "protocol": "httpx POST /chat/completions",
           "endpoint": "http://127.0.0.1:20128/v1",
-          "auth": "none (local)",
+          "auth": "OMNIROUTE_API_KEY (Bearer)",
           "file": "services/faceless/script_engine.py"
         },
         {
@@ -289,7 +289,7 @@
           "provider": "OmniRoute LLM",
           "protocol": "httpx POST /chat/completions",
           "endpoint": "http://127.0.0.1:20128/v1",
-          "auth": "none (local)",
+          "auth": "OMNIROUTE_API_KEY (Bearer)",
           "model": "antigravity/claude-opus-4-6-thinking",
           "file": "services/storyboard/engine.py"
         },
@@ -297,7 +297,7 @@
           "provider": "OmniRoute Image (FLUX.2-pro)",
           "protocol": "httpx POST /images/generations",
           "endpoint": "http://127.0.0.1:20128/v1/images/generations",
-          "auth": "none (local)",
+          "auth": "OMNIROUTE_API_KEY (Bearer)",
           "model": "together/black-forest-labs/FLUX.2-pro",
           "file": "services/storyboard/engine.py"
         }
@@ -315,7 +315,7 @@
           "provider": "OmniRoute LLM (highlight scoring)",
           "protocol": "httpx POST /chat/completions",
           "endpoint": "http://127.0.0.1:20128/v1",
-          "auth": "none (local)",
+          "auth": "OMNIROUTE_API_KEY (Bearer)",
           "file": "services/clipper/highlight_detector.py"
         },
         {
@@ -438,7 +438,7 @@
           "provider": "OmniRoute LLM",
           "protocol": "httpx POST /chat/completions",
           "endpoint": "http://127.0.0.1:20128/v1",
-          "auth": "none (local)",
+          "auth": "OMNIROUTE_API_KEY (Bearer)",
           "file": "services/trends/analyzer.py; services/trends/seo_generator.py"
         }
       ]
@@ -473,7 +473,7 @@
           "provider": "OmniRoute LLM",
           "protocol": "httpx POST /chat/completions",
           "endpoint": "http://127.0.0.1:20128/v1",
-          "auth": "none (local)",
+          "auth": "OMNIROUTE_API_KEY (Bearer)",
           "file": "services/autopilot/orchestrator.py"
         }
       ]
@@ -542,7 +542,7 @@
       ],
       "auth": "OMNIROUTE_API_KEY or none (local)",
       "models": {
-        "chat": "auto/best-chat, auto/free-chat, antigravity/claude-opus-4-6-thinking",
+        "chat": "auto/all-working, auto/free-chat, antigravity/claude-opus-4-6-thinking",
         "image": "flux-1-dev, FLUX.2-pro, together/black-forest-labs/FLUX.2-pro"
       }
     },

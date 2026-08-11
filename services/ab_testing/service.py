@@ -198,7 +198,7 @@ Output JSON: {{"A": {{"description": "...", "tags": ["#tag1"]}}, "B": {{"descrip
             response = httpx.post(
                 f"{OMNIRoute_URL}/chat/completions",
                 headers=headers,
-                json={"model": "auto/best-chat", "messages": [{"role": "user", "content": prompt}], "temperature": 0.9, "max_tokens": 1000},
+                json={"model": "auto/all-working", "messages": [{"role": "user", "content": prompt}], "temperature": 0.9, "max_tokens": 1000, "stream": False},
                 timeout=30,
             )
             response.raise_for_status()

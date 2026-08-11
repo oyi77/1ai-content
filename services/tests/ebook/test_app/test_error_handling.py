@@ -161,10 +161,10 @@ class TestCreateEbookErrorHandling:
                     operation="get_models",
                     error=str(e),
                 )
-                models = ["auto/best-chat", "auto/best-fast", "auto/best-reasoning"]
+                models = ["auto/all-working", "auto/best-fast", "auto/best-reasoning"]
 
             # Verify fallback models are returned
-            assert models == ["auto/best-chat", "auto/best-fast", "auto/best-reasoning"]
+            assert models == ["auto/all-working", "auto/best-fast", "auto/best-reasoning"]
 
     def test_model_fetch_timeout_logged(self, caplog):
         """Test that OmniRoute timeout errors are logged"""
@@ -190,10 +190,10 @@ class TestCreateEbookErrorHandling:
                     operation="get_models",
                     error=str(e),
                 )
-                models = ["auto/best-chat", "auto/best-fast", "auto/best-reasoning"]
+                models = ["auto/all-working", "auto/best-fast", "auto/best-reasoning"]
 
             # Verify fallback models are returned
-            assert models == ["auto/best-chat", "auto/best-fast", "auto/best-reasoning"]
+            assert models == ["auto/all-working", "auto/best-fast", "auto/best-reasoning"]
 
     def test_successful_model_fetch_no_error(self, caplog):
         """Test that successful model fetch doesn't log errors"""
@@ -216,7 +216,7 @@ class TestCreateEbookErrorHandling:
                     data = resp.json()
                     models = [m["id"] for m in data.get("data", [])]
             except Exception:
-                models = ["auto/best-chat", "auto/best-fast", "auto/best-reasoning"]
+                models = ["auto/all-working", "auto/best-fast", "auto/best-reasoning"]
 
             # Verify actual models are returned
             assert models == ["gpt-4", "claude-3-opus"]

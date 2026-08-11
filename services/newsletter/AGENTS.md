@@ -7,7 +7,7 @@ Engine API (services/newsletter/engine.py, class NewsletterEngine):
   language="en", brand_name="1AI Content", cta_url=None)` -> dict
   Returns `{success, subject, html, plain_text, sections, word_count, language, llm}`.
   `llm_fn` (injectable callable `(text)->str`) is used verbatim when set (tests);
-  None triggers a real LLM path (OmniRoute `auto/best-chat` with Ollama fallback),
+  None triggers a real LLM path (OmniRoute `auto/all-working` with Ollama fallback),
   which falls back to deterministic template copy on any failure — never depends on
   the network to succeed.
 

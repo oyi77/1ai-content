@@ -327,7 +327,7 @@ Return ONLY valid JSON, no markdown fences."""
                         f"{self.llm_url}/chat/completions",
                         headers=headers,
                         json={
-                            "model": "auto/best-chat",
+                            "model": "auto/all-working",
                             "messages": [{"role": "user", "content": prompt}],
                             "max_tokens": max_tokens,
                             "temperature": 0.7,

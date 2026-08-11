@@ -18,6 +18,7 @@ import os
 from datetime import datetime
 
 OMNIROUTE_URL = os.getenv("OMNIRoute_URL", "http://127.0.0.1:20128/v1")
+OMNIROUTE_API_KEY = os.getenv("OMNIROUTE_API_KEY", "")
 
 
 class AutoPilotOrchestrator:
@@ -318,14 +319,17 @@ Return JSON with keys:
 Return ONLY valid JSON, no markdown."""
 
         try:
+            headers = {"Authorization": f"Bearer {OMNIROUTE_API_KEY}"} if OMNIROUTE_API_KEY else {}
             resp = httpx.post(
                 f"{OMNIROUTE_URL}/chat/completions",
                 json={
-                    "model": "auto/best-chat",
+                    "model": "auto/all-working",
                     "messages": [{"role": "user", "content": prompt}],
                     "max_tokens": 512,
                     "temperature": 0.7,
+                    "stream": False,
                 },
+                headers=headers,
                 timeout=30,
             )
             if resp.status_code == 200:

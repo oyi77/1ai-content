@@ -19,7 +19,7 @@ Pipeline video "faceless": dari skrip teks menjadi video jadi. Alur: script (LLM
   - `generate_video`, `generate_product_video`, `batch_generate` (dari clone plan)
   - `output_base = '/tmp/faceless_output'` (baris ~63)
 - `script_engine.py` — `ScriptEngine`:
-  - `_call_llm` — httpx POST `${OMNIRoute_URL}/chat/completions` (env `OMNIRoute_URL`, default `http://127.0.0.1:20128/v1`, model `auto/best-chat`, temp 0.7, timeout 60)
+  - `_call_llm` — httpx POST `${OMNIRoute_URL}/chat/completions` (env `OMNIRoute_URL`, default `http://127.0.0.1:20128/v1`, model `auto/all-working`, temp 0.7, timeout 60)
   - `generate_script` (VALID_STYLES: educational/story/product/listicle/motivational; durasi per platform; visual_keywords wajib English)
   - `generate_product_script` (VALID_PRODUCT_STYLES: pain_point/scene_recommendation/comparison/story; `seo` → hashtags/cover_text/interaction_guide)
   - Parse JSON via regex greedy `\{[\s\S]*\}`

@@ -4,7 +4,7 @@ Content source order (mirrors ``services.research.engine``, sync-adapted):
 
 1. ``self.llm_fn`` — injected callable (tests / external), output used verbatim.
 2. Real LLM via sync ``httpx.Client``: OmniRoute
-   (``auto/best-chat``, Bearer ``OMNIROUTE_API_KEY``, 90s) first, then local
+   (``auto/all-working``, Bearer ``OMNIROUTE_API_KEY``, 90s) first, then local
    Ollama (``qwen3:0.6b``) as fallback.
 3. Deterministic template fallback (no network) when the LLM is unavailable
    or returns unusable content.
@@ -24,7 +24,7 @@ OMNIRoute_URL = os.getenv("OMNIRoute_URL", "http://127.0.0.1:20128/v1")
 OMNIROUTE_API_KEY = os.getenv("OMNIROUTE_API_KEY", "")
 OLLAMA_URL = "http://localhost:11434/v1"
 
-DEFAULT_MODEL = "auto/best-chat"
+DEFAULT_MODEL = "auto/all-working"
 FALLBACK_MODEL = "qwen3:0.6b"
 
 _TAG_RE = re.compile(r"<[^>]+>")

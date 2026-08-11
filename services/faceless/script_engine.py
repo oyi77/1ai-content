@@ -21,6 +21,7 @@ import httpx
 from typing import Optional
 
 OMNIRoute_URL = os.getenv("OMNIRoute_URL", "http://127.0.0.1:20128/v1")
+OMNIROUTE_API_KEY = os.getenv("OMNIROUTE_API_KEY", "")
 
 PLATFORM_DURATIONS: dict[str, int] = {
     "tiktok": 60,
@@ -44,14 +45,17 @@ class ScriptEngine:
     def _call_llm(self, prompt: str, max_tokens: int = 2000) -> str:
         """Call OmniRoute LLM for script generation."""
         try:
+            headers = {"Authorization": f"Bearer {OMNIROUTE_API_KEY}"} if OMNIROUTE_API_KEY else {}
             resp = httpx.post(
                 f"{self.omniroute_url}/chat/completions",
                 json={
-                    "model": "auto/best-chat",
+                    "model": "auto/all-working",
                     "messages": [{"role": "user", "content": prompt}],
                     "max_tokens": max_tokens,
                     "temperature": 0.7,
+                    "stream": False,
                 },
+                headers=headers,
                 timeout=60,
             )
             resp.raise_for_status()

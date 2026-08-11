@@ -117,7 +117,7 @@ class NewsletterEngine:
                     f"{self.llm_url}/chat/completions",
                     headers={"Authorization": f"Bearer {self.api_key}"},
                     json={
-                        "model": "auto/best-chat",
+                        "model": "auto/all-working",
                         "messages": [{"role": "user", "content": prompt}],
                         "max_tokens": max_tokens,
                         "temperature": 0.7,

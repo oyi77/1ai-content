@@ -27,4 +27,4 @@ def get_available_models():
             return models
     except Exception as e:
         logger.info("Failed to fetch available models, using defaults", error=str(e))
-    return ["auto/best-chat", "auto/best-fast", "auto/best-reasoning"]
+    return ["auto/all-working", "auto/best-fast", "auto/best-reasoning"]
