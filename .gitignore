@@ -4,7 +4,6 @@ data/*.rdb
 data/redis/
 data/videos/
 data/comic/
-data/remotion/
 data/processed/
 data/ebook/
 dist/

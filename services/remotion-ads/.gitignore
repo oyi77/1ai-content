@@ -1,5 +1,3 @@
 node_modules/
-out/
-bundles/
-*.mp4
+renders/
 .cache/

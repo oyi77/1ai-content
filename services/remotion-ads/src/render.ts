@@ -101,14 +101,20 @@ async function prepareImage(imageUrl: string, publicDir: string): Promise<string
 
 async function renderProductAd(input: RenderInput): Promise<RenderResult> {
   const entryPoint = path.resolve(__dirname, "./index.tsx");
-  const outputDir = path.resolve(__dirname, "../output");
-  const publicDir = path.resolve(__dirname, "../public");
+  const rendersDir = path.resolve(__dirname, "../renders");
+  const cacheDir = path.join(rendersDir, "cache");
+  const outputDir = path.join(rendersDir, "videos");
+  const buildDir = path.join(rendersDir, "build");
+  const bundlesDir = path.join(rendersDir, "bundles");
 
+  fs.mkdirSync(cacheDir, { recursive: true });
   fs.mkdirSync(outputDir, { recursive: true });
-  fs.mkdirSync(publicDir, { recursive: true });
+  fs.mkdirSync(buildDir, { recursive: true });
+  fs.mkdirSync(bundlesDir, { recursive: true });
 
   // Prepare image for rendering
-  const preparedImage = await prepareImage(input.imageUrl, publicDir);
+  const preparedImage = await prepareImage(input.imageUrl, cacheDir);
+
 
   // Generate deterministic ad copy
   const adCopyData = generateDeterministicAdCopy(
