@@ -15,15 +15,20 @@ export async function pageRoutes(server: FastifyInstance): Promise<void> {
   // ── Landing (React SPA via admin-ui single bundle) ──
   // Satu-satunya sumber kebenaran landing: admin-ui/dist. Gagal keras (500)
   // bila build tidak ada, agar dev tidak diam-diam menyajikan duplikat usang.
-  const LANDING_INDEX = path.join(process.cwd(), "admin-ui", "dist", "index.html");
+  const LANDING_INDEX = path.join(
+    process.cwd(),
+    "admin-ui",
+    "dist",
+    "index.html",
+  );
   server.get("/", async (_request, reply) => {
     if (!fs.existsSync(LANDING_INDEX)) {
       return reply
         .status(500)
         .type("text/html")
         .send(
-          "<!doctype html><html><head><meta charset=\"utf-8\"/><title>admin-ui build missing</title></head>" +
-            "<body style=\"font-family:system-ui,sans-serif;padding:2rem;background:#0a0a1a;color:#fff\">" +
+          '<!doctype html><html><head><meta charset="utf-8"/><title>admin-ui build missing</title></head>' +
+            '<body style="font-family:system-ui,sans-serif;padding:2rem;background:#0a0a1a;color:#fff">' +
             "<h1>admin-ui build missing</h1>" +
             "<p>Run <code>npm run build</code> in <code>admin-ui/</code> to generate the landing bundle.</p>" +
             "</body></html>",
@@ -41,7 +46,9 @@ export async function pageRoutes(server: FastifyInstance): Promise<void> {
 
   // ── FAQ ──
   server.get("/faq", async (_request, reply) => {
-    return reply.view("web/faq.ejs", { botUsername: getConfig().BOT_USERNAME || "vilona_content_bot" });
+    return reply.view("web/faq.ejs", {
+      botUsername: getConfig().BOT_USERNAME || "vilona_content_bot",
+    });
   });
 
   // ── Terms of Service ──
@@ -59,9 +66,12 @@ export async function pageRoutes(server: FastifyInstance): Promise<void> {
   });
 
   // Facebook domain verification
-  server.get("/go7u73s641jq2jtd8gfh2ecbl94kmy.html", async (_request, reply) => {
-    reply.type("text/html").send("go7u73s641jq2jtd8gfh2ecbl94kmy");
-  });
+  server.get(
+    "/go7u73s641jq2jtd8gfh2ecbl94kmy.html",
+    async (_request, reply) => {
+      reply.type("text/html").send("go7u73s641jq2jtd8gfh2ecbl94kmy");
+    },
+  );
 
   // Favicon routes
   server.get("/favicon.ico", async (_request, reply) => {
@@ -70,7 +80,10 @@ export async function pageRoutes(server: FastifyInstance): Promise<void> {
   });
 
   server.get("/favicon.svg", async (_request, reply) => {
-    const svg = fs.readFileSync(`${process.cwd()}/src/public/favicon.svg`, "utf8");
+    const svg = fs.readFileSync(
+      `${process.cwd()}/src/public/favicon.svg`,
+      "utf8",
+    );
     return reply.type("image/svg+xml").send(svg);
   });
 
@@ -91,11 +104,14 @@ export async function pageRoutes(server: FastifyInstance): Promise<void> {
           statusIcon = "✅";
           statusClass = "success";
         } else if (tx?.status === "failed") {
-          statusMessage = "Payment failed. Please try again or contact support.";
+          statusMessage =
+            "Payment failed. Please try again or contact support.";
           statusIcon = "❌";
           statusClass = "failed";
         }
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
     const botUsername = getConfig().BOT_USERNAME || "vilona_content_bot";
     return reply.type("text/html")
@@ -112,25 +128,42 @@ export async function pageRoutes(server: FastifyInstance): Promise<void> {
 
   // ── PWA Manifest ──
   server.get("/manifest.json", async (_request, reply) => {
-    return reply.type('application/json').send({
-      name: '1AI Content',
-      short_name: '1AI Content',
-      start_url: '/app',
-      display: 'standalone',
-      background_color: '#0a0a1a',
-      theme_color: '#00d9ff',
+    return reply.type("application/json").send({
+      name: "1AI Content",
+      short_name: "1AI Content",
+      start_url: "/app",
+      display: "standalone",
+      background_color: "#0a0a1a",
+      theme_color: "#00d9ff",
       icons: [
-        { src: '/public/icon-192.png', sizes: '192x192', type: 'image/png' },
-        { src: '/public/icon-512.png', sizes: '512x512', type: 'image/png' },
+        { src: "/public/icon-192.png", sizes: "192x192", type: "image/png" },
+        { src: "/public/icon-512.png", sizes: "512x512", type: "image/png" },
       ],
     });
+  });
+
+  // ── Robots.txt ──
+  server.get("/robots.txt", async (_request, reply) => {
+    const candidates = [
+      path.join(process.cwd(), "admin-ui", "dist", "robots.txt"),
+      path.join(process.cwd(), "admin-ui", "public", "robots.txt"),
+    ];
+    const robotsPath = candidates.find((p) => fs.existsSync(p));
+    if (robotsPath) {
+      return reply
+        .type("text/plain")
+        .send(fs.readFileSync(robotsPath, "utf-8"));
+    }
+    return reply.status(404).send({ error: "Robots not found" });
   });
 
   // ── Dashboard HTML ──
   server.get("/dashboard.html", async (_request, reply) => {
     const dashboardPath = path.join(process.cwd(), "public", "dashboard.html");
     if (fs.existsSync(dashboardPath)) {
-      return reply.type("text/html").send(fs.readFileSync(dashboardPath, "utf-8"));
+      return reply
+        .type("text/html")
+        .send(fs.readFileSync(dashboardPath, "utf-8"));
     }
     return reply.status(404).send({ error: "Dashboard not found" });
   });
@@ -139,7 +172,9 @@ export async function pageRoutes(server: FastifyInstance): Promise<void> {
   server.get("/sw.js", async (_request, reply) => {
     const swPath = path.join(process.cwd(), "public", "sw.js");
     if (fs.existsSync(swPath)) {
-      return reply.type("application/javascript").send(fs.readFileSync(swPath, "utf-8"));
+      return reply
+        .type("application/javascript")
+        .send(fs.readFileSync(swPath, "utf-8"));
     }
     return reply.status(404).send({ error: "Service worker not found" });
   });

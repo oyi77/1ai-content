@@ -1,4 +1,6 @@
 """AutoPilot automation endpoints."""
+import asyncio
+
 from fastapi import APIRouter, HTTPException
 
 from services.api_models import AutoPilotJobRequest
@@ -44,7 +46,10 @@ async def autopilot_run():
     """Check and run all ready autopilot jobs."""
     try:
         pub = get_autopilot()
-        results = pub.check_and_run()
+        # check_and_run() runs a synchronous multi-minute generation pipeline
+        # (script -> stock -> ffmpeg -> SEO -> publish). Offload to a worker
+        # thread so the event loop stays responsive (/health, /calendar, etc.).
+        results = await asyncio.to_thread(pub.check_and_run)
         return {"jobs_run": len(results), "results": results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

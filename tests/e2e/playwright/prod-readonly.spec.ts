@@ -186,8 +186,13 @@ test('GET /api/py/docs is gated (401 — docs not in PUBLIC_ALLOWLIST)', async (
   // Proxied via nginx, /docs likewise returns 404/401 — never 200 HTML.
   const response = await request.get('/api/py/docs');
   expect(response.status()).toBe(401);
-  const body = await response.json();
-  expect(body.error).toBe('Unauthorized');
+  const body = (await response.json()) as { error?: string; detail?: string };
+  // Two documented 401 layers front this surface:
+  //  - Fastify /api/py proxy gate (LOCAL :3002) → {error:'Unauthorized'} (24B)
+  //  - api.py FastAPI middleware (DIRECT/LIVE :8767) → {detail:'Unauthorized: …'} (55B)
+  // The live edge returns the FastAPI shape; accept whichever layer guards it.
+  const reason = body.error ?? body.detail;
+  expect(String(reason)).toContain('Unauthorized');
 });
 
 test('GET /docs is not the swagger surface (404 JSON, SPA/API boundary holds)', async ({ request }) => {

@@ -33,7 +33,7 @@ interface ProviderInfo {
   enabled: boolean;
   hasApiKey: boolean;
   strengths?: string[];
-  quirks?: string[];
+  quirks?: string | string[];
   avoid?: string[];
   maxDuration?: number;
   supportsRefImage?: boolean;
@@ -423,9 +423,9 @@ export default function ProvidersPage() {
           ))}
         </div>
       )}
-      {p.quirks && p.quirks.length > 0 && (
+      {(Array.isArray(p.quirks) ? p.quirks : p.quirks ? [p.quirks] : []).length > 0 && (
         <div className="flex flex-wrap gap-1 mb-2">
-          {p.quirks.map((q) => (
+          {(Array.isArray(p.quirks) ? p.quirks : [p.quirks]).map((q) => (
             <span
               key={q}
               className={`text-[10px] px-1.5 py-0.5 rounded-full border ${pillColor("quirks")}`}

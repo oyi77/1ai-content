@@ -26,7 +26,8 @@ from typing import Optional
 from datetime import datetime
 
 # ── API CONFIG ─────────────────────────────────────────────
-OMNIROUTE_URL = "http://127.0.0.1:20128/v1"
+OMNIROUTE_URL = os.getenv("OMNIRoute_URL", "http://127.0.0.1:20128/v1")
+OMNIROUTE_API_KEY = os.getenv("OMNIROUTE_API_KEY", "")
 # Using our best models
 IMAGE_MODEL = os.getenv("STORYBOARD_IMAGE_MODEL", "together/black-forest-labs/FLUX.2-pro")
 LLM_MODEL = os.getenv("STORYBOARD_LLM_MODEL", "antigravity/claude-opus-4-6-thinking")
@@ -49,12 +50,15 @@ class StoryboardEngine:
             "messages": messages,
             "max_tokens": 4096,
             "temperature": 0.7,
+            "stream": False,
         }
 
         try:
+            headers = {"Authorization": f"Bearer {OMNIROUTE_API_KEY}"} if OMNIROUTE_API_KEY else {}
             resp = httpx.post(
                 f"{OMNIROUTE_URL}/chat/completions",
                 json=payload,
+                headers=headers,
                 timeout=60,
             )
             if resp.status_code == 200:
@@ -79,9 +83,11 @@ class StoryboardEngine:
         }
 
         try:
+            headers = {"Authorization": f"Bearer {OMNIROUTE_API_KEY}"} if OMNIROUTE_API_KEY else {}
             resp = httpx.post(
                 f"{OMNIROUTE_URL}/images/generations",
                 json=payload,
+                headers=headers,
                 timeout=120,
             )
 
