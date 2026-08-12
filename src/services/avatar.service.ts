@@ -5,10 +5,15 @@
  * generation across multiple image and video sessions.
  */
 
-import { prisma } from '@/config/database';
-import { logger } from '@/utils/logger';
-import { ConfigError, ProviderError, ProviderTimeoutError, ValidationError } from '@/utils/app-errors';
-import { ContentAnalysisService } from './content-analysis.service';
+import { prisma } from "@/config/database";
+import { logger } from "@/utils/logger";
+import {
+  ConfigError,
+  ProviderError,
+  ProviderTimeoutError,
+  ValidationError,
+} from "@/utils/app-errors";
+import { ContentAnalysisService } from "./content-analysis.service";
 
 const MAX_AVATARS_PER_USER = 5;
 
@@ -38,23 +43,29 @@ export class AvatarService {
       where: { userId: telegramId },
     });
     if (count >= MAX_AVATARS_PER_USER) {
-      throw new ValidationError(`Maximum ${MAX_AVATARS_PER_USER} avatars allowed`, 'avatarCount');
+      throw new ValidationError(
+        `Maximum ${MAX_AVATARS_PER_USER} avatars allowed`,
+        "avatarCount",
+      );
     }
 
     // Analyse image to extract features
-    let description = '';
+    let description = "";
     let features: Record<string, unknown> = {};
     try {
-      const analysis = await ContentAnalysisService.extractPrompt(imageUrl, 'image');
+      const analysis = await ContentAnalysisService.extractPrompt(
+        imageUrl,
+        "image",
+      );
       if (analysis.success && analysis.prompt) {
         description = analysis.prompt;
         features = {
-          style: analysis.style || '',
+          style: analysis.style || "",
           elements: analysis.elements || [],
         };
       }
     } catch (err) {
-      logger.warn('Avatar analysis failed, saving without features:', err);
+      logger.warn("Avatar analysis failed, saving without features:", err);
     }
 
     // If this is the user's first avatar, make it default
@@ -89,10 +100,10 @@ export class AvatarService {
   static async listAvatars(telegramId: bigint): Promise<AvatarData[]> {
     const avatars = await prisma.userAvatar.findMany({
       where: { userId: telegramId },
-      orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
+      orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
     });
 
-    return avatars.map(a => ({
+    return avatars.map((a) => ({
       id: a.id,
       name: a.name,
       imageUrl: a.imageUrl,
@@ -104,7 +115,9 @@ export class AvatarService {
   }
 
   /** Get user's default avatar */
-  static async getDefaultAvatar(telegramId: bigint): Promise<AvatarData | null> {
+  static async getDefaultAvatar(
+    telegramId: bigint,
+  ): Promise<AvatarData | null> {
     const avatar = await prisma.userAvatar.findFirst({
       where: { userId: telegramId, isDefault: true },
     });
@@ -154,48 +167,62 @@ export class AvatarService {
   }
 
   /** Generate a talking video from a photo URL and text script via D-ID */
-  static async generateTalkingVideo(imageUrl: string, text: string): Promise<string> {
+  static async generateTalkingVideo(
+    imageUrl: string,
+    text: string,
+  ): Promise<string> {
     const apiKey = process.env.D_ID_API_KEY;
-    if (!apiKey) throw new ConfigError('D_ID_API_KEY');
+    if (!apiKey) throw new ConfigError("D_ID_API_KEY");
 
-    const authHeader = `Basic ${Buffer.from(`${apiKey}:`).toString('base64')}`;
+    const authHeader = `Basic ${Buffer.from(`${apiKey}:`).toString("base64")}`;
 
-    const createRes = await fetch('https://api.d-id.com/talks', {
-      method: 'POST',
+    const createRes = await fetch("https://api.d-id.com/talks", {
+      method: "POST",
       headers: {
         Authorization: authHeader,
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         source_url: imageUrl,
         script: {
-          type: 'text',
+          type: "text",
           input: text,
-          provider: { type: 'microsoft', voice_id: 'en-US-JennyNeural' },
+          provider: { type: "microsoft", voice_id: "en-US-JennyNeural" },
         },
       }),
     });
     if (!createRes.ok) {
       const err = await createRes.text();
-      throw new ProviderError('D-ID', `create failed: ${createRes.status} ${err}`);
+      throw new ProviderError(
+        "D-ID",
+        `create failed: ${createRes.status} ${err}`,
+      );
     }
-    const { id } = await createRes.json() as { id: string };
+    const { id } = (await createRes.json()) as { id: string };
 
     // Poll for result (max 30 × 3s = 90s)
     for (let i = 0; i < 30; i++) {
-      await new Promise(r => setTimeout(r, 3000));
+      await new Promise((r) => setTimeout(r, 3000));
       const pollRes = await fetch(`https://api.d-id.com/talks/${id}`, {
         headers: { Authorization: authHeader },
       });
-      const data = await pollRes.json() as { status: string; result_url?: string; error?: { description: string } };
-      if (data.status === 'done' && data.result_url) return data.result_url;
-      if (data.status === 'error') throw new ProviderError('D-ID', `error: ${data.error?.description}`);
+      const data = (await pollRes.json()) as {
+        status: string;
+        result_url?: string;
+        error?: { description: string };
+      };
+      if (data.status === "done" && data.result_url) return data.result_url;
+      if (data.status === "error")
+        throw new ProviderError("D-ID", `error: ${data.error?.description}`);
     }
-    throw new ProviderTimeoutError('D-ID', 90000);
+    throw new ProviderTimeoutError("D-ID", 90000);
   }
 
   /** Delete an avatar */
-  static async deleteAvatar(telegramId: bigint, avatarId: number): Promise<boolean> {
+  static async deleteAvatar(
+    telegramId: bigint,
+    avatarId: number,
+  ): Promise<boolean> {
     const avatar = await prisma.userAvatar.findFirst({
       where: { id: avatarId, userId: telegramId },
     });
@@ -207,7 +234,7 @@ export class AvatarService {
     if (avatar.isDefault) {
       const next = await prisma.userAvatar.findFirst({
         where: { userId: telegramId },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       });
       if (next) {
         await prisma.userAvatar.update({

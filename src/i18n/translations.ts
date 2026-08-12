@@ -9,10 +9,10 @@
  *   const msg = t('create.select_niche', 'ru');
  */
 
-import idTranslations from './locales/id.json';
-import enTranslations from './locales/en.json';
-import ruTranslations from './locales/ru.json';
-import zhTranslations from './locales/zh.json';
+import idTranslations from "./locales/id.json";
+import enTranslations from "./locales/en.json";
+import ruTranslations from "./locales/ru.json";
+import zhTranslations from "./locales/zh.json";
 
 type Lang = string;
 
@@ -47,21 +47,21 @@ for (const [lang, data] of Object.entries(languageFiles)) {
 export function t(
   key: string,
   langOrParams?: string | Record<string, string | number>,
-  paramsOrUndefined?: Record<string, string | number>
+  paramsOrUndefined?: Record<string, string | number>,
 ): string {
   let lang: string;
   let params: Record<string, string | number> | undefined;
-  if (typeof langOrParams === 'string') {
+  if (typeof langOrParams === "string") {
     lang = langOrParams;
     params = paramsOrUndefined;
   } else {
-    lang = 'en';
+    lang = "en";
     params = langOrParams;
   }
 
   const entry = translations[key];
   if (!entry) return key;
-  let template = entry[lang] || entry['en'] || key;
+  let template = entry[lang] || entry["en"] || key;
 
   if (params) {
     for (const [paramKey, paramValue] of Object.entries(params)) {

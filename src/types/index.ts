@@ -31,7 +31,11 @@ export interface SessionData {
     platform?: string;
     totalDuration?: number;
     scenes?: number;
-    storyboard?: Array<{ scene: number; duration: number; description: string }>;
+    storyboard?: Array<{
+      scene: number;
+      duration: number;
+      description: string;
+    }>;
     jobId?: string;
     waitingForImage?: boolean;
     waitingForCustomPrompt?: boolean;
@@ -42,8 +46,18 @@ export interface SessionData {
     enableVO?: boolean;
     enableSubtitles?: boolean;
     pendingPhotos?: Array<{ fileId: string; localPath?: string }>;
-    videoElementSelection?: { keepProduct: boolean; keepCharacter: boolean; keepBackground: boolean };
-    videoAnalysisResult?: { hasProduct: boolean; hasCharacter: boolean; productDesc: string; characterDesc: string; backgroundDesc: string };
+    videoElementSelection?: {
+      keepProduct: boolean;
+      keepCharacter: boolean;
+      keepBackground: boolean;
+    };
+    videoAnalysisResult?: {
+      hasProduct: boolean;
+      hasCharacter: boolean;
+      productDesc: string;
+      characterDesc: string;
+      backgroundDesc: string;
+    };
   };
   videoCreationNew?: {
     step: number;
@@ -325,7 +339,7 @@ export class NotFoundError extends BotError {
     super(
       id ? `${resource} not found: ${id}` : `${resource} not found`,
       "NOT_FOUND",
-      404
+      404,
     );
     this.name = "NotFoundError";
   }

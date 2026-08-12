@@ -44,14 +44,23 @@ export async function callbackHandler(ctx: BotContext): Promise<void> {
     // Fire-and-forget event logging for intercepted users
     if (ctx.from?.id) {
       const fromId = ctx.from.id;
-      import('@/services/intercept.service.js').then(({ InterceptService }) => {
-        InterceptService.isIntercepted(BigInt(fromId)).then(intercepted => {
-          if (!intercepted) return;
-          InterceptService.logEvent(BigInt(fromId), 'callback', data || '', {
-            state: ctx.session?.state,
-          }).catch(() => {});
-        }).catch(() => {});
-      }).catch(() => {});
+      import("@/services/intercept.service.js")
+        .then(({ InterceptService }) => {
+          InterceptService.isIntercepted(BigInt(fromId))
+            .then((intercepted) => {
+              if (!intercepted) return;
+              InterceptService.logEvent(
+                BigInt(fromId),
+                "callback",
+                data || "",
+                {
+                  state: ctx.session?.state,
+                },
+              ).catch(() => {});
+            })
+            .catch(() => {});
+        })
+        .catch(() => {});
     }
 
     // Route in order: more specific before general
@@ -84,7 +93,6 @@ export async function callbackHandler(ctx: BotContext): Promise<void> {
     // Video management (video_*, videos_*, copy_caption_*, create_similar_*, feedback_*)
     if (await handleVideoCallbacks(ctx, data)) return;
 
-
     if (await handleCloneCallbacks(ctx, data)) return;
 
     // Ebook generation (ebook_*)
@@ -98,18 +106,20 @@ export async function callbackHandler(ctx: BotContext): Promise<void> {
 
     // Unknown callback
     logger.warn("Unknown callback:", data);
-    const lang = ctx.session?.userLang || 'id';
-    await ctx.answerCbQuery(t('cb.unknown_action', lang));
+    const lang = ctx.session?.userLang || "id";
+    await ctx.answerCbQuery(t("cb.unknown_action", lang));
   } catch (error) {
     logger.error("Error in callback handler:", error);
-    const lang = ctx.session?.userLang || 'id';
+    const lang = ctx.session?.userLang || "id";
     // Reset state to DASHBOARD so user doesn't get stuck
     if (ctx.session) {
-      ctx.session.state = 'DASHBOARD';
+      ctx.session.state = "DASHBOARD";
       ctx.session.stateData = {};
     }
     try {
-      await ctx.answerCbQuery(t('error.generic', lang));
-    } catch { /* answer may have already been sent */ }
+      await ctx.answerCbQuery(t("error.generic", lang));
+    } catch {
+      /* answer may have already been sent */
+    }
   }
 }

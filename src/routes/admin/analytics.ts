@@ -42,8 +42,6 @@ export async function registerAnalyticsRoutes(server: FastifyInstance) {
     return reply.redirect("/admin/analytics/research");
   });
 
-
-
   // API: Analytics data (today's metrics, active users, provider health, top niches, recent errors)
   server.get("/api/analytics", async () => {
     const today = new Date();

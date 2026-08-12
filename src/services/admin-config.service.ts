@@ -7,7 +7,7 @@
  */
 
 import { prisma } from "@/config/database";
-import type { InputJsonValue } from '@prisma/client/runtime/library';
+import type { InputJsonValue } from "@prisma/client/runtime/library";
 import { logger } from "@/utils/logger";
 import { PROVIDER_CONFIG } from "@/config/providers";
 
@@ -59,7 +59,12 @@ export class AdminConfigService {
     await prisma.pricingConfig.upsert({
       where: { category_key: { category, key } },
       update: { value: value as InputJsonValue, updatedBy: updatedBy ?? null },
-      create: { category, key, value: value as InputJsonValue, updatedBy: updatedBy ?? null },
+      create: {
+        category,
+        key,
+        value: value as InputJsonValue,
+        updatedBy: updatedBy ?? null,
+      },
     });
     const cacheKey = `${category}:${key}`;
     AdminConfigService.cache.delete(cacheKey);
@@ -83,7 +88,10 @@ export class AdminConfigService {
       }
       return result;
     } catch (err) {
-      logger.warn(`AdminConfigService.getCategory failed for ${category}:`, err);
+      logger.warn(
+        `AdminConfigService.getCategory failed for ${category}:`,
+        err,
+      );
       return {};
     }
   }
@@ -95,7 +103,8 @@ export class AdminConfigService {
   // ── Default seeding ────────────────────────────────────────────────────────
 
   static async initializeDefaults(): Promise<void> {
-    const defaults: Array<{ category: string; key: string; value: unknown }> = [];
+    const defaults: Array<{ category: string; key: string; value: unknown }> =
+      [];
 
     // Provider config — seed from static PROVIDER_CONFIG
     for (const [name, cfg] of Object.entries(PROVIDER_CONFIG.video)) {
@@ -207,10 +216,10 @@ export class AdminConfigService {
       api_read_per_minute: 60,
       // Per-operation bot rate limits (windowSec + max)
       op_generate: { windowSec: 60, max: 5 },
-      op_create:   { windowSec: 60, max: 10 },
-      op_topup:    { windowSec: 300, max: 3 },
+      op_create: { windowSec: 60, max: 10 },
+      op_topup: { windowSec: 300, max: 3 },
       op_referral: { windowSec: 3600, max: 5 },
-      op_support:  { windowSec: 300, max: 3 },
+      op_support: { windowSec: 300, max: 3 },
     };
     for (const [key, value] of Object.entries(rateLimits)) {
       defaults.push({ category: "rate_limit", key, value });
@@ -241,7 +250,10 @@ export class AdminConfigService {
         });
         seeded++;
       } catch (err) {
-        logger.warn(`AdminConfigService: failed to seed ${category}:${key}`, err);
+        logger.warn(
+          `AdminConfigService: failed to seed ${category}:${key}`,
+          err,
+        );
       }
     }
     logger.info(`AdminConfigService: seeded ${seeded} default config entries`);

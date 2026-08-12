@@ -9,7 +9,12 @@ import { getConfig } from "@/config/env";
 import type { ProviderFn } from "./image-text2img";
 
 export type { ProviderFn };
-export { getDims, getImageDimensions, mapAspectRatio, GEMINIGEN_API_BASE } from "./image-text2img";
+export {
+  getDims,
+  getImageDimensions,
+  mapAspectRatio,
+  GEMINIGEN_API_BASE,
+} from "./image-text2img";
 
 export interface ImageProvider {
   key: string;

@@ -37,16 +37,18 @@ export async function registerContentToolsRoutes(server: FastifyInstance) {
 
   // Save a generated book
   server.post("/api/books", async (request, reply) => {
-    const { title, subject, full_markdown, sections, stats } =
-      (request.body ?? {}) as {
-        title: string;
-        subject?: string;
-        full_markdown: string;
-        sections?: unknown;
-        stats?: unknown;
-      };
+    const { title, subject, full_markdown, sections, stats } = (request.body ??
+      {}) as {
+      title: string;
+      subject?: string;
+      full_markdown: string;
+      sections?: unknown;
+      stats?: unknown;
+    };
     if (!title || !full_markdown) {
-      return reply.status(400).send({ error: "title and full_markdown required" });
+      return reply
+        .status(400)
+        .send({ error: "title and full_markdown required" });
     }
     const book = await prisma.book.create({
       data: {
@@ -69,34 +71,47 @@ export async function registerContentToolsRoutes(server: FastifyInstance) {
   });
 
   // Get a single book
-  server.get<{ Params: { id: string } }>("/api/books/:id", async (request, reply) => {
-    const { id } = request.params;
-    const book = await prisma.book.findUnique({
-      where: { id: Number(id) },
-    });
-    if (!book) {
-      return reply.status(404).send({ error: "Book not found" });
-    }
-    return reply.send(book);
-  });
+  server.get<{ Params: { id: string } }>(
+    "/api/books/:id",
+    async (request, reply) => {
+      const { id } = request.params;
+      const book = await prisma.book.findUnique({
+        where: { id: Number(id) },
+      });
+      if (!book) {
+        return reply.status(404).send({ error: "Book not found" });
+      }
+      return reply.send(book);
+    },
+  );
 
   // ========== Comic API ==========
 
   // Save a generated comic
   server.post("/api/comics", async (request, reply) => {
-    const { title, format, language, prompt, script, num_episodes, total_pages, output_dir, cover_path, stats } =
-      (request.body ?? {}) as {
-        title: string;
-        format?: string;
-        language?: string;
-        prompt: string;
-        script?: unknown;
-        num_episodes?: number;
-        total_pages?: number;
-        output_dir?: string;
-        cover_path?: string;
-        stats?: unknown;
-      };
+    const {
+      title,
+      format,
+      language,
+      prompt,
+      script,
+      num_episodes,
+      total_pages,
+      output_dir,
+      cover_path,
+      stats,
+    } = (request.body ?? {}) as {
+      title: string;
+      format?: string;
+      language?: string;
+      prompt: string;
+      script?: unknown;
+      num_episodes?: number;
+      total_pages?: number;
+      output_dir?: string;
+      cover_path?: string;
+      stats?: unknown;
+    };
     if (!title || !prompt) {
       return reply.status(400).send({ error: "title and prompt required" });
     }
@@ -126,16 +141,19 @@ export async function registerContentToolsRoutes(server: FastifyInstance) {
   });
 
   // Get a single comic
-  server.get<{ Params: { id: string } }>("/api/comics/:id", async (request, reply) => {
-    const { id } = request.params;
-    const comic = await prisma.comic.findUnique({
-      where: { id: Number(id) },
-    });
-    if (!comic) {
-      return reply.status(404).send({ error: "Comic not found" });
-    }
-    return reply.send(comic);
-  });
+  server.get<{ Params: { id: string } }>(
+    "/api/comics/:id",
+    async (request, reply) => {
+      const { id } = request.params;
+      const comic = await prisma.comic.findUnique({
+        where: { id: Number(id) },
+      });
+      if (!comic) {
+        return reply.status(404).send({ error: "Comic not found" });
+      }
+      return reply.send(comic);
+    },
+  );
 
   // Delete a comic
   server.delete<{ Params: { id: string } }>(
@@ -151,21 +169,33 @@ export async function registerContentToolsRoutes(server: FastifyInstance) {
 
   // Save a generated movie
   server.post("/api/movies", async (request, reply) => {
-    const { title, genre, num_scenes, duration, prompt, script, video_path, cover_path, output_dir, stats, status, metadata } =
-      (request.body ?? {}) as {
-        title: string;
-        genre?: string;
-        num_scenes?: number;
-        duration?: number;
-        prompt: string;
-        script?: unknown;
-        video_path?: string;
-        cover_path?: string;
-        output_dir?: string;
-        stats?: unknown;
-        status?: string;
-        metadata?: unknown;
-      };
+    const {
+      title,
+      genre,
+      num_scenes,
+      duration,
+      prompt,
+      script,
+      video_path,
+      cover_path,
+      output_dir,
+      stats,
+      status,
+      metadata,
+    } = (request.body ?? {}) as {
+      title: string;
+      genre?: string;
+      num_scenes?: number;
+      duration?: number;
+      prompt: string;
+      script?: unknown;
+      video_path?: string;
+      cover_path?: string;
+      output_dir?: string;
+      stats?: unknown;
+      status?: string;
+      metadata?: unknown;
+    };
     if (!title || !prompt) {
       return reply.status(400).send({ error: "title and prompt required" });
     }
@@ -197,44 +227,52 @@ export async function registerContentToolsRoutes(server: FastifyInstance) {
   });
 
   // Get a single movie
-  server.get<{ Params: { id: string } }>("/api/movies/:id", async (request, reply) => {
-    const { id } = request.params;
-    const movie = await prisma.movie.findUnique({
-      where: { id: Number(id) },
-    });
-    if (!movie) {
-      return reply.status(404).send({ error: "Movie not found" });
-    }
-    return reply.send(movie);
-  });
+  server.get<{ Params: { id: string } }>(
+    "/api/movies/:id",
+    async (request, reply) => {
+      const { id } = request.params;
+      const movie = await prisma.movie.findUnique({
+        where: { id: Number(id) },
+      });
+      if (!movie) {
+        return reply.status(404).send({ error: "Movie not found" });
+      }
+      return reply.send(movie);
+    },
+  );
   // Delete a book
-  server.delete<{ Params: { id: string } }>("/api/books/:id", async (request, reply) => {
-    const { id } = request.params;
-    const book = await prisma.book.findUnique({
-      where: { id: Number(id) },
-    });
-    if (!book) {
-      return reply.status(404).send({ error: "Book not found" });
-    }
-    await prisma.book.delete({
-      where: { id: Number(id) },
-    });
-    return reply.send({ success: true });
-  });
+  server.delete<{ Params: { id: string } }>(
+    "/api/books/:id",
+    async (request, reply) => {
+      const { id } = request.params;
+      const book = await prisma.book.findUnique({
+        where: { id: Number(id) },
+      });
+      if (!book) {
+        return reply.status(404).send({ error: "Book not found" });
+      }
+      await prisma.book.delete({
+        where: { id: Number(id) },
+      });
+      return reply.send({ success: true });
+    },
+  );
 
   // Delete a movie
-  server.delete<{ Params: { id: string } }>("/api/movies/:id", async (request, reply) => {
-    const { id } = request.params;
-    const movie = await prisma.movie.findUnique({
-      where: { id: Number(id) },
-    });
-    if (!movie) {
-      return reply.status(404).send({ error: "Movie not found" });
-    }
-    await prisma.movie.delete({
-      where: { id: Number(id) },
-    });
-    return reply.send({ success: true });
-  });
+  server.delete<{ Params: { id: string } }>(
+    "/api/movies/:id",
+    async (request, reply) => {
+      const { id } = request.params;
+      const movie = await prisma.movie.findUnique({
+        where: { id: Number(id) },
+      });
+      if (!movie) {
+        return reply.status(404).send({ error: "Movie not found" });
+      }
+      await prisma.movie.delete({
+        where: { id: Number(id) },
+      });
+      return reply.send({ success: true });
+    },
+  );
 }
-

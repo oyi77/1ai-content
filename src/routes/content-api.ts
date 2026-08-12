@@ -127,7 +127,9 @@ export async function contentApiRoutes(server: FastifyInstance): Promise<void> {
     const balance = Number(fullUser.creditBalance || 0);
 
     if (balance < creditCost) {
-      return reply.status(402).send({ error: "Insufficient credits", required: creditCost, balance });
+      return reply
+        .status(402)
+        .send({ error: "Insufficient credits", required: creditCost, balance });
     }
 
     const nicheConfig = (NICHES as Record<string, unknown>)[niche];
@@ -141,7 +143,7 @@ export async function contentApiRoutes(server: FastifyInstance): Promise<void> {
       niche,
       (nicheConfig as { styles?: string[] }).styles?.slice(0, 2) || ["viral"],
       durationNum,
-      scenes
+      scenes,
     );
 
     await enqueueVideoGeneration({
@@ -166,7 +168,12 @@ export async function contentApiRoutes(server: FastifyInstance): Promise<void> {
 
     await UserService.deductCredits(user.telegramId, creditCost);
 
-    return { jobId, status: "queued", creditCost, message: "Video generation started" };
+    return {
+      jobId,
+      status: "queued",
+      creditCost,
+      message: "Video generation started",
+    };
   });
 
   server.get("/api/content/video/:jobId/status", async (request, reply) => {
@@ -196,7 +203,11 @@ export async function contentApiRoutes(server: FastifyInstance): Promise<void> {
     const user = await getUser(request, reply);
     if (!user) return;
 
-    const { prompt, category = "general", aspectRatio = "1:1" } = (request.body ?? {}) as Record<string, string>;
+    const {
+      prompt,
+      category = "general",
+      aspectRatio = "1:1",
+    } = (request.body ?? {}) as Record<string, string>;
 
     if (!prompt) {
       return reply.status(400).send({ error: "prompt required" });
@@ -212,17 +223,30 @@ export async function contentApiRoutes(server: FastifyInstance): Promise<void> {
     const balance = Number(fullUser.creditBalance || 0);
 
     if (balance < creditCost) {
-      return reply.status(402).send({ error: "Insufficient credits", required: creditCost, balance });
+      return reply
+        .status(402)
+        .send({ error: "Insufficient credits", required: creditCost, balance });
     }
 
     try {
-      const result = await ImageGenerationService.generateImage({ prompt, category, aspectRatio });
+      const result = await ImageGenerationService.generateImage({
+        prompt,
+        category,
+        aspectRatio,
+      });
 
       if (result.success) {
         await UserService.deductCredits(user.telegramId, creditCost);
-        return { success: true, url: result.imageUrl, thumbnailUrl: result.thumbnailUrl, creditCost };
+        return {
+          success: true,
+          url: result.imageUrl,
+          thumbnailUrl: result.thumbnailUrl,
+          creditCost,
+        };
       } else {
-        return reply.status(500).send({ error: result.error || "Generation failed" });
+        return reply
+          .status(500)
+          .send({ error: result.error || "Generation failed" });
       }
     } catch (err: unknown) {
       const error = err as Error;
@@ -236,7 +260,10 @@ export async function contentApiRoutes(server: FastifyInstance): Promise<void> {
     if (!user) return;
 
     try {
-      const projects = await ebookService.listProjects(20, Number(user.telegramId));
+      const projects = await ebookService.listProjects(
+        20,
+        Number(user.telegramId),
+      );
       return { ebooks: projects };
     } catch (err: unknown) {
       const error = err as Error;
@@ -248,24 +275,37 @@ export async function contentApiRoutes(server: FastifyInstance): Promise<void> {
     const user = await getUser(request, reply);
     if (!user) return;
 
-    const { idea, title, chapterCount = 10, targetLanguage = "id", productMode = "paid_ebook" } = (request.body ?? {}) as Record<string, string>;
+    const {
+      idea,
+      title,
+      chapterCount = 10,
+      targetLanguage = "id",
+      productMode = "paid_ebook",
+    } = (request.body ?? {}) as Record<string, string>;
 
     if (!idea) {
       return reply.status(400).send({ error: "idea required" });
     }
 
     try {
-      const project = await ebookService.createProject({
-        idea,
-        title,
-        chapter_count: Number(chapterCount),
-        target_language: targetLanguage,
-        product_mode: productMode,
-      }, Number(user.telegramId));
+      const project = await ebookService.createProject(
+        {
+          idea,
+          title,
+          chapter_count: Number(chapterCount),
+          target_language: targetLanguage,
+          product_mode: productMode,
+        },
+        Number(user.telegramId),
+      );
 
       await ebookService.generate(project.id, Number(user.telegramId));
 
-      return { projectId: project.id, status: "generating", message: "Ebook generation started. Poll /api/content/ebook/:id/status" };
+      return {
+        projectId: project.id,
+        status: "generating",
+        message: "Ebook generation started. Poll /api/content/ebook/:id/status",
+      };
     } catch (err: unknown) {
       const error = err as Error;
       return reply.status(500).send({ error: error.message });
@@ -279,7 +319,10 @@ export async function contentApiRoutes(server: FastifyInstance): Promise<void> {
     const { id } = request.params as { id: string };
 
     try {
-      const status = await ebookService.getStatus(Number(id), Number(user.telegramId));
+      const status = await ebookService.getStatus(
+        Number(id),
+        Number(user.telegramId),
+      );
       return status;
     } catch (err: unknown) {
       const error = err as Error;
@@ -287,26 +330,38 @@ export async function contentApiRoutes(server: FastifyInstance): Promise<void> {
     }
   });
 
-  server.get("/api/content/ebook/:id/download/:format", async (request, reply) => {
-    const user = await getUser(request, reply);
-    if (!user) return;
+  server.get(
+    "/api/content/ebook/:id/download/:format",
+    async (request, reply) => {
+      const user = await getUser(request, reply);
+      if (!user) return;
 
-    const { id, format } = request.params as { id: string; format: string };
+      const { id, format } = request.params as { id: string; format: string };
 
-    if (!["pdf", "docx", "epub"].includes(format)) {
-      return reply.status(400).send({ error: "Invalid format. Use pdf, docx, or epub" });
-    }
+      if (!["pdf", "docx", "epub"].includes(format)) {
+        return reply
+          .status(400)
+          .send({ error: "Invalid format. Use pdf, docx, or epub" });
+      }
 
-    try {
-      const file = await ebookService.download(Number(id), format as "pdf" | "docx" | "epub", Number(user.telegramId));
-      reply.header("Content-Type", file.contentType);
-      reply.header("Content-Disposition", `attachment; filename="${file.filename}"`);
-      return reply.send(file.buffer);
-    } catch (err: unknown) {
-      const error = err as Error;
-      return reply.status(500).send({ error: error.message });
-    }
-  });
+      try {
+        const file = await ebookService.download(
+          Number(id),
+          format as "pdf" | "docx" | "epub",
+          Number(user.telegramId),
+        );
+        reply.header("Content-Type", file.contentType);
+        reply.header(
+          "Content-Disposition",
+          `attachment; filename="${file.filename}"`,
+        );
+        return reply.send(file.buffer);
+      } catch (err: unknown) {
+        const error = err as Error;
+        return reply.status(500).send({ error: error.message });
+      }
+    },
+  );
 
   server.post("/api/content/chat", async (request, reply) => {
     const user = await getUser(request, reply);
@@ -322,7 +377,11 @@ export async function contentApiRoutes(server: FastifyInstance): Promise<void> {
       const ai = getOmniRouteService();
       const response = await ai.chat(user.telegramId.toString(), message);
 
-      return { success: true, response: response.content, model: response.model };
+      return {
+        success: true,
+        response: response.content,
+        model: response.model,
+      };
     } catch (err: unknown) {
       const error = err as Error;
       return reply.status(500).send({ error: error.message });
@@ -365,11 +424,12 @@ export async function contentApiRoutes(server: FastifyInstance): Promise<void> {
     if (!user) return;
 
     const body = (request.body ?? {}) as Record<string, unknown>;
-    const { contentFactoryService } = await import("@/services/content-factory.service.js");
+    const { contentFactoryService } =
+      await import("@/services/content-factory.service.js");
 
     try {
       const result = await contentFactoryService.remetaVideo({
-        source: String(body.source ?? ''),
+        source: String(body.source ?? ""),
         overlay: body.overlay ? String(body.overlay) : undefined,
         watermark: body.watermark ? String(body.watermark) : undefined,
         position: body.position ? String(body.position) : undefined,
@@ -379,7 +439,9 @@ export async function contentApiRoutes(server: FastifyInstance): Promise<void> {
       });
       return result;
     } catch (err: unknown) {
-      logger.error(`[ContentAPI] Remeta error: ${err instanceof Error ? err.message : String(err)}`);
+      logger.error(
+        `[ContentAPI] Remeta error: ${err instanceof Error ? err.message : String(err)}`,
+      );
       return reply.status(500).send({ error: "Re-metadata failed" });
     }
   });
@@ -390,31 +452,44 @@ export async function contentApiRoutes(server: FastifyInstance): Promise<void> {
     if (!user) return;
 
     const body = (request.body ?? {}) as Record<string, unknown>;
-    const { contentFactoryService } = await import("@/services/content-factory.service.js");
+    const { contentFactoryService } =
+      await import("@/services/content-factory.service.js");
 
     try {
       const sources = body.sources as string[];
       if (!Array.isArray(sources) || sources.length < 2) {
-        return reply.status(400).send({ error: "Minimum 2 source URLs required" });
+        return reply
+          .status(400)
+          .send({ error: "Minimum 2 source URLs required" });
       }
 
       const result = await contentFactoryService.repurposeVideo({
         sources,
-        targetDuration: body.targetDuration ? Number(body.targetDuration) : undefined,
+        targetDuration: body.targetDuration
+          ? Number(body.targetDuration)
+          : undefined,
         platform: body.platform ? String(body.platform) : undefined,
         niche: body.niche ? String(body.niche) : undefined,
         style: body.style ? String(body.style) : undefined,
         language: body.language ? String(body.language) : undefined,
         colorPreset: body.colorPreset ? String(body.colorPreset) : undefined,
-        transitionStyle: body.transitionStyle ? String(body.transitionStyle) : undefined,
+        transitionStyle: body.transitionStyle
+          ? String(body.transitionStyle)
+          : undefined,
         overlayText: body.overlayText ? String(body.overlayText) : undefined,
-        watermarkText: body.watermarkText ? String(body.watermarkText) : undefined,
+        watermarkText: body.watermarkText
+          ? String(body.watermarkText)
+          : undefined,
         addSubtitles: body.addSubtitles !== false,
-        subtitleStyle: body.subtitleStyle ? String(body.subtitleStyle) : undefined,
+        subtitleStyle: body.subtitleStyle
+          ? String(body.subtitleStyle)
+          : undefined,
       });
       return result;
     } catch (err: unknown) {
-      logger.error(`[ContentAPI] Repurpose error: ${err instanceof Error ? err.message : String(err)}`);
+      logger.error(
+        `[ContentAPI] Repurpose error: ${err instanceof Error ? err.message : String(err)}`,
+      );
       return reply.status(500).send({ error: "Repurpose failed" });
     }
   });
@@ -425,7 +500,15 @@ export async function contentApiRoutes(server: FastifyInstance): Promise<void> {
     if (!user) return;
 
     try {
-      const data = await (request as unknown as { file: () => Promise<{ filename: string; mimetype: string; file: NodeJS.ReadableStream }> }).file();
+      const data = await (
+        request as unknown as {
+          file: () => Promise<{
+            filename: string;
+            mimetype: string;
+            file: NodeJS.ReadableStream;
+          }>;
+        }
+      ).file();
       if (!data) return reply.status(400).send({ error: "No file uploaded" });
 
       const uploadDir = "/tmp/content_uploads";
@@ -434,9 +517,35 @@ export async function contentApiRoutes(server: FastifyInstance): Promise<void> {
       fs.mkdirSync(uploadDir, { recursive: true });
 
       const ext = path.extname(data.filename || ".mp4").toLowerCase();
-      const allowedExts = new Set([".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v", ".jpg", ".jpeg", ".png", ".gif", ".webp", ".mp3", ".wav", ".m4a", ".ogg", ".pdf", ".txt", ".srt", ".vtt"]);
-      if (!allowedExts.has(ext)) { return reply.status(400).send({ error: `File extension "${ext}" not allowed` }); }
-      const safeBase = path.basename(data.filename || `video${ext}`).replace(/[^\w.-]/g, "_");
+      const allowedExts = new Set([
+        ".mp4",
+        ".mov",
+        ".avi",
+        ".mkv",
+        ".webm",
+        ".m4v",
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".gif",
+        ".webp",
+        ".mp3",
+        ".wav",
+        ".m4a",
+        ".ogg",
+        ".pdf",
+        ".txt",
+        ".srt",
+        ".vtt",
+      ]);
+      if (!allowedExts.has(ext)) {
+        return reply
+          .status(400)
+          .send({ error: `File extension "${ext}" not allowed` });
+      }
+      const safeBase = path
+        .basename(data.filename || `video${ext}`)
+        .replace(/[^\w.-]/g, "_");
       const filename = `${Date.now()}_${safeBase}`;
       const filePath = path.join(uploadDir, filename);
 
@@ -448,7 +557,9 @@ export async function contentApiRoutes(server: FastifyInstance): Promise<void> {
 
       return { success: true, path: filePath, filename };
     } catch (err: unknown) {
-      logger.error(`[ContentAPI] Upload error: ${err instanceof Error ? err.message : String(err)}`);
+      logger.error(
+        `[ContentAPI] Upload error: ${err instanceof Error ? err.message : String(err)}`,
+      );
       return reply.status(500).send({ error: "Upload failed" });
     }
   });

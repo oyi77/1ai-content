@@ -8,24 +8,29 @@ import {
 } from "@/config/languages";
 import { t } from "@/i18n/translations";
 
-export async function handleSettingsCallbacks(ctx: BotContext, data: string): Promise<boolean> {
+export async function handleSettingsCallbacks(
+  ctx: BotContext,
+  data: string,
+): Promise<boolean> {
   // account_menu
   if (data === "account_menu") {
     await ctx.answerCbQuery();
-    const lang = ctx.session?.userLang || 'id';
-    await ctx.editMessageText(
-      t('cb.account_title', lang),
-      {
-        parse_mode: "Markdown",
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: t('btn.referral_code', lang), callback_data: "open_referral" }],
-            [{ text: t('btn.help_faq', lang), callback_data: "open_help" }],
-            [{ text: t('btn.main_menu', lang), callback_data: "main_menu" }],
+    const lang = ctx.session?.userLang || "id";
+    await ctx.editMessageText(t("cb.account_title", lang), {
+      parse_mode: "Markdown",
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: t("btn.referral_code", lang),
+              callback_data: "open_referral",
+            },
           ],
-        },
+          [{ text: t("btn.help_faq", lang), callback_data: "open_help" }],
+          [{ text: t("btn.main_menu", lang), callback_data: "main_menu" }],
+        ],
       },
-    );
+    });
     return true;
   }
 
@@ -40,24 +45,53 @@ export async function handleSettingsCallbacks(ctx: BotContext, data: string): Pr
     const user = userId
       ? await UserService.findByTelegramId(BigInt(userId))
       : null;
-    const uiLang = ctx.session?.userLang || user?.language || 'id';
-    const langDisplay = getLangConfig(user?.language || 'id').label;
-    const notif = user?.notificationsEnabled ? t('cb2.notif_enabled', uiLang) : t('cb2.notif_disabled', uiLang);
-    const autoRenew = user?.autoRenewal ? t('cb2.notif_enabled', uiLang) : t('cb2.notif_disabled', uiLang);
+    const uiLang = ctx.session?.userLang || user?.language || "id";
+    const langDisplay = getLangConfig(user?.language || "id").label;
+    const notif = user?.notificationsEnabled
+      ? t("cb2.notif_enabled", uiLang)
+      : t("cb2.notif_disabled", uiLang);
+    const autoRenew = user?.autoRenewal
+      ? t("cb2.notif_enabled", uiLang)
+      : t("cb2.notif_disabled", uiLang);
 
-    const settingsText = t('cb2.settings_title', uiLang, { lang: langDisplay, notif, autoRenew });
+    const settingsText = t("cb2.settings_title", uiLang, {
+      lang: langDisplay,
+      notif,
+      autoRenew,
+    });
     const settingsMarkup = {
       inline_keyboard: [
-        [{ text: t('cb2.settings_lang_btn', uiLang), callback_data: "settings_language" }],
-        [{ text: t('cb2.settings_notif_btn', uiLang), callback_data: "settings_notifications" }],
-        [{ text: t('cb2.settings_autorenewal_btn', uiLang), callback_data: "settings_autorenewal" }],
-        [{ text: t('cb2.back_to_menu', uiLang), callback_data: "main_menu" }],
+        [
+          {
+            text: t("cb2.settings_lang_btn", uiLang),
+            callback_data: "settings_language",
+          },
+        ],
+        [
+          {
+            text: t("cb2.settings_notif_btn", uiLang),
+            callback_data: "settings_notifications",
+          },
+        ],
+        [
+          {
+            text: t("cb2.settings_autorenewal_btn", uiLang),
+            callback_data: "settings_autorenewal",
+          },
+        ],
+        [{ text: t("cb2.back_to_menu", uiLang), callback_data: "main_menu" }],
       ],
     };
     try {
-      await ctx.editMessageText(settingsText, { parse_mode: "Markdown", reply_markup: settingsMarkup });
+      await ctx.editMessageText(settingsText, {
+        parse_mode: "Markdown",
+        reply_markup: settingsMarkup,
+      });
     } catch {
-      await ctx.reply(settingsText, { parse_mode: "Markdown", reply_markup: settingsMarkup });
+      await ctx.reply(settingsText, {
+        parse_mode: "Markdown",
+        reply_markup: settingsMarkup,
+      });
     }
     return true;
   }
@@ -79,7 +113,8 @@ export async function handleSettingsCallbacks(ctx: BotContext, data: string): Pr
     const pageItems = LANGUAGE_LIST.slice(start, start + LANG_PAGE_SIZE);
     const totalPages = Math.ceil(LANGUAGE_LIST.length / LANG_PAGE_SIZE);
 
-    const langButtons: Array<Array<{ text: string; callback_data: string }>> = [];
+    const langButtons: Array<Array<{ text: string; callback_data: string }>> =
+      [];
     for (let i = 0; i < pageItems.length; i += 2) {
       const row: Array<{ text: string; callback_data: string }> = [];
       for (let j = i; j < Math.min(i + 2, pageItems.length); j++) {
@@ -109,7 +144,7 @@ export async function handleSettingsCallbacks(ctx: BotContext, data: string): Pr
 
     langButtons.push([
       {
-        text: t('cb2.back_to_settings', currentLang),
+        text: t("cb2.back_to_settings", currentLang),
         callback_data: "open_settings",
       },
     ]);
@@ -135,7 +170,10 @@ export async function handleSettingsCallbacks(ctx: BotContext, data: string): Pr
       zh: "🌐 *更改语言*",
     };
     const uiLangCurrent: Record<string, string> = {
-      id: "Saat ini", en: "Current", ru: "Текущий", zh: "当前",
+      id: "Saat ini",
+      en: "Current",
+      ru: "Текущий",
+      zh: "当前",
     };
     const uiLangHint: Record<string, string> = {
       id: "Pilih bahasa. Mempengaruhi tampilan bot, voice over, subtitle, dan caption.",
@@ -146,8 +184,8 @@ export async function handleSettingsCallbacks(ctx: BotContext, data: string): Pr
 
     await ctx.editMessageText(
       `${uiLangTitle[currentLang] || "🌐 *Change Language*"}\n\n` +
-      `${uiLangCurrent[currentLang] || "Current"}: ${currentConfig.flag} ${currentConfig.label}\n\n` +
-      `${uiLangHint[currentLang] || "Select language. Affects bot UI, voice over, subtitles, and captions."}`,
+        `${uiLangCurrent[currentLang] || "Current"}: ${currentConfig.flag} ${currentConfig.label}\n\n` +
+        `${uiLangHint[currentLang] || "Select language. Affects bot UI, voice over, subtitles, and captions."}`,
       {
         parse_mode: "Markdown",
         reply_markup: { inline_keyboard: langButtons },
@@ -169,14 +207,17 @@ export async function handleSettingsCallbacks(ctx: BotContext, data: string): Pr
       ctx.session.userLang = langCode;
     }
     await ctx.editMessageText(
-      t('cb2.lang_updated', langCode, { flag: langCfg.flag, label: langCfg.label }),
+      t("cb2.lang_updated", langCode, {
+        flag: langCfg.flag,
+        label: langCfg.label,
+      }),
       {
         parse_mode: "Markdown",
         reply_markup: {
           inline_keyboard: [
             [
               {
-                text: t('cb2.back_to_settings', langCode),
+                text: t("cb2.back_to_settings", langCode),
                 callback_data: "open_settings",
               },
             ],
@@ -195,10 +236,12 @@ export async function handleSettingsCallbacks(ctx: BotContext, data: string): Pr
       ? await UserService.findByTelegramId(BigInt(userId))
       : null;
     const enabled = user?.notificationsEnabled ?? true;
-    const lang = ctx.session?.userLang || 'id';
-    const statusText = enabled ? t('cb2.notif_enabled', lang) : t('cb2.notif_disabled', lang);
+    const lang = ctx.session?.userLang || "id";
+    const statusText = enabled
+      ? t("cb2.notif_enabled", lang)
+      : t("cb2.notif_disabled", lang);
     await ctx.editMessageText(
-      t('cb2.notifications_title', lang, { status: statusText }),
+      t("cb2.notifications_title", lang, { status: statusText }),
       {
         parse_mode: "Markdown",
         reply_markup: {
@@ -206,12 +249,17 @@ export async function handleSettingsCallbacks(ctx: BotContext, data: string): Pr
             [
               {
                 text: enabled
-                  ? t('cb2.turn_off_notif', lang)
-                  : t('cb2.turn_on_notif', lang),
+                  ? t("cb2.turn_off_notif", lang)
+                  : t("cb2.turn_on_notif", lang),
                 callback_data: "toggle_notifications",
               },
             ],
-            [{ text: t('cb2.back_to_settings', lang), callback_data: "open_settings" }],
+            [
+              {
+                text: t("cb2.back_to_settings", lang),
+                callback_data: "open_settings",
+              },
+            ],
           ],
         },
       },
@@ -222,8 +270,8 @@ export async function handleSettingsCallbacks(ctx: BotContext, data: string): Pr
   if (data === "toggle_notifications") {
     const userId = ctx.from?.id;
     if (!userId) {
-      const lang = ctx.session?.userLang || 'id';
-      await ctx.answerCbQuery(t('misc.user_not_found_error', lang));
+      const lang = ctx.session?.userLang || "id";
+      await ctx.answerCbQuery(t("misc.user_not_found_error", lang));
       return true;
     }
     const user = await UserService.findByTelegramId(BigInt(userId));
@@ -231,14 +279,20 @@ export async function handleSettingsCallbacks(ctx: BotContext, data: string): Pr
     await UserService.update(BigInt(userId), {
       notificationsEnabled: newValue,
     });
-    const lang = ctx.session?.userLang || 'id';
+    const lang = ctx.session?.userLang || "id";
     await ctx.answerCbQuery(
-      newValue ? t('cb2.notif_toggle_on', lang) : t('cb2.notif_toggle_off', lang),
+      newValue
+        ? t("cb2.notif_toggle_on", lang)
+        : t("cb2.notif_toggle_off", lang),
     );
-    const statusText = newValue ? t('cb2.notif_enabled', lang) : t('cb2.notif_disabled', lang);
-    const actionText = newValue ? t('cb2.notif_action_enabled', lang) : t('cb2.notif_action_disabled', lang);
+    const statusText = newValue
+      ? t("cb2.notif_enabled", lang)
+      : t("cb2.notif_disabled", lang);
+    const actionText = newValue
+      ? t("cb2.notif_action_enabled", lang)
+      : t("cb2.notif_action_disabled", lang);
     await ctx.editMessageText(
-      t('cb2.notif_updated', lang, { status: statusText, action: actionText }),
+      t("cb2.notif_updated", lang, { status: statusText, action: actionText }),
       {
         parse_mode: "Markdown",
         reply_markup: {
@@ -246,12 +300,17 @@ export async function handleSettingsCallbacks(ctx: BotContext, data: string): Pr
             [
               {
                 text: newValue
-                  ? t('cb2.turn_off_notif', lang)
-                  : t('cb2.turn_on_notif', lang),
+                  ? t("cb2.turn_off_notif", lang)
+                  : t("cb2.turn_on_notif", lang),
                 callback_data: "toggle_notifications",
               },
             ],
-            [{ text: t('cb2.back_to_settings', lang), callback_data: "open_settings" }],
+            [
+              {
+                text: t("cb2.back_to_settings", lang),
+                callback_data: "open_settings",
+              },
+            ],
           ],
         },
       },
@@ -267,10 +326,12 @@ export async function handleSettingsCallbacks(ctx: BotContext, data: string): Pr
       ? await UserService.findByTelegramId(BigInt(userId))
       : null;
     const enabled = user?.autoRenewal ?? false;
-    const lang = ctx.session?.userLang || 'id';
-    const statusText = enabled ? t('cb2.notif_enabled', lang) : t('cb2.notif_disabled', lang);
+    const lang = ctx.session?.userLang || "id";
+    const statusText = enabled
+      ? t("cb2.notif_enabled", lang)
+      : t("cb2.notif_disabled", lang);
     await ctx.editMessageText(
-      t('cb2.autorenewal_title', lang, { status: statusText }),
+      t("cb2.autorenewal_title", lang, { status: statusText }),
       {
         parse_mode: "Markdown",
         reply_markup: {
@@ -278,12 +339,17 @@ export async function handleSettingsCallbacks(ctx: BotContext, data: string): Pr
             [
               {
                 text: enabled
-                  ? t('cb2.disable_autorenewal', lang)
-                  : t('cb2.enable_autorenewal', lang),
+                  ? t("cb2.disable_autorenewal", lang)
+                  : t("cb2.enable_autorenewal", lang),
                 callback_data: "toggle_autorenewal",
               },
             ],
-            [{ text: t('cb2.back_to_settings', lang), callback_data: "open_settings" }],
+            [
+              {
+                text: t("cb2.back_to_settings", lang),
+                callback_data: "open_settings",
+              },
+            ],
           ],
         },
       },
@@ -294,21 +360,30 @@ export async function handleSettingsCallbacks(ctx: BotContext, data: string): Pr
   if (data === "toggle_autorenewal") {
     const userId = ctx.from?.id;
     if (!userId) {
-      const lang = ctx.session?.userLang || 'id';
-      await ctx.answerCbQuery(t('misc.user_not_found_error', lang));
+      const lang = ctx.session?.userLang || "id";
+      await ctx.answerCbQuery(t("misc.user_not_found_error", lang));
       return true;
     }
     const user = await UserService.findByTelegramId(BigInt(userId));
     const newValue = !(user?.autoRenewal ?? false);
     await UserService.update(BigInt(userId), { autoRenewal: newValue });
-    const lang = ctx.session?.userLang || 'id';
+    const lang = ctx.session?.userLang || "id";
     await ctx.answerCbQuery(
-      newValue ? t('cb2.autorenewal_toggle_on', lang) : t('cb2.autorenewal_toggle_off', lang),
+      newValue
+        ? t("cb2.autorenewal_toggle_on", lang)
+        : t("cb2.autorenewal_toggle_off", lang),
     );
-    const statusText = newValue ? t('cb2.notif_enabled', lang) : t('cb2.notif_disabled', lang);
-    const actionText = newValue ? t('cb2.notif_action_enabled', lang) : t('cb2.notif_action_disabled', lang);
+    const statusText = newValue
+      ? t("cb2.notif_enabled", lang)
+      : t("cb2.notif_disabled", lang);
+    const actionText = newValue
+      ? t("cb2.notif_action_enabled", lang)
+      : t("cb2.notif_action_disabled", lang);
     await ctx.editMessageText(
-      t('cb2.autorenewal_updated', lang, { status: statusText, action: actionText }),
+      t("cb2.autorenewal_updated", lang, {
+        status: statusText,
+        action: actionText,
+      }),
       {
         parse_mode: "Markdown",
         reply_markup: {
@@ -316,12 +391,17 @@ export async function handleSettingsCallbacks(ctx: BotContext, data: string): Pr
             [
               {
                 text: newValue
-                  ? t('cb2.disable_autorenewal', lang)
-                  : t('cb2.enable_autorenewal', lang),
+                  ? t("cb2.disable_autorenewal", lang)
+                  : t("cb2.enable_autorenewal", lang),
                 callback_data: "toggle_autorenewal",
               },
             ],
-            [{ text: t('cb2.back_to_settings', lang), callback_data: "open_settings" }],
+            [
+              {
+                text: t("cb2.back_to_settings", lang),
+                callback_data: "open_settings",
+              },
+            ],
           ],
         },
       },
@@ -339,11 +419,14 @@ export async function handleSettingsCallbacks(ctx: BotContext, data: string): Pr
         data: { notificationsEnabled: false },
       });
     }
-    const lang = ctx.session?.userLang || 'id';
-    await ctx.reply(
-      t('cb2.notif_unsubscribed', lang),
-      { reply_markup: { inline_keyboard: [[{ text: t('btn.settings', lang), callback_data: "open_settings" }]] } },
-    );
+    const lang = ctx.session?.userLang || "id";
+    await ctx.reply(t("cb2.notif_unsubscribed", lang), {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: t("btn.settings", lang), callback_data: "open_settings" }],
+        ],
+      },
+    });
     return true;
   }
 

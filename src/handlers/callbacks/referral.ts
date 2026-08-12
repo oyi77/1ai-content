@@ -5,24 +5,29 @@ import { prisma } from "@/config/database";
 import { UserService } from "@/services/user.service";
 import { PaymentSettingsService } from "@/services/payment-settings.service";
 import { t } from "@/i18n/translations";
-import type { InlineKeyboardButton } from '@telegraf/types/markup';
+import type { InlineKeyboardButton } from "@telegraf/types/markup";
 
-export async function handleReferralCallbacks(ctx: BotContext, data: string): Promise<boolean> {
-  if (data === 'referral_explain') {
+export async function handleReferralCallbacks(
+  ctx: BotContext,
+  data: string,
+): Promise<boolean> {
+  if (data === "referral_explain") {
     await ctx.answerCbQuery().catch(() => {});
-    const lang = ctx.session?.userLang || 'id';
-    await ctx.reply(t('referral.explanation', lang), {
-      parse_mode: 'Markdown',
+    const lang = ctx.session?.userLang || "id";
+    await ctx.reply(t("referral.explanation", lang), {
+      parse_mode: "Markdown",
       reply_markup: {
-        inline_keyboard: [[{ text: t('btn.back', lang), callback_data: 'referral_menu' }]],
+        inline_keyboard: [
+          [{ text: t("btn.back", lang), callback_data: "referral_menu" }],
+        ],
       },
     });
     return true;
   }
 
   if (data === "share_referral") {
-    const lang = ctx.session?.userLang || 'id';
-    await ctx.answerCbQuery(t('misc.share_coming_soon', lang));
+    const lang = ctx.session?.userLang || "id";
+    await ctx.answerCbQuery(t("misc.share_coming_soon", lang));
     return true;
   }
 
@@ -34,8 +39,8 @@ export async function handleReferralCallbacks(ctx: BotContext, data: string): Pr
     try {
       const user = await UserService.findByTelegramId(BigInt(userId));
       if (!user) {
-        const lang = ctx.session?.userLang || 'id';
-        await ctx.reply(t('error.user_not_found', lang));
+        const lang = ctx.session?.userLang || "id";
+        await ctx.reply(t("error.user_not_found", lang));
         return true;
       }
 
@@ -60,9 +65,9 @@ export async function handleReferralCallbacks(ctx: BotContext, data: string): Pr
       const availableCommission = Number(availableAgg._sum.amount || 0);
       const withdrawnCommission = Number(withdrawnAgg._sum.amount || 0);
 
-      const lang = ctx.session?.userLang || 'id';
+      const lang = ctx.session?.userLang || "id";
       await ctx.editMessageText(
-        t('cb2.referral_stats', lang, {
+        t("cb2.referral_stats", lang, {
           referralCount,
           referralTier: user.referralTier,
           totalCommission: totalCommission.toLocaleString("id-ID"),
@@ -74,10 +79,15 @@ export async function handleReferralCallbacks(ctx: BotContext, data: string): Pr
           parse_mode: "Markdown",
           reply_markup: {
             inline_keyboard: [
-              [{ text: t('cb2.withdraw_btn', lang), callback_data: "referral_withdraw" }],
               [
                 {
-                  text: t('btn.back', lang),
+                  text: t("cb2.withdraw_btn", lang),
+                  callback_data: "referral_withdraw",
+                },
+              ],
+              [
+                {
+                  text: t("btn.back", lang),
                   callback_data: "open_referral",
                 },
               ],
@@ -88,7 +98,7 @@ export async function handleReferralCallbacks(ctx: BotContext, data: string): Pr
     } catch (error) {
       logger.error("Referral stats error:", error);
       await ctx.reply(
-        t('cb.referral_stats_error', ctx.session?.userLang || 'id'),
+        t("cb.referral_stats_error", ctx.session?.userLang || "id"),
       );
     }
     return true;
@@ -106,18 +116,22 @@ export async function handleReferralCallbacks(ctx: BotContext, data: string): Pr
       });
       const available = Number(availableAgg._sum.amount || 0);
 
-      const sellRateStr = await PaymentSettingsService.get('referral_sell_rate');
+      const sellRateStr =
+        await PaymentSettingsService.get("referral_sell_rate");
       const SELL_RATE = sellRateStr ? parseInt(sellRateStr) : 3000;
       const creditsCanConvert = Math.floor(available / SELL_RATE);
 
-      const lang = ctx.session?.userLang || 'id';
-      let message = t('cb2.withdraw_title', lang) + "\n\n";
-      message += t('cb2.withdraw_balance', lang, { available: available.toLocaleString("id-ID") }) + "\n\n";
+      const lang = ctx.session?.userLang || "id";
+      let message = t("cb2.withdraw_title", lang) + "\n\n";
+      message +=
+        t("cb2.withdraw_balance", lang, {
+          available: available.toLocaleString("id-ID"),
+        }) + "\n\n";
 
       if (available <= 0) {
-        message += t('cb2.withdraw_no_commission', lang);
+        message += t("cb2.withdraw_no_commission", lang);
       } else {
-        message += t('cb2.withdraw_options', lang, {
+        message += t("cb2.withdraw_options", lang, {
           creditsCanConvert,
           sellRate: SELL_RATE.toLocaleString("id-ID"),
           cashoutHalf: (available / 2).toLocaleString("id-ID"),
@@ -126,11 +140,29 @@ export async function handleReferralCallbacks(ctx: BotContext, data: string): Pr
 
       const buttons: InlineKeyboardButton[][] = [];
       if (creditsCanConvert > 0) {
-        buttons.push([{ text: t('cb2.convert_to_credits_btn', lang, { credits: creditsCanConvert }), callback_data: "referral_convert_credits" }]);
-        buttons.push([{ text: t('cb2.sell_to_admin_btn', lang, { amount: (available / 2).toLocaleString("id-ID") }), callback_data: "referral_sell_admin" }]);
+        buttons.push([
+          {
+            text: t("cb2.convert_to_credits_btn", lang, {
+              credits: creditsCanConvert,
+            }),
+            callback_data: "referral_convert_credits",
+          },
+        ]);
+        buttons.push([
+          {
+            text: t("cb2.sell_to_admin_btn", lang, {
+              amount: (available / 2).toLocaleString("id-ID"),
+            }),
+            callback_data: "referral_sell_admin",
+          },
+        ]);
       }
-      buttons.push([{ text: t('cb2.view_stats', lang), callback_data: "referral_stats" }]);
-      buttons.push([{ text: t('btn.back', lang), callback_data: "open_referral" }]);
+      buttons.push([
+        { text: t("cb2.view_stats", lang), callback_data: "referral_stats" },
+      ]);
+      buttons.push([
+        { text: t("btn.back", lang), callback_data: "open_referral" },
+      ]);
 
       await ctx.editMessageText(message, {
         parse_mode: "Markdown",
@@ -138,8 +170,8 @@ export async function handleReferralCallbacks(ctx: BotContext, data: string): Pr
       });
     } catch (error) {
       logger.error("Referral withdraw error:", error);
-      const lang = ctx.session?.userLang || 'id';
-      await ctx.reply(t('referral.withdraw_load_failed', lang));
+      const lang = ctx.session?.userLang || "id";
+      await ctx.reply(t("referral.withdraw_load_failed", lang));
     }
     return true;
   }
@@ -153,7 +185,8 @@ export async function handleReferralCallbacks(ctx: BotContext, data: string): Pr
       const telegramId = BigInt(userId);
 
       const result = await prisma.$transaction(async (tx) => {
-        const sellRateStr = await PaymentSettingsService.get('referral_sell_rate');
+        const sellRateStr =
+          await PaymentSettingsService.get("referral_sell_rate");
         const SELL_RATE = sellRateStr ? parseInt(sellRateStr) : 3000;
 
         const availableAgg = await tx.commission.aggregate({
@@ -190,31 +223,48 @@ export async function handleReferralCallbacks(ctx: BotContext, data: string): Pr
 
       const { creditsToAdd, available } = result;
       if (creditsToAdd <= 0) {
-        const lang = ctx.session?.userLang || 'id';
-        await ctx.editMessageText(t('referral.insufficient_convert', lang), {
+        const lang = ctx.session?.userLang || "id";
+        await ctx.editMessageText(t("referral.insufficient_convert", lang), {
           parse_mode: "Markdown",
-          reply_markup: { inline_keyboard: [[{ text: t('btn.back', ctx.session?.userLang || 'id'), callback_data: "referral_withdraw" }]] },
+          reply_markup: {
+            inline_keyboard: [
+              [
+                {
+                  text: t("btn.back", ctx.session?.userLang || "id"),
+                  callback_data: "referral_withdraw",
+                },
+              ],
+            ],
+          },
         });
         return true;
       }
 
-      const lang = ctx.session?.userLang || 'id';
+      const lang = ctx.session?.userLang || "id";
       await ctx.editMessageText(
-        t('cb2.conversion_success', lang, { available: available.toLocaleString("id-ID"), credits: creditsToAdd }),
+        t("cb2.conversion_success", lang, {
+          available: available.toLocaleString("id-ID"),
+          credits: creditsToAdd,
+        }),
         {
           parse_mode: "Markdown",
           reply_markup: {
             inline_keyboard: [
-              [{ text: t('cb2.create_video_btn', lang), callback_data: "create_video_new" }],
-              [{ text: t('cb2.main_menu', lang), callback_data: "main_menu" }],
+              [
+                {
+                  text: t("cb2.create_video_btn", lang),
+                  callback_data: "create_video_new",
+                },
+              ],
+              [{ text: t("cb2.main_menu", lang), callback_data: "main_menu" }],
             ],
           },
         },
       );
     } catch (error) {
       logger.error("Referral convert credits error:", error);
-      const lang = ctx.session?.userLang || 'id';
-      await ctx.reply(t('referral.convert_failed', lang));
+      const lang = ctx.session?.userLang || "id";
+      await ctx.reply(t("referral.convert_failed", lang));
     }
     return true;
   }
@@ -234,10 +284,19 @@ export async function handleReferralCallbacks(ctx: BotContext, data: string): Pr
       const cashoutAmount = Math.floor(available / 2);
 
       if (cashoutAmount <= 0) {
-        const lang = ctx.session?.userLang || 'id';
-        await ctx.editMessageText(t('referral.insufficient_sell', lang), {
+        const lang = ctx.session?.userLang || "id";
+        await ctx.editMessageText(t("referral.insufficient_sell", lang), {
           parse_mode: "Markdown",
-          reply_markup: { inline_keyboard: [[{ text: t('btn.back', ctx.session?.userLang || 'id'), callback_data: "referral_withdraw" }]] },
+          reply_markup: {
+            inline_keyboard: [
+              [
+                {
+                  text: t("btn.back", ctx.session?.userLang || "id"),
+                  callback_data: "referral_withdraw",
+                },
+              ],
+            ],
+          },
         });
         return true;
       }
@@ -260,14 +319,16 @@ export async function handleReferralCallbacks(ctx: BotContext, data: string): Pr
         },
       });
 
-      const adminIds = (getConfig().ADMIN_TELEGRAM_IDS || "").split(",").filter(Boolean);
+      const adminIds = (getConfig().ADMIN_TELEGRAM_IDS || "")
+        .split(",")
+        .filter(Boolean);
       const user = await UserService.findByTelegramId(telegramId);
       const userName = user?.firstName || user?.username || String(telegramId);
       for (const adminId of adminIds) {
         try {
           await ctx.telegram.sendMessage(
             adminId.trim(),
-            t('cb2.cashout_admin_notify', 'id', {
+            t("cb2.cashout_admin_notify", "id", {
               userName,
               telegramId: String(telegramId),
               available: available.toLocaleString("id-ID"),
@@ -275,12 +336,14 @@ export async function handleReferralCallbacks(ctx: BotContext, data: string): Pr
             }),
             { parse_mode: "Markdown" },
           );
-        } catch { /* admin unreachable */ }
+        } catch {
+          /* admin unreachable */
+        }
       }
 
-      const lang = ctx.session?.userLang || 'id';
+      const lang = ctx.session?.userLang || "id";
       await ctx.editMessageText(
-        t('cb2.cashout_sent', lang, {
+        t("cb2.cashout_sent", lang, {
           available: available.toLocaleString("id-ID"),
           cashoutAmount: cashoutAmount.toLocaleString("id-ID"),
         }),
@@ -288,16 +351,21 @@ export async function handleReferralCallbacks(ctx: BotContext, data: string): Pr
           parse_mode: "Markdown",
           reply_markup: {
             inline_keyboard: [
-              [{ text: t('cb2.view_stats', lang), callback_data: "referral_stats" }],
-              [{ text: t('cb2.main_menu', lang), callback_data: "main_menu" }],
+              [
+                {
+                  text: t("cb2.view_stats", lang),
+                  callback_data: "referral_stats",
+                },
+              ],
+              [{ text: t("cb2.main_menu", lang), callback_data: "main_menu" }],
             ],
           },
         },
       );
     } catch (error) {
       logger.error("Referral sell admin error:", error);
-      const lang = ctx.session?.userLang || 'id';
-      await ctx.reply(t('referral.cashout_failed', lang));
+      const lang = ctx.session?.userLang || "id";
+      await ctx.reply(t("referral.cashout_failed", lang));
     }
     return true;
   }

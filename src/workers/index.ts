@@ -15,7 +15,10 @@ import {
   cleanupStuckVideos,
   setCleanupTelegram,
 } from "@/workers/cleanup.worker";
-import { setAlertTelegram, sendAdminAlert as sendGroupAlert } from "@/services/admin-alert.service";
+import {
+  setAlertTelegram,
+  sendAdminAlert as sendGroupAlert,
+} from "@/services/admin-alert.service";
 import type { Telegraf } from "telegraf";
 
 /**
@@ -34,7 +37,9 @@ export async function startWorkers(bot: Telegraf): Promise<void> {
       startVideoWorker(bot);
       logger.info("✅ Video generation worker started");
     } catch {
-      logger.warn("⚠️ Video worker failed to start, falling back to direct async");
+      logger.warn(
+        "⚠️ Video worker failed to start, falling back to direct async",
+      );
     }
   }
 
@@ -68,7 +73,9 @@ export async function startWorkers(bot: Telegraf): Promise<void> {
     try {
       const stuckCount = await Promise.race([
         cleanupStuckVideos(bot.telegram),
-        new Promise<number>((resolve) => { setTimeout(() => resolve(0), 10000); }),
+        new Promise<number>((resolve) => {
+          setTimeout(() => resolve(0), 10000);
+        }),
       ]);
       if (stuckCount > 0) {
         logger.info(`✅ Startup cleanup: resolved ${stuckCount} stuck videos`);

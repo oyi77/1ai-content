@@ -5,11 +5,11 @@
  * Ensures prices automatically adjust when provider costs change.
  */
 
-import { ProviderCostTrackerService } from './provider-cost-tracker.service';
-import { PaymentSettingsService } from './payment-settings.service';
-import { prisma } from '@/config/database';
-import { logger } from '@/utils/logger';
-import { getConfig } from '@/config/env';
+import { ProviderCostTrackerService } from "./provider-cost-tracker.service";
+import { PaymentSettingsService } from "./payment-settings.service";
+import { prisma } from "@/config/database";
+import { logger } from "@/utils/logger";
+import { getConfig } from "@/config/env";
 
 interface DynamicPriceConfig {
   providerKey: string;
@@ -43,7 +43,9 @@ export class DynamicPricingService {
   /**
    * Calculate dynamic price for an action
    */
-  static async calculatePrice(config: DynamicPriceConfig): Promise<PriceCalculation> {
+  static async calculatePrice(
+    config: DynamicPriceConfig,
+  ): Promise<PriceCalculation> {
     const {
       providerKey,
       units,
@@ -52,17 +54,22 @@ export class DynamicPricingService {
     } = config;
 
     // Get current provider cost
-    const providerCost = await ProviderCostTrackerService.getProviderCost(providerKey);
+    const providerCost =
+      await ProviderCostTrackerService.getProviderCost(providerKey);
     const costUsd = providerCost?.costUsd || 0;
 
     // Get margin and exchange rate
-    const margin = marginPercent ?? await PaymentSettingsService.getMarginPercent();
+    const margin =
+      marginPercent ?? (await PaymentSettingsService.getMarginPercent());
 
     // Get USD to IDR exchange rate from database
     const exchangeRateConfig = await prisma.pricingConfig.findUnique({
-      where: { category_key: { category: 'global', key: 'exchange_rate' } },
+      where: { category_key: { category: "global", key: "exchange_rate" } },
     });
-    const usdToIdr = Number((exchangeRateConfig?.value as Record<string, unknown>)?.rate) || getConfig().USD_TO_IDR_RATE || 16000;
+    const usdToIdr =
+      Number((exchangeRateConfig?.value as Record<string, unknown>)?.rate) ||
+      getConfig().USD_TO_IDR_RATE ||
+      16000;
 
     // Calculate cost in IDR
     const providerCostIdr = costUsd * usdToIdr;
@@ -104,13 +111,18 @@ export class DynamicPricingService {
   /**
    * Get recommended unit costs based on current provider costs
    */
-  static async getRecommendedUnitCosts(): Promise<Record<string, {
-    units: number;
-    credits: number;
-    priceIdr: number;
-    providerKey: string;
-    costUsd: number;
-  }>> {
+  static async getRecommendedUnitCosts(): Promise<
+    Record<
+      string,
+      {
+        units: number;
+        credits: number;
+        priceIdr: number;
+        providerKey: string;
+        costUsd: number;
+      }
+    >
+  > {
     const recommendations: Record<string, any> = {};
 
     // Video costs (by duration)
@@ -123,7 +135,7 @@ export class DynamicPricingService {
 
       // Use average video provider cost
       const calculation = await this.calculatePrice({
-        providerKey: 'omniroute', // Will route to cheapest
+        providerKey: "omniroute", // Will route to cheapest
         units: scenes,
       });
 
@@ -131,36 +143,36 @@ export class DynamicPricingService {
         units: scenes * 10, // Store in units (10 units = 1 credit)
         credits: calculation.credits,
         priceIdr: calculation.priceIdr,
-        providerKey: 'omniroute',
+        providerKey: "omniroute",
         costUsd: calculation.costUsd,
       };
     }
 
     // Image costs
     const imageCalculation = await this.calculatePrice({
-      providerKey: 'omniroute',
+      providerKey: "omniroute",
       units: 10,
     });
 
-    recommendations['IMAGE_UNIT'] = {
+    recommendations["IMAGE_UNIT"] = {
       units: 10,
       credits: 1,
       priceIdr: imageCalculation.priceIdr,
-      providerKey: 'omniroute',
+      providerKey: "omniroute",
       costUsd: imageCalculation.costUsd,
     };
 
     // Image set (7 scenes)
     const imageSetCalculation = await this.calculatePrice({
-      providerKey: 'omniroute',
+      providerKey: "omniroute",
       units: 70,
     });
 
-    recommendations['IMAGE_SET_7_SCENE'] = {
+    recommendations["IMAGE_SET_7_SCENE"] = {
       units: 70,
       credits: 7,
       priceIdr: imageSetCalculation.priceIdr,
-      providerKey: 'omniroute',
+      providerKey: "omniroute",
       costUsd: imageSetCalculation.costUsd * 7,
     };
 
@@ -191,11 +203,11 @@ export class DynamicPricingService {
 
     // Get database costs
     const dbCosts = await prisma.pricingConfig.findMany({
-      where: { category: 'provider_cost' },
+      where: { category: "provider_cost" },
     });
 
     for (const current of currentCosts) {
-      const dbCost = dbCosts.find(c => c.key === current.providerKey);
+      const dbCost = dbCosts.find((c) => c.key === current.providerKey);
       if (!dbCost) continue;
 
       const dbCostValue = dbCost.value as Record<string, unknown>;
@@ -236,13 +248,19 @@ export class DynamicPricingService {
     }>;
   }> {
     const recommendations = await this.getRecommendedUnitCosts();
-    const changes: Array<{key: string; oldUnits: number; newUnits: number; oldPrice: number; newPrice: number}> = [];
+    const changes: Array<{
+      key: string;
+      oldUnits: number;
+      newUnits: number;
+      oldPrice: number;
+      newPrice: number;
+    }> = [];
     let updated = 0;
 
     for (const [key, recommendation] of Object.entries(recommendations)) {
       // Get current unit cost
       const current = await prisma.pricingConfig.findUnique({
-        where: { category_key: { category: 'unit_cost', key } },
+        where: { category_key: { category: "unit_cost", key } },
       });
 
       if (current) {
@@ -255,13 +273,15 @@ export class DynamicPricingService {
             key,
             oldUnits,
             newUnits,
-            oldPrice: Math.ceil((Number(oldUnits) / 10) * (Number(oldUnits) / 10)), // Rough estimate
+            oldPrice: Math.ceil(
+              (Number(oldUnits) / 10) * (Number(oldUnits) / 10),
+            ), // Rough estimate
             newPrice: recommendation.priceIdr,
           });
 
           // Update in database
           await prisma.pricingConfig.update({
-            where: { category_key: { category: 'unit_cost', key } },
+            where: { category_key: { category: "unit_cost", key } },
             data: {
               value: {
                 units: newUnits,

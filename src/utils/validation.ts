@@ -3,9 +3,9 @@
  * - validateBody: imperative helper for inline use (returns parsed data or sends 400)
  * - validate: preHandler factory for declarative route-level validation
  */
-import { z } from 'zod';
-import { FastifyRequest, FastifyReply } from 'fastify';
-import { ZodSchema, ZodError } from 'zod';
+import { z } from "zod";
+import { FastifyRequest, FastifyReply } from "fastify";
+import { ZodSchema, ZodError } from "zod";
 
 /**
  * Validate request body against a Zod schema.
@@ -14,12 +14,14 @@ import { ZodSchema, ZodError } from 'zod';
 export async function validateBody<T extends z.ZodType>(
   request: FastifyRequest,
   reply: FastifyReply,
-  schema: T
+  schema: T,
 ): Promise<z.infer<T> | null> {
   const result = schema.safeParse(request.body);
   if (!result.success) {
-    const errors = result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`);
-    reply.status(400).send({ error: 'Validation failed', details: errors });
+    const errors = result.error.errors.map(
+      (e) => `${e.path.join(".")}: ${e.message}`,
+    );
+    reply.status(400).send({ error: "Validation failed", details: errors });
     return null;
   }
   return result.data;
@@ -37,7 +39,7 @@ export interface ValidationSchemas {
  */
 export function validate(schemas: ValidationSchemas) {
   return async (request: FastifyRequest, reply: FastifyReply) => {
-    for (const part of ['body', 'params', 'querystring'] as const) {
+    for (const part of ["body", "params", "querystring"] as const) {
       const schema = schemas[part];
       if (!schema) continue;
       const data = (request as any)[part];
@@ -45,10 +47,10 @@ export function validate(schemas: ValidationSchemas) {
       if (!result.success) {
         const zodError = result.error as ZodError;
         reply.code(400).send({
-          error: 'ValidationError',
+          error: "ValidationError",
           message: `Invalid ${part}`,
           issues: zodError.issues.map((i) => ({
-            path: i.path.join('.'),
+            path: i.path.join("."),
             message: i.message,
           })),
         });
@@ -79,7 +81,7 @@ export const creditsBodySchema = z.object({
 });
 
 export const tierBodySchema = z.object({
-  tier: z.enum(['free', 'basic', 'pro', 'agency']),
+  tier: z.enum(["free", "basic", "pro", "agency"]),
 });
 
 export const banBodySchema = z.object({
@@ -89,7 +91,7 @@ export const banBodySchema = z.object({
 
 export const broadcastBodySchema = z.object({
   message: z.string().min(1).max(4096),
-  targetTier: z.enum(['all', 'free', 'basic', 'pro', 'agency']).optional(),
+  targetTier: z.enum(["all", "free", "basic", "pro", "agency"]).optional(),
 });
 
 export const cancelSubscriptionSchema = z.object({

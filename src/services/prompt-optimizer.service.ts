@@ -5,13 +5,12 @@
  * Caches results in the prompt_cache DB table.
  */
 
-import { prisma } from '@/config/database';
-import { createHash } from 'crypto';
-import { logger } from '@/utils/logger';
-import { PROVIDER_CONFIG } from '@/config/providers';
-import { STYLE_PRESETS } from '@/config/styles';
-import { NICHE_CONFIG } from '@/config/niches';
-
+import { prisma } from "@/config/database";
+import { createHash } from "crypto";
+import { logger } from "@/utils/logger";
+import { PROVIDER_CONFIG } from "@/config/providers";
+import { STYLE_PRESETS } from "@/config/styles";
+import { NICHE_CONFIG } from "@/config/niches";
 
 export class PromptOptimizer {
   /**
@@ -21,7 +20,7 @@ export class PromptOptimizer {
     rawPrompt: string,
     providerKey: string,
     niche?: string,
-    styleKeys?: string[]
+    styleKeys?: string[],
   ): Promise<string> {
     const provider = PROVIDER_CONFIG.video[providerKey];
     if (!provider) return rawPrompt;
@@ -49,17 +48,17 @@ export class PromptOptimizer {
       }
 
       if (prefixes.length > 0) {
-        optimized = `${prefixes.join(', ')}, ${optimized}`;
+        optimized = `${prefixes.join(", ")}, ${optimized}`;
       }
       if (suffixes.length > 0) {
-        optimized = `${optimized}, ${suffixes.join(', ')}`;
+        optimized = `${optimized}, ${suffixes.join(", ")}`;
       }
     }
 
     // Apply niche keywords
     if (niche && NICHE_CONFIG[niche]) {
       const nicheConfig = NICHE_CONFIG[niche];
-      const keywords = nicheConfig.keywords.slice(0, 3).join(', ');
+      const keywords = nicheConfig.keywords.slice(0, 3).join(", ");
       optimized = `${optimized}, ${keywords}`;
     }
 
@@ -71,11 +70,17 @@ export class PromptOptimizer {
     // Truncate to provider token limit (rough estimate: 1 token ~ 4 chars)
     const charLimit = provider.tokenLimit * 4;
     if (optimized.length > charLimit) {
-      optimized = optimized.substring(0, charLimit - 3) + '...';
+      optimized = optimized.substring(0, charLimit - 3) + "...";
     }
 
     // Cache result
-    await this.saveToCache(cacheKey, rawPrompt, providerKey, styleKeys, optimized);
+    await this.saveToCache(
+      cacheKey,
+      rawPrompt,
+      providerKey,
+      styleKeys,
+      optimized,
+    );
 
     return optimized;
   }
@@ -83,9 +88,13 @@ export class PromptOptimizer {
   /**
    * Check if a provider should be avoided for given styles
    */
-  static shouldAvoidProvider(providerKey: string, styleKeys: string[]): boolean {
+  static shouldAvoidProvider(
+    providerKey: string,
+    styleKeys: string[],
+  ): boolean {
     const provider = PROVIDER_CONFIG.video[providerKey];
-    if (!provider || !provider.avoid || provider.avoid.length === 0) return false;
+    if (!provider || !provider.avoid || provider.avoid.length === 0)
+      return false;
 
     for (const sk of styleKeys) {
       if (provider.avoid.includes(sk)) return true;
@@ -96,9 +105,13 @@ export class PromptOptimizer {
   /**
    * Build a cache key hash
    */
-  private static buildCacheKey(rawPrompt: string, provider: string, styleKeys?: string[]): string {
-    const input = `${rawPrompt}|${provider}|${(styleKeys || []).sort().join(',')}`;
-    return createHash('md5').update(input).digest('hex');
+  private static buildCacheKey(
+    rawPrompt: string,
+    provider: string,
+    styleKeys?: string[],
+  ): string {
+    const input = `${rawPrompt}|${provider}|${(styleKeys || []).sort().join(",")}`;
+    return createHash("md5").update(input).digest("hex");
   }
 
   /**
@@ -106,7 +119,9 @@ export class PromptOptimizer {
    */
   private static async getFromCache(hash: string): Promise<string | null> {
     try {
-      const cached = await prisma.promptCache.findUnique({ where: { promptHash: hash } });
+      const cached = await prisma.promptCache.findUnique({
+        where: { promptHash: hash },
+      });
       if (cached && cached.expiresAt && cached.expiresAt > new Date()) {
         await prisma.promptCache.update({
           where: { promptHash: hash },
@@ -115,7 +130,7 @@ export class PromptOptimizer {
         return cached.optimizedPrompt;
       }
     } catch (err) {
-      logger.debug('Prompt cache miss or error:', err);
+      logger.debug("Prompt cache miss or error:", err);
     }
     return null;
   }
@@ -128,7 +143,7 @@ export class PromptOptimizer {
     rawPrompt: string,
     provider: string,
     styleKeys: string[] | undefined,
-    optimized: string
+    optimized: string,
   ): Promise<void> {
     try {
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
@@ -141,14 +156,14 @@ export class PromptOptimizer {
           promptHash: hash,
           rawPrompt,
           provider,
-          styleKey: styleKeys ? styleKeys.join(',') : null,
+          styleKey: styleKeys ? styleKeys.join(",") : null,
           optimizedPrompt: optimized,
           tokenEstimate,
           expiresAt,
         },
       });
     } catch (err) {
-      logger.debug('Failed to cache prompt:', err);
+      logger.debug("Failed to cache prompt:", err);
     }
   }
 }

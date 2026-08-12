@@ -1,6 +1,6 @@
 /**
  * Ecosystem API Contracts
- * 
+ *
  * Shared types for 1ai-content ↔ 1ai-social ↔ 1ai-affiliate integration.
  * Import from '@/types/ecosystem' in any service.
  */
@@ -15,7 +15,7 @@ export interface PublishRequest {
   /** Media URL (image or video) */
   mediaUrl: string;
   /** Media type */
-  mediaType: 'image' | 'video' | 'carousel';
+  mediaType: "image" | "video" | "carousel";
   /** Post caption */
   caption: string;
   /** Target platforms */
@@ -32,13 +32,13 @@ export interface PublishRequest {
   platformOverrides?: Partial<Record<Platform, PlatformOverride>>;
 }
 
-export type Platform = 
-  | 'facebook' 
-  | 'instagram' 
-  | 'tiktok' 
-  | 'youtube' 
-  | 'twitter' 
-  | 'linkedin';
+export type Platform =
+  | "facebook"
+  | "instagram"
+  | "tiktok"
+  | "youtube"
+  | "twitter"
+  | "linkedin";
 
 export interface PlatformOverride {
   caption?: string;
@@ -109,7 +109,7 @@ export interface ConversionWebhook {
   /** User ID from 1ai-content */
   userId: string;
   /** Conversion type */
-  conversionType: 'click' | 'lead' | 'purchase' | 'signup';
+  conversionType: "click" | "lead" | "purchase" | "signup";
   /** Revenue amount (in smallest currency unit) */
   revenue: number;
   /** Currency code */
@@ -140,7 +140,7 @@ export interface ContentPackage {
   /** User who created the content */
   userId: string;
   /** Content type */
-  type: 'video' | 'image' | 'carousel';
+  type: "video" | "image" | "carousel";
   /** Media URLs */
   mediaUrls: string[];
   /** Generated caption */
@@ -152,7 +152,10 @@ export interface ContentPackage {
   /** Created timestamp */
   createdAt: string;
   /** Publishing status */
-  publishStatus?: Record<Platform, 'pending' | 'scheduled' | 'published' | 'failed'>;
+  publishStatus?: Record<
+    Platform,
+    "pending" | "scheduled" | "published" | "failed"
+  >;
   /** Affiliate tracking info */
   affiliate?: {
     trackingId: string;
@@ -167,20 +170,20 @@ export interface ContentPackage {
 
 export const ENDPOINTS = {
   // 1ai-social
-  SOCIAL_PUBLISH: '/api/content/publish',
-  SOCIAL_SCHEDULE: '/api/content/schedule',
-  SOCIAL_PAGES: '/api/meta-pages',
-  SOCIAL_ANALYTICS: '/api/analytics',
+  SOCIAL_PUBLISH: "/api/content/publish",
+  SOCIAL_SCHEDULE: "/api/content/schedule",
+  SOCIAL_PAGES: "/api/meta-pages",
+  SOCIAL_ANALYTICS: "/api/analytics",
 
   // 1ai-affiliate
-  AFFILIATE_GENERATE_LINK: '/api/affiliate/generate-link',
-  AFFILIATE_CAMPAIGNS: '/api/affiliate/campaigns',
-  AFFILIATE_CONVERSION_WEBHOOK: '/webhook/conversion',
-  AFFILIATE_ANALYTICS: '/api/affiliate/analytics',
+  AFFILIATE_GENERATE_LINK: "/api/affiliate/generate-link",
+  AFFILIATE_CAMPAIGNS: "/api/affiliate/campaigns",
+  AFFILIATE_CONVERSION_WEBHOOK: "/webhook/conversion",
+  AFFILIATE_ANALYTICS: "/api/affiliate/analytics",
 
   // 1ai-content (internal)
-  CONTENT_WEBHOOK_PUBLISH: '/webhook/publish-result',
-  CONTENT_WEBHOOK_CONVERSION: '/webhook/conversion-update',
+  CONTENT_WEBHOOK_PUBLISH: "/webhook/publish-result",
+  CONTENT_WEBHOOK_CONVERSION: "/webhook/conversion-update",
 } as const;
 
 // ══════════════════════════════════════════════════════════════════════
@@ -189,11 +192,11 @@ export const ENDPOINTS = {
 
 export interface ServiceAuth {
   /** API key header */
-  'X-Service-Key': string;
+  "X-Service-Key": string;
   /** Service name */
-  'X-Service-Name': '1ai-content' | '1ai-social' | '1ai-affiliate';
+  "X-Service-Name": "1ai-content" | "1ai-social" | "1ai-affiliate";
   /** Request timestamp for replay protection */
-  'X-Timestamp': string;
+  "X-Timestamp": string;
   /** HMAC signature */
-  'X-Signature': string;
+  "X-Signature": string;
 }

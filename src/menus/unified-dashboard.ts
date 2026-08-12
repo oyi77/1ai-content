@@ -18,7 +18,10 @@ type InlineRow = InlineButton[];
 
 export async function showMainDashboard(ctx: BotContext): Promise<void> {
   const user = ctx.from;
-  if (!user) { await ctx.reply("Unable to identify user."); return; }
+  if (!user) {
+    await ctx.reply("Unable to identify user.");
+    return;
+  }
 
   const dbUser = await UserService.findByTelegramId(BigInt(user.id));
   const lang = dbUser?.language || "en";
@@ -26,7 +29,7 @@ export async function showMainDashboard(ctx: BotContext): Promise<void> {
   const tier = dbUser?.tier || "free";
   const creditEmoji = credits === 0 ? "⚠️" : credits < 3 ? "🟡" : "🟢";
 
-  const miniAppUrl = 'https://content.aitradepulse.com/app/mini';
+  const miniAppUrl = "https://content.aitradepulse.com/app/mini";
 
   const text = [
     `👋 ${user.first_name}`,
@@ -38,9 +41,7 @@ export async function showMainDashboard(ctx: BotContext): Promise<void> {
     "Pilih menu:",
   ].join("\n");
   const buttons: InlineRow[] = [
-    [
-      { text: "📱 Open App", url: miniAppUrl },
-    ],
+    [{ text: "📱 Open App", url: miniAppUrl }],
     [
       { text: "🎬 Buat Video", callback_data: "menu_create" },
       { text: "🖼️ Buat Foto", callback_data: "menu_image" },
@@ -77,7 +78,9 @@ export async function showMainDashboard(ctx: BotContext): Promise<void> {
 
   if (ctx.callbackQuery) {
     await ctx.answerCbQuery?.();
-    await ctx.editMessageText(text, { reply_markup: { inline_keyboard: buttons } });
+    await ctx.editMessageText(text, {
+      reply_markup: { inline_keyboard: buttons },
+    });
   } else {
     await ctx.reply(text, { reply_markup: { inline_keyboard: buttons } });
   }
@@ -96,7 +99,12 @@ export async function showCreateMenu(ctx: BotContext): Promise<void> {
         [{ text: "🎤 Voiceover AI", callback_data: "create_voice" }],
         [{ text: "🎵 Musik AI", callback_data: "create_music" }],
         [{ text: "🔁 Video Loop", callback_data: "create_loop" }],
-        [{ text: "🔄 Repurpose (Anti-Copyright)", callback_data: "create_regen" }],
+        [
+          {
+            text: "🔄 Repurpose (Anti-Copyright)",
+            callback_data: "create_regen",
+          },
+        ],
         [{ text: "🔙 Kembali", callback_data: "menu_main" }],
       ],
     },
@@ -108,9 +116,18 @@ export async function showImageMenu(ctx: BotContext): Promise<void> {
   await ctx.editMessageText("🖼️ *Buat Foto*\n\nPilih jenis foto:", {
     reply_markup: {
       inline_keyboard: [
-        [{ text: "🛍️ Product Photo", callback_data: "img_product" }, { text: "🍔 F&B Food", callback_data: "img_fnb" }],
-        [{ text: "🏠 Real Estate", callback_data: "img_realestate" }, { text: "🚗 Car/Auto", callback_data: "img_car" }],
-        [{ text: "💄 Beauty", callback_data: "img_beauty" }, { text: "🏢 Corporate", callback_data: "img_services" }],
+        [
+          { text: "🛍️ Product Photo", callback_data: "img_product" },
+          { text: "🍔 F&B Food", callback_data: "img_fnb" },
+        ],
+        [
+          { text: "🏠 Real Estate", callback_data: "img_realestate" },
+          { text: "🚗 Car/Auto", callback_data: "img_car" },
+        ],
+        [
+          { text: "💄 Beauty", callback_data: "img_beauty" },
+          { text: "🏢 Corporate", callback_data: "img_services" },
+        ],
         [{ text: "🔙 Kembali", callback_data: "menu_main" }],
       ],
     },
@@ -122,7 +139,10 @@ export async function showPromptsMenu(ctx: BotContext): Promise<void> {
   await ctx.editMessageText("📚 *Prompt Library*\n\nBrowse prompts:", {
     reply_markup: {
       inline_keyboard: [
-        [{ text: "🔥 Trending", callback_data: "prompts_trending" }, { text: "🎁 Daily", callback_data: "prompts_daily" }],
+        [
+          { text: "🔥 Trending", callback_data: "prompts_trending" },
+          { text: "🎁 Daily", callback_data: "prompts_daily" },
+        ],
         [{ text: "🧬 Fingerprint", callback_data: "prompts_fingerprint" }],
         [{ text: "🔙 Kembali", callback_data: "menu_main" }],
       ],
@@ -177,7 +197,9 @@ export async function showProfileMenu(ctx: BotContext): Promise<void> {
   const dbUser = await UserService.findByTelegramId(BigInt(user.id));
   const credits = dbUser ? Number(dbUser.creditBalance) : 0;
   const tier = dbUser?.tier || "free";
-  const videos = dbUser ? await prisma.video.count({ where: { userId: BigInt(user.id) } }) : 0;
+  const videos = dbUser
+    ? await prisma.video.count({ where: { userId: BigInt(user.id) } })
+    : 0;
 
   const text = [
     "👤 *Profil*",
@@ -192,9 +214,7 @@ export async function showProfileMenu(ctx: BotContext): Promise<void> {
 
   await ctx.editMessageText(text, {
     reply_markup: {
-      inline_keyboard: [
-        [{ text: "🔙 Kembali", callback_data: "menu_main" }],
-      ],
+      inline_keyboard: [[{ text: "🔙 Kembali", callback_data: "menu_main" }]],
     },
   });
 }
@@ -207,14 +227,17 @@ export async function showReferralMenu(ctx: BotContext): Promise<void> {
   const dbUser = await UserService.findByTelegramId(BigInt(user.id));
   const refCode = dbUser?.referralCode || "N/A";
 
-  await ctx.editMessageText(`👥 *Referral*\n\nKode referral: \`${refCode}\`\n\nShare kode ini untuk dapat bonus credits!`, {
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: "📊 Referral Stats", callback_data: "referral_stats" }],
-        [{ text: "🔙 Kembali", callback_data: "menu_main" }],
-      ],
+  await ctx.editMessageText(
+    `👥 *Referral*\n\nKode referral: \`${refCode}\`\n\nShare kode ini untuk dapat bonus credits!`,
+    {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: "📊 Referral Stats", callback_data: "referral_stats" }],
+          [{ text: "🔙 Kembali", callback_data: "menu_main" }],
+        ],
+      },
     },
-  });
+  );
 }
 
 export async function showSettingsMenu(ctx: BotContext): Promise<void> {
@@ -248,23 +271,21 @@ export async function showHelpMenu(ctx: BotContext): Promise<void> {
   await ctx.answerCbQuery?.();
   await ctx.editMessageText(
     "📖 *Panduan 1AI Content*\n\n" +
-    "🎬 `/create` — Buat video dari ide/link/file\n" +
-    "🖼️ `/image` — Buat foto produk AI\n" +
-    "🖼️ `/carousel` — Buat TikTok carousel\n" +
-    "🤖 `/autopilot` — Auto-generate & publish\n" +
-    "📅 `/calendar` — Content calendar\n" +
-    "🧪 `/abtest` — A/B testing konten\n" +
-    "💬 `/chat` — Chat dengan AI\n" +
-    "🔥 `/trending` — Lihat trending\n" +
-    "🔥 `/viral` — Cari konten viral\n" +
-    "✂️ `/clip` — Download & clip video\n" +
-    "🕵️ `/scrape` — Scrape kompetitor",
+      "🎬 `/create` — Buat video dari ide/link/file\n" +
+      "🖼️ `/image` — Buat foto produk AI\n" +
+      "🖼️ `/carousel` — Buat TikTok carousel\n" +
+      "🤖 `/autopilot` — Auto-generate & publish\n" +
+      "📅 `/calendar` — Content calendar\n" +
+      "🧪 `/abtest` — A/B testing konten\n" +
+      "💬 `/chat` — Chat dengan AI\n" +
+      "🔥 `/trending` — Lihat trending\n" +
+      "🔥 `/viral` — Cari konten viral\n" +
+      "✂️ `/clip` — Download & clip video\n" +
+      "🕵️ `/scrape` — Scrape kompetitor",
     {
       parse_mode: "Markdown",
       reply_markup: {
-        inline_keyboard: [
-          [{ text: "🔙 Kembali", callback_data: "menu_main" }],
-        ],
+        inline_keyboard: [[{ text: "🔙 Kembali", callback_data: "menu_main" }]],
       },
     },
   );
@@ -290,7 +311,12 @@ export async function showTrendingMenu(ctx: BotContext): Promise<void> {
       inline_keyboard: [
         [{ text: "🔥 Viral Videos", callback_data: "viral_scan" }],
         [{ text: "📊 Trending Prompts", callback_data: "prompts_trending" }],
-        [{ text: "🔥 Scan & Generate Konten", callback_data: "trending_scan_generate" }],
+        [
+          {
+            text: "🔥 Scan & Generate Konten",
+            callback_data: "trending_scan_generate",
+          },
+        ],
         [{ text: "🔙 Kembali", callback_data: "menu_main" }],
       ],
     },
@@ -301,18 +327,16 @@ export async function showChatMenu(ctx: BotContext): Promise<void> {
   await ctx.answerCbQuery?.();
   await ctx.editMessageText(
     "💬 *AI Chat Assistant*\n\n" +
-    "Chat langsung dengan AI untuk:\n" +
-    "• Brainstorm ide konten\n" +
-    "• Tulis caption viral\n" +
-    "• Riset topik\n" +
-    "• Tanya apapun\n\n" +
-    "Ketik pesan kamu langsung di chat ini!",
+      "Chat langsung dengan AI untuk:\n" +
+      "• Brainstorm ide konten\n" +
+      "• Tulis caption viral\n" +
+      "• Riset topik\n" +
+      "• Tanya apapun\n\n" +
+      "Ketik pesan kamu langsung di chat ini!",
     {
       parse_mode: "Markdown",
       reply_markup: {
-        inline_keyboard: [
-          [{ text: "🔙 Kembali", callback_data: "menu_main" }],
-        ],
+        inline_keyboard: [[{ text: "🔙 Kembali", callback_data: "menu_main" }]],
       },
     },
   );
@@ -334,7 +358,7 @@ export async function showCalendarMenu(ctx: BotContext): Promise<void> {
     "• Bulk schedule 1 minggu",
     "• Stats & tracking",
     "",
- "Ketik `/calendar` untuk lihat jadwal",
+    "Ketik `/calendar` untuk lihat jadwal",
     "Ketik `/calendar schedule <topic> | <tanggal>` untuk schedule",
   ].join("\n");
 

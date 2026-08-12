@@ -10,16 +10,16 @@
  * 3. Periodic sync from static config (fallback)
  */
 
-import { prisma } from '@/config/database';
-import { logger } from '@/utils/logger';
-import { redis } from '@/config/redis';
-import { PROVIDER_CONFIG } from '@/config/providers';
-import { PaymentSettingsService } from './payment-settings.service';
+import { prisma } from "@/config/database";
+import { logger } from "@/utils/logger";
+import { redis } from "@/config/redis";
+import { PROVIDER_CONFIG } from "@/config/providers";
+import { PaymentSettingsService } from "./payment-settings.service";
 
 interface ProviderCost {
   providerKey: string;
   costUsd: number;
-  source: 'api' | 'manual' | 'static';
+  source: "api" | "manual" | "static";
   fetchedAt: Date;
   metadata?: {
     model?: string;
@@ -33,7 +33,7 @@ interface CostHistory {
   providerKey: string;
   costUsd: number;
   recordedAt: Date;
-  source: 'api' | 'manual' | 'static';
+  source: "api" | "manual" | "static";
 }
 
 export class ProviderCostTrackerService {
@@ -43,7 +43,9 @@ export class ProviderCostTrackerService {
   /**
    * Get current cost for a provider (with cache)
    */
-  static async getProviderCost(providerKey: string): Promise<ProviderCost | null> {
+  static async getProviderCost(
+    providerKey: string,
+  ): Promise<ProviderCost | null> {
     const cacheKey = `provider_cost:${providerKey}`;
     const cached = await redis.get(cacheKey);
 
@@ -57,28 +59,31 @@ export class ProviderCostTrackerService {
       const cost: ProviderCost = {
         providerKey,
         costUsd: config,
-        source: 'static',
+        source: "static",
         fetchedAt: new Date(),
       };
 
-      await redis.set(cacheKey, JSON.stringify(cost), 'EX', this.CACHE_TTL);
+      await redis.set(cacheKey, JSON.stringify(cost), "EX", this.CACHE_TTL);
       return cost;
     }
 
     // Fallback to PROVIDER_CONFIG
     const [type, key] = this.findProviderInConfig(providerKey);
     if (type && key) {
-      const cfg = PROVIDER_CONFIG[type][key] as unknown as Record<string, unknown>;
+      const cfg = PROVIDER_CONFIG[type][key] as unknown as Record<
+        string,
+        unknown
+      >;
       if (cfg.costPerGenerationUsd !== undefined) {
         const cost: ProviderCost = {
           providerKey,
           costUsd: cfg.costPerGenerationUsd as number,
-          source: 'static',
+          source: "static",
           fetchedAt: new Date(),
         };
 
         // Cache and return
-        await redis.set(cacheKey, JSON.stringify(cost), 'EX', this.CACHE_TTL);
+        await redis.set(cacheKey, JSON.stringify(cost), "EX", this.CACHE_TTL);
         return cost;
       }
     }
@@ -92,50 +97,56 @@ export class ProviderCostTrackerService {
   static async recordCostFromUsage(
     providerKey: string,
     costUsd: number,
-    metadata?: ProviderCost['metadata']
+    metadata?: ProviderCost["metadata"],
   ): Promise<void> {
     const cost: ProviderCost = {
       providerKey,
       costUsd,
-      source: 'api',
+      source: "api",
       fetchedAt: new Date(),
       metadata,
     };
 
     // Update database
     await prisma.pricingConfig.upsert({
-      where: { category_key: { category: 'provider_cost', key: providerKey } },
+      where: { category_key: { category: "provider_cost", key: providerKey } },
       update: {
-        value: JSON.parse(JSON.stringify({
-          costUsd,
-          source: 'api',
-          lastFetched: new Date().toISOString(),
-          metadata
-        }))
+        value: JSON.parse(
+          JSON.stringify({
+            costUsd,
+            source: "api",
+            lastFetched: new Date().toISOString(),
+            metadata,
+          }),
+        ),
       },
       create: {
-        category: 'provider_cost',
+        category: "provider_cost",
         key: providerKey,
-        value: JSON.parse(JSON.stringify({
-          costUsd,
-          source: 'api',
-          lastFetched: new Date().toISOString(),
-          metadata
-        }))
+        value: JSON.parse(
+          JSON.stringify({
+            costUsd,
+            source: "api",
+            lastFetched: new Date().toISOString(),
+            metadata,
+          }),
+        ),
       },
     });
 
     // Add to history
-    await this.addCostHistory(providerKey, costUsd, 'api');
+    await this.addCostHistory(providerKey, costUsd, "api");
 
     // Update cache
     const cacheKey = `provider_cost:${providerKey}`;
-    await redis.set(cacheKey, JSON.stringify(cost), 'EX', this.CACHE_TTL);
+    await redis.set(cacheKey, JSON.stringify(cost), "EX", this.CACHE_TTL);
 
     // Clear pricing cache
     PaymentSettingsService.clearPricingCache();
 
-    logger.info(`Recorded provider cost from API usage: ${providerKey} = $${costUsd}`);
+    logger.info(
+      `Recorded provider cost from API usage: ${providerKey} = $${costUsd}`,
+    );
   }
 
   /**
@@ -144,45 +155,49 @@ export class ProviderCostTrackerService {
   static async setManualCost(
     providerKey: string,
     costUsd: number,
-    metadata?: ProviderCost['metadata']
+    metadata?: ProviderCost["metadata"],
   ): Promise<void> {
     const cost: ProviderCost = {
       providerKey,
       costUsd,
-      source: 'manual',
+      source: "manual",
       fetchedAt: new Date(),
       metadata,
     };
 
     // Update database
     await prisma.pricingConfig.upsert({
-      where: { category_key: { category: 'provider_cost', key: providerKey } },
+      where: { category_key: { category: "provider_cost", key: providerKey } },
       update: {
-        value: JSON.parse(JSON.stringify({
-          costUsd,
-          source: 'manual',
-          lastFetched: new Date().toISOString(),
-          metadata
-        }))
+        value: JSON.parse(
+          JSON.stringify({
+            costUsd,
+            source: "manual",
+            lastFetched: new Date().toISOString(),
+            metadata,
+          }),
+        ),
       },
       create: {
-        category: 'provider_cost',
+        category: "provider_cost",
         key: providerKey,
-        value: JSON.parse(JSON.stringify({
-          costUsd,
-          source: 'manual',
-          lastFetched: new Date().toISOString(),
-          metadata
-        }))
+        value: JSON.parse(
+          JSON.stringify({
+            costUsd,
+            source: "manual",
+            lastFetched: new Date().toISOString(),
+            metadata,
+          }),
+        ),
       },
     });
 
     // Add to history
-    await this.addCostHistory(providerKey, costUsd, 'manual');
+    await this.addCostHistory(providerKey, costUsd, "manual");
 
     // Update cache
     const cacheKey = `provider_cost:${providerKey}`;
-    await redis.set(cacheKey, JSON.stringify(cost), 'EX', this.CACHE_TTL);
+    await redis.set(cacheKey, JSON.stringify(cost), "EX", this.CACHE_TTL);
 
     // Clear pricing cache
     PaymentSettingsService.clearPricingCache();
@@ -209,7 +224,7 @@ export class ProviderCostTrackerService {
         costs.push({
           providerKey: key,
           costUsd: costUsd as number,
-          source: 'static',
+          source: "static",
           fetchedAt: new Date(),
         });
       }
@@ -217,34 +232,40 @@ export class ProviderCostTrackerService {
 
     // Override with database values (manual/API tracked)
     const dbCosts = await prisma.pricingConfig.findMany({
-      where: { category: 'provider_cost' },
+      where: { category: "provider_cost" },
     });
 
     for (const dbCost of dbCosts) {
       const value = dbCost.value as Record<string, unknown>;
-      const existingIdx = costs.findIndex(c => c.providerKey === dbCost.key);
+      const existingIdx = costs.findIndex((c) => c.providerKey === dbCost.key);
 
       if (existingIdx >= 0) {
         // Override with more recent source
         const cost: ProviderCost = {
           providerKey: dbCost.key,
           costUsd: value.costUsd as number,
-          source: (value.source as string || 'manual') as ProviderCost['source'],
-          fetchedAt: value.lastFetched ? new Date(value.lastFetched as string) : new Date(),
-          metadata: value.metadata as ProviderCost['metadata'],
+          source: ((value.source as string) ||
+            "manual") as ProviderCost["source"],
+          fetchedAt: value.lastFetched
+            ? new Date(value.lastFetched as string)
+            : new Date(),
+          metadata: value.metadata as ProviderCost["metadata"],
         };
 
         // API/Manual sources always override static
-        if (cost.source === 'api' || cost.source === 'manual') {
+        if (cost.source === "api" || cost.source === "manual") {
           costs[existingIdx] = cost;
         }
       } else {
         costs.push({
           providerKey: dbCost.key,
           costUsd: value.costUsd as number,
-          source: (value.source as string || 'manual') as ProviderCost['source'],
-          fetchedAt: value.lastFetched ? new Date(value.lastFetched as string) : new Date(),
-          metadata: value.metadata as ProviderCost['metadata'],
+          source: ((value.source as string) ||
+            "manual") as ProviderCost["source"],
+          fetchedAt: value.lastFetched
+            ? new Date(value.lastFetched as string)
+            : new Date(),
+          metadata: value.metadata as ProviderCost["metadata"],
         });
       }
     }
@@ -275,17 +296,25 @@ export class ProviderCostTrackerService {
   static async calculateDynamicPrice(
     providerKey: string,
     units: number,
-    marginPercent?: number
-  ): Promise<{ price: number; costUsd: number; margin: number; breakdown: Record<string, unknown> }> {
+    marginPercent?: number,
+  ): Promise<{
+    price: number;
+    costUsd: number;
+    margin: number;
+    breakdown: Record<string, unknown>;
+  }> {
     const cost = await this.getProviderCost(providerKey);
     const costUsd = cost?.costUsd || 0;
-    const margin = marginPercent ?? await PaymentSettingsService.getMarginPercent();
+    const margin =
+      marginPercent ?? (await PaymentSettingsService.getMarginPercent());
 
     // Get USD to IDR exchange rate from database
     const exchangeRateConfig = await prisma.pricingConfig.findUnique({
-      where: { category_key: { category: 'global', key: 'exchange_rate' } },
+      where: { category_key: { category: "global", key: "exchange_rate" } },
     });
-    const exchangeValue = exchangeRateConfig?.value as Record<string, unknown> | undefined;
+    const exchangeValue = exchangeRateConfig?.value as
+      | Record<string, unknown>
+      | undefined;
     const usdToIdr = (exchangeValue?.rate as number) || 16000;
 
     const totalCostIdr = costUsd * usdToIdr;
@@ -305,7 +334,7 @@ export class ProviderCostTrackerService {
         usdToIdr,
         totalCostIdr,
         marginPercent: margin,
-        marginAmount: totalCostIdr * margin / 100,
+        marginAmount: (totalCostIdr * margin) / 100,
         finalPrice: Math.ceil(idrPerCredit),
       },
     };
@@ -323,21 +352,22 @@ export class ProviderCostTrackerService {
     };
 
     for (const [key, cfg] of Object.entries(providers)) {
-      const costUsd = (cfg as unknown as Record<string, unknown>).costPerGenerationUsd;
+      const costUsd = (cfg as unknown as Record<string, unknown>)
+        .costPerGenerationUsd;
       if (costUsd !== undefined) {
         // Only insert if not exists (don't override manual/API sources)
         const existing = await prisma.pricingConfig.findUnique({
-          where: { category_key: { category: 'provider_cost', key } },
+          where: { category_key: { category: "provider_cost", key } },
         });
 
         if (!existing) {
           await prisma.pricingConfig.create({
             data: {
-              category: 'provider_cost',
+              category: "provider_cost",
               key,
               value: {
                 costUsd,
-                source: 'static',
+                source: "static",
                 lastFetched: new Date().toISOString(),
               },
             },
@@ -354,12 +384,14 @@ export class ProviderCostTrackerService {
   /**
    * Find provider in PROVIDER_CONFIG by key
    */
-  private static findProviderInConfig(providerKey: string): ['video' | 'image', string] | [] {
+  private static findProviderInConfig(
+    providerKey: string,
+  ): ["video" | "image", string] | [] {
     if (PROVIDER_CONFIG.video[providerKey]) {
-      return ['video', providerKey];
+      return ["video", providerKey];
     }
     if (PROVIDER_CONFIG.image[providerKey]) {
-      return ['image', providerKey];
+      return ["image", providerKey];
     }
     return [];
   }
@@ -370,7 +402,7 @@ export class ProviderCostTrackerService {
   private static async addCostHistory(
     providerKey: string,
     costUsd: number,
-    source: 'api' | 'manual' | 'static'
+    source: "api" | "manual" | "static",
   ): Promise<void> {
     // DEFERRED: Blocked on ProviderCostHistory Prisma model.
     // Interim: storing in Redis with 30-day TTL.

@@ -9,15 +9,15 @@
  * - Trending scan + auto-generate
  */
 
-import axios, { type AxiosInstance } from 'axios';
-import { getConfig } from '@/config/env';
-import { logger } from '@/utils/logger';
+import axios, { type AxiosInstance } from "axios";
+import { getConfig } from "@/config/env";
+import { logger } from "@/utils/logger";
 
 // ── Types ─────────────────────────────────────────────────────
 
 export interface CarouselSlide {
   index: number;
-  type: 'cover' | 'content' | 'closing';
+  type: "cover" | "content" | "closing";
   headline: string;
   body: string;
   icon?: string;
@@ -121,14 +121,14 @@ export class TikTokAutomationService {
 
   constructor() {
     const appConfig = getConfig();
-    const baseURL = appConfig.CONTENT_FACTORY_URL || 'http://127.0.0.1:8767';
+    const baseURL = appConfig.CONTENT_FACTORY_URL || "http://127.0.0.1:8767";
     this.client = axios.create({
       baseURL,
       timeout: 120_000,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         // media-api :8767 requires X-API-Key when EBOOK_API_KEY is set (security: gap-1)
-        'X-API-Key': getConfig().EBOOK_API_KEY || '',
+        "X-API-Key": getConfig().EBOOK_API_KEY || "",
       },
     });
   }
@@ -143,13 +143,16 @@ export class TikTokAutomationService {
     language?: string;
   }): Promise<CarouselResult> {
     try {
-      const { data } = await this.client.post<CarouselResult>('/image/carousel', {
-        topic: options.topic,
-        num_slides: options.numSlides ?? 7,
-        style: options.style ?? 'outline',
-        platform: options.platform ?? 'tiktok',
-        language: options.language ?? 'id',
-      });
+      const { data } = await this.client.post<CarouselResult>(
+        "/image/carousel",
+        {
+          topic: options.topic,
+          num_slides: options.numSlides ?? 7,
+          style: options.style ?? "outline",
+          platform: options.platform ?? "tiktok",
+          language: options.language ?? "id",
+        },
+      );
       return data;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -160,7 +163,9 @@ export class TikTokAutomationService {
 
   async getCarouselStyles(): Promise<Record<string, CarouselStyle>> {
     try {
-      const { data } = await this.client.get<{ styles: Record<string, CarouselStyle> }>('/image/carousel/styles');
+      const { data } = await this.client.get<{
+        styles: Record<string, CarouselStyle>;
+      }>("/image/carousel/styles");
       return data.styles ?? {};
     } catch {
       return {};
@@ -181,32 +186,39 @@ export class TikTokAutomationService {
     autoPublish?: boolean;
     tiktokProfileId?: string;
   }): Promise<AutoPilotJob> {
-    const { data } = await this.client.post<AutoPilotJob>('/autopilot/create', {
+    const { data } = await this.client.post<AutoPilotJob>("/autopilot/create", {
       name: options.name,
       niche: options.niche,
-      platforms: options.platforms ?? ['tiktok'],
+      platforms: options.platforms ?? ["tiktok"],
       videos_per_day: options.videosPerDay ?? 3,
-      posting_times: options.postingTimes ?? ['11:00', '15:00', '19:00'],
-      content_type: options.contentType ?? 'video',
-      style: options.style ?? 'educational',
-      language: options.language ?? 'id',
+      posting_times: options.postingTimes ?? ["11:00", "15:00", "19:00"],
+      content_type: options.contentType ?? "video",
+      style: options.style ?? "educational",
+      language: options.language ?? "id",
       auto_publish: options.autoPublish ?? true,
-      tiktok_profile_id: options.tiktokProfileId ?? '',
+      tiktok_profile_id: options.tiktokProfileId ?? "",
     });
     return data;
   }
 
   async getAutoPilotStatus(): Promise<AutoPilotStatus> {
     try {
-      const { data } = await this.client.get<AutoPilotStatus>('/autopilot/status');
+      const { data } =
+        await this.client.get<AutoPilotStatus>("/autopilot/status");
       return data;
     } catch {
       return { active_jobs: 0, total_jobs: 0, jobs: [], recent_results: [] };
     }
   }
 
-  async runAutoPilot(): Promise<{ jobs_run: number; results: Record<string, unknown>[] }> {
-    const { data } = await this.client.post<{ jobs_run: number; results: Record<string, unknown>[] }>('/autopilot/run');
+  async runAutoPilot(): Promise<{
+    jobs_run: number;
+    results: Record<string, unknown>[];
+  }> {
+    const { data } = await this.client.post<{
+      jobs_run: number;
+      results: Record<string, unknown>[];
+    }>("/autopilot/run");
     return data;
   }
 
@@ -214,8 +226,8 @@ export class TikTokAutomationService {
 
   async scanTrending(niche?: string, region?: string): Promise<TrendingResult> {
     try {
-      const { data } = await this.client.get<TrendingResult>('/trending/scan', {
-        params: { niche: niche ?? '', region: region ?? 'ID' },
+      const { data } = await this.client.get<TrendingResult>("/trending/scan", {
+        params: { niche: niche ?? "", region: region ?? "ID" },
       });
       return data;
     } catch {
@@ -229,14 +241,18 @@ export class TikTokAutomationService {
     platform?: string;
     language?: string;
   }): Promise<CarouselResult> {
-    const { data } = await this.client.post<CarouselResult>('/trending/generate', null, {
-      params: {
-        topic: options.topic,
-        content_type: options.contentType ?? 'video',
-        platform: options.platform ?? 'tiktok',
-        language: options.language ?? 'id',
+    const { data } = await this.client.post<CarouselResult>(
+      "/trending/generate",
+      null,
+      {
+        params: {
+          topic: options.topic,
+          content_type: options.contentType ?? "video",
+          platform: options.platform ?? "tiktok",
+          language: options.language ?? "id",
+        },
       },
-    });
+    );
     return data;
   }
 
@@ -255,27 +271,37 @@ export class TikTokAutomationService {
     language?: string;
     autoPost?: boolean;
   }): Promise<CalendarEntry> {
-    const { data } = await this.client.post<CalendarEntry>('/calendar/schedule', {
-      user_id: options.userId,
-      topic: options.topic,
-      scheduled_at: options.scheduledAt,
-      platform: options.platform ?? 'tiktok',
-      content_type: options.contentType ?? 'video',
-      caption: options.caption ?? '',
-      hashtags: options.hashtags ?? [],
-      niche: options.niche ?? '',
-      style: options.style ?? 'educational',
-      language: options.language ?? 'id',
-      auto_post: options.autoPost ?? false,
-    });
+    const { data } = await this.client.post<CalendarEntry>(
+      "/calendar/schedule",
+      {
+        user_id: options.userId,
+        topic: options.topic,
+        scheduled_at: options.scheduledAt,
+        platform: options.platform ?? "tiktok",
+        content_type: options.contentType ?? "video",
+        caption: options.caption ?? "",
+        hashtags: options.hashtags ?? [],
+        niche: options.niche ?? "",
+        style: options.style ?? "educational",
+        language: options.language ?? "id",
+        auto_post: options.autoPost ?? false,
+      },
+    );
     return data;
   }
 
-  async getCalendarEntries(userId: number, status?: string, platform?: string): Promise<CalendarEntry[]> {
+  async getCalendarEntries(
+    userId: number,
+    status?: string,
+    platform?: string,
+  ): Promise<CalendarEntry[]> {
     try {
-      const { data } = await this.client.get<{ entries: CalendarEntry[] }>(`/calendar/list/${userId}`, {
-        params: { status, platform },
-      });
+      const { data } = await this.client.get<{ entries: CalendarEntry[] }>(
+        `/calendar/list/${userId}`,
+        {
+          params: { status, platform },
+        },
+      );
       return data.entries ?? [];
     } catch {
       return [];
@@ -292,22 +318,25 @@ export class TikTokAutomationService {
     contentType?: string;
     language?: string;
   }): Promise<ABTest> {
-    const { data } = await this.client.post<ABTest>('/ab-test/create', {
+    const { data } = await this.client.post<ABTest>("/ab-test/create", {
       user_id: options.userId,
       name: options.name,
       topic: options.topic,
-      platform: options.platform ?? 'tiktok',
-      content_type: options.contentType ?? 'caption',
-      language: options.language ?? 'id',
+      platform: options.platform ?? "tiktok",
+      content_type: options.contentType ?? "caption",
+      language: options.language ?? "id",
     });
     return data;
   }
 
   async getABTests(userId: number, status?: string): Promise<ABTest[]> {
     try {
-      const { data } = await this.client.get<{ tests: ABTest[] }>(`/ab-test/list/${userId}`, {
-        params: { status },
-      });
+      const { data } = await this.client.get<{ tests: ABTest[] }>(
+        `/ab-test/list/${userId}`,
+        {
+          params: { status },
+        },
+      );
       return data.tests ?? [];
     } catch {
       return [];
@@ -316,9 +345,13 @@ export class TikTokAutomationService {
 
   async startABTest(userId: number, testId: string): Promise<ABTest | null> {
     try {
-      const { data } = await this.client.post<ABTest>(`/ab-test/${testId}/start`, null, {
-        params: { user_id: userId },
-      });
+      const { data } = await this.client.post<ABTest>(
+        `/ab-test/${testId}/start`,
+        null,
+        {
+          params: { user_id: userId },
+        },
+      );
       return data;
     } catch {
       return null;
@@ -327,9 +360,13 @@ export class TikTokAutomationService {
 
   async endABTest(userId: number, testId: string): Promise<ABTest | null> {
     try {
-      const { data } = await this.client.post<ABTest>(`/ab-test/${testId}/end`, null, {
-        params: { user_id: userId },
-      });
+      const { data } = await this.client.post<ABTest>(
+        `/ab-test/${testId}/end`,
+        null,
+        {
+          params: { user_id: userId },
+        },
+      );
       return data;
     } catch {
       return null;
@@ -359,26 +396,26 @@ export class TikTokAutomationService {
     addSubtitles?: boolean;
     subtitleStyle?: string;
   }): Promise<Record<string, unknown>> {
-    const { data } = await this.client.post('/video/repurpose', {
+    const { data } = await this.client.post("/video/repurpose", {
       sources: options.sources,
       target_duration: options.targetDuration ?? 180,
-      platform: options.platform ?? 'tiktok',
-      niche: options.niche ?? 'general',
-      style: options.style ?? 'educational',
-      language: options.language ?? 'id',
-      color_preset: options.colorPreset ?? 'cinematic',
-      transition_style: options.transitionStyle ?? 'crossfade',
-      overlay_text: options.overlayText ?? '',
-      overlay_position: options.overlayPosition ?? 'lower_third',
-      watermark_text: options.watermarkText ?? '',
-      watermark_image: options.watermarkImage ?? '',
-      bgm_path: options.bgmPath ?? '',
+      platform: options.platform ?? "tiktok",
+      niche: options.niche ?? "general",
+      style: options.style ?? "educational",
+      language: options.language ?? "id",
+      color_preset: options.colorPreset ?? "cinematic",
+      transition_style: options.transitionStyle ?? "crossfade",
+      overlay_text: options.overlayText ?? "",
+      overlay_position: options.overlayPosition ?? "lower_third",
+      watermark_text: options.watermarkText ?? "",
+      watermark_image: options.watermarkImage ?? "",
+      bgm_path: options.bgmPath ?? "",
       bgm_volume: options.bgmVolume ?? 0.15,
-      voiceover_path: options.voiceoverPath ?? '',
+      voiceover_path: options.voiceoverPath ?? "",
       speed_min: options.speedMin ?? 0.8,
       speed_max: options.speedMax ?? 1.5,
       add_subtitles: options.addSubtitles ?? true,
-      subtitle_style: options.subtitleStyle ?? 'karaoke',
+      subtitle_style: options.subtitleStyle ?? "karaoke",
     });
     return data as Record<string, unknown>;
   }
@@ -407,16 +444,16 @@ export class TikTokAutomationService {
     platform?: string;
     language?: string;
   }): Promise<Record<string, unknown>> {
-    const { data } = await this.client.post('/video/remeta', {
+    const { data } = await this.client.post("/video/remeta", {
       source: options.source,
-      overlay: options.overlay ?? '',
-      watermark: options.watermark ?? '',
-      position: options.position ?? 'bottom_right',
+      overlay: options.overlay ?? "",
+      watermark: options.watermark ?? "",
+      position: options.position ?? "bottom_right",
       speed: options.speed ?? 0,
       color_shift: options.colorShift ?? true,
-      niche: options.niche ?? 'general',
-      platform: options.platform ?? 'tiktok',
-      language: options.language ?? 'id',
+      niche: options.niche ?? "general",
+      platform: options.platform ?? "tiktok",
+      language: options.language ?? "id",
     });
     return data as Record<string, unknown>;
   }

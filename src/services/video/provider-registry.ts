@@ -16,17 +16,36 @@
  * 9. Demo mode (fallback)
  */
 
-import { AllProvidersFailedError, ProviderError, ValidationError } from '@/utils/app-errors';
+import {
+  AllProvidersFailedError,
+  ProviderError,
+  ValidationError,
+} from "@/utils/app-errors";
 import { logger } from "@/utils/logger";
 import { getConfig } from "@/config/env";
-import { veoVideoService, type VeoVideoRequest } from "./providers/veo-3.1.service";
-import { klingVideoService, type KlingVideoRequest } from "./providers/kling-3.0.service";
+import {
+  veoVideoService,
+  type VeoVideoRequest,
+} from "./providers/veo-3.1.service";
+import {
+  klingVideoService,
+  type KlingVideoRequest,
+} from "./providers/kling-3.0.service";
 
 // ══════════════════════════════════════════════════════════════════════
 // Types
 // ══════════════════════════════════════════════════════════════════════
 
-export type VideoProvider = "veo-3.1" | "kling-3.0" | "geminigen" | "byteplus" | "omniroute" | "grok" | "openai" | "stability" | "demo";
+export type VideoProvider =
+  | "veo-3.1"
+  | "kling-3.0"
+  | "geminigen"
+  | "byteplus"
+  | "omniroute"
+  | "grok"
+  | "openai"
+  | "stability"
+  | "demo";
 
 export interface VideoGenerationRequest {
   prompt: string;
@@ -61,7 +80,10 @@ export class VideoProviderRegistry {
   /**
    * Get provider availability status
    */
-  static getProviderStatus(): Record<VideoProvider, { available: boolean; capabilities: string[] }> {
+  static getProviderStatus(): Record<
+    VideoProvider,
+    { available: boolean; capabilities: string[] }
+  > {
     return {
       "veo-3.1": {
         available: veoVideoService.isAvailable(),
@@ -110,19 +132,25 @@ export class VideoProviderRegistry {
     const chain: VideoProvider[] = [];
 
     // If preferred provider is specified and available, try it first
-    if (request.preferredProvider && status[request.preferredProvider]?.available) {
+    if (
+      request.preferredProvider &&
+      status[request.preferredProvider]?.available
+    ) {
       chain.push(request.preferredProvider);
     }
 
     // Add 4K-capable providers first if 4K requested
     if (request.resolution === "4k") {
-      if (status["veo-3.1"].available && !chain.includes("veo-3.1")) chain.push("veo-3.1");
-      if (status["kling-3.0"].available && !chain.includes("kling-3.0")) chain.push("kling-3.0");
+      if (status["veo-3.1"].available && !chain.includes("veo-3.1"))
+        chain.push("veo-3.1");
+      if (status["kling-3.0"].available && !chain.includes("kling-3.0"))
+        chain.push("kling-3.0");
     }
 
     // Add 60fps-capable providers if 60fps requested
     if (request.fps === 60) {
-      if (status["kling-3.0"].available && !chain.includes("kling-3.0")) chain.push("kling-3.0");
+      if (status["kling-3.0"].available && !chain.includes("kling-3.0"))
+        chain.push("kling-3.0");
     }
 
     // Add remaining providers in order
@@ -150,7 +178,9 @@ export class VideoProviderRegistry {
   /**
    * Generate video using the provider chain with fallback
    */
-  static async generateVideo(request: VideoGenerationRequest): Promise<VideoGenerationResponse> {
+  static async generateVideo(
+    request: VideoGenerationRequest,
+  ): Promise<VideoGenerationResponse> {
     const chain = this.getProviderChain(request);
 
     logger.info({
@@ -198,7 +228,7 @@ export class VideoProviderRegistry {
    */
   private static async generateWithProvider(
     provider: VideoProvider,
-    request: VideoGenerationRequest
+    request: VideoGenerationRequest,
   ): Promise<VideoGenerationResponse> {
     switch (provider) {
       case "veo-3.1": {
@@ -238,13 +268,13 @@ export class VideoProviderRegistry {
       case "geminigen":
         throw new ProviderError(
           "geminigen",
-          "Gemini Gen video provider not yet implemented — use veo-3.1 or kling-3.0 instead"
+          "Gemini Gen video provider not yet implemented — use veo-3.1 or kling-3.0 instead",
         );
 
       case "byteplus":
         throw new ProviderError(
           "byteplus",
-          "BytePlus video provider not yet implemented — use veo-3.1 or kling-3.0 instead"
+          "BytePlus video provider not yet implemented — use veo-3.1 or kling-3.0 instead",
         );
 
       case "demo":

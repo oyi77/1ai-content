@@ -12,19 +12,30 @@ export function registerChannelCommands(bot: Telegraf<Context>): void {
   bot.command("yt_channels", async (ctx) => {
     const channels = await prisma.ytChannel.findMany({
       orderBy: { createdAt: "desc" },
-      select: { channelId: true, nicheVertical: true, tier: true, trafficStatus: true, totalPublished: true },
+      select: {
+        channelId: true,
+        nicheVertical: true,
+        tier: true,
+        trafficStatus: true,
+        totalPublished: true,
+      },
     });
 
     if (channels.length === 0) {
-      await ctx.reply("📭 No YouTube channels registered. Use /yt_channel_add to add one.");
+      await ctx.reply(
+        "📭 No YouTube channels registered. Use /yt_channel_add to add one.",
+      );
       return;
     }
 
-    const lines = channels.map((ch: Record<string, unknown>, i: number) =>
-      `${i + 1}. \`${ch.channelId}\` | ${ch.nicheVertical} | ${ch.tier} | ${ch.trafficStatus} | ${ch.totalPublished} videos`,
+    const lines = channels.map(
+      (ch: Record<string, unknown>, i: number) =>
+        `${i + 1}. \`${ch.channelId}\` | ${ch.nicheVertical} | ${ch.tier} | ${ch.trafficStatus} | ${ch.totalPublished} videos`,
     );
 
-    await ctx.reply(`📺 *YouTube Channels*\n\n${lines.join("\n")}`, { parse_mode: "Markdown" });
+    await ctx.reply(`📺 *YouTube Channels*\n\n${lines.join("\n")}`, {
+      parse_mode: "Markdown",
+    });
   });
 
   bot.command("yt_status", async (ctx) => {
@@ -37,12 +48,17 @@ export function registerChannelCommands(bot: Telegraf<Context>): void {
 
     const channel = await prisma.ytChannel.findUnique({ where: { channelId } });
     if (!channel) {
-      await ctx.reply(`❌ Channel \`${channelId}\` not found.`, { parse_mode: "Markdown" });
+      await ctx.reply(`❌ Channel \`${channelId}\` not found.`, {
+        parse_mode: "Markdown",
+      });
       return;
     }
 
     const recentVideos = await prisma.ytPublishedVideo.count({
-      where: { channelId, publishedAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } },
+      where: {
+        channelId,
+        publishedAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+      },
     });
 
     const text = [

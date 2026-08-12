@@ -1,20 +1,20 @@
 /**
  * User Middleware
- * 
+ *
  * Loads user data from database and attaches to session
  */
 
-import { Middleware } from 'telegraf';
-import { BotContext } from '@/types';
-import { prisma } from '@/config/database';
-import { logger } from '@/utils/logger';
+import { Middleware } from "telegraf";
+import { BotContext } from "@/types";
+import { prisma } from "@/config/database";
+import { logger } from "@/utils/logger";
 
 /**
  * User middleware
  */
 export const userMiddleware: Middleware<BotContext> = async (ctx, next) => {
   const userId = ctx.from?.id;
-  
+
   if (!userId) {
     return next();
   }
@@ -28,7 +28,10 @@ export const userMiddleware: Middleware<BotContext> = async (ctx, next) => {
     if (dbUser && ctx.session) {
       // Ban check — allow /start to show ban message, block everything else silently
       if (dbUser.isBanned) {
-        const isStartCommand = ctx.message && 'text' in ctx.message && ctx.message.text?.startsWith('/start');
+        const isStartCommand =
+          ctx.message &&
+          "text" in ctx.message &&
+          ctx.message.text?.startsWith("/start");
         if (!isStartCommand) {
           return;
         }
@@ -48,9 +51,8 @@ export const userMiddleware: Middleware<BotContext> = async (ctx, next) => {
         data: { lastActivityAt: new Date() },
       });
     }
-
   } catch (error) {
-    logger.error('Error loading user:', error);
+    logger.error("Error loading user:", error);
     // Continue even if user loading fails
   }
 

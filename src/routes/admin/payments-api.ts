@@ -1,7 +1,9 @@
 import { FastifyInstance } from "fastify";
 import { prisma } from "@/config/database";
 
-export async function registerPaymentsApiRoutes(server: FastifyInstance): Promise<void> {
+export async function registerPaymentsApiRoutes(
+  server: FastifyInstance,
+): Promise<void> {
   /** GET /api/admin/payments — list recent transactions */
   server.get("/api/admin/payments", async (_request, reply) => {
     const transactions = await prisma.transaction.findMany({

@@ -6,9 +6,9 @@
  * consistency anchors into subsequent scene prompts.
  */
 
-import { logger } from '@/utils/logger';
-import { NICHE_CONFIG, resolveNicheKey } from '@/config/niches';
-import { STYLE_PRESETS } from '@/config/styles';
+import { logger } from "@/utils/logger";
+import { NICHE_CONFIG, resolveNicheKey } from "@/config/niches";
+import { STYLE_PRESETS } from "@/config/styles";
 
 /**
  * Tracks visual identity across scenes to maintain coherence.
@@ -27,48 +27,48 @@ export interface SceneMemory {
  * Mapping from niche IDs to default mood descriptors.
  */
 const NICHE_MOOD_MAP: Record<string, string> = {
-  fashion_lifestyle: 'stylish and aspirational',
-  food_culinary: 'warm and appetizing',
-  tech_gadgets: 'sleek and modern',
-  beauty_skincare: 'soft and radiant',
-  travel_adventure: 'epic and adventurous',
-  fitness_health: 'energetic and powerful',
-  home_decor: 'cozy and inviting',
-  business_finance: 'professional and confident',
-  education_knowledge: 'clean and informative',
+  fashion_lifestyle: "stylish and aspirational",
+  food_culinary: "warm and appetizing",
+  tech_gadgets: "sleek and modern",
+  beauty_skincare: "soft and radiant",
+  travel_adventure: "epic and adventurous",
+  fitness_health: "energetic and powerful",
+  home_decor: "cozy and inviting",
+  business_finance: "professional and confident",
+  education_knowledge: "clean and informative",
   // New niches
-  cinematic: 'dramatic and cinematic',
-  anime: 'vibrant and stylized',
-  music_video: 'energetic and rhythmic',
-  entertainment: 'vibrant and exciting',
+  cinematic: "dramatic and cinematic",
+  anime: "vibrant and stylized",
+  music_video: "energetic and rhythmic",
+  entertainment: "vibrant and exciting",
   // Fallback keys used in the simpler NICHES map from video-generation service
-  trading: 'analytical and focused',
-  fitness: 'energetic and powerful',
-  cooking: 'warm and appetizing',
-  tech: 'sleek and modern',
-  travel: 'epic and adventurous',
-  education: 'clean and informative',
-  fnb: 'warm and appetizing',
-  beauty: 'soft and radiant',
-  retail: 'vibrant and engaging',
-  services: 'professional and trustworthy',
-  professional: 'polished and authoritative',
-  hospitality: 'welcoming and luxurious',
+  trading: "analytical and focused",
+  fitness: "energetic and powerful",
+  cooking: "warm and appetizing",
+  tech: "sleek and modern",
+  travel: "epic and adventurous",
+  education: "clean and informative",
+  fnb: "warm and appetizing",
+  beauty: "soft and radiant",
+  retail: "vibrant and engaging",
+  services: "professional and trustworthy",
+  professional: "polished and authoritative",
+  hospitality: "welcoming and luxurious",
 };
 
 /**
  * Mapping from style IDs to default camera descriptors.
  */
 const STYLE_CAMERA_MAP: Record<string, string> = {
-  realistic: 'natural perspective, steady framing',
-  cartoon: 'dynamic playful angles',
-  anime: 'dramatic anime angles, expressive framing',
-  closeup_product: 'macro close-up, shallow depth of field',
-  daily_life: 'handheld candid, point of view',
-  comparison: 'matched split-screen framing',
-  cinematic: 'cinematic tracking, widescreen framing',
-  minimalist: 'centered symmetrical composition',
-  luxury: 'premium editorial framing',
+  realistic: "natural perspective, steady framing",
+  cartoon: "dynamic playful angles",
+  anime: "dramatic anime angles, expressive framing",
+  closeup_product: "macro close-up, shallow depth of field",
+  daily_life: "handheld candid, point of view",
+  comparison: "matched split-screen framing",
+  cinematic: "cinematic tracking, widescreen framing",
+  minimalist: "centered symmetrical composition",
+  luxury: "premium editorial framing",
 };
 
 /**
@@ -90,11 +90,19 @@ export class SceneConsistencyEngine {
     hasReferenceImage?: boolean,
   ): SceneMemory {
     const mainSubject = SceneConsistencyEngine.extractSubject(firstScenePrompt);
-    const colorPalette = SceneConsistencyEngine.deriveColorPalette(niche, firstScenePrompt);
-    const lightingStyle = SceneConsistencyEngine.deriveLighting(style, firstScenePrompt);
-    const cameraStyle = STYLE_CAMERA_MAP[style] || 'consistent framing';
+    const colorPalette = SceneConsistencyEngine.deriveColorPalette(
+      niche,
+      firstScenePrompt,
+    );
+    const lightingStyle = SceneConsistencyEngine.deriveLighting(
+      style,
+      firstScenePrompt,
+    );
+    const cameraStyle = STYLE_CAMERA_MAP[style] || "consistent framing";
     const canonicalNiche = resolveNicheKey(niche);
-    const mood = NICHE_MOOD_MAP[canonicalNiche as keyof typeof NICHE_MOOD_MAP] || 'professional and engaging';
+    const mood =
+      NICHE_MOOD_MAP[canonicalNiche as keyof typeof NICHE_MOOD_MAP] ||
+      "professional and engaging";
 
     const memory: SceneMemory = {
       mainSubject,
@@ -106,7 +114,7 @@ export class SceneConsistencyEngine {
       referenceImageAnchored: !!hasReferenceImage,
     };
 
-    logger.info('[SceneConsistency] Memory created', {
+    logger.info("[SceneConsistency] Memory created", {
       mainSubject: memory.mainSubject,
       colorPalette: memory.colorPalette,
       lightingStyle: memory.lightingStyle,
@@ -130,8 +138,8 @@ export class SceneConsistencyEngine {
   ): string {
     // Reference image identity anchor — applied to ALL scenes (including scene 0)
     const refImageAnchor = memory.referenceImageAnchored
-      ? 'maintain exact visual identity from original reference image, no identity drift'
-      : '';
+      ? "maintain exact visual identity from original reference image, no identity drift"
+      : "";
 
     // Scene 0 is the anchor — only add reference image lock if applicable
     if (sceneIndex === 0) {
@@ -163,26 +171,21 @@ export class SceneConsistencyEngine {
 
     // Build the continuity anchor
     const continuityNote = `[Continuing from previous scene: ${memory.previousSceneDescription}]`;
-    const consistencyAnchor = consistencyParts.length > 0
-      ? `[Visual consistency: ${consistencyParts.join(', ')}]`
-      : '';
+    const consistencyAnchor =
+      consistencyParts.length > 0
+        ? `[Visual consistency: ${consistencyParts.join(", ")}]`
+        : "";
 
     // Compose the enriched prompt: continuity context, original prompt,
     // then the consistency anchor as a suffix.
-    const enrichedParts = [
-      continuityNote,
-      scenePrompt,
-      consistencyAnchor,
-    ];
+    const enrichedParts = [continuityNote, scenePrompt, consistencyAnchor];
 
     // Add reference image identity lock for all scenes
     if (refImageAnchor) {
       enrichedParts.push(refImageAnchor);
     }
 
-    const enriched = enrichedParts
-      .filter(Boolean)
-      .join(' ');
+    const enriched = enrichedParts.filter(Boolean).join(" ");
 
     // Update memory with current scene for next iteration
     memory.previousSceneDescription = scenePrompt;
@@ -206,20 +209,23 @@ export class SceneConsistencyEngine {
   private static extractSubject(prompt: string): string {
     // Remove duration/platform tokens (e.g. "15s", "tiktok format")
     const cleaned = prompt
-      .replace(/\d+s\s*/g, '')
-      .replace(/,?\s*(tiktok|instagram|youtube|facebook|shorts|reels)\s*format/gi, '')
-      .replace(/,?\s*(high quality|professional style)/gi, '')
+      .replace(/\d+s\s*/g, "")
+      .replace(
+        /,?\s*(tiktok|instagram|youtube|facebook|shorts|reels)\s*format/gi,
+        "",
+      )
+      .replace(/,?\s*(high quality|professional style)/gi, "")
       .trim();
 
     // Take the first meaningful clause (before the first comma)
-    const firstClause = cleaned.split(',')[0]?.trim() || cleaned;
+    const firstClause = cleaned.split(",")[0]?.trim() || cleaned;
 
     // Limit length to keep prompts sane
     if (firstClause.length > 80) {
       return firstClause.slice(0, 80).trim();
     }
 
-    return firstClause || 'the main subject';
+    return firstClause || "the main subject";
   }
 
   /**
@@ -235,21 +241,21 @@ export class SceneConsistencyEngine {
 
     // Fallback colour associations for the simpler niche keys
     const fallback: Record<string, string> = {
-      trading: 'green and dark tones',
-      fitness: 'high contrast bold tones',
-      cooking: 'warm appetizing tones',
-      tech: 'cool modern tones',
-      travel: 'golden hour natural tones',
-      education: 'clean bright tones',
-      fnb: 'warm rustic tones',
-      beauty: 'soft pastel tones',
-      retail: 'vibrant commercial tones',
-      services: 'professional neutral tones',
-      professional: 'muted corporate tones',
-      hospitality: 'warm luxurious tones',
+      trading: "green and dark tones",
+      fitness: "high contrast bold tones",
+      cooking: "warm appetizing tones",
+      tech: "cool modern tones",
+      travel: "golden hour natural tones",
+      education: "clean bright tones",
+      fnb: "warm rustic tones",
+      beauty: "soft pastel tones",
+      retail: "vibrant commercial tones",
+      services: "professional neutral tones",
+      professional: "muted corporate tones",
+      hospitality: "warm luxurious tones",
     };
 
-    return fallback[niche] || 'consistent natural tones';
+    return fallback[niche] || "consistent natural tones";
   }
 
   /**
@@ -263,8 +269,15 @@ export class SceneConsistencyEngine {
 
     // Check the prompt for explicit lighting keywords
     const lightingKeywords = [
-      'golden hour', 'natural light', 'studio lighting', 'dramatic lighting',
-      'soft light', 'neon', 'ambient', 'backlit', 'rim light',
+      "golden hour",
+      "natural light",
+      "studio lighting",
+      "dramatic lighting",
+      "soft light",
+      "neon",
+      "ambient",
+      "backlit",
+      "rim light",
     ];
     for (const kw of lightingKeywords) {
       if (prompt.toLowerCase().includes(kw)) {
@@ -272,6 +285,6 @@ export class SceneConsistencyEngine {
       }
     }
 
-    return 'consistent professional lighting';
+    return "consistent professional lighting";
   }
 }

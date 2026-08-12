@@ -17,7 +17,10 @@ import { PromptOptimizer } from "@/services/prompt-optimizer.service";
 import { ProviderRouter } from "@/services/provider-router.service";
 import { QualityCheckService } from "@/services/quality-check.service";
 import { getVideoCreditCost } from "@/config/pricing";
-import { AITaskSettingsService, AITaskProvider } from "@/services/ai-task-settings.service";
+import {
+  AITaskSettingsService,
+  AITaskProvider,
+} from "@/services/ai-task-settings.service";
 import { trackTokens } from "@/services/token-tracker.service";
 import { pipelineGenerate } from "@/services/shared-ai-pipeline.service";
 import { NICHE_CONFIG, getNicheConfig, resolveNicheKey } from "@/config/niches";
@@ -36,13 +39,22 @@ function isDemoMode(): boolean {
 // ============================================================================
 
 // Backward-compatible re-export for consumers that import NICHES from this module
-export const NICHES: Record<string, { name: string; emoji: string; styles: string[] }> =
-  Object.fromEntries(
-    Object.keys(NICHE_CONFIG).map(k => {
-      const v = NICHE_CONFIG[k as keyof typeof NICHE_CONFIG];
-      return [k, { name: v.name, emoji: v.emoji, styles: (v.keywords as string[]).slice(0, 3) }];
-    })
-  );
+export const NICHES: Record<
+  string,
+  { name: string; emoji: string; styles: string[] }
+> = Object.fromEntries(
+  Object.keys(NICHE_CONFIG).map((k) => {
+    const v = NICHE_CONFIG[k as keyof typeof NICHE_CONFIG];
+    return [
+      k,
+      {
+        name: v.name,
+        emoji: v.emoji,
+        styles: (v.keywords as string[]).slice(0, 3),
+      },
+    ];
+  }),
+);
 
 export const PROVIDERS = {
   geminigen: {
@@ -204,7 +216,9 @@ export async function generateVideo(
               `✅ ${provider.name} quality check passed (score: ${qualityResult.score})`,
             );
           } catch (qcError) {
-            logger.warn(`Quality check error, proceeding: ${(qcError as Error).message}`);
+            logger.warn(
+              `Quality check error, proceeding: ${(qcError as Error).message}`,
+            );
           }
         }
 
@@ -517,12 +531,17 @@ export function generatePromptFromNiche(
 ): string {
   const config = getNicheConfig(niche);
   if (!config) {
-    return `Create a ${styles.join(', ') || 'professional'} video for ${niche}, ${duration}s, high quality`;
+    return `Create a ${styles.join(", ") || "professional"} video for ${niche}, ${duration}s, high quality`;
   }
-  const styleStr = styles.length > 0 ? styles.join(', ') : config.keywords.slice(0, 2).join(', ');
-  const palette = config.colorPalettes[0] || 'natural';
-  const introTemplate = config.sceneTemplates.intro[0]
-    .replace(/\{[^}]+\}/g, config.keywords[0] || niche);
+  const styleStr =
+    styles.length > 0
+      ? styles.join(", ")
+      : config.keywords.slice(0, 2).join(", ");
+  const palette = config.colorPalettes[0] || "natural";
+  const introTemplate = config.sceneTemplates.intro[0].replace(
+    /\{[^}]+\}/g,
+    config.keywords[0] || niche,
+  );
   return `Create a ${styleStr} ${config.name.toLowerCase()} video, ${duration}s. Opening: ${introTemplate}. Color palette: ${palette}. Professional quality, trending on social media.`;
 }
 
@@ -540,9 +559,9 @@ export async function generatePromptFromNicheAsync(
   try {
     const taskSettings = await AITaskSettingsService.getSettings();
     const cfg = taskSettings.promptGeneration;
-    if (cfg.provider === 'builtin') return templateResult;
+    if (cfg.provider === "builtin") return templateResult;
 
-    const styleStr = styles.join(', ');
+    const styleStr = styles.join(", ");
     const llmPrompt =
       `Generate a creative, detailed AI video generation prompt for a ${niche} video.\n` +
       `Styles: ${styleStr}\n` +
@@ -554,73 +573,127 @@ export async function generatePromptFromNicheAsync(
 
     const result = await callLLMForPromptGen(llmPrompt, cfg);
     if (result && result.trim().length > 10) {
-      logger.info(`[VideoGeneration] LLM prompt generation succeeded for niche=${niche}`);
+      logger.info(
+        `[VideoGeneration] LLM prompt generation succeeded for niche=${niche}`,
+      );
       return result.trim();
     }
   } catch (err) {
-    logger.warn(`[VideoGeneration] LLM prompt generation failed, using template: ${(err as Error).message}`);
+    logger.warn(
+      `[VideoGeneration] LLM prompt generation failed, using template: ${(err as Error).message}`,
+    );
   }
 
   return templateResult;
 }
 
-async function callLLMForPromptGen(prompt: string, cfg: AITaskProvider): Promise<string | null> {
+async function callLLMForPromptGen(
+  prompt: string,
+  cfg: AITaskProvider,
+): Promise<string | null> {
   // Try shared AI pipeline first
   const pipelineResult = await pipelineGenerate(prompt, {
-    model: cfg.provider === 'omniroute' ? cfg.model : undefined,
+    model: cfg.provider === "omniroute" ? cfg.model : undefined,
     temperature: 0.8,
     maxTokens: 256,
   });
   if (pipelineResult && pipelineResult.content.trim()) {
-    trackTokens({ provider: 'pipeline', model: pipelineResult.model, service: 'prompt_generation', promptTokens: pipelineResult.usage.promptTokens, completionTokens: pipelineResult.usage.completionTokens }).catch(() => {});
+    trackTokens({
+      provider: "pipeline",
+      model: pipelineResult.model,
+      service: "prompt_generation",
+      promptTokens: pipelineResult.usage.promptTokens,
+      completionTokens: pipelineResult.usage.completionTokens,
+    }).catch(() => {});
     return pipelineResult.content.trim();
   }
 
   const config = getConfig();
 
-  if (cfg.provider === 'groq') {
-    const apiKey = config.GROQ_API_KEY || '';
+  if (cfg.provider === "groq") {
+    const apiKey = config.GROQ_API_KEY || "";
     if (!apiKey) return null;
-    const model = cfg.model || 'llama-3.3-70b-versatile';
+    const model = cfg.model || "llama-3.3-70b-versatile";
     const response = await axios.post(
-      'https://api.groq.com/openai/v1/chat/completions',
-      { model, messages: [{ role: 'user', content: prompt }], temperature: 0.8, max_tokens: 256 },
-      { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` }, timeout: 8_000 },
+      "https://api.groq.com/openai/v1/chat/completions",
+      {
+        model,
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.8,
+        max_tokens: 256,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        timeout: 8_000,
+      },
     );
     const content = response.data?.choices?.[0]?.message?.content;
-    trackTokens({ provider: 'groq', model, service: 'prompt_generation', promptTokens: response.data?.usage?.prompt_tokens || 0, completionTokens: response.data?.usage?.completion_tokens || 0 }).catch(() => {});
+    trackTokens({
+      provider: "groq",
+      model,
+      service: "prompt_generation",
+      promptTokens: response.data?.usage?.prompt_tokens || 0,
+      completionTokens: response.data?.usage?.completion_tokens || 0,
+    }).catch(() => {});
     return content || null;
   }
 
-  if (cfg.provider === 'gemini') {
-    const apiKey = config.GEMINI_API_KEY || '';
+  if (cfg.provider === "gemini") {
+    const apiKey = config.GEMINI_API_KEY || "";
     if (!apiKey) return null;
-    const model = cfg.model || 'gemini-2.5-flash';
+    const model = cfg.model || "gemini-2.5-flash";
     const response = await axios.post(
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-      { contents: [{ parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: 256, temperature: 0.8 } },
-      { headers: { 'Content-Type': 'application/json' }, timeout: 8_000 },
+      {
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { maxOutputTokens: 256, temperature: 0.8 },
+      },
+      { headers: { "Content-Type": "application/json" }, timeout: 8_000 },
     );
     const text = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
     const usage = response.data?.usageMetadata;
-    if (usage) trackTokens({ provider: 'gemini-direct', model, service: 'prompt_generation', promptTokens: usage.promptTokenCount || 0, completionTokens: usage.candidatesTokenCount || 0 }).catch(() => {});
+    if (usage)
+      trackTokens({
+        provider: "gemini-direct",
+        model,
+        service: "prompt_generation",
+        promptTokens: usage.promptTokenCount || 0,
+        completionTokens: usage.candidatesTokenCount || 0,
+      }).catch(() => {});
     return text || null;
   }
 
-  if (cfg.provider === 'omniroute') {
+  if (cfg.provider === "omniroute") {
     const omniUrl = config.OMNIROUTE_URL;
-    const apiKey = config.OMNIROUTE_API_KEY || '';
-    const model = cfg.model || 'antigravity/gemini-2.5-flash';
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
+    const apiKey = config.OMNIROUTE_API_KEY || "";
+    const model = cfg.model || "antigravity/gemini-2.5-flash";
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
     const response = await axios.post(
       `${omniUrl}/chat/completions`,
-      { model, messages: [{ role: 'user', content: prompt }], temperature: 0.8, max_tokens: 256 },
+      {
+        model,
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.8,
+        max_tokens: 256,
+      },
       { headers, timeout: 8_000 },
     );
     const content = response.data?.choices?.[0]?.message?.content;
     const usage = response.data?.usage;
-    if (usage) trackTokens({ provider: 'omniroute', model: response.data?.model || model, service: 'prompt_generation', promptTokens: usage.prompt_tokens || 0, completionTokens: usage.completion_tokens || 0 }).catch(() => {});
+    if (usage)
+      trackTokens({
+        provider: "omniroute",
+        model: response.data?.model || model,
+        service: "prompt_generation",
+        promptTokens: usage.prompt_tokens || 0,
+        completionTokens: usage.completion_tokens || 0,
+      }).catch(() => {});
     return content || null;
   }
 
@@ -749,14 +822,15 @@ export function getCreditCost(duration: number): number {
 /**
  * Process video job — called by video.service.ts for queued jobs
  */
-export async function processVideoJob(video: Video,
+export async function processVideoJob(
+  video: Video,
 ): Promise<VideoGenerationResult> {
   logger.info(`Processing video job: ${video.jobId}`);
   return generateVideo({
-    prompt: video.title ?? '',
+    prompt: video.title ?? "",
     duration: video.duration,
     niche: video.niche,
     styles: video.styles,
-    aspectRatio: '9:16',
+    aspectRatio: "9:16",
   });
 }

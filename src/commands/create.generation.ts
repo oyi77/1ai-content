@@ -22,13 +22,22 @@ import { getVideoCreditCost } from "@/config/pricing";
 import { getConfig } from "@/config/env";
 import { actionableError } from "@/utils/errors";
 import { t } from "@/i18n/translations";
-import type { InlineKeyboardButton } from '@telegraf/types/markup';
-import { sendSuccessNotification, sendErrorNotification } from "./create.notifications";
-import { buildPrompt, getAspectRatio, getStyleForNiche } from "./create.helpers";
+import type { InlineKeyboardButton } from "@telegraf/types/markup";
+import {
+  sendSuccessNotification,
+  sendErrorNotification,
+} from "./create.notifications";
+import {
+  buildPrompt,
+  getAspectRatio,
+  getStyleForNiche,
+} from "./create.helpers";
 
 const execFile = promisify(execFileCallback);
 
-function getVideoDir(): string { return getConfig().VIDEO_DIR; }
+function getVideoDir(): string {
+  return getConfig().VIDEO_DIR;
+}
 
 /**
  * Generate single scene video
@@ -47,7 +56,12 @@ export async function generateVideoAsync(
 
     const scene = storyboard[0];
     const customPrompt = ctx.session?.videoCreation?.customPrompt;
-    const prompt = buildPrompt(scene.description, platform, duration, customPrompt);
+    const prompt = buildPrompt(
+      scene.description,
+      platform,
+      duration,
+      customPrompt,
+    );
 
     // Use multi-provider fallback chain
     const result = await generateVideoWithFallback({
@@ -95,9 +109,18 @@ export async function generateVideoAsync(
     await VideoService.updateStatus(jobId, "failed", String(error));
     const telegramId = BigInt(ctx.from!.id);
     const creditCostFallback = getVideoCreditCost(duration);
-    await UserService.refundCredits(telegramId, creditCostFallback, jobId, String(error));
+    await UserService.refundCredits(
+      telegramId,
+      creditCostFallback,
+      jobId,
+      String(error),
+    );
     const userMessage = actionableError(String(error), { jobId });
-    await ctx.reply(t('msg.credits_refunded', ctx.session?.userLang || 'id', { message: userMessage }));
+    await ctx.reply(
+      t("msg.credits_refunded", ctx.session?.userLang || "id", {
+        message: userMessage,
+      }),
+    );
   }
 }
 
@@ -140,7 +163,12 @@ export async function generateExtendedVideoAsync(
         `🎬 Generating scene ${i + 1}/${scenes}: ${scene.description}`,
       );
       const customPrompt = ctx.session?.videoCreation?.customPrompt;
-      let prompt = buildPrompt(scene.description, platform, scene.duration, customPrompt);
+      let prompt = buildPrompt(
+        scene.description,
+        platform,
+        scene.duration,
+        customPrompt,
+      );
 
       // Apply scene consistency: create memory from scene 1, enrich scene 2+
       if (i === 0) {
@@ -263,9 +291,18 @@ export async function generateExtendedVideoAsync(
     await VideoService.updateStatus(jobId, "failed", String(error));
     const telegramId = BigInt(ctx.from!.id);
     const creditCostExtended = getVideoCreditCost(totalDuration);
-    await UserService.refundCredits(telegramId, creditCostExtended, jobId, String(error));
+    await UserService.refundCredits(
+      telegramId,
+      creditCostExtended,
+      jobId,
+      String(error),
+    );
     const userMessage = actionableError(String(error), { jobId });
-    await ctx.reply(t('msg.credits_refunded', ctx.session?.userLang || 'id', { message: userMessage }));
+    await ctx.reply(
+      t("msg.credits_refunded", ctx.session?.userLang || "id", {
+        message: userMessage,
+      }),
+    );
   }
 }
 
@@ -276,7 +313,7 @@ async function downloadVideoToPath(
   url: string,
   outputPath: string,
 ): Promise<void> {
-  await execFile('wget', ['-O', outputPath, url]);
+  await execFile("wget", ["-O", outputPath, url]);
 }
 
 /**
@@ -295,24 +332,46 @@ async function concatenateVideos(
 
   // Concatenate with xfade crossfade
   if (inputPaths.length === 2) {
-    await execFile('ffmpeg', [
-      '-i', inputPaths[0], '-i', inputPaths[1],
-      '-filter_complex', '[0:v][1:v]xfade=transition=fade:duration=0.5:offset=4.5[v]',
-      '-map', '[v]', outputPath,
+    await execFile("ffmpeg", [
+      "-i",
+      inputPaths[0],
+      "-i",
+      inputPaths[1],
+      "-filter_complex",
+      "[0:v][1:v]xfade=transition=fade:duration=0.5:offset=4.5[v]",
+      "-map",
+      "[v]",
+      outputPath,
     ]);
   } else if (inputPaths.length === 3) {
-    await execFile('ffmpeg', [
-      '-i', inputPaths[0], '-i', inputPaths[1], '-i', inputPaths[2],
-      '-filter_complex', '[0:v][1:v]xfade=transition=fade:duration=0.5:offset=4.5[v1];[v1][2:v]xfade=transition=fade:duration=0.5:offset=9.5[v]',
-      '-map', '[v]', outputPath,
+    await execFile("ffmpeg", [
+      "-i",
+      inputPaths[0],
+      "-i",
+      inputPaths[1],
+      "-i",
+      inputPaths[2],
+      "-filter_complex",
+      "[0:v][1:v]xfade=transition=fade:duration=0.5:offset=4.5[v1];[v1][2:v]xfade=transition=fade:duration=0.5:offset=9.5[v]",
+      "-map",
+      "[v]",
+      outputPath,
     ]);
   } else {
     // Fallback: simple concat without crossfade
     const simpleListPath = path.join(getVideoDir(), "simple_list.txt");
     const simpleListContent = inputPaths.map((p) => `file '${p}'`).join("\n");
     fs.writeFileSync(simpleListPath, simpleListContent);
-    await execFile('ffmpeg', [
-      '-f', 'concat', '-safe', '0', '-i', simpleListPath, '-c', 'copy', outputPath,
+    await execFile("ffmpeg", [
+      "-f",
+      "concat",
+      "-safe",
+      "0",
+      "-i",
+      simpleListPath,
+      "-c",
+      "copy",
+      outputPath,
     ]);
   }
 }
@@ -322,6 +381,6 @@ async function concatenateVideos(
  */
 async function downloadVideo(url: string, jobId: string): Promise<string> {
   const outputPath = path.join(getVideoDir(), `${jobId}.mp4`);
-  await execFile('wget', ['-O', outputPath, url]);
+  await execFile("wget", ["-O", outputPath, url]);
   return outputPath;
 }

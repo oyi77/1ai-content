@@ -16,7 +16,7 @@ export interface VideoGenerationJobData {
   storyboard: Array<{ scene: number; duration: number; description: string }>;
   referenceImage?: string | null;
   customPrompt?: string;
-  userId: string;   // bigint serialised as string
+  userId: string; // bigint serialised as string
   chatId: number;
   enableVO?: boolean;
   enableSubtitles?: boolean;

@@ -9,7 +9,12 @@
 import { prisma } from "@/config/database";
 import { logger } from "@/utils/logger";
 import { Decimal } from "@prisma/client/runtime/library";
-import { NotFoundError, ForbiddenError, ConflictError, ValidationError } from "@/utils/app-errors";
+import {
+  NotFoundError,
+  ForbiddenError,
+  ConflictError,
+  ValidationError,
+} from "@/utils/app-errors";
 
 export interface WhiteLabelConfig {
   id: bigint;
@@ -58,7 +63,9 @@ export class WhiteLabelService {
       },
     });
 
-    logger.info(`[Whitelabel] New bot registered: ${params.brandName} by ${params.ownerId}`);
+    logger.info(
+      `[Whitelabel] New bot registered: ${params.brandName} by ${params.ownerId}`,
+    );
     return bot;
   }
 
@@ -132,10 +139,7 @@ export class WhiteLabelService {
       where: { ownerId, isActive: true },
     });
 
-    const totalEarned = bots.reduce(
-      (sum, b) => sum + Number(b.totalEarned),
-      0,
-    );
+    const totalEarned = bots.reduce((sum, b) => sum + Number(b.totalEarned), 0);
     const totalWithdrawn = bots.reduce(
       (sum, b) => sum + Number(b.totalWithdrawn),
       0,
@@ -199,19 +203,13 @@ export class WhiteLabelService {
       where: { ownerId },
     });
 
-    const totalEarned = bots.reduce(
-      (sum, b) => sum + Number(b.totalEarned),
-      0,
-    );
+    const totalEarned = bots.reduce((sum, b) => sum + Number(b.totalEarned), 0);
     const totalWithdrawn = bots.reduce(
       (sum, b) => sum + Number(b.totalWithdrawn),
       0,
     );
     const totalUsers = bots.reduce((sum, b) => sum + b.userCount, 0);
-    const totalSales = bots.reduce(
-      (sum, b) => sum + Number(b.totalSales),
-      0,
-    );
+    const totalSales = bots.reduce((sum, b) => sum + Number(b.totalSales), 0);
 
     return {
       botCount: bots.length,

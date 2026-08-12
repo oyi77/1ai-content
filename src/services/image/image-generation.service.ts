@@ -8,20 +8,24 @@
  *
  * Provider implementations live in ./providers/ (split into text2img, img2img, and registry).
  */
-import { logger } from '@/utils/logger';
-import { sendAdminAlert } from '@/services/admin-alert.service';
-import { trackTokens } from '@/services/token-tracker.service';
-import { CircuitBreaker } from '@/services/circuit-breaker.service';
-import { ContentAnalysisService } from '@/services/content-analysis.service';
-import { WatermarkService } from '@/services/watermark.service';
-import { PromptEngine } from '@/config/prompt-engine';
-import { AIPromptOptimizer } from '@/services/ai-prompt-optimizer.service';
-import { getConfig } from '@/config/env';
-import { getProviders } from './providers/providers-registry';
-import { isDemoMode, detectMode, getImageDimensions } from './utils';
-import { DEMO_IMAGES } from './constants';
-import type { ImageGenerationMode, ImageGenerationResult, ImageGenerationParams } from './types';
-import type { ImageProvider } from './providers/providers-registry';
+import { logger } from "@/utils/logger";
+import { sendAdminAlert } from "@/services/admin-alert.service";
+import { trackTokens } from "@/services/token-tracker.service";
+import { CircuitBreaker } from "@/services/circuit-breaker.service";
+import { ContentAnalysisService } from "@/services/content-analysis.service";
+import { WatermarkService } from "@/services/watermark.service";
+import { PromptEngine } from "@/config/prompt-engine";
+import { AIPromptOptimizer } from "@/services/ai-prompt-optimizer.service";
+import { getConfig } from "@/config/env";
+import { getProviders } from "./providers/providers-registry";
+import { isDemoMode, detectMode, getImageDimensions } from "./utils";
+import { DEMO_IMAGES } from "./constants";
+import type {
+  ImageGenerationMode,
+  ImageGenerationResult,
+  ImageGenerationParams,
+} from "./types";
+import type { ImageProvider } from "./providers/providers-registry";
 
 // Helper for dynamic property access on ImageGenerationParams
 function asDict(p: ImageGenerationParams): Record<string, unknown> {
@@ -36,7 +40,7 @@ export class ImageGenerationService {
     params: ImageGenerationParams,
   ): Promise<ImageGenerationResult> {
     if (isDemoMode()) {
-      logger.warn('🖼️ DEMO_MODE forced — returning placeholder');
+      logger.warn("🖼️ DEMO_MODE forced — returning placeholder");
       return this.generateDemoImage(params);
     }
 
@@ -44,16 +48,16 @@ export class ImageGenerationService {
     logger.info(`🖼️ Generation mode: ${mode}`);
 
     // ── Watermark pre-processing ──
-    let cleanedRefUrl = params.referenceImageUrl;
-    if (cleanedRefUrl && (mode === 'img2img' || mode === 'ip_adapter')) {
+    const cleanedRefUrl = params.referenceImageUrl;
+    if (cleanedRefUrl && (mode === "img2img" || mode === "ip_adapter")) {
       try {
         const cleanedPath = await WatermarkService.cleanImage(cleanedRefUrl);
         if (cleanedPath) {
           params = { ...params, referenceImagePath: cleanedPath };
-          logger.info('🧹 Reference image cleaned of watermarks');
+          logger.info("🧹 Reference image cleaned of watermarks");
         }
       } catch {
-        logger.warn('🧹 Watermark pre-processing skipped');
+        logger.warn("🧹 Watermark pre-processing skipped");
       }
     }
 
@@ -61,18 +65,26 @@ export class ImageGenerationService {
     let visionEnrichedPrompt = params.prompt;
     const refUrl = cleanedRefUrl || params.avatarImageUrl;
 
-    if (refUrl && (mode === 'img2img' || mode === 'ip_adapter')) {
+    if (refUrl && (mode === "img2img" || mode === "ip_adapter")) {
       try {
-        logger.info('🖼️ Analysing reference image with Vision AI...');
-        const analysis = await ContentAnalysisService.extractPrompt(refUrl, 'image');
+        logger.info("🖼️ Analysing reference image with Vision AI...");
+        const analysis = await ContentAnalysisService.extractPrompt(
+          refUrl,
+          "image",
+        );
         if (analysis.success && analysis.prompt) {
-          visionEnrichedPrompt = analysis.prompt.length > 20
-            ? `${params.prompt}. Reference subject/product appearance: ${analysis.prompt}`
-            : params.prompt;
-          logger.info(`🖼️ Style enrichment added (${analysis.prompt.length} chars)`);
+          visionEnrichedPrompt =
+            analysis.prompt.length > 20
+              ? `${params.prompt}. Reference subject/product appearance: ${analysis.prompt}`
+              : params.prompt;
+          logger.info(
+            `🖼️ Style enrichment added (${analysis.prompt.length} chars)`,
+          );
         }
       } catch {
-        logger.warn('🖼️ Vision analysis failed, continuing with original prompt');
+        logger.warn(
+          "🖼️ Vision analysis failed, continuing with original prompt",
+        );
         asDict(params)._visionAnalysisFailed = true;
       }
     }
@@ -94,7 +106,7 @@ export class ImageGenerationService {
     // AI-optimise the enriched prompt
     const optimizedFull = await AIPromptOptimizer.optimize(enrichedBase.full, {
       niche: params.category,
-      style: params.style || 'commercial',
+      style: params.style || "commercial",
       category: params.category,
     }).catch(() => enrichedBase.full);
 
@@ -103,7 +115,9 @@ export class ImageGenerationService {
       full: optimizedFull || enrichedBase.full,
     };
 
-    logger.info(`🖼️ Enriched prompt (${enriched.full.length} chars): ${enriched.full.slice(0, 100)}...`);
+    logger.info(
+      `🖼️ Enriched prompt (${enriched.full.length} chars): ${enriched.full.slice(0, 100)}...`,
+    );
 
     let providers = getProviders();
 
@@ -112,7 +126,11 @@ export class ImageGenerationService {
       const target = providers.find((p) => p.key === params._forceProvider);
       if (target) {
         logger.info(`🛠️ [Playground] Forcing provider: ${target.name}`);
-        const promptForProvider = ['geminigen', 'falai', 'siliconflow'].includes(target.key)
+        const promptForProvider = [
+          "geminigen",
+          "falai",
+          "siliconflow",
+        ].includes(target.key)
           ? enriched.full
           : enriched.provider_hint;
         return target.generate(promptForProvider, params);
@@ -123,9 +141,9 @@ export class ImageGenerationService {
     providers = await this.applyProviderOverrides(providers);
 
     // ── Smart routing by mode ──
-    if (mode === 'ip_adapter') {
+    if (mode === "ip_adapter") {
       return this.routeIpAdapter(providers, enriched, params);
-    } else if (mode === 'img2img') {
+    } else if (mode === "img2img") {
       return this.routeImg2Img(providers, enriched, params);
     } else {
       return this.routeText2Img(providers, enriched, params);
@@ -142,15 +160,29 @@ export class ImageGenerationService {
     const nativeProviders = providers.filter(
       (p) => p.enabled && p.supportsIPAdapter && p.generateIPAdapter,
     );
-    logger.info(`🖼️ IP-Adapter mode — ${nativeProviders.length} native providers: ${nativeProviders.map((p) => p.name).join(', ')}`);
+    logger.info(
+      `🖼️ IP-Adapter mode — ${nativeProviders.length} native providers: ${nativeProviders.map((p) => p.name).join(", ")}`,
+    );
 
     if (nativeProviders.length > 0) {
-      const result = await this.generateWithProviders(nativeProviders, enriched, params, 'ip_adapter');
-      if (result.success && result.provider !== 'demo') return result;
+      const result = await this.generateWithProviders(
+        nativeProviders,
+        enriched,
+        params,
+        "ip_adapter",
+      );
+      if (result.success && result.provider !== "demo") return result;
     }
 
-    logger.warn('🖼️ Native IP-Adapter failed — avatar consistency may be reduced');
-    return this.generateWithAllFallback(providers, enriched, params, 'ip_adapter');
+    logger.warn(
+      "🖼️ Native IP-Adapter failed — avatar consistency may be reduced",
+    );
+    return this.generateWithAllFallback(
+      providers,
+      enriched,
+      params,
+      "ip_adapter",
+    );
   }
 
   private static async routeImg2Img(
@@ -161,15 +193,24 @@ export class ImageGenerationService {
     const nativeProviders = providers.filter(
       (p) => p.enabled && p.supportsImg2Img && p.generateImg2Img,
     );
-    logger.info(`🖼️ Img2Img mode — ${nativeProviders.length} native providers: ${nativeProviders.map((p) => p.name).join(', ')}`);
+    logger.info(
+      `🖼️ Img2Img mode — ${nativeProviders.length} native providers: ${nativeProviders.map((p) => p.name).join(", ")}`,
+    );
 
     if (nativeProviders.length > 0) {
-      const result = await this.generateWithProviders(nativeProviders, enriched, params, 'img2img');
-      if (result.success && result.provider !== 'demo') return result;
+      const result = await this.generateWithProviders(
+        nativeProviders,
+        enriched,
+        params,
+        "img2img",
+      );
+      if (result.success && result.provider !== "demo") return result;
     }
 
-    logger.info('🖼️ Native img2img failed — using vision-enriched prompt on all providers');
-    return this.generateWithAllFallback(providers, enriched, params, 'img2img');
+    logger.info(
+      "🖼️ Native img2img failed — using vision-enriched prompt on all providers",
+    );
+    return this.generateWithAllFallback(providers, enriched, params, "img2img");
   }
 
   private static async routeText2Img(
@@ -178,13 +219,20 @@ export class ImageGenerationService {
     params: ImageGenerationParams,
   ): Promise<ImageGenerationResult> {
     const enabledProviders = providers.filter((p) => p.enabled);
-    logger.info(`🖼️ Text2Img mode — ${enabledProviders.length} providers: ${enabledProviders.map((p) => p.name).join(', ')}`);
+    logger.info(
+      `🖼️ Text2Img mode — ${enabledProviders.length} providers: ${enabledProviders.map((p) => p.name).join(", ")}`,
+    );
 
     if (enabledProviders.length > 0) {
-      return this.generateWithProviders(enabledProviders, enriched, params, 'text2img');
+      return this.generateWithProviders(
+        enabledProviders,
+        enriched,
+        params,
+        "text2img",
+      );
     }
 
-    logger.warn('🖼️ No image providers configured — returning demo image');
+    logger.warn("🖼️ No image providers configured — returning demo image");
     return this.generateDemoImage(params);
   }
 
@@ -199,10 +247,10 @@ export class ImageGenerationService {
       const fallbackResult = await this.generateWithProviders(
         allEnabled,
         enriched,
-        { ...params, mode: 'text2img' },
-        'text2img',
+        { ...params, mode: "text2img" },
+        "text2img",
       );
-      if (fallbackResult.success && originalMode === 'ip_adapter') {
+      if (fallbackResult.success && originalMode === "ip_adapter") {
         fallbackResult.metadata = {
           ...fallbackResult.metadata,
           avatarConsistencyDegraded: true,
@@ -224,7 +272,9 @@ export class ImageGenerationService {
     const reordered = await this.reorderByHealth([...providers]);
 
     for (const provider of reordered) {
-      const canExecute = await CircuitBreaker.canExecute(provider.key).catch(() => true);
+      const canExecute = await CircuitBreaker.canExecute(provider.key).catch(
+        () => true,
+      );
       if (!canExecute) {
         logger.info(`🖼️ Circuit breaker OPEN for ${provider.name} — skipping`);
         continue;
@@ -232,15 +282,19 @@ export class ImageGenerationService {
 
       try {
         logger.info(`🖼️ Trying ${provider.name} (${mode})...`);
-        const promptForProvider = ['geminigen', 'falai', 'siliconflow'].includes(provider.key)
+        const promptForProvider = [
+          "geminigen",
+          "falai",
+          "siliconflow",
+        ].includes(provider.key)
           ? enriched.full
           : enriched.provider_hint;
 
         let result: ImageGenerationResult;
 
-        if (mode === 'ip_adapter' && provider.generateIPAdapter) {
+        if (mode === "ip_adapter" && provider.generateIPAdapter) {
           result = await provider.generateIPAdapter(promptForProvider, params);
-        } else if (mode === 'img2img' && provider.generateImg2Img) {
+        } else if (mode === "img2img" && provider.generateImg2Img) {
           result = await provider.generateImg2Img(promptForProvider, params);
         } else {
           result = await provider.generate(promptForProvider, params);
@@ -248,28 +302,38 @@ export class ImageGenerationService {
 
         if (result.success) {
           await CircuitBreaker.recordSuccess(provider.key).catch((err) =>
-            logger.warn('Circuit breaker update failed', { error: err.message }),
+            logger.warn("Circuit breaker update failed", {
+              error: err.message,
+            }),
           );
           logger.info(`🖼️ ${provider.name} succeeded (${mode})`);
           trackTokens({
             provider: provider.key,
             model: provider.key,
-            service: 'image_gen',
+            service: "image_gen",
             promptTokens: 0,
             completionTokens: 0,
-          }).catch((err) => logger.warn('Image provider tracking failed', { error: err.message }));
+          }).catch((err) =>
+            logger.warn("Image provider tracking failed", {
+              error: err.message,
+            }),
+          );
           return result;
         }
       } catch (error) {
         await CircuitBreaker.recordFailure(provider.key).catch((err) =>
-          logger.warn('Circuit breaker update failed', { error: err.message }),
+          logger.warn("Circuit breaker update failed", { error: err.message }),
         );
-        logger.warn(`🖼️ ${provider.name} failed (${mode}): ${(error as Error).message}`);
+        logger.warn(
+          `🖼️ ${provider.name} failed (${mode}): ${(error as Error).message}`,
+        );
       }
     }
 
-    logger.error(`🖼️ All ${providers.length} providers failed (${mode}) — demo fallback`);
-    sendAdminAlert('critical', 'All Image Providers Failed', {
+    logger.error(
+      `🖼️ All ${providers.length} providers failed (${mode}) — demo fallback`,
+    );
+    sendAdminAlert("critical", "All Image Providers Failed", {
       mode,
       providers: providers.length,
       category: params.category,
@@ -282,13 +346,17 @@ export class ImageGenerationService {
     providers: ImageProvider[],
   ): Promise<ImageProvider[]> {
     try {
-      const { redis } = await import('../../config/redis.js');
+      const { redis } = await import("../../config/redis.js");
       const failScores = await Promise.all(
         providers.map(async (p) => {
           const raw = await redis.get(`cb:${p.key}`).catch(() => null);
           if (!raw) return 0;
           const state = JSON.parse(raw);
-          if (state.failureCount > 0 && state.lastFailure && Date.now() - state.lastFailure < 60000) {
+          if (
+            state.failureCount > 0 &&
+            state.lastFailure &&
+            Date.now() - state.lastFailure < 60000
+          ) {
             return state.failureCount;
           }
           return 0;
@@ -301,7 +369,9 @@ export class ImageGenerationService {
           const scoreB = failScores[providers.indexOf(b)] || 0;
           return scoreA - scoreB;
         });
-        logger.info(`🖼️ Reordered providers by health: ${sorted.map((p) => p.name).join(', ')}`);
+        logger.info(
+          `🖼️ Reordered providers by health: ${sorted.map((p) => p.name).join(", ")}`,
+        );
         return sorted;
       }
     } catch {
@@ -315,14 +385,16 @@ export class ImageGenerationService {
     providers: ImageProvider[],
   ): Promise<ImageProvider[]> {
     try {
-      const { ProviderSettingsService } = await import('../provider-settings.service.js');
+      const { ProviderSettingsService } =
+        await import("../provider-settings.service.js");
       const overrides = await ProviderSettingsService.getDynamicSettings();
       const imageOverrides = overrides?.image || {};
       if (Object.keys(imageOverrides).length > 0) {
         return providers
           .map((p) => {
             const ov = imageOverrides[p.key];
-            if (ov?.enabled === false) return { ...p, enabled: false } as ImageProvider;
+            if (ov?.enabled === false)
+              return { ...p, enabled: false } as ImageProvider;
             return p;
           })
           .filter((p) => p.enabled);
@@ -343,14 +415,18 @@ export class ImageGenerationService {
 
     const sel = params.elementSelection;
     const ea = params.elementAnalysis;
-    const keepCount = [sel.keepProduct, sel.keepCharacter, sel.keepBackground].filter(Boolean).length;
+    const keepCount = [
+      sel.keepProduct,
+      sel.keepCharacter,
+      sel.keepBackground,
+    ].filter(Boolean).length;
 
     if (keepCount === 0) {
       // keepNone — pure text2img, discard reference
-      logger.info('🎯 Element selection: keepNone — switching to text2img');
+      logger.info("🎯 Element selection: keepNone — switching to text2img");
       return {
         ...params,
-        mode: 'text2img',
+        mode: "text2img",
         referenceImageUrl: undefined,
         referenceImagePath: undefined,
       };
@@ -360,39 +436,57 @@ export class ImageGenerationService {
     let elementStrengthOverride: number | undefined;
 
     if (sel.keepProduct && !sel.keepCharacter && !sel.keepBackground) {
-      const productRef = ea.productDesc ? ` Exact product to preserve: ${ea.productDesc}.` : '';
+      const productRef = ea.productDesc
+        ? ` Exact product to preserve: ${ea.productDesc}.`
+        : "";
       enrichedPrompt = `Keep the product exactly as shown in the reference image.${productRef} ${params.prompt}. Change only the background and scene as described. Do not alter the product itself.`;
       elementStrengthOverride = 0.55;
-      (asDict(params))._negativePrompt = ((asDict(params))._negativePrompt || '') + ', person, human, model, hands, body';
-      logger.info('🎯 Element selection: keepProduct only (strength=0.55)');
+      asDict(params)._negativePrompt =
+        (asDict(params)._negativePrompt || "") +
+        ", person, human, model, hands, body";
+      logger.info("🎯 Element selection: keepProduct only (strength=0.55)");
     } else if (sel.keepCharacter && !sel.keepProduct && !sel.keepBackground) {
-      const charRef = ea.characterDesc ? ` Character appearance to preserve: ${ea.characterDesc}.` : '';
+      const charRef = ea.characterDesc
+        ? ` Character appearance to preserve: ${ea.characterDesc}.`
+        : "";
       enrichedPrompt = `Preserve the person/character appearance from the reference.${charRef} ${params.prompt}.`;
       elementStrengthOverride = 0.65;
-      logger.info('🎯 Element selection: keepCharacter only (strength=0.65)');
+      logger.info("🎯 Element selection: keepCharacter only (strength=0.65)");
     } else if (sel.keepProduct && sel.keepCharacter && !sel.keepBackground) {
-      const refs = [ea.productDesc && `Product: ${ea.productDesc}`, ea.characterDesc && `Character: ${ea.characterDesc}`].filter(Boolean).join('. ');
+      const refs = [
+        ea.productDesc && `Product: ${ea.productDesc}`,
+        ea.characterDesc && `Character: ${ea.characterDesc}`,
+      ]
+        .filter(Boolean)
+        .join(". ");
       enrichedPrompt = `Keep both the product and person from the reference. ${refs}. ${params.prompt}. Change only the background.`;
-      elementStrengthOverride = 0.60;
-      logger.info('🎯 Element selection: keepProduct + keepCharacter (strength=0.60)');
+      elementStrengthOverride = 0.6;
+      logger.info(
+        "🎯 Element selection: keepProduct + keepCharacter (strength=0.60)",
+      );
     } else if (sel.keepBackground && !sel.keepProduct && !sel.keepCharacter) {
-      const bgRef = ea.backgroundDesc ? ` Background to preserve: ${ea.backgroundDesc}.` : '';
+      const bgRef = ea.backgroundDesc
+        ? ` Background to preserve: ${ea.backgroundDesc}.`
+        : "";
       enrichedPrompt = `Preserve the background scene from the reference.${bgRef} ${params.prompt}.`;
-      elementStrengthOverride = 0.50;
-      logger.info('🎯 Element selection: keepBackground only (strength=0.50)');
+      elementStrengthOverride = 0.5;
+      logger.info("🎯 Element selection: keepBackground only (strength=0.50)");
     } else {
       elementStrengthOverride = 0.55;
-      logger.info('🎯 Element selection: keepAll/multi (strength=0.55)');
+      logger.info("🎯 Element selection: keepAll/multi (strength=0.55)");
     }
 
     // Always add anti-UI/screenshot negative prompt
-    asDict(params)._negativePrompt = (asDict(params)._negativePrompt || '') +
-      ', text overlay, ui elements, interface, screenshot, watermark, button, icon, timestamp, chat bubble, telegram, mobile app';
+    asDict(params)._negativePrompt =
+      (asDict(params)._negativePrompt || "") +
+      ", text overlay, ui elements, interface, screenshot, watermark, button, icon, timestamp, chat bubble, telegram, mobile app";
 
     const result = {
       ...params,
       prompt: enrichedPrompt,
-      ...(elementStrengthOverride !== undefined ? { _elementStrengthOverride: elementStrengthOverride } : {}),
+      ...(elementStrengthOverride !== undefined
+        ? { _elementStrengthOverride: elementStrengthOverride }
+        : {}),
     };
 
     return result;
@@ -404,22 +498,23 @@ export class ImageGenerationService {
     params: ImageGenerationParams,
   ): ImageGenerationResult {
     const categoryImages = DEMO_IMAGES[params.category] || DEMO_IMAGES.product;
-    const demoImage = categoryImages[Math.floor(Math.random() * categoryImages.length)];
+    const demoImage =
+      categoryImages[Math.floor(Math.random() * categoryImages.length)];
 
     const aspectSizes: Record<string, string> = {
-      '9:16': 'w=576&h=1024',
-      '16:9': 'w=1024&h=576',
-      '4:5': 'w=820&h=1024',
-      '1:1': 'w=1024&h=1024',
+      "9:16": "w=576&h=1024",
+      "16:9": "w=1024&h=576",
+      "4:5": "w=820&h=1024",
+      "1:1": "w=1024&h=1024",
     };
-    const sizeParams = aspectSizes[params.aspectRatio || '1:1'] || 'w=1024';
-    const sizedUrl = demoImage.replace('w=1024', sizeParams);
+    const sizeParams = aspectSizes[params.aspectRatio || "1:1"] || "w=1024";
+    const sizedUrl = demoImage.replace("w=1024", sizeParams);
 
     return {
       success: true,
       imageUrl: sizedUrl,
-      thumbnailUrl: sizedUrl.replace(sizeParams, 'w=256'),
-      provider: 'demo',
+      thumbnailUrl: sizedUrl.replace(sizeParams, "w=256"),
+      provider: "demo",
     };
   }
 
@@ -431,9 +526,9 @@ export class ImageGenerationService {
   ): Promise<ImageGenerationResult> {
     return this.generateImage({
       prompt: description,
-      category: 'product',
-      aspectRatio: '1:1',
-      style: 'commercial',
+      category: "product",
+      aspectRatio: "1:1",
+      style: "commercial",
       referenceImageUrl,
     });
   }
@@ -444,9 +539,9 @@ export class ImageGenerationService {
   ): Promise<ImageGenerationResult> {
     return this.generateImage({
       prompt: description,
-      category: 'fnb',
-      aspectRatio: '4:5',
-      style: 'food photography',
+      category: "fnb",
+      aspectRatio: "4:5",
+      style: "food photography",
       referenceImageUrl,
     });
   }
@@ -457,9 +552,9 @@ export class ImageGenerationService {
   ): Promise<ImageGenerationResult> {
     return this.generateImage({
       prompt: description,
-      category: 'realestate',
-      aspectRatio: '16:9',
-      style: 'architectural',
+      category: "realestate",
+      aspectRatio: "16:9",
+      style: "architectural",
       referenceImageUrl,
     });
   }
@@ -470,9 +565,9 @@ export class ImageGenerationService {
   ): Promise<ImageGenerationResult> {
     return this.generateImage({
       prompt: description,
-      category: 'car',
-      aspectRatio: '16:9',
-      style: 'automotive',
+      category: "car",
+      aspectRatio: "16:9",
+      style: "automotive",
       referenceImageUrl,
     });
   }
@@ -480,16 +575,16 @@ export class ImageGenerationService {
   static async generateWithAvatar(
     description: string,
     avatarImageUrl: string,
-    category: string = 'product',
-    aspectRatio: string = '1:1',
+    category: string = "product",
+    aspectRatio: string = "1:1",
   ): Promise<ImageGenerationResult> {
     return this.generateImage({
       prompt: description,
       category,
       aspectRatio,
-      style: 'commercial',
+      style: "commercial",
       avatarImageUrl,
-      mode: 'ip_adapter',
+      mode: "ip_adapter",
     });
   }
 }

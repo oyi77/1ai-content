@@ -15,9 +15,9 @@
  *   AI_PIPELINE_DEFAULT_MODEL - Default model (default: auto/pro-fast)
  */
 
-import { AIPipeline, AIPipelineConfig, GenerateResult } from '@1ai/ai-pipeline';
-import { logger } from '@/utils/logger';
-import { getConfig } from '@/config/env';
+import { AIPipeline, AIPipelineConfig, GenerateResult } from "@1ai/ai-pipeline";
+import { logger } from "@/utils/logger";
+import { getConfig } from "@/config/env";
 
 let _pipeline: AIPipeline | null = null;
 let _initAttempted = false;
@@ -27,13 +27,14 @@ function getPipelineConfig(): AIPipelineConfig | null {
 
   // Only initialise if at least one routing URL is available
   const directUrl = getConfig().AI_PIPELINE_DIRECT_URL;
-  const directApiKey = process.env.AI_PIPELINE_DIRECT_API_KEY || config.OMNIROUTE_API_KEY || '';
+  const directApiKey =
+    process.env.AI_PIPELINE_DIRECT_API_KEY || config.OMNIROUTE_API_KEY || "";
   const hubUrl = getConfig().AI_PIPELINE_HUB_URL;
-  const mode = getConfig().AI_PIPELINE_MODE as 'direct' | 'hub';
+  const mode = getConfig().AI_PIPELINE_MODE as "direct" | "hub";
 
   // Must have a URL to work with
-  if (mode === 'hub' && !hubUrl) return null;
-  if (mode === 'direct' && !directUrl) return null;
+  if (mode === "hub" && !hubUrl) return null;
+  if (mode === "direct" && !directUrl) return null;
 
   return {
     mode,
@@ -41,7 +42,7 @@ function getPipelineConfig(): AIPipelineConfig | null {
     directApiKey,
     hubUrl,
     hubApiKey: process.env.AI_PIPELINE_HUB_API_KEY,
-    defaultModel: process.env.AI_PIPELINE_DEFAULT_MODEL || 'auto/pro-fast',
+    defaultModel: process.env.AI_PIPELINE_DEFAULT_MODEL || "auto/pro-fast",
     maxRetries: 1,
     timeout: 5000, // 5s timeout matching existing LLM_TIMEOUT
     fallbackModels: [],
@@ -61,9 +62,14 @@ export function getSharedAIPipeline(): AIPipeline | null {
     if (cfg) {
       try {
         _pipeline = new AIPipeline(cfg);
-        logger.info('[SharedAIPipeline] Initialised', { mode: cfg.mode, url: cfg.mode === 'hub' ? cfg.hubUrl : cfg.directUrl });
+        logger.info("[SharedAIPipeline] Initialised", {
+          mode: cfg.mode,
+          url: cfg.mode === "hub" ? cfg.hubUrl : cfg.directUrl,
+        });
       } catch (err) {
-        logger.warn(`[SharedAIPipeline] Init failed: ${(err as Error).message}`);
+        logger.warn(
+          `[SharedAIPipeline] Init failed: ${(err as Error).message}`,
+        );
       }
     }
   }
@@ -79,7 +85,12 @@ export function getSharedAIPipeline(): AIPipeline | null {
  */
 export async function pipelineGenerate(
   prompt: string,
-  options?: { model?: string; temperature?: number; maxTokens?: number; systemPrompt?: string },
+  options?: {
+    model?: string;
+    temperature?: number;
+    maxTokens?: number;
+    systemPrompt?: string;
+  },
 ): Promise<GenerateResult | null> {
   const pipeline = getSharedAIPipeline();
   if (!pipeline) return null;
@@ -91,10 +102,14 @@ export async function pipelineGenerate(
       maxTokens: options?.maxTokens,
       systemPrompt: options?.systemPrompt,
     });
-    logger.info('[SharedAIPipeline] Generate succeeded', { model: result.model });
+    logger.info("[SharedAIPipeline] Generate succeeded", {
+      model: result.model,
+    });
     return result;
   } catch (err) {
-    logger.debug(`[SharedAIPipeline] Generate failed: ${(err as Error).message}`);
+    logger.debug(
+      `[SharedAIPipeline] Generate failed: ${(err as Error).message}`,
+    );
     return null;
   }
 }

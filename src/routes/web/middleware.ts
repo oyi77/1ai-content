@@ -16,7 +16,9 @@ function getJwtSecret(): string {
 
 export async function getUser(request: FastifyRequest, reply: FastifyReply) {
   // If a valid API key was already resolved by tryApiKeyAuth, look up the full user
-  const apiUser = (request as unknown as Record<string, unknown>).apiUser as { telegramId: bigint } | undefined;
+  const apiUser = (request as unknown as Record<string, unknown>).apiUser as
+    | { telegramId: bigint }
+    | undefined;
   if (apiUser) {
     const user = await UserService.findByTelegramId(apiUser.telegramId);
     if (!user) {
@@ -35,10 +37,9 @@ export async function getUser(request: FastifyRequest, reply: FastifyReply) {
     return null;
   }
   try {
-    const decoded = jwt.verify(
-      authHeader.substring(7),
-      getJwtSecret(),
-    ) as { userId: string };
+    const decoded = jwt.verify(authHeader.substring(7), getJwtSecret()) as {
+      userId: string;
+    };
     const user = await UserService.findByUuid(decoded.userId);
     if (!user) {
       reply.status(404).send({ error: "User not found" });

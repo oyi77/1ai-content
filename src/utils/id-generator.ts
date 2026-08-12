@@ -11,5 +11,5 @@ let sequence = 0;
 export function generateSyntheticId(): bigint {
   const ts = Date.now();
   sequence = (sequence + 1) % 100000;
-  return BigInt(`-${ts}${String(sequence).padStart(5, '0')}`);
+  return BigInt(`-${ts}${String(sequence).padStart(5, "0")}`);
 }

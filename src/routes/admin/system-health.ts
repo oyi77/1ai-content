@@ -23,8 +23,17 @@ export async function registerSystemHealthRoutes(server: FastifyInstance) {
     try {
       const token = getConfig().BOT_TOKEN;
       if (token) {
-        const res = await fetch(`https://api.telegram.org/bot${token}/getWebhookInfo`);
-        const data = await res.json() as { ok?: boolean; result?: { url?: string; pending_update_count?: number; last_error_message?: string } };
+        const res = await fetch(
+          `https://api.telegram.org/bot${token}/getWebhookInfo`,
+        );
+        const data = (await res.json()) as {
+          ok?: boolean;
+          result?: {
+            url?: string;
+            pending_update_count?: number;
+            last_error_message?: string;
+          };
+        };
         checks.webhook = {
           status: data.ok ? "ok" : "error",
           url: data.result?.url,
@@ -36,7 +45,9 @@ export async function registerSystemHealthRoutes(server: FastifyInstance) {
       checks.webhook = { status: "error", message: (e as Error).message };
     }
     return {
-      status: Object.values(checks).every(c => c.status === "ok") ? "healthy" : "degraded",
+      status: Object.values(checks).every((c) => c.status === "ok")
+        ? "healthy"
+        : "degraded",
       checks,
       environment: getConfig().NODE_ENV,
       version: "3.0.0",

@@ -11,19 +11,19 @@
  * Safety: never deletes files for videos that are still processing.
  */
 
-import { Worker, Job } from 'bullmq';
-import { bullmqRedis } from '@/config/redis';
-import { prisma } from '@/config/database';
-import { logger } from '@/utils/logger';
-import { getConfig } from '@/config/env';
-import { UserService } from '@/services/user.service';
-import { getVideoCreditCost } from '@/config/pricing';
-import * as fs from 'fs';
-import * as path from 'path';
-import type { Telegram } from 'telegraf';
+import { Worker, Job } from "bullmq";
+import { bullmqRedis } from "@/config/redis";
+import { prisma } from "@/config/database";
+import { logger } from "@/utils/logger";
+import { getConfig } from "@/config/env";
+import { UserService } from "@/services/user.service";
+import { getVideoCreditCost } from "@/config/pricing";
+import * as fs from "fs";
+import * as path from "path";
+import type { Telegram } from "telegraf";
 
 const VIDEO_DIR = getConfig().VIDEO_DIR;
-const FRAME_DIR = '/tmp/quality_check_frames';
+const FRAME_DIR = "/tmp/quality_check_frames";
 const RETENTION_DAYS = 7;
 const RETENTION_MS = RETENTION_DAYS * 24 * 60 * 60 * 1000;
 
@@ -38,7 +38,10 @@ export interface CleanupResult {
  * Clean up old video files from the local filesystem.
  * Skips files whose jobId corresponds to a video that is still processing.
  */
-async function cleanupLocalFiles(): Promise<{ filesDeleted: number; freedBytes: number }> {
+async function cleanupLocalFiles(): Promise<{
+  filesDeleted: number;
+  freedBytes: number;
+}> {
   let filesDeleted = 0;
   let freedBytes = 0;
 
@@ -50,10 +53,10 @@ async function cleanupLocalFiles(): Promise<{ filesDeleted: number; freedBytes: 
 
   // Get all actively processing job IDs to avoid deleting their files
   const activeVideos = await prisma.video.findMany({
-    where: { status: { in: ['processing', 'queued'] } },
+    where: { status: { in: ["processing", "queued"] } },
     select: { jobId: true },
   });
-  const activeJobIds = new Set(activeVideos.map(v => v.jobId));
+  const activeJobIds = new Set(activeVideos.map((v) => v.jobId));
 
   const files = fs.readdirSync(VIDEO_DIR);
 
@@ -83,7 +86,10 @@ async function cleanupLocalFiles(): Promise<{ filesDeleted: number; freedBytes: 
       fs.unlinkSync(filePath);
       filesDeleted++;
     } catch (err) {
-      logger.warn(`[Cleanup] Failed to process file ${file}:`, (err as Error).message);
+      logger.warn(
+        `[Cleanup] Failed to process file ${file}:`,
+        (err as Error).message,
+      );
     }
   }
 
@@ -98,7 +104,7 @@ async function cleanupDatabaseRecords(): Promise<number> {
 
   const result = await prisma.video.deleteMany({
     where: {
-      status: 'deleted',
+      status: "deleted",
       createdAt: { lt: cutoff },
     },
   });
@@ -116,7 +122,7 @@ async function cleanupFrames(): Promise<number> {
     return framesDeleted;
   }
 
-  const cutoff = Date.now() - (24 * 60 * 60 * 1000); // Frames older than 1 day
+  const cutoff = Date.now() - 24 * 60 * 60 * 1000; // Frames older than 1 day
   const files = fs.readdirSync(FRAME_DIR);
 
   for (const file of files) {
@@ -128,7 +134,9 @@ async function cleanupFrames(): Promise<number> {
         fs.unlinkSync(filePath);
         framesDeleted++;
       }
-    } catch (_) { /* ignore individual file errors */ }
+    } catch (_) {
+      /* ignore individual file errors */
+    }
   }
 
   return framesDeleted;
@@ -150,34 +158,39 @@ export function setCleanupTelegram(telegram: Telegram): void {
  * Find videos stuck in "processing" for more than 30 minutes,
  * mark them as failed, refund credits, and notify the user.
  */
-export async function cleanupStuckVideos(telegram?: Telegram | null): Promise<number> {
+export async function cleanupStuckVideos(
+  telegram?: Telegram | null,
+): Promise<number> {
   const tg = telegram || telegramInstance;
   const cutoff = new Date(Date.now() - STUCK_THRESHOLD_MS);
 
   const stuckVideos = await prisma.video.findMany({
     where: {
-      status: 'processing',
+      status: "processing",
       createdAt: { lt: cutoff },
     },
   });
 
   if (stuckVideos.length === 0) return 0;
 
-  logger.info(`[Cleanup] Found ${stuckVideos.length} stuck videos (processing > 30 min)`);
+  logger.info(
+    `[Cleanup] Found ${stuckVideos.length} stuck videos (processing > 30 min)`,
+  );
 
   for (const video of stuckVideos) {
     try {
       await prisma.video.update({
         where: { id: video.id },
-        data: { status: 'failed', errorMessage: 'Timed out after 30 minutes' },
+        data: { status: "failed", errorMessage: "Timed out after 30 minutes" },
       });
 
-      const creditCost = Number(video.creditsUsed) || getVideoCreditCost(video.duration);
+      const creditCost =
+        Number(video.creditsUsed) || getVideoCreditCost(video.duration);
       await UserService.refundCredits(
         BigInt(video.userId.toString()),
         creditCost,
         video.jobId,
-        'Video stuck in processing > 30 min'
+        "Video stuck in processing > 30 min",
       );
 
       if (tg) {
@@ -185,17 +198,25 @@ export async function cleanupStuckVideos(telegram?: Telegram | null): Promise<nu
           await tg.sendMessage(
             video.userId.toString(),
             `⚠️ Video generation timed out\n\nJob: ${video.jobId}\n` +
-            `Your ${creditCost} credits have been refunded.\n\n` +
-            `Please try again — if this keeps happening, contact /support.`
+              `Your ${creditCost} credits have been refunded.\n\n` +
+              `Please try again — if this keeps happening, contact /support.`,
           );
         } catch (sendErr) {
-          logger.warn(`[Cleanup] Failed to notify user ${video.userId}:`, sendErr);
+          logger.warn(
+            `[Cleanup] Failed to notify user ${video.userId}:`,
+            sendErr,
+          );
         }
       }
 
-      logger.info(`[Cleanup] Marked video ${video.jobId} as failed, refunded ${creditCost} credits`);
+      logger.info(
+        `[Cleanup] Marked video ${video.jobId} as failed, refunded ${creditCost} credits`,
+      );
     } catch (err) {
-      logger.error(`[Cleanup] Failed to clean up stuck video ${video.jobId}:`, err);
+      logger.error(
+        `[Cleanup] Failed to clean up stuck video ${video.jobId}:`,
+        err,
+      );
     }
   }
 
@@ -211,14 +232,16 @@ async function cleanupExpiredTransactions(): Promise<number> {
 
   const result = await prisma.transaction.updateMany({
     where: {
-      status: 'pending',
+      status: "pending",
       createdAt: { lt: cutoff },
     },
-    data: { status: 'failed' },
+    data: { status: "failed" },
   });
 
   if (result.count > 0) {
-    logger.info(`[Cleanup] Expired ${result.count} abandoned pending transactions`);
+    logger.info(
+      `[Cleanup] Expired ${result.count} abandoned pending transactions`,
+    );
   }
 
   return result.count;
@@ -231,10 +254,10 @@ async function cleanupExpiredTransactions(): Promise<number> {
 async function cleanupGatewayExpiredTransactions(): Promise<void> {
   const result = await prisma.transaction.updateMany({
     where: {
-      status: 'pending',
+      status: "pending",
       expiredAt: { lt: new Date() },
     },
-    data: { status: 'expired' },
+    data: { status: "expired" },
   });
   if (result.count > 0) {
     logger.info(`Marked ${result.count} expired pending transactions`);
@@ -245,9 +268,15 @@ async function cleanupGatewayExpiredTransactions(): Promise<void> {
  * Main cleanup job processor.
  */
 async function processCleanup(_job: Job): Promise<CleanupResult> {
-  logger.info('[Cleanup] Starting scheduled cleanup...');
+  logger.info("[Cleanup] Starting scheduled cleanup...");
 
-  const [localResult, dbRecordsDeleted, framesDeleted, stuckCleaned, expiredTxns] = await Promise.all([
+  const [
+    localResult,
+    dbRecordsDeleted,
+    framesDeleted,
+    stuckCleaned,
+    expiredTxns,
+  ] = await Promise.all([
     cleanupLocalFiles(),
     cleanupDatabaseRecords(),
     cleanupFrames(),
@@ -257,7 +286,8 @@ async function processCleanup(_job: Job): Promise<CleanupResult> {
 
   await cleanupGatewayExpiredTransactions();
 
-  const freedMB = Math.round((localResult.freedBytes / (1024 * 1024)) * 100) / 100;
+  const freedMB =
+    Math.round((localResult.freedBytes / (1024 * 1024)) * 100) / 100;
 
   const result: CleanupResult = {
     filesDeleted: localResult.filesDeleted,
@@ -268,8 +298,8 @@ async function processCleanup(_job: Job): Promise<CleanupResult> {
 
   logger.info(
     `[Cleanup] Cleaned up ${result.filesDeleted} files, freed ${result.freedMB} MB, ` +
-    `hard-deleted ${result.dbRecordsDeleted} DB records, removed ${result.framesDeleted} temp frames, ` +
-    `${stuckCleaned} stuck videos resolved, ${expiredTxns} expired transactions cleared`
+      `hard-deleted ${result.dbRecordsDeleted} DB records, removed ${result.framesDeleted} temp frames, ` +
+      `${stuckCleaned} stuck videos resolved, ${expiredTxns} expired transactions cleared`,
   );
 
   return result;
@@ -285,31 +315,29 @@ let cleanupWorkerInstance: Worker | null = null;
  */
 export function startCleanupWorker(): Worker {
   if (cleanupWorkerInstance) {
-    logger.warn('Cleanup worker already running, returning existing instance');
+    logger.warn("Cleanup worker already running, returning existing instance");
     return cleanupWorkerInstance;
   }
 
-  cleanupWorkerInstance = new Worker(
-    'cleanup-videos',
-    processCleanup,
-    {
-      connection: bullmqRedis,
-      concurrency: 1,
-    }
-  );
-
-  cleanupWorkerInstance.on('completed', (job, result: CleanupResult) => {
-    logger.info(`Cleanup worker: job ${job.id} completed — ${result.filesDeleted} files, ${result.freedMB} MB freed`);
+  cleanupWorkerInstance = new Worker("cleanup-videos", processCleanup, {
+    connection: bullmqRedis,
+    concurrency: 1,
   });
 
-  cleanupWorkerInstance.on('failed', (job, err) => {
+  cleanupWorkerInstance.on("completed", (job, result: CleanupResult) => {
+    logger.info(
+      `Cleanup worker: job ${job.id} completed — ${result.filesDeleted} files, ${result.freedMB} MB freed`,
+    );
+  });
+
+  cleanupWorkerInstance.on("failed", (job, err) => {
     logger.error(`Cleanup worker: job ${job?.id} failed:`, err);
   });
 
-  cleanupWorkerInstance.on('error', (err) => {
-    logger.error('Cleanup worker error:', err);
+  cleanupWorkerInstance.on("error", (err) => {
+    logger.error("Cleanup worker error:", err);
   });
 
-  logger.info('Cleanup worker started');
+  logger.info("Cleanup worker started");
   return cleanupWorkerInstance;
 }

@@ -26,7 +26,12 @@ export class AppError extends Error {
 export class ApiError extends AppError {
   public readonly statusCode: number;
 
-  constructor(code: string, message: string, statusCode: number, cause?: unknown) {
+  constructor(
+    code: string,
+    message: string,
+    statusCode: number,
+    cause?: unknown,
+  ) {
     super(code, message, cause);
     this.statusCode = statusCode;
   }
@@ -36,8 +41,8 @@ export class ApiError extends AppError {
 
 /** User has insufficient credits for an operation */
 export class InsufficientCreditsError extends ApiError {
-  constructor(message: string = 'Insufficient credits', cause?: unknown) {
-    super('CREDIT_INSUFFICIENT', message, 402, cause);
+  constructor(message: string = "Insufficient credits", cause?: unknown) {
+    super("CREDIT_INSUFFICIENT", message, 402, cause);
   }
 }
 
@@ -45,15 +50,22 @@ export class InsufficientCreditsError extends ApiError {
 export class ProviderError extends AppError {
   public readonly provider: string;
   constructor(provider: string, message: string, cause?: unknown) {
-    super(`PROVIDER_${provider.toUpperCase()}_ERROR`, `${provider}: ${message}`, cause);
+    super(
+      `PROVIDER_${provider.toUpperCase()}_ERROR`,
+      `${provider}: ${message}`,
+      cause,
+    );
     this.provider = provider;
   }
 }
 
 /** All providers in the fallback chain failed */
 export class AllProvidersFailedError extends AppError {
-  constructor(message: string = 'All providers in fallback chain failed', cause?: unknown) {
-    super('PROVIDER_ALL_FAILED', message, cause);
+  constructor(
+    message: string = "All providers in fallback chain failed",
+    cause?: unknown,
+  ) {
+    super("PROVIDER_ALL_FAILED", message, cause);
   }
 }
 
@@ -68,15 +80,23 @@ export class ProviderTimeoutError extends ProviderError {
 export class CircuitOpenError extends AppError {
   public readonly provider: string;
   constructor(provider: string, cause?: unknown) {
-    super('CIRCUIT_OPEN', `Circuit breaker open for ${provider}`, cause);
+    super("CIRCUIT_OPEN", `Circuit breaker open for ${provider}`, cause);
     this.provider = provider;
   }
 }
 
 /** External service (HTTP API, third-party) returned an error or is unreachable */
 export class ExternalServiceError extends AppError {
-  constructor(public readonly service: string, message?: string, cause?: unknown) {
-    super(`EXT_SERVICE_${service.toUpperCase().replace(/-/g, "_")}`, message ?? `External service "${service}" failed`, cause);
+  constructor(
+    public readonly service: string,
+    message?: string,
+    cause?: unknown,
+  ) {
+    super(
+      `EXT_SERVICE_${service.toUpperCase().replace(/-/g, "_")}`,
+      message ?? `External service "${service}" failed`,
+      cause,
+    );
   }
 }
 
@@ -84,10 +104,10 @@ export class ExternalServiceError extends AppError {
 export class NotFoundError extends ApiError {
   constructor(resource: string, id?: string, cause?: unknown) {
     super(
-      'NOT_FOUND',
+      "NOT_FOUND",
       id ? `${resource} not found: ${id}` : `${resource} not found`,
       404,
-      cause
+      cause,
     );
   }
 }
@@ -95,28 +115,28 @@ export class NotFoundError extends ApiError {
 /** Validation failed at the service layer (distinct from request validation) */
 export class ValidationError extends ApiError {
   constructor(message: string, _field?: string, cause?: unknown) {
-    super('VALIDATION_ERROR', message, 400, cause);
+    super("VALIDATION_ERROR", message, 400, cause);
   }
 }
 
 /** Unauthorized / unauthenticated */
 export class UnauthorizedError extends ApiError {
-  constructor(message: string = 'Unauthorized', cause?: unknown) {
-    super('UNAUTHORIZED', message, 401, cause);
+  constructor(message: string = "Unauthorized", cause?: unknown) {
+    super("UNAUTHORIZED", message, 401, cause);
   }
 }
 
 /** Forbidden */
 export class ForbiddenError extends ApiError {
-  constructor(message: string = 'Forbidden', cause?: unknown) {
-    super('FORBIDDEN', message, 403, cause);
+  constructor(message: string = "Forbidden", cause?: unknown) {
+    super("FORBIDDEN", message, 403, cause);
   }
 }
 
 /** User already banned, or already subscribed, etc. */
 export class ConflictError extends ApiError {
   constructor(message: string, cause?: unknown) {
-    super('CONFLICT', message, 409, cause);
+    super("CONFLICT", message, 409, cause);
   }
 }
 
@@ -132,21 +152,21 @@ export class PaymentError extends AppError {
 /** Queue / job error */
 export class QueueError extends AppError {
   constructor(message: string, jobId?: string, cause?: unknown) {
-    super('QUEUE_ERROR', jobId ? `${message} (job ${jobId})` : message, cause);
+    super("QUEUE_ERROR", jobId ? `${message} (job ${jobId})` : message, cause);
   }
 }
 
 /** Database / Prisma error */
 export class DatabaseError extends AppError {
   constructor(message: string, cause?: unknown) {
-    super('DATABASE_ERROR', message, cause);
+    super("DATABASE_ERROR", message, cause);
   }
 }
 
 /** Configuration missing (e.g., required env var) */
 export class ConfigError extends AppError {
   constructor(key: string, cause?: unknown) {
-    super('CONFIG_MISSING', `Missing configuration: ${key}`, cause);
+    super("CONFIG_MISSING", `Missing configuration: ${key}`, cause);
   }
 }
 
@@ -154,10 +174,12 @@ export class ConfigError extends AppError {
 export class RateLimitError extends ApiError {
   constructor(retryAfterMs?: number, cause?: unknown) {
     super(
-      'RATE_LIMITED',
-      retryAfterMs ? `Rate limited. Retry after ${retryAfterMs}ms` : 'Rate limited',
+      "RATE_LIMITED",
+      retryAfterMs
+        ? `Rate limited. Retry after ${retryAfterMs}ms`
+        : "Rate limited",
       429,
-      cause
+      cause,
     );
   }
 }
@@ -165,6 +187,7 @@ export class RateLimitError extends ApiError {
 /** Convert any thrown value into a typed AppError */
 export function toAppError(err: unknown): AppError {
   if (err instanceof AppError) return err;
-  if (err instanceof Error) return new AppError('UNKNOWN_ERROR', err.message, err);
-  return new AppError('UNKNOWN_ERROR', String(err));
+  if (err instanceof Error)
+    return new AppError("UNKNOWN_ERROR", err.message, err);
+  return new AppError("UNKNOWN_ERROR", String(err));
 }

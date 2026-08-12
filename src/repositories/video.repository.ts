@@ -47,7 +47,12 @@ export class VideoRepository {
   ): Promise<Video> {
     return prisma.video.update({
       where: { jobId },
-      data: { ...urls, status: "completed", progress: 100, completedAt: new Date() },
+      data: {
+        ...urls,
+        status: "completed",
+        progress: 100,
+        completedAt: new Date(),
+      },
     });
   }
 
@@ -62,19 +67,27 @@ export class VideoRepository {
       data: {
         status,
         errorMessage,
-        ...(status === "completed" ? { completedAt: new Date(), progress: 100 } : {}),
+        ...(status === "completed"
+          ? { completedAt: new Date(), progress: 100 }
+          : {}),
       },
     });
   }
 
   /** Soft-delete a video */
   static async softDelete(jobId: string): Promise<void> {
-    await prisma.video.update({ where: { jobId }, data: { status: "deleted" } });
+    await prisma.video.update({
+      where: { jobId },
+      data: { status: "deleted" },
+    });
   }
 
   /** Restore a soft-deleted video */
   static async restore(jobId: string): Promise<void> {
-    await prisma.video.update({ where: { jobId }, data: { status: "completed" } });
+    await prisma.video.update({
+      where: { jobId },
+      data: { status: "completed" },
+    });
   }
 
   /** Permanently delete a video */
@@ -90,7 +103,10 @@ export class VideoRepository {
     });
     if (!video) return false;
     const newState = !video.favorited;
-    await prisma.video.update({ where: { jobId }, data: { favorited: newState } });
+    await prisma.video.update({
+      where: { jobId },
+      data: { favorited: newState },
+    });
     return newState;
   }
 
@@ -127,7 +143,10 @@ export class VideoRepository {
   }
 
   /** Count user's daily video generations */
-  static async countDailyGenerations(userId: bigint, startOfDay: Date): Promise<number> {
+  static async countDailyGenerations(
+    userId: bigint,
+    startOfDay: Date,
+  ): Promise<number> {
     return prisma.video.count({
       where: { userId, createdAt: { gte: startOfDay } },
     });

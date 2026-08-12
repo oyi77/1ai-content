@@ -103,7 +103,6 @@ export class ContentWebhookService {
     });
   }
 
-
   async notifyTikTokUpload(params: {
     contentId: string;
     videoPath: string;
@@ -122,7 +121,9 @@ export class ContentWebhookService {
     });
   }
 
-  private async sendWebhook(payload: WebhookPayload): Promise<WebhookResponse | null> {
+  private async sendWebhook(
+    payload: WebhookPayload,
+  ): Promise<WebhookResponse | null> {
     try {
       const headers: Record<string, string> = {
         "Content-Type": "application/json",

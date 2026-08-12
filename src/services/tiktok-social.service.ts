@@ -22,18 +22,23 @@ interface TikTokUploadResult {
 
 const SOCIAL_API_BASE = getConfig().SOCIAL_API_URL;
 
-export async function uploadToTikTok(params: TikTokUploadParams): Promise<TikTokUploadResult> {
+export async function uploadToTikTok(
+  params: TikTokUploadParams,
+): Promise<TikTokUploadResult> {
   try {
-    const response = await fetch(`${SOCIAL_API_BASE}/api/v1/social/tiktok/upload`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        video_path: params.videoPath,
-        caption: params.caption,
-        hashtags: params.hashtags || [],
-      }),
-      signal: AbortSignal.timeout(180_000), // 3 min timeout for upload
-    });
+    const response = await fetch(
+      `${SOCIAL_API_BASE}/api/v1/social/tiktok/upload`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          video_path: params.videoPath,
+          caption: params.caption,
+          hashtags: params.hashtags || [],
+        }),
+        signal: AbortSignal.timeout(180_000), // 3 min timeout for upload
+      },
+    );
 
     if (!response.ok) {
       const text = await response.text();

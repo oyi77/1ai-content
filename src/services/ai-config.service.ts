@@ -6,23 +6,28 @@
  * Cache: Redis key 'admin:ai_config:<section>' (no TTL — DB is source of truth)
  */
 
-import { redis } from '@/config/redis';
-import { prisma } from '@/config/database';
-import { ValidationError } from '@/utils/app-errors';
+import { redis } from "@/config/redis";
+import { prisma } from "@/config/database";
+import { ValidationError } from "@/utils/app-errors";
 
-export type LLMProvider = 'groq' | 'gemini' | 'omniroute' | 'builtin' | 'custom';
+export type LLMProvider =
+  | "groq"
+  | "gemini"
+  | "omniroute"
+  | "builtin"
+  | "custom";
 
 export interface TaskProviderConfig {
   provider: LLMProvider;
   model: string;
-  customProviderId?: string;  // used when provider === 'custom'
+  customProviderId?: string; // used when provider === 'custom'
 }
 
 export interface AITasksConfig {
   storyboard: TaskProviderConfig;
   transcript: TaskProviderConfig;
-  transcriptFallback1: TaskProviderConfig;  // 2nd attempt when primary fails
-  transcriptFallback2: TaskProviderConfig;  // 3rd attempt when fallback1 fails
+  transcriptFallback1: TaskProviderConfig; // 2nd attempt when primary fails
+  transcriptFallback2: TaskProviderConfig; // 3rd attempt when fallback1 fails
   promptEnhancement: TaskProviderConfig;
   promptGeneration: TaskProviderConfig;
   caption: TaskProviderConfig;
@@ -32,19 +37,19 @@ export interface AITasksConfig {
 }
 
 export interface AIPromptsConfig {
-  botPersona: string;          // The full BERKAHKARYA_SYSTEM_PROMPT text
-  promptOptimizer: string;     // The meta-prompt template for prompt enhancement (use {rawPrompt}, {niche}, {style}, {hasReferenceImage} as placeholders)
-  voNarration: string;         // VO script generation prompt template (use {niche}, {duration}, {language})
-  qualityCheck: string;        // Quality scoring prompt for video frames
-  watermarkDetect: string;     // Watermark detection prompt
-  captionGeneration: string;   // Caption generation prompt template (use {niche}, {sceneCount})
+  botPersona: string; // The full BERKAHKARYA_SYSTEM_PROMPT text
+  promptOptimizer: string; // The meta-prompt template for prompt enhancement (use {rawPrompt}, {niche}, {style}, {hasReferenceImage} as placeholders)
+  voNarration: string; // VO script generation prompt template (use {niche}, {duration}, {language})
+  qualityCheck: string; // Quality scoring prompt for video frames
+  watermarkDetect: string; // Watermark detection prompt
+  captionGeneration: string; // Caption generation prompt template (use {niche}, {sceneCount})
   storyboardGeneration: string; // Storyboard generation prompt template (use {niche}, {duration}, {scenes})
   imageAnalysisPrompt: string; // Prompt for image analysis (empty = use hardcoded OMNI_IMAGE_PROMPT)
   videoAnalysisPrompt: string; // Prompt for video analysis (empty = use hardcoded OMNI_VIDEO_PROMPT)
 }
 
 export interface AIChatConfig {
-  defaultModel: string;        // Default model for OmniRoute chat
+  defaultModel: string; // Default model for OmniRoute chat
 }
 
 export interface AIFullConfig {
@@ -54,47 +59,66 @@ export interface AIFullConfig {
 }
 
 const DEFAULT_TASKS: AITasksConfig = {
-  storyboard: { provider: 'builtin', model: '' },
-  transcript: { provider: 'gemini', model: 'gemini-2.5-flash' },
-  transcriptFallback1: { provider: 'groq', model: 'meta-llama/llama-4-scout-17b-16e-instruct' },
-  transcriptFallback2: { provider: 'omniroute', model: 'antigravity/gemini-2.5-flash' },
-  promptEnhancement: { provider: 'groq', model: 'llama-3.3-70b-versatile' },
-  promptGeneration: { provider: 'builtin', model: '' },
-  caption: { provider: 'gemini', model: 'gemini-2.5-flash' },
-  voNarration: { provider: 'groq', model: 'llama-3.3-70b-versatile' },
-  qualityCheck: { provider: 'gemini', model: 'gemini-2.0-flash' },
-  watermarkDetect: { provider: 'gemini', model: 'gemini-2.0-flash' },
+  storyboard: { provider: "builtin", model: "" },
+  transcript: { provider: "gemini", model: "gemini-2.5-flash" },
+  transcriptFallback1: {
+    provider: "groq",
+    model: "meta-llama/llama-4-scout-17b-16e-instruct",
+  },
+  transcriptFallback2: {
+    provider: "omniroute",
+    model: "antigravity/gemini-2.5-flash",
+  },
+  promptEnhancement: { provider: "groq", model: "llama-3.3-70b-versatile" },
+  promptGeneration: { provider: "builtin", model: "" },
+  caption: { provider: "gemini", model: "gemini-2.5-flash" },
+  voNarration: { provider: "groq", model: "llama-3.3-70b-versatile" },
+  qualityCheck: { provider: "gemini", model: "gemini-2.0-flash" },
+  watermarkDetect: { provider: "gemini", model: "gemini-2.0-flash" },
 };
 
 const DEFAULT_PROMPTS: AIPromptsConfig = {
-  botPersona: '',          // Empty string = use hardcoded BERKAHKARYA_SYSTEM_PROMPT
-  promptOptimizer: '',     // Empty = use hardcoded buildMetaPrompt()
-  voNarration: '',
-  qualityCheck: '',
-  watermarkDetect: '',
-  captionGeneration: '',
-  storyboardGeneration: '',
-  imageAnalysisPrompt: '', // Empty = use hardcoded OMNI_IMAGE_PROMPT
-  videoAnalysisPrompt: '', // Empty = use hardcoded OMNI_VIDEO_PROMPT
+  botPersona: "", // Empty string = use hardcoded BERKAHKARYA_SYSTEM_PROMPT
+  promptOptimizer: "", // Empty = use hardcoded buildMetaPrompt()
+  voNarration: "",
+  qualityCheck: "",
+  watermarkDetect: "",
+  captionGeneration: "",
+  storyboardGeneration: "",
+  imageAnalysisPrompt: "", // Empty = use hardcoded OMNI_IMAGE_PROMPT
+  videoAnalysisPrompt: "", // Empty = use hardcoded OMNI_VIDEO_PROMPT
 };
 
 const DEFAULT_CHAT: AIChatConfig = {
-  defaultModel: 'antigravity/gemini-2.5-flash',
+  defaultModel: "antigravity/gemini-2.5-flash",
 };
 
-const REDIS_KEY_TASKS = 'admin:ai_config:tasks';
-const REDIS_KEY_PROMPTS = 'admin:ai_config:prompts';
-const REDIS_KEY_CHAT = 'admin:ai_config:chat';
+const REDIS_KEY_TASKS = "admin:ai_config:tasks";
+const REDIS_KEY_PROMPTS = "admin:ai_config:prompts";
+const REDIS_KEY_CHAT = "admin:ai_config:chat";
 
-const VALID_PROVIDERS: LLMProvider[] = ['groq', 'gemini', 'omniroute', 'builtin', 'custom'];
+const VALID_PROVIDERS: LLMProvider[] = [
+  "groq",
+  "gemini",
+  "omniroute",
+  "builtin",
+  "custom",
+];
 
-function validateProviders(obj: unknown, path = ''): void {
-  if (obj && typeof obj === 'object') {
+function validateProviders(obj: unknown, path = ""): void {
+  if (obj && typeof obj === "object") {
     for (const [k, v] of Object.entries(obj)) {
-      if (k === 'provider' && typeof v === 'string' && !VALID_PROVIDERS.includes(v as LLMProvider)) {
-        throw new ValidationError(`Invalid provider "${v}" at ${path}.${k}`, 'provider');
+      if (
+        k === "provider" &&
+        typeof v === "string" &&
+        !VALID_PROVIDERS.includes(v as LLMProvider)
+      ) {
+        throw new ValidationError(
+          `Invalid provider "${v}" at ${path}.${k}`,
+          "provider",
+        );
       }
-      if (typeof v === 'object') validateProviders(v, `${path}.${k}`);
+      if (typeof v === "object") validateProviders(v, `${path}.${k}`);
     }
   }
 }
@@ -122,11 +146,11 @@ export class AIConfigService {
     }
     try {
       const dbRow = await prisma.pricingConfig.findUnique({
-        where: { category_key: { category: 'ai_config', key: 'tasks' } },
+        where: { category_key: { category: "ai_config", key: "tasks" } },
       });
       if (dbRow) {
         const settings = dbRow.value as Partial<AITasksConfig>;
-        await redis.set(REDIS_KEY_TASKS, JSON.stringify(settings), 'EX', 900);
+        await redis.set(REDIS_KEY_TASKS, JSON.stringify(settings), "EX", 900);
         return { ...DEFAULT_TASKS, ...settings };
       }
     } catch {
@@ -147,11 +171,11 @@ export class AIConfigService {
     }
     try {
       const dbRow = await prisma.pricingConfig.findUnique({
-        where: { category_key: { category: 'ai_config', key: 'prompts' } },
+        where: { category_key: { category: "ai_config", key: "prompts" } },
       });
       if (dbRow) {
         const settings = dbRow.value as Partial<AIPromptsConfig>;
-        await redis.set(REDIS_KEY_PROMPTS, JSON.stringify(settings), 'EX', 900);
+        await redis.set(REDIS_KEY_PROMPTS, JSON.stringify(settings), "EX", 900);
         return { ...DEFAULT_PROMPTS, ...settings };
       }
     } catch {
@@ -172,11 +196,11 @@ export class AIConfigService {
     }
     try {
       const dbRow = await prisma.pricingConfig.findUnique({
-        where: { category_key: { category: 'ai_config', key: 'chat' } },
+        where: { category_key: { category: "ai_config", key: "chat" } },
       });
       if (dbRow) {
         const settings = dbRow.value as Partial<AIChatConfig>;
-        await redis.set(REDIS_KEY_CHAT, JSON.stringify(settings), 'EX', 900);
+        await redis.set(REDIS_KEY_CHAT, JSON.stringify(settings), "EX", 900);
         return { ...DEFAULT_CHAT, ...settings };
       }
     } catch {
@@ -191,21 +215,39 @@ export class AIConfigService {
     const current = await AIConfigService.getTasksConfig();
     const merged = { ...current, ...tasks };
     await prisma.pricingConfig.upsert({
-      where: { category_key: { category: 'ai_config', key: 'tasks' } },
-      create: { category: 'ai_config', key: 'tasks', value: JSON.parse(JSON.stringify(merged)), updatedBy: BigInt(0) },
-      update: { value: JSON.parse(JSON.stringify(merged)), updatedBy: BigInt(0) },
+      where: { category_key: { category: "ai_config", key: "tasks" } },
+      create: {
+        category: "ai_config",
+        key: "tasks",
+        value: JSON.parse(JSON.stringify(merged)),
+        updatedBy: BigInt(0),
+      },
+      update: {
+        value: JSON.parse(JSON.stringify(merged)),
+        updatedBy: BigInt(0),
+      },
     });
     await redis.set(REDIS_KEY_TASKS, JSON.stringify(merged));
   }
 
   // Update prompts section (saves to Redis + DB, merges with current)
-  static async updatePromptsConfig(prompts: Partial<AIPromptsConfig>): Promise<void> {
+  static async updatePromptsConfig(
+    prompts: Partial<AIPromptsConfig>,
+  ): Promise<void> {
     const current = await AIConfigService.getPromptsConfig();
     const merged = { ...current, ...prompts };
     await prisma.pricingConfig.upsert({
-      where: { category_key: { category: 'ai_config', key: 'prompts' } },
-      create: { category: 'ai_config', key: 'prompts', value: JSON.parse(JSON.stringify(merged)), updatedBy: BigInt(0) },
-      update: { value: JSON.parse(JSON.stringify(merged)), updatedBy: BigInt(0) },
+      where: { category_key: { category: "ai_config", key: "prompts" } },
+      create: {
+        category: "ai_config",
+        key: "prompts",
+        value: JSON.parse(JSON.stringify(merged)),
+        updatedBy: BigInt(0),
+      },
+      update: {
+        value: JSON.parse(JSON.stringify(merged)),
+        updatedBy: BigInt(0),
+      },
     });
     await redis.set(REDIS_KEY_PROMPTS, JSON.stringify(merged));
   }
@@ -215,9 +257,17 @@ export class AIConfigService {
     const current = await AIConfigService.getChatConfig();
     const merged = { ...current, ...chat };
     await prisma.pricingConfig.upsert({
-      where: { category_key: { category: 'ai_config', key: 'chat' } },
-      create: { category: 'ai_config', key: 'chat', value: JSON.parse(JSON.stringify(merged)), updatedBy: BigInt(0) },
-      update: { value: JSON.parse(JSON.stringify(merged)), updatedBy: BigInt(0) },
+      where: { category_key: { category: "ai_config", key: "chat" } },
+      create: {
+        category: "ai_config",
+        key: "chat",
+        value: JSON.parse(JSON.stringify(merged)),
+        updatedBy: BigInt(0),
+      },
+      update: {
+        value: JSON.parse(JSON.stringify(merged)),
+        updatedBy: BigInt(0),
+      },
     });
     await redis.set(REDIS_KEY_CHAT, JSON.stringify(merged));
   }
@@ -225,9 +275,17 @@ export class AIConfigService {
   // Reset tasks section to factory defaults (Redis + DB)
   static async resetTasksConfig(): Promise<void> {
     await prisma.pricingConfig.upsert({
-      where: { category_key: { category: 'ai_config', key: 'tasks' } },
-      create: { category: 'ai_config', key: 'tasks', value: JSON.parse(JSON.stringify(DEFAULT_TASKS)), updatedBy: BigInt(0) },
-      update: { value: JSON.parse(JSON.stringify(DEFAULT_TASKS)), updatedBy: BigInt(0) },
+      where: { category_key: { category: "ai_config", key: "tasks" } },
+      create: {
+        category: "ai_config",
+        key: "tasks",
+        value: JSON.parse(JSON.stringify(DEFAULT_TASKS)),
+        updatedBy: BigInt(0),
+      },
+      update: {
+        value: JSON.parse(JSON.stringify(DEFAULT_TASKS)),
+        updatedBy: BigInt(0),
+      },
     });
     await redis.set(REDIS_KEY_TASKS, JSON.stringify(DEFAULT_TASKS));
   }
@@ -235,9 +293,17 @@ export class AIConfigService {
   // Reset prompts section to defaults (Redis + DB)
   static async resetPromptsConfig(): Promise<void> {
     await prisma.pricingConfig.upsert({
-      where: { category_key: { category: 'ai_config', key: 'prompts' } },
-      create: { category: 'ai_config', key: 'prompts', value: JSON.parse(JSON.stringify(DEFAULT_PROMPTS)), updatedBy: BigInt(0) },
-      update: { value: JSON.parse(JSON.stringify(DEFAULT_PROMPTS)), updatedBy: BigInt(0) },
+      where: { category_key: { category: "ai_config", key: "prompts" } },
+      create: {
+        category: "ai_config",
+        key: "prompts",
+        value: JSON.parse(JSON.stringify(DEFAULT_PROMPTS)),
+        updatedBy: BigInt(0),
+      },
+      update: {
+        value: JSON.parse(JSON.stringify(DEFAULT_PROMPTS)),
+        updatedBy: BigInt(0),
+      },
     });
     await redis.set(REDIS_KEY_PROMPTS, JSON.stringify(DEFAULT_PROMPTS));
   }
@@ -245,15 +311,25 @@ export class AIConfigService {
   // Reset chat section to defaults (Redis + DB)
   static async resetChatConfig(): Promise<void> {
     await prisma.pricingConfig.upsert({
-      where: { category_key: { category: 'ai_config', key: 'chat' } },
-      create: { category: 'ai_config', key: 'chat', value: JSON.parse(JSON.stringify(DEFAULT_CHAT)), updatedBy: BigInt(0) },
-      update: { value: JSON.parse(JSON.stringify(DEFAULT_CHAT)), updatedBy: BigInt(0) },
+      where: { category_key: { category: "ai_config", key: "chat" } },
+      create: {
+        category: "ai_config",
+        key: "chat",
+        value: JSON.parse(JSON.stringify(DEFAULT_CHAT)),
+        updatedBy: BigInt(0),
+      },
+      update: {
+        value: JSON.parse(JSON.stringify(DEFAULT_CHAT)),
+        updatedBy: BigInt(0),
+      },
     });
     await redis.set(REDIS_KEY_CHAT, JSON.stringify(DEFAULT_CHAT));
   }
 
   // Helper: get a single task's provider config
-  static async getTaskConfig(task: keyof AITasksConfig): Promise<TaskProviderConfig> {
+  static async getTaskConfig(
+    task: keyof AITasksConfig,
+  ): Promise<TaskProviderConfig> {
     const tasks = await AIConfigService.getTasksConfig();
     return tasks[task];
   }

@@ -10,8 +10,8 @@
  * centralize conversions and prevent runtime type errors.
  */
 
-import { ValidationError } from '@/utils/app-errors';
-import { Decimal } from '@prisma/client/runtime/library';
+import { ValidationError } from "@/utils/app-errors";
+import { Decimal } from "@prisma/client/runtime/library";
 
 /**
  * Convert Prisma Decimal (creditBalance) to safe number
@@ -27,7 +27,9 @@ import { Decimal } from '@prisma/client/runtime/library';
  * const balance = toUserCreditBalance(user.creditBalance); // number
  * if (balance >= 100) { ... }
  */
-export function toUserCreditBalance(decimal: Decimal | null | undefined): number {
+export function toUserCreditBalance(
+  decimal: Decimal | null | undefined,
+): number {
   if (!decimal) return 0;
   // Decimal.toNumber() is safe for credit balances (max 2 decimal places)
   return decimal.toNumber();
@@ -49,7 +51,7 @@ export function toUserCreditBalance(decimal: Decimal | null | undefined): number
  */
 export function toUserCreditBalanceString(
   decimal: Decimal | null | undefined,
-  defaultValue = '0'
+  defaultValue = "0",
 ): string {
   if (!decimal) return defaultValue;
   return decimal.toString();
@@ -70,7 +72,7 @@ export function toUserCreditBalanceString(
  * await telegram.sendMessage(telegramIdStr, 'Hello!');
  */
 export function toTelegramId(bigint: bigint | null | undefined): string {
-  if (!bigint) return '0';
+  if (!bigint) return "0";
   return bigint.toString();
 }
 
@@ -94,7 +96,9 @@ export function fromTelegramId(str: string | number): bigint {
   try {
     return BigInt(str);
   } catch (error) {
-    throw new ValidationError(`Invalid telegram ID: ${str}. Error: ${error instanceof Error ? error.message : String(error)}`);
+    throw new ValidationError(
+      `Invalid telegram ID: ${str}. Error: ${error instanceof Error ? error.message : String(error)}`,
+    );
   }
 }
 
@@ -112,7 +116,7 @@ export function fromTelegramId(str: string | number): bigint {
  * res.json({ userId, creditBalance: toUserCreditBalance(user.creditBalance) });
  */
 export function toUserId(bigint: bigint | null | undefined): string {
-  if (!bigint) return '0';
+  if (!bigint) return "0";
   return bigint.toString();
 }
 
@@ -133,7 +137,9 @@ export function fromUserId(str: string | number): bigint {
   try {
     return BigInt(str);
   } catch (error) {
-    throw new ValidationError(`Invalid user ID: ${str}. Error: ${error instanceof Error ? error.message : String(error)}`);
+    throw new ValidationError(
+      `Invalid user ID: ${str}. Error: ${error instanceof Error ? error.message : String(error)}`,
+    );
   }
 }
 
@@ -175,5 +181,5 @@ export function isDecimal(value: unknown): value is Decimal {
  * @returns True if value is a BigInt
  */
 export function isBigInt(value: unknown): value is bigint {
-  return typeof value === 'bigint';
+  return typeof value === "bigint";
 }

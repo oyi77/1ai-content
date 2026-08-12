@@ -1,18 +1,21 @@
 /**
  * Post Automation Service
- * 
+ *
  * Handles social media posting via PostBridge API
  * Each user can only post to their own connected accounts
  */
 
-import { prisma } from '@/config/database';
-import { logger } from '@/utils/logger';
-import { getConfig } from '@/config/env';
-import axios from 'axios';
-import { ValidationError, ProviderError } from '@/utils/app-errors';
-import { publishViaAdapter, getPostBridgeAccountsViaAdapter } from './shared-platform-adapters.service';
+import { prisma } from "@/config/database";
+import { logger } from "@/utils/logger";
+import { getConfig } from "@/config/env";
+import axios from "axios";
+import { ValidationError, ProviderError } from "@/utils/app-errors";
+import {
+  publishViaAdapter,
+  getPostBridgeAccountsViaAdapter,
+} from "./shared-platform-adapters.service";
 
-const POSTBRIDGE_API = 'https://api.post-bridge.com/v1';
+const POSTBRIDGE_API = "https://api.post-bridge.com/v1";
 
 export interface SocialAccount {
   id: number;
@@ -53,7 +56,6 @@ export interface ConnectAccountResult {
  * PostAutomation Service
  */
 export class PostAutomationService {
-  
   /**
    * Get PostBridge accounts (admin only - for reference)
    */
@@ -65,23 +67,26 @@ export class PostAutomationService {
         return adapterResult;
       }
     } catch (err) {
-      logger.warn('Shared adapter getAccounts failed, falling back:', (err as Error).message);
+      logger.warn(
+        "Shared adapter getAccounts failed, falling back:",
+        (err as Error).message,
+      );
     }
 
     // Fallback: Direct API call
     try {
-      const response = await axios.get(
-        `${POSTBRIDGE_API}/social-accounts`,
-        {
-          headers: {
-            'Authorization': `Bearer ${getConfig().POSTBRIDGE_API_KEY || ''}`,
-          },
-        }
-      );
+      const response = await axios.get(`${POSTBRIDGE_API}/social-accounts`, {
+        headers: {
+          Authorization: `Bearer ${getConfig().POSTBRIDGE_API_KEY || ""}`,
+        },
+      });
 
       return response.data.data || [];
     } catch (error) {
-      logger.error('Failed to fetch PostBridge accounts:', (error as any).response?.data || (error as Error).message);
+      logger.error(
+        "Failed to fetch PostBridge accounts:",
+        (error as any).response?.data || (error as Error).message,
+      );
       return [];
     }
   }
@@ -91,17 +96,17 @@ export class PostAutomationService {
    */
   static async getUserAccounts(userId: bigint): Promise<SocialAccount[]> {
     const accounts = await prisma.socialAccount.findMany({
-      where: { 
+      where: {
         userId,
-        status: 'active',
+        status: "active",
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
 
-    return accounts.map(acc => ({
+    return accounts.map((acc) => ({
       id: acc.id,
       platform: acc.platform,
-      username: acc.accountName || '',
+      username: acc.accountName || "",
       accountId: acc.pbAccountId,
     }));
   }
@@ -115,7 +120,7 @@ export class PostAutomationService {
     platform: string,
     pbAccountId: string,
     accountName?: string,
-    avatarUrl?: string
+    avatarUrl?: string,
   ): Promise<ConnectAccountResult> {
     // Check if already connected
     const existing = await prisma.socialAccount.findFirst({
@@ -131,7 +136,7 @@ export class PostAutomationService {
         data: {
           accountName,
           avatarUrl,
-          status: 'active',
+          status: "active",
           updatedAt: new Date(),
         },
       });
@@ -145,7 +150,7 @@ export class PostAutomationService {
         pbAccountId,
         accountName,
         avatarUrl,
-        status: 'active',
+        status: "active",
       },
     });
   }
@@ -153,7 +158,10 @@ export class PostAutomationService {
   /**
    * Disconnect social account
    */
-  static async disconnectAccount(userId: bigint, accountId: number): Promise<void> {
+  static async disconnectAccount(
+    userId: bigint,
+    accountId: number,
+  ): Promise<void> {
     await prisma.socialAccount.deleteMany({
       where: {
         id: accountId,
@@ -174,16 +182,19 @@ export class PostAutomationService {
         },
         {
           headers: {
-            'Authorization': `Bearer ${getConfig().POSTBRIDGE_API_KEY || ''}`,
-            'Content-Type': 'application/json',
+            Authorization: `Bearer ${getConfig().POSTBRIDGE_API_KEY || ""}`,
+            "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       return response.data.media_id || response.data.id;
     } catch (error) {
-      logger.error('Failed to upload media to PostBridge:', (error as any).response?.data || (error as Error).message);
-      throw new ValidationError('Failed to upload media', 'media');
+      logger.error(
+        "Failed to upload media to PostBridge:",
+        (error as any).response?.data || (error as Error).message,
+      );
+      throw new ValidationError("Failed to upload media", "media");
     }
   }
 
@@ -200,7 +211,7 @@ export class PostAutomationService {
         scheduledAt: params.scheduledAt,
       });
       if (adapterResult !== null) {
-        return adapterResult.map(r => ({
+        return adapterResult.map((r) => ({
           success: r.success,
           postId: r.postId,
           postUrl: r.postUrl,
@@ -209,7 +220,10 @@ export class PostAutomationService {
         }));
       }
     } catch (err) {
-      logger.warn('Shared platform-adapters publish failed, falling back:', (err as Error).message);
+      logger.warn(
+        "Shared platform-adapters publish failed, falling back:",
+        (err as Error).message,
+      );
     }
 
     // Fallback: Existing direct PostBridge API implementation
@@ -217,14 +231,14 @@ export class PostAutomationService {
 
     // Get user's connected accounts
     const userAccounts = await this.getUserAccounts(params.userId);
-    
+
     // Filter to only selected accounts
-    const selectedAccounts = userAccounts.filter(acc =>
-      params.platformAccountIds.includes(acc.id)
+    const selectedAccounts = userAccounts.filter((acc) =>
+      params.platformAccountIds.includes(acc.id),
     );
 
     if (selectedAccounts.length === 0) {
-      throw new ValidationError('No accounts selected', 'accounts');
+      throw new ValidationError("No accounts selected", "accounts");
     }
 
     // Upload media to PostBridge first
@@ -232,8 +246,8 @@ export class PostAutomationService {
     try {
       mediaId = await this.uploadMedia(params.mediaUrl);
     } catch (error) {
-      logger.error('Media upload failed:', error);
-      throw new ProviderError('PostBridge', 'Failed to upload media');
+      logger.error("Media upload failed:", error);
+      throw new ProviderError("PostBridge", "Failed to upload media");
     }
 
     // Publish to each selected platform
@@ -250,16 +264,12 @@ export class PostAutomationService {
           postData.scheduled_at = params.scheduledAt.toISOString();
         }
 
-        const response = await axios.post(
-          `${POSTBRIDGE_API}/posts`,
-          postData,
-          {
-            headers: {
-              'Authorization': `Bearer ${getConfig().POSTBRIDGE_API_KEY || ''}`,
-              'Content-Type': 'application/json',
-            },
-          }
-        );
+        const response = await axios.post(`${POSTBRIDGE_API}/posts`, postData, {
+          headers: {
+            Authorization: `Bearer ${getConfig().POSTBRIDGE_API_KEY || ""}`,
+            "Content-Type": "application/json",
+          },
+        });
 
         results.push({
           success: true,
@@ -268,15 +278,20 @@ export class PostAutomationService {
           platform: account.platform,
         });
 
-        logger.info(`Published to ${account.platform} for user ${params.userId}`);
-
+        logger.info(
+          `Published to ${account.platform} for user ${params.userId}`,
+        );
       } catch (error) {
-        logger.error(`Failed to publish to ${account.platform}:`, (error as any).response?.data || (error as Error).message);
-        
+        logger.error(
+          `Failed to publish to ${account.platform}:`,
+          (error as any).response?.data || (error as Error).message,
+        );
+
         results.push({
           success: false,
           platform: account.platform,
-          error: (error as any).response?.data?.message || (error as Error).message,
+          error:
+            (error as any).response?.data?.message || (error as Error).message,
         });
       }
     }
@@ -301,29 +316,34 @@ export class PostAutomationService {
     required: string[];
     optional: string[];
   } {
-    const requirements: Record<string, { required: string[]; optional: string[] }> = {
+    const requirements: Record<
+      string,
+      { required: string[]; optional: string[] }
+    > = {
       tiktok: {
-        required: ['video'],
-        optional: ['caption', 'hashtags'],
+        required: ["video"],
+        optional: ["caption", "hashtags"],
       },
       instagram: {
-        required: ['media'], // image or video
-        optional: ['caption', 'hashtags', 'location'],
+        required: ["media"], // image or video
+        optional: ["caption", "hashtags", "location"],
       },
       facebook: {
-        required: ['media'],
-        optional: ['caption', 'hashtags'],
+        required: ["media"],
+        optional: ["caption", "hashtags"],
       },
       twitter: {
-        required: ['text'],
-        optional: ['media', 'hashtags'],
+        required: ["text"],
+        optional: ["media", "hashtags"],
       },
       youtube: {
-        required: ['video', 'title'],
-        optional: ['description', 'tags'],
+        required: ["video", "title"],
+        optional: ["description", "tags"],
       },
     };
 
-    return requirements[platform.toLowerCase()] || { required: [], optional: [] };
+    return (
+      requirements[platform.toLowerCase()] || { required: [], optional: [] }
+    );
   }
 }

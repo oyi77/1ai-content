@@ -9,11 +9,19 @@ import { logger } from "@/utils/logger";
 import { AdminConfigService } from "@/services/admin-config.service";
 import { getConfig } from "@/config/env";
 import { secureRandomInt } from "@/utils/crypto";
-import { ProviderError, ProviderTimeoutError, AllProvidersFailedError, ValidationError } from "@/utils/app-errors";
+import {
+  ProviderError,
+  ProviderTimeoutError,
+  AllProvidersFailedError,
+  ValidationError,
+} from "@/utils/app-errors";
 import axios from "axios";
 import FormData from "form-data";
 import * as fs from "fs";
-import type { ImageGenerationParams, ImageGenerationResult } from "../../image.service";
+import type {
+  ImageGenerationParams,
+  ImageGenerationResult,
+} from "../../image.service";
 
 // Re-use getDims from text2img (circular import-safe since they're siblings)
 import { getDims, mapAspectRatio } from "./image-text2img";
@@ -47,7 +55,12 @@ export async function generateViaFalai(
 
   const images = response.data?.images;
   if (images?.length > 0 && images[0].url) {
-    return { success: true, imageUrl: images[0].url, provider: "falai", mode: "text2img" };
+    return {
+      success: true,
+      imageUrl: images[0].url,
+      provider: "falai",
+      mode: "text2img",
+    };
   }
   throw new ProviderError("Fal.ai", "no images returned");
 }
@@ -57,16 +70,26 @@ export async function generateViaFalaiImg2Img(
   params: ImageGenerationParams,
 ): Promise<ImageGenerationResult> {
   const imageUrl = params.referenceImageUrl;
-  if (!imageUrl) throw new ValidationError("reference image URL required", "referenceImageUrl");
+  if (!imageUrl)
+    throw new ValidationError(
+      "reference image URL required",
+      "referenceImageUrl",
+    );
 
-  const negativePrompt = (params as unknown as Record<string, unknown>)._negativePrompt as string | undefined;
+  const negativePrompt = (params as unknown as Record<string, unknown>)
+    ._negativePrompt as string | undefined;
   const response = await axios.post(
     "https://fal.run/fal-ai/flux/dev/image-to-image",
     {
       prompt,
       image_url: imageUrl,
-      strength: ((params as unknown as Record<string, unknown>)._elementStrengthOverride as number) ?? await AdminConfigService.getAiParam('falai_img2img_strength', 0.75),
-      ...(negativePrompt ? { negative_prompt: negativePrompt.replace(/^,\s*/, '') } : {}),
+      strength:
+        ((params as unknown as Record<string, unknown>)
+          ._elementStrengthOverride as number) ??
+        (await AdminConfigService.getAiParam("falai_img2img_strength", 0.75)),
+      ...(negativePrompt
+        ? { negative_prompt: negativePrompt.replace(/^,\s*/, "") }
+        : {}),
       image_size:
         params.aspectRatio === "16:9"
           ? "landscape_16_9"
@@ -74,21 +97,32 @@ export async function generateViaFalaiImg2Img(
             ? "portrait_16_9"
             : "square_hd",
       num_images: 1,
-      num_inference_steps: await AdminConfigService.getAiParam('falai_inference_steps', 28),
-      guidance_scale: await AdminConfigService.getAiParam('falai_guidance_scale', 3.5),
+      num_inference_steps: await AdminConfigService.getAiParam(
+        "falai_inference_steps",
+        28,
+      ),
+      guidance_scale: await AdminConfigService.getAiParam(
+        "falai_guidance_scale",
+        3.5,
+      ),
     },
     {
       headers: {
         Authorization: `Key ${getConfig().FALAI_API_KEY || ""}`,
         "Content-Type": "application/json",
       },
-      timeout: await AdminConfigService.getTimeout('falai_img2img_ms', 90000),
+      timeout: await AdminConfigService.getTimeout("falai_img2img_ms", 90000),
     },
   );
 
   const images = response.data?.images;
   if (images?.length > 0 && images[0].url) {
-    return { success: true, imageUrl: images[0].url, provider: "falai_img2img", mode: "img2img" };
+    return {
+      success: true,
+      imageUrl: images[0].url,
+      provider: "falai_img2img",
+      mode: "img2img",
+    };
   }
   throw new ProviderError("Fal.ai", "img2img: no images returned");
 }
@@ -98,14 +132,18 @@ export async function generateViaFalaiIPAdapter(
   params: ImageGenerationParams,
 ): Promise<ImageGenerationResult> {
   const avatarUrl = params.avatarImageUrl;
-  if (!avatarUrl) throw new ValidationError("avatar image URL required", "avatarUrl");
+  if (!avatarUrl)
+    throw new ValidationError("avatar image URL required", "avatarUrl");
 
   const response = await axios.post(
     "https://fal.run/fal-ai/flux/dev/ip-adapter",
     {
       prompt,
       ip_adapter_image_url: avatarUrl,
-      ip_adapter_scale: await AdminConfigService.getAiParam('falai_ip_adapter_scale', 0.7),
+      ip_adapter_scale: await AdminConfigService.getAiParam(
+        "falai_ip_adapter_scale",
+        0.7,
+      ),
       image_size:
         params.aspectRatio === "16:9"
           ? "landscape_16_9"
@@ -113,21 +151,35 @@ export async function generateViaFalaiIPAdapter(
             ? "portrait_16_9"
             : "square_hd",
       num_images: 1,
-      num_inference_steps: await AdminConfigService.getAiParam('falai_inference_steps', 28),
-      guidance_scale: await AdminConfigService.getAiParam('falai_guidance_scale', 3.5),
+      num_inference_steps: await AdminConfigService.getAiParam(
+        "falai_inference_steps",
+        28,
+      ),
+      guidance_scale: await AdminConfigService.getAiParam(
+        "falai_guidance_scale",
+        3.5,
+      ),
     },
     {
       headers: {
         Authorization: `Key ${getConfig().FALAI_API_KEY || ""}`,
         "Content-Type": "application/json",
       },
-      timeout: await AdminConfigService.getTimeout('falai_ip_adapter_ms', 90000),
+      timeout: await AdminConfigService.getTimeout(
+        "falai_ip_adapter_ms",
+        90000,
+      ),
     },
   );
 
   const images = response.data?.images;
   if (images?.length > 0 && images[0].url) {
-    return { success: true, imageUrl: images[0].url, provider: "falai_ip_adapter", mode: "ip_adapter" };
+    return {
+      success: true,
+      imageUrl: images[0].url,
+      provider: "falai_ip_adapter",
+      mode: "ip_adapter",
+    };
   }
   throw new ProviderError("Fal.ai", "IP-Adapter: no images returned");
 }
@@ -199,9 +251,16 @@ export async function generateViaLaoZhangKontext(
   params: ImageGenerationParams,
 ): Promise<ImageGenerationResult> {
   const imageUrl = params.referenceImageUrl;
-  if (!imageUrl) throw new ValidationError("reference image URL required", "referenceImageUrl");
+  if (!imageUrl)
+    throw new ValidationError(
+      "reference image URL required",
+      "referenceImageUrl",
+    );
 
-  const imgResponse = await axios.get(imageUrl, { responseType: "arraybuffer", timeout: 30000 });
+  const imgResponse = await axios.get(imageUrl, {
+    responseType: "arraybuffer",
+    timeout: 30000,
+  });
   const formData = new FormData();
   formData.append("image", Buffer.from(imgResponse.data), {
     filename: "reference.jpg",
@@ -210,19 +269,30 @@ export async function generateViaLaoZhangKontext(
   formData.append("prompt", prompt);
   formData.append("model", "flux-kontext-pro");
 
-  const response = await axios.post("https://api.laozhang.ai/v1/images/edits", formData, {
-    headers: {
-      Authorization: `Bearer ${getConfig().LAOZHANG_API_KEY || ""}`,
-      ...formData.getHeaders(),
+  const response = await axios.post(
+    "https://api.laozhang.ai/v1/images/edits",
+    formData,
+    {
+      headers: {
+        Authorization: `Bearer ${getConfig().LAOZHANG_API_KEY || ""}`,
+        ...formData.getHeaders(),
+      },
+      timeout: 120000,
     },
-    timeout: 120000,
-  });
+  );
 
   const data = response.data?.data;
   if (data?.length > 0) {
     const url =
-      data[0].url || (data[0].b64_json ? `data:image/png;base64,${data[0].b64_json}` : null);
-    if (url) return { success: true, imageUrl: url, provider: "laozhang_kontext", mode: "img2img" };
+      data[0].url ||
+      (data[0].b64_json ? `data:image/png;base64,${data[0].b64_json}` : null);
+    if (url)
+      return {
+        success: true,
+        imageUrl: url,
+        provider: "laozhang_kontext",
+        mode: "img2img",
+      };
   }
   throw new ProviderError("LaoZhang", "Kontext: no image returned");
 }
@@ -234,7 +304,11 @@ export async function generateViaEvoLinkImg2Img(
   params: ImageGenerationParams,
 ): Promise<ImageGenerationResult> {
   const imageUrl = params.referenceImageUrl;
-  if (!imageUrl) throw new ValidationError("reference image URL required", "referenceImageUrl");
+  if (!imageUrl)
+    throw new ValidationError(
+      "reference image URL required",
+      "referenceImageUrl",
+    );
 
   const models = ["qwen-image-edit-plus", "wan2.5-image-to-image"];
   for (const model of models) {
@@ -255,13 +329,17 @@ async function evolinkImageGenerate(
   const body: Record<string, unknown> = { model, prompt };
   if (imageUrl) body.image_url = imageUrl;
 
-  const response = await axios.post("https://api.evolink.ai/v1/images/generations", body, {
-    headers: {
-      Authorization: `Bearer ${getConfig().EVOLINK_API_KEY || ""}`,
-      "Content-Type": "application/json",
+  const response = await axios.post(
+    "https://api.evolink.ai/v1/images/generations",
+    body,
+    {
+      headers: {
+        Authorization: `Bearer ${getConfig().EVOLINK_API_KEY || ""}`,
+        "Content-Type": "application/json",
+      },
+      timeout: 30000,
     },
-    timeout: 30000,
-  });
+  );
 
   const taskId = response.data?.id;
   if (!taskId) throw new ProviderError("EvoLink", "img2img: no task ID");
@@ -291,7 +369,10 @@ async function evolinkImageGenerate(
       throw new ProviderError("EvoLink", "img2img: completed but no URL");
     }
     if (status === "failed" || status === "error") {
-      throw new ProviderError("EvoLink", `img2img: ${poll.data?.error || "generation failed"}`);
+      throw new ProviderError(
+        "EvoLink",
+        `img2img: ${poll.data?.error || "generation failed"}`,
+      );
     }
     await new Promise((r) => setTimeout(r, 5000));
   }
@@ -318,13 +399,20 @@ export async function generateViaPiAPI(
       },
     },
     {
-      headers: { "x-api-key": getConfig().PIAPI_API_KEY || "", "Content-Type": "application/json" },
+      headers: {
+        "x-api-key": getConfig().PIAPI_API_KEY || "",
+        "Content-Type": "application/json",
+      },
       timeout: 30000,
     },
   );
 
   const taskId = response.data?.data?.task_id;
-  if (!taskId) throw new ProviderError("PiAPI", `no task_id in response: ${JSON.stringify(response.data).slice(0, 200)}`);
+  if (!taskId)
+    throw new ProviderError(
+      "PiAPI",
+      `no task_id in response: ${JSON.stringify(response.data).slice(0, 200)}`,
+    );
 
   for (let i = 0; i < 60; i++) {
     const poll = await axios.get(`https://api.piapi.ai/api/v1/task/${taskId}`, {
@@ -348,11 +436,20 @@ export async function generateViaPiAPI(
         (Array.isArray(output?.image_urls) ? output.image_urls[0] : null) ||
         output?.result?.image_url ||
         output?.url;
-      if (url) return { success: true, imageUrl: url, provider: "piapi_flux", mode: "text2img" };
+      if (url)
+        return {
+          success: true,
+          imageUrl: url,
+          provider: "piapi_flux",
+          mode: "text2img",
+        };
       throw new ProviderError("PiAPI", "completed but no image URL");
     }
     if (status === "failed") {
-      throw new ProviderError("PiAPI", `task failed: ${pollData?.error || "Unknown error"}`);
+      throw new ProviderError(
+        "PiAPI",
+        `task failed: ${pollData?.error || "Unknown error"}`,
+      );
     }
     await new Promise((r) => setTimeout(r, 3000));
   }
@@ -364,7 +461,11 @@ export async function generateViaPiAPIImg2Img(
   params: ImageGenerationParams,
 ): Promise<ImageGenerationResult> {
   const imageUrl = params.referenceImageUrl;
-  if (!imageUrl) throw new ValidationError("reference image URL required", "referenceImageUrl");
+  if (!imageUrl)
+    throw new ValidationError(
+      "reference image URL required",
+      "referenceImageUrl",
+    );
 
   const response = await axios.post(
     "https://api.piapi.ai/api/v1/task",
@@ -382,7 +483,10 @@ export async function generateViaPiAPIImg2Img(
       },
     },
     {
-      headers: { "x-api-key": getConfig().PIAPI_API_KEY || "", "Content-Type": "application/json" },
+      headers: {
+        "x-api-key": getConfig().PIAPI_API_KEY || "",
+        "Content-Type": "application/json",
+      },
       timeout: 30000,
     },
   );
@@ -412,10 +516,20 @@ export async function generateViaPiAPIImg2Img(
         (Array.isArray(output?.image_urls) ? output.image_urls[0] : null) ||
         output?.result?.image_url ||
         output?.url;
-      if (url) return { success: true, imageUrl: url, provider: "piapi_img2img", mode: "img2img" };
+      if (url)
+        return {
+          success: true,
+          imageUrl: url,
+          provider: "piapi_img2img",
+          mode: "img2img",
+        };
       throw new ProviderError("PiAPI", "img2img: completed but no image URL");
     }
-    if (status === "failed") throw new ProviderError("PiAPI", `img2img: ${pollData?.error || "failed"}`);
+    if (status === "failed")
+      throw new ProviderError(
+        "PiAPI",
+        `img2img: ${pollData?.error || "failed"}`,
+      );
     await new Promise((r) => setTimeout(r, 3000));
   }
   throw new ProviderTimeoutError("PiAPI", 0);
@@ -428,7 +542,8 @@ export async function generateViaSegmindIPAdapter(
   params: ImageGenerationParams,
 ): Promise<ImageGenerationResult> {
   const avatarUrl = params.avatarImageUrl;
-  if (!avatarUrl) throw new ValidationError("avatar image URL required", "avatarUrl");
+  if (!avatarUrl)
+    throw new ValidationError("avatar image URL required", "avatarUrl");
 
   const response = await axios.post(
     "https://api.segmind.com/v1/flux-ipadapter",
@@ -443,13 +558,19 @@ export async function generateViaSegmindIPAdapter(
       height: getDims(params).height,
     },
     {
-      headers: { "x-api-key": getConfig().SEGMIND_API_KEY || "", "Content-Type": "application/json" },
+      headers: {
+        "x-api-key": getConfig().SEGMIND_API_KEY || "",
+        "Content-Type": "application/json",
+      },
       timeout: 90000,
       responseType: "arraybuffer",
     },
   );
 
-  if (response.data && String(response.headers["content-type"] || "").includes("image")) {
+  if (
+    response.data &&
+    String(response.headers["content-type"] || "").includes("image")
+  ) {
     const base64 = Buffer.from(response.data).toString("base64");
     const mimeType = String(response.headers["content-type"] || "image/png");
     return {
@@ -467,7 +588,11 @@ export async function generateViaSegmindImg2Img(
   params: ImageGenerationParams,
 ): Promise<ImageGenerationResult> {
   const imageUrl = params.referenceImageUrl;
-  if (!imageUrl) throw new ValidationError("reference image URL required", "referenceImageUrl");
+  if (!imageUrl)
+    throw new ValidationError(
+      "reference image URL required",
+      "referenceImageUrl",
+    );
 
   const response = await axios.post(
     "https://api.segmind.com/v1/sdxl1.0-img2img",
@@ -482,13 +607,19 @@ export async function generateViaSegmindImg2Img(
       height: getDims(params).height,
     },
     {
-      headers: { "x-api-key": getConfig().SEGMIND_API_KEY || "", "Content-Type": "application/json" },
+      headers: {
+        "x-api-key": getConfig().SEGMIND_API_KEY || "",
+        "Content-Type": "application/json",
+      },
       timeout: 90000,
       responseType: "arraybuffer",
     },
   );
 
-  if (response.data && String(response.headers["content-type"] || "").includes("image")) {
+  if (
+    response.data &&
+    String(response.headers["content-type"] || "").includes("image")
+  ) {
     const base64 = Buffer.from(response.data).toString("base64");
     const mimeType = String(response.headers["content-type"] || "image/png");
     return {

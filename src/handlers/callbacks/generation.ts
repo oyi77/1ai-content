@@ -12,51 +12,61 @@ import {
   handleSkipPrompt,
   createCommand,
 } from "@/commands/create";
-import {
-  promptsCommand,
-} from "@/commands/prompts";
+import { promptsCommand } from "@/commands/prompts";
 
-export async function handleGenerationCallbacks(ctx: BotContext, data: string): Promise<boolean> {
+export async function handleGenerationCallbacks(
+  ctx: BotContext,
+  data: string,
+): Promise<boolean> {
   // make_video_from_image: start video flow pre-populated with last generated image context
   if (data === "make_video_from_image") {
     await ctx.answerCbQuery?.();
-    const lang = ctx.session?.userLang || 'id';
+    const lang = ctx.session?.userLang || "id";
     const lastDesc = ctx.session?.generateProductDesc;
     let lastImageUrl = ctx.session?.generateLastImageUrl;
 
     // Validate URL freshness — Telegram file links expire ~1h, provider URLs may expire sooner
     if (lastImageUrl) {
       try {
-        const axios = (await import('axios')).default;
-        const headRes = await axios.head(lastImageUrl, { timeout: 5000 }).catch(async (err) => {
-          // Some CDNs return 405 on HEAD but work fine on GET — treat as valid
-          if (err?.response?.status === 405) return { status: 405 };
-          throw err;
-        });
+        const axios = (await import("axios")).default;
+        const headRes = await axios
+          .head(lastImageUrl, { timeout: 5000 })
+          .catch(async (err) => {
+            // Some CDNs return 405 on HEAD but work fine on GET — treat as valid
+            if (err?.response?.status === 405) return { status: 405 };
+            throw err;
+          });
         void headRes; // URL is reachable
       } catch {
         // URL expired or unreachable — clear it and prompt re-upload
         lastImageUrl = undefined;
-        if (ctx.session) delete (ctx.session as unknown as Record<string, unknown>).generateLastImageUrl;
-        await ctx.reply(
-          t('gen.image_url_expired', lang),
-          {
-            parse_mode: 'Markdown',
-            reply_markup: {
-              inline_keyboard: [[
-                { text: t('btn.upload_new_image', lang), callback_data: 'image_pref_upload' },
-                { text: t('gen.btn_skip_ref', lang), callback_data: 'image_pref_skip' },
-              ]],
-            },
-          }
-        );
+        if (ctx.session)
+          delete (ctx.session as unknown as Record<string, unknown>)
+            .generateLastImageUrl;
+        await ctx.reply(t("gen.image_url_expired", lang), {
+          parse_mode: "Markdown",
+          reply_markup: {
+            inline_keyboard: [
+              [
+                {
+                  text: t("btn.upload_new_image", lang),
+                  callback_data: "image_pref_upload",
+                },
+                {
+                  text: t("gen.btn_skip_ref", lang),
+                  callback_data: "image_pref_skip",
+                },
+              ],
+            ],
+          },
+        });
         return true;
       }
     }
 
     if (lastDesc) {
       if (ctx.session) {
-        ctx.session.generateAction = 'video';
+        ctx.session.generateAction = "video";
         if (lastImageUrl) ctx.session.generatePhotoUrl = lastImageUrl;
       }
       const { showGenerateMode } = await import("../../flows/generate.js");
@@ -86,8 +96,13 @@ export async function handleGenerationCallbacks(ctx: BotContext, data: string): 
 
   // action_*
   if (data.startsWith("action_")) {
-    const { requestProductInput, showSmartPresetSelection } = await import("../../flows/generate.js");
-    const action = data.replace("action_", "") as "image_set" | "video" | "clone_style" | "campaign";
+    const { requestProductInput, showSmartPresetSelection } =
+      await import("../../flows/generate.js");
+    const action = data.replace("action_", "") as
+      | "image_set"
+      | "video"
+      | "clone_style"
+      | "campaign";
     if (action === "video" && ctx.session?.generateMode === "smart") {
       await showSmartPresetSelection(ctx);
     } else {
@@ -102,25 +117,29 @@ export async function handleGenerationCallbacks(ctx: BotContext, data: string): 
 
     if (preset === "custom") {
       await ctx.answerCbQuery?.();
-      const lang = ctx.session?.userLang || 'id';
+      const lang = ctx.session?.userLang || "id";
       if (ctx.session) {
         ctx.session.state = "CUSTOM_DURATION_INPUT_V3";
       }
-      await ctx.editMessageText(
-        t('cb.custom_duration_v3', lang),
-        { parse_mode: "Markdown" },
-      );
+      await ctx.editMessageText(t("cb.custom_duration_v3", lang), {
+        parse_mode: "Markdown",
+      });
       return true;
     }
 
-    const { showSmartPlatformSelection } = await import("../../flows/generate.js");
+    const { showSmartPlatformSelection } =
+      await import("../../flows/generate.js");
     await showSmartPlatformSelection(ctx, preset as DurationPreset);
     return true;
   }
 
   // platform_*
   if (data.startsWith("platform_")) {
-    const platform = data.replace("platform_", "") as "tiktok" | "instagram" | "youtube" | "square";
+    const platform = data.replace("platform_", "") as
+      | "tiktok"
+      | "instagram"
+      | "youtube"
+      | "square";
     if (ctx.session) ctx.session.generatePlatform = platform;
     if (ctx.session?.generateProductDesc) {
       const { showConfirmScreen } = await import("../../flows/generate.js");
@@ -135,7 +154,8 @@ export async function handleGenerationCallbacks(ctx: BotContext, data: string): 
   // campaign_size_*
   if (data === "campaign_size_5" || data === "campaign_size_10") {
     const { showConfirmScreen } = await import("../../flows/generate.js");
-    if (ctx.session) ctx.session.generateCampaignSize = data === "campaign_size_5" ? 5 : 10;
+    if (ctx.session)
+      ctx.session.generateCampaignSize = data === "campaign_size_5" ? 5 : 10;
     await showConfirmScreen(ctx);
     return true;
   }
@@ -143,7 +163,7 @@ export async function handleGenerationCallbacks(ctx: BotContext, data: string): 
   // img_ar_* — aspect ratio selection for image_set
   if (data.startsWith("img_ar_")) {
     await ctx.answerCbQuery?.();
-    const ar = data.replace("img_ar_", "") as '9:16' | '1:1' | '16:9' | '4:5';
+    const ar = data.replace("img_ar_", "") as "9:16" | "1:1" | "16:9" | "4:5";
     if (ctx.session) ctx.session.generateAspectRatio = ar;
     const { showImageResolution } = await import("../../flows/generate.js");
     await showImageResolution(ctx);
@@ -153,7 +173,7 @@ export async function handleGenerationCallbacks(ctx: BotContext, data: string): 
   // img_res_* — resolution selection for image_set
   if (data.startsWith("img_res_")) {
     await ctx.answerCbQuery?.();
-    const res = data.replace("img_res_", "") as 'standard' | 'hd' | 'ultra';
+    const res = data.replace("img_res_", "") as "standard" | "hd" | "ultra";
     if (ctx.session) ctx.session.generateResolution = res;
     const { showConfirmScreen } = await import("../../flows/generate.js");
     await showConfirmScreen(ctx);
@@ -163,25 +183,37 @@ export async function handleGenerationCallbacks(ctx: BotContext, data: string): 
   // imgset_preview_* — show generated scene images as preview (video already processing)
   if (data.startsWith("imgset_preview_")) {
     await ctx.answerCbQuery?.();
-    const lang = ctx.session?.userLang || 'id';
-    const urls = (ctx.session?.stateData?.imgsetPreviewUrls as string[] | undefined) || [];
+    const lang = ctx.session?.userLang || "id";
+    const urls =
+      (ctx.session?.stateData?.imgsetPreviewUrls as string[] | undefined) || [];
     if (urls.length > 0) {
       const mediaGroup = urls.map((url, i) => ({
-        type: 'photo' as const,
+        type: "photo" as const,
         media: url,
-        ...(i === 0 ? { caption: t('gen.imgset_preview_caption', lang, { count: urls.length }), parse_mode: 'Markdown' as const } : {}),
+        ...(i === 0
+          ? {
+              caption: t("gen.imgset_preview_caption", lang, {
+                count: urls.length,
+              }),
+              parse_mode: "Markdown" as const,
+            }
+          : {}),
       }));
       await ctx.replyWithMediaGroup(mediaGroup).catch(() => {});
     }
-    await ctx.reply(t('gen.video_processing', lang), { parse_mode: 'Markdown' });
+    await ctx.reply(t("gen.video_processing", lang), {
+      parse_mode: "Markdown",
+    });
     return true;
   }
 
   // imgset_skip — skip preview, video already processing
   if (data === "imgset_skip") {
     await ctx.answerCbQuery?.();
-    const lang = ctx.session?.userLang || 'id';
-    await ctx.editMessageText(t('gen.video_processing', lang), { parse_mode: 'Markdown' });
+    const lang = ctx.session?.userLang || "id";
+    await ctx.editMessageText(t("gen.video_processing", lang), {
+      parse_mode: "Markdown",
+    });
     return true;
   }
 
@@ -202,12 +234,11 @@ export async function handleGenerationCallbacks(ctx: BotContext, data: string): 
   // image_pref_upload
   if (data === "image_pref_upload") {
     await ctx.answerCbQuery();
-    const lang = ctx.session?.userLang || 'id';
-    if (ctx.session) ctx.session.state = 'AWAITING_GENERATE_IMAGE';
-    await ctx.editMessageText(
-      t('cb.send_reference_photo', lang),
-      { parse_mode: 'Markdown' },
-    );
+    const lang = ctx.session?.userLang || "id";
+    if (ctx.session) ctx.session.state = "AWAITING_GENERATE_IMAGE";
+    await ctx.editMessageText(t("cb.send_reference_photo", lang), {
+      parse_mode: "Markdown",
+    });
     return true;
   }
 
@@ -216,9 +247,10 @@ export async function handleGenerationCallbacks(ctx: BotContext, data: string): 
     await ctx.answerCbQuery();
     if (ctx.session) {
       delete ctx.session.generatePhotoUrl;
-      ctx.session.state = 'DASHBOARD';
+      ctx.session.state = "DASHBOARD";
     }
-    const { continueAfterImagePreference } = await import('../../flows/generate.js');
+    const { continueAfterImagePreference } =
+      await import("../../flows/generate.js");
     await continueAfterImagePreference(ctx);
     return true;
   }
@@ -228,9 +260,10 @@ export async function handleGenerationCallbacks(ctx: BotContext, data: string): 
     await ctx.answerCbQuery();
     if (ctx.session) {
       ctx.session.generatePhotoUploadDone = true;
-      ctx.session.state = 'DASHBOARD';
+      ctx.session.state = "DASHBOARD";
     }
-    const { showPromptSourceSelection } = await import('../../flows/generate.js');
+    const { showPromptSourceSelection } =
+      await import("../../flows/generate.js");
     await showPromptSourceSelection(ctx);
     return true;
   }
@@ -238,16 +271,16 @@ export async function handleGenerationCallbacks(ctx: BotContext, data: string): 
   // Pro mode storyboard auto/manual
   if (data === "pro_storyboard_auto") {
     await ctx.answerCbQuery();
-    if (ctx.session) ctx.session.generateStoryboardMode = 'auto';
-    const { showProTranscriptChoice } = await import('../../flows/generate.js');
+    if (ctx.session) ctx.session.generateStoryboardMode = "auto";
+    const { showProTranscriptChoice } = await import("../../flows/generate.js");
     await showProTranscriptChoice(ctx);
     return true;
   }
 
   if (data === "pro_storyboard_manual") {
     await ctx.answerCbQuery();
-    if (ctx.session) ctx.session.generateStoryboardMode = 'manual';
-    const { showProStoryboardEditor } = await import('../../flows/generate.js');
+    if (ctx.session) ctx.session.generateStoryboardMode = "manual";
+    const { showProStoryboardEditor } = await import("../../flows/generate.js");
     await showProStoryboardEditor(ctx, 0);
     return true;
   }
@@ -255,22 +288,27 @@ export async function handleGenerationCallbacks(ctx: BotContext, data: string): 
   // Pro mode transcript auto/manual
   if (data === "pro_transcript_auto") {
     await ctx.answerCbQuery();
-    if (ctx.session) ctx.session.generateTranscriptMode = 'auto';
-    const { showSmartPresetSelection } = await import('../../flows/generate.js');
+    if (ctx.session) ctx.session.generateTranscriptMode = "auto";
+    const { showSmartPresetSelection } =
+      await import("../../flows/generate.js");
     await showSmartPresetSelection(ctx);
     return true;
   }
 
   if (data === "pro_transcript_manual") {
     await ctx.answerCbQuery();
-    if (ctx.session) ctx.session.state = 'AWAITING_TRANSCRIPT_INPUT';
-    await ctx.editMessageText(t('gen.transcript_input', ctx.session?.userLang || 'id'), { parse_mode: 'Markdown' });
+    if (ctx.session) ctx.session.state = "AWAITING_TRANSCRIPT_INPUT";
+    await ctx.editMessageText(
+      t("gen.transcript_input", ctx.session?.userLang || "id"),
+      { parse_mode: "Markdown" },
+    );
     return true;
   }
 
   // Pro select duration
   if (data === "pro_select_duration") {
-    const { showSmartPresetSelection } = await import("../../flows/generate.js");
+    const { showSmartPresetSelection } =
+      await import("../../flows/generate.js");
     await showSmartPresetSelection(ctx);
     return true;
   }
@@ -282,12 +320,15 @@ export async function handleGenerationCallbacks(ctx: BotContext, data: string): 
     const scenes = ctx.session?.generateScenes || [];
     const sceneIndex = scenes.findIndex((s) => s.sceneId === sceneId);
     if (ctx.session) {
-      ctx.session.stateData = { ...(ctx.session.stateData as object || {}), editingSceneId: sceneId };
+      ctx.session.stateData = {
+        ...((ctx.session.stateData as object) || {}),
+        editingSceneId: sceneId,
+      };
       ctx.session.state = "AWAITING_SCENE_EDIT";
     }
     const sceneNum = sceneIndex >= 0 ? sceneIndex + 1 : "?";
     await ctx.reply(
-      t('cb2.edit_scene', ctx.session?.userLang || 'id', { sceneNum }),
+      t("cb2.edit_scene", ctx.session?.userLang || "id", { sceneNum }),
       { parse_mode: "Markdown" },
     );
     return true;
@@ -303,54 +344,63 @@ export async function handleGenerationCallbacks(ctx: BotContext, data: string): 
 
   if (data === "prompt_source_auto") {
     await ctx.answerCbQuery();
-    const lang = ctx.session?.userLang || 'id';
+    const lang = ctx.session?.userLang || "id";
     const photoUrl = ctx.session?.generatePhotoUrl as string | undefined;
     const existingDesc = ctx.session?.generateProductDesc as string | undefined;
 
     if (!photoUrl && !existingDesc) {
-      await ctx.editMessageText(t('gen.auto_prompt_no_input', lang), { parse_mode: 'Markdown' });
+      await ctx.editMessageText(t("gen.auto_prompt_no_input", lang), {
+        parse_mode: "Markdown",
+      });
       return true;
     }
 
-    await ctx.editMessageText(t('gen.auto_prompt_generating', lang), { parse_mode: 'Markdown' });
+    await ctx.editMessageText(t("gen.auto_prompt_generating", lang), {
+      parse_mode: "Markdown",
+    });
 
-    let autoPrompt = '';
+    let autoPrompt = "";
     if (photoUrl) {
-      const { ContentAnalysisService } = await import('../../services/content-analysis.service.js');
-      const analysis = await ContentAnalysisService.extractPrompt(photoUrl, 'image');
-      autoPrompt = analysis.success && analysis.prompt ? analysis.prompt : '';
+      const { ContentAnalysisService } =
+        await import("../../services/content-analysis.service.js");
+      const analysis = await ContentAnalysisService.extractPrompt(
+        photoUrl,
+        "image",
+      );
+      autoPrompt = analysis.success && analysis.prompt ? analysis.prompt : "";
     }
     if (!autoPrompt && existingDesc) {
-      const { detectIndustry } = await import('../../config/hpas-engine.js');
+      const { detectIndustry } = await import("../../config/hpas-engine.js");
       const industry = detectIndustry(existingDesc);
       autoPrompt = `${existingDesc} — produk ${industry}`;
     }
 
     if (ctx.session && autoPrompt) {
       ctx.session.generateProductDesc = autoPrompt;
-      ctx.session.state = 'DASHBOARD';
+      ctx.session.state = "DASHBOARD";
     }
 
-    const { showConfirmScreen } = await import('../../flows/generate.js');
+    const { showConfirmScreen } = await import("../../flows/generate.js");
     await showConfirmScreen(ctx);
     return true;
   }
 
   if (data === "prompt_source_custom") {
     await ctx.answerCbQuery();
-    const lang = ctx.session?.userLang || 'id';
-    if (ctx.session) ctx.session.state = 'AWAITING_PRODUCT_INPUT';
-    const action = ctx.session?.generateAction || 'video';
+    const lang = ctx.session?.userLang || "id";
+    if (ctx.session) ctx.session.state = "AWAITING_PRODUCT_INPUT";
+    const action = ctx.session?.generateAction || "video";
     const actionLabelKeys: Record<string, string> = {
-      image_set: 'cb.action_label_image_set',
-      video: 'cb.action_label_video',
-      campaign: 'cb.action_label_campaign',
+      image_set: "cb.action_label_image_set",
+      video: "cb.action_label_video",
+      campaign: "cb.action_label_campaign",
     };
-    const output = actionLabelKeys[action] ? t(actionLabelKeys[action], lang) : action;
-    await ctx.editMessageText(
-      t('cb.write_custom_prompt', lang, { output }),
-      { parse_mode: 'Markdown' },
-    );
+    const output = actionLabelKeys[action]
+      ? t(actionLabelKeys[action], lang)
+      : action;
+    await ctx.editMessageText(t("cb.write_custom_prompt", lang, { output }), {
+      parse_mode: "Markdown",
+    });
     return true;
   }
 
@@ -429,33 +479,32 @@ export async function handleGenerationCallbacks(ctx: BotContext, data: string): 
   // Upload reference from VO continue screen
   if (data === "create_upload_reference") {
     await ctx.answerCbQuery();
-    const lang = ctx.session?.userLang || 'id';
+    const lang = ctx.session?.userLang || "id";
     if (ctx.session?.videoCreation)
       ctx.session.videoCreation.waitingForImage = true;
     ctx.session!.state = "CREATE_VIDEO_UPLOAD";
-    await ctx.editMessageText(
-      t('cb.upload_reference', lang),
-      { parse_mode: "Markdown" },
-    );
+    await ctx.editMessageText(t("cb.upload_reference", lang), {
+      parse_mode: "Markdown",
+    });
     return true;
   }
 
   // brief_skip
   if (data === "brief_skip") {
-    const lang = ctx.session?.userLang || 'id';
-    await ctx.editMessageText(
-      t('cb.brief_skip', lang),
-      {
-        reply_markup: {
-          inline_keyboard: [
-            [
-              { text: t('btn.yes_create', lang), callback_data: "confirm_create" },
-              { text: t('btn.cancel', lang), callback_data: "cancel_create" },
-            ],
+    const lang = ctx.session?.userLang || "id";
+    await ctx.editMessageText(t("cb.brief_skip", lang), {
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: t("btn.yes_create", lang),
+              callback_data: "confirm_create",
+            },
+            { text: t("btn.cancel", lang), callback_data: "cancel_create" },
           ],
-        },
+        ],
       },
-    );
+    });
     return true;
   }
 
@@ -468,10 +517,8 @@ export async function handleGenerationCallbacks(ctx: BotContext, data: string): 
 
   // cancel_create
   if (data === "cancel_create") {
-    const lang = ctx.session?.userLang || 'id';
-    await ctx.editMessageText(
-      t('cb.creation_cancelled', lang),
-    );
+    const lang = ctx.session?.userLang || "id";
+    await ctx.editMessageText(t("cb.creation_cancelled", lang));
     ctx.session.state = "DASHBOARD";
     return true;
   }
@@ -491,7 +538,7 @@ export async function handleGenerationCallbacks(ctx: BotContext, data: string): 
         selectedPrompt: undefined,
       };
     }
-    await ctx.deleteMessage().catch(() => { });
+    await ctx.deleteMessage().catch(() => {});
     await createCommand(ctx);
     return true;
   }

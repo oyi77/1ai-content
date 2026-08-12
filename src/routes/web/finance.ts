@@ -12,8 +12,10 @@ import { PaymentSettingsService } from "@/services/payment-settings.service";
 import { UserService } from "@/services/user.service";
 import { SubscriptionService } from "@/services/subscription.service";
 import {
-  getPackagesAsync, getUnitCostAsync,
-  getSubscriptionPlansAsync, getPlanPrice,
+  getPackagesAsync,
+  getUnitCostAsync,
+  getSubscriptionPlansAsync,
+  getPlanPrice,
   SUBSCRIPTION_PLANS,
 } from "@/config/pricing";
 import type { PlanKey, BillingCycle } from "@/config/pricing";
@@ -31,8 +33,10 @@ export async function financeRoutes(server: FastifyInstance): Promise<void> {
         getPackagesAsync(),
         PaymentSettingsService.getEnabledGateways(),
         Promise.all([
-          getUnitCostAsync("VIDEO_15S"), getUnitCostAsync("VIDEO_30S"),
-          getUnitCostAsync("VIDEO_60S"), getUnitCostAsync("VIDEO_120S"),
+          getUnitCostAsync("VIDEO_15S"),
+          getUnitCostAsync("VIDEO_30S"),
+          getUnitCostAsync("VIDEO_60S"),
+          getUnitCostAsync("VIDEO_120S"),
           getUnitCostAsync("IMAGE_UNIT"),
         ]),
       ]);
@@ -51,28 +55,40 @@ export async function financeRoutes(server: FastifyInstance): Promise<void> {
   });
 
   // ── POST /api/payment/create ──
-  server.post("/api/payment/create", { preHandler: [paymentLimiter] }, async (request, reply) => {
-    const user = await getUser(request, reply);
-    if (!user) return;
-    try {
-      const { packageId, gateway } = (request.body ?? {}) as Record<string, string>;
-      if (!packageId || !gateway)
-        return reply.status(400).send({ error: "packageId and gateway required" });
-      const result = await PaymentService.createTransaction({
-        userId: user.telegramId, packageId,
-        username: user.username || user.firstName,
-        gateway: gateway as 'midtrans' | 'tripay' | 'duitku' | 'nowpayments',
-      });
-      return { ...result, paymentUrl: result.redirectUrl };
-    } catch (error) {
-      server.log.error({ error }, "Payment create error");
-      return reply.status(500).send({ error: "Failed to create payment" });
-    }
-  });
+  server.post(
+    "/api/payment/create",
+    { preHandler: [paymentLimiter] },
+    async (request, reply) => {
+      const user = await getUser(request, reply);
+      if (!user) return;
+      try {
+        const { packageId, gateway } = (request.body ?? {}) as Record<
+          string,
+          string
+        >;
+        if (!packageId || !gateway)
+          return reply
+            .status(400)
+            .send({ error: "packageId and gateway required" });
+        const result = await PaymentService.createTransaction({
+          userId: user.telegramId,
+          packageId,
+          username: user.username || user.firstName,
+          gateway: gateway as "midtrans" | "tripay" | "duitku" | "nowpayments",
+        });
+        return { ...result, paymentUrl: result.redirectUrl };
+      } catch (error) {
+        server.log.error({ error }, "Payment create error");
+        return reply.status(500).send({ error: "Failed to create payment" });
+      }
+    },
+  );
 
   // ── GET /api/my/transactions ──
   server.get("/api/my/transactions", async (request, reply) => {
-    if ((request.headers as Record<string, string>)['x-api-key']) { if (!await tryApiKeyAuth(request, reply)) return; }
+    if ((request.headers as Record<string, string>)["x-api-key"]) {
+      if (!(await tryApiKeyAuth(request, reply))) return;
+    }
     const user = await getUser(request, reply);
     if (!user) return;
     try {
@@ -96,7 +112,8 @@ export async function financeRoutes(server: FastifyInstance): Promise<void> {
       const tx = await prisma.transaction.findFirst({
         where: { id: BigInt(id), userId: user.telegramId },
       });
-      if (!tx) return reply.status(404).send({ error: "Transaction not found" });
+      if (!tx)
+        return reply.status(404).send({ error: "Transaction not found" });
       const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Receipt #${tx.id}</title>
 <style>body{font-family:Inter,sans-serif;max-width:600px;margin:40px auto;padding:20px;color:#333}
 h1{color:#00d9ff}table{width:100%;border-collapse:collapse;margin:20px 0}
@@ -122,9 +139,19 @@ td{padding:8px;border-bottom:1px solid #eee}.total{font-size:24px;font-weight:bo
     const user = await getUser(request, reply);
     if (!user) return;
     try {
-      const { recipientUsername, amount } = (request.body ?? {}) as Record<string, string>;
-      if (!recipientUsername || !amount || isNaN(Number(amount)) || Number(amount) < 50) {
-        return reply.status(400).send({ error: "Invalid parameters. Minimum transfer is 50 credits." });
+      const { recipientUsername, amount } = (request.body ?? {}) as Record<
+        string,
+        string
+      >;
+      if (
+        !recipientUsername ||
+        !amount ||
+        isNaN(Number(amount)) ||
+        Number(amount) < 50
+      ) {
+        return reply.status(400).send({
+          error: "Invalid parameters. Minimum transfer is 50 credits.",
+        });
       }
 
       const recipient = await prisma.user.findFirst({
@@ -132,31 +159,50 @@ td{padding:8px;border-bottom:1px solid #eee}.total{font-size:24px;font-weight:bo
       });
 
       if (!recipient) {
-        return reply.status(404).send({ error: "Penerima tidak ditemukan. Pastikan username benar." });
+        return reply.status(404).send({
+          error: "Penerima tidak ditemukan. Pastikan username benar.",
+        });
       }
 
       if (recipient.telegramId === user.telegramId) {
-        return reply.status(400).send({ error: "Tidak dapat mentransfer ke diri sendiri." });
+        return reply
+          .status(400)
+          .send({ error: "Tidak dapat mentransfer ke diri sendiri." });
       }
 
       const { P2pService } = await import("@/services/p2p.service.js");
       const amountNum = Number(amount);
       const { totalDeduction } = await P2pService.validateTransfer(
-        user.telegramId, recipient.telegramId, amountNum,
+        user.telegramId,
+        recipient.telegramId,
+        amountNum,
       );
 
-      await P2pService.executeTransfer(user.telegramId, recipient.telegramId, amountNum);
+      await P2pService.executeTransfer(
+        user.telegramId,
+        recipient.telegramId,
+        amountNum,
+      );
 
-      return { success: true, amountSent: amount, recipient: recipient.username, totalDeduction };
+      return {
+        success: true,
+        amountSent: amount,
+        recipient: recipient.username,
+        totalDeduction,
+      };
     } catch (error) {
       server.log.error(error);
-      return reply.status(400).send({ error: (error as Error).message || "Transfer failed" });
+      return reply
+        .status(400)
+        .send({ error: (error as Error).message || "Transfer failed" });
     }
   });
 
   // ── GET /api/referral ──
   server.get("/api/referral", async (request, reply) => {
-    if ((request.headers as Record<string, string>)['x-api-key']) { if (!await tryApiKeyAuth(request, reply)) return; }
+    if ((request.headers as Record<string, string>)["x-api-key"]) {
+      if (!(await tryApiKeyAuth(request, reply))) return;
+    }
     const user = await getUser(request, reply);
     if (!user) return;
     try {
@@ -167,7 +213,8 @@ td{padding:8px;border-bottom:1px solid #eee}.total{font-size:24px;font-weight:bo
       });
       const availableCommission = Number(commissionAgg._sum.amount || 0);
 
-      const sellRateStr = await PaymentSettingsService.get("referral_sell_rate");
+      const sellRateStr =
+        await PaymentSettingsService.get("referral_sell_rate");
       const sellRate = sellRateStr ? parseInt(sellRateStr) : 3000;
       const creditsIfConverted = Math.floor(availableCommission / sellRate);
 
@@ -175,9 +222,13 @@ td{padding:8px;border-bottom:1px solid #eee}.total{font-size:24px;font-weight:bo
       const referralLink = `https://t.me/${BOT_USERNAME}?start=ref_${user.referralCode}`;
 
       return {
-        referralCode: user.referralCode, referralLink,
-        referralCount: stats.referralCount, commissionEarned: stats.commissionEarned,
-        availableCommission, creditsIfConverted, sellRate,
+        referralCode: user.referralCode,
+        referralLink,
+        referralCount: stats.referralCount,
+        commissionEarned: stats.commissionEarned,
+        availableCommission,
+        creditsIfConverted,
+        sellRate,
       };
     } catch (error) {
       server.log.error({ error }, "Referral info error");
@@ -186,77 +237,112 @@ td{padding:8px;border-bottom:1px solid #eee}.total{font-size:24px;font-weight:bo
   });
 
   // ── POST /api/referral/withdraw ──
-  server.post("/api/referral/withdraw", { preHandler: [withdrawalLimiter] }, async (request, reply) => {
-    const user = await getUser(request, reply);
-    if (!user) return;
-    try {
-      const { action } = (request.body ?? {}) as { action: "convert_credits" | "sell_admin" };
-      if (action !== "convert_credits" && action !== "sell_admin") {
-        return reply.status(400).send({ error: "action must be convert_credits or sell_admin" });
-      }
-
-      const availableAgg = await prisma.commission.aggregate({
-        where: { referrerId: user.telegramId, status: "available" },
-        _sum: { amount: true },
-      });
-      const available = Number(availableAgg._sum.amount || 0);
-
-      if (available <= 0) {
-        return reply.status(400).send({ error: "No commission available to withdraw" });
-      }
-
-      const sellRateStr = await PaymentSettingsService.get("referral_sell_rate");
-      const SELL_RATE = sellRateStr ? parseInt(sellRateStr) : 3000;
-
-      if (action === "convert_credits") {
-        const creditsToAdd = Math.floor(available / SELL_RATE);
-        if (creditsToAdd <= 0) {
-          return reply.status(400).send({ error: "Commission too low to convert to credits" });
+  server.post(
+    "/api/referral/withdraw",
+    { preHandler: [withdrawalLimiter] },
+    async (request, reply) => {
+      const user = await getUser(request, reply);
+      if (!user) return;
+      try {
+        const { action } = (request.body ?? {}) as {
+          action: "convert_credits" | "sell_admin";
+        };
+        if (action !== "convert_credits" && action !== "sell_admin") {
+          return reply
+            .status(400)
+            .send({ error: "action must be convert_credits or sell_admin" });
         }
-        await prisma.$transaction(async (tx) => {
-          await tx.commission.updateMany({
-            where: { referrerId: user.telegramId, status: "available" },
-            data: { status: "withdrawn" },
-          });
-          await tx.user.update({
-            where: { telegramId: user.telegramId },
-            data: { creditBalance: { increment: creditsToAdd } },
-          });
-          await tx.transaction.create({
-            data: {
-              orderId: `REF-CONV-${Date.now()}`, userId: user.telegramId,
-              type: "referral_conversion", amountIdr: available,
-              creditsAmount: creditsToAdd, gateway: "internal",
-              status: "success", paymentMethod: "referral_commission",
-            },
-          });
-        });
-        return { ok: true, action: "convert_credits", creditsAdded: creditsToAdd, commissionUsed: available };
-      }
 
-      // sell_admin
-      const cashoutAmount = Math.floor(available / 2);
-      if (cashoutAmount <= 0) {
-        return reply.status(400).send({ error: "Commission too low for cashout" });
+        const availableAgg = await prisma.commission.aggregate({
+          where: { referrerId: user.telegramId, status: "available" },
+          _sum: { amount: true },
+        });
+        const available = Number(availableAgg._sum.amount || 0);
+
+        if (available <= 0) {
+          return reply
+            .status(400)
+            .send({ error: "No commission available to withdraw" });
+        }
+
+        const sellRateStr =
+          await PaymentSettingsService.get("referral_sell_rate");
+        const SELL_RATE = sellRateStr ? parseInt(sellRateStr) : 3000;
+
+        if (action === "convert_credits") {
+          const creditsToAdd = Math.floor(available / SELL_RATE);
+          if (creditsToAdd <= 0) {
+            return reply
+              .status(400)
+              .send({ error: "Commission too low to convert to credits" });
+          }
+          await prisma.$transaction(async (tx) => {
+            await tx.commission.updateMany({
+              where: { referrerId: user.telegramId, status: "available" },
+              data: { status: "withdrawn" },
+            });
+            await tx.user.update({
+              where: { telegramId: user.telegramId },
+              data: { creditBalance: { increment: creditsToAdd } },
+            });
+            await tx.transaction.create({
+              data: {
+                orderId: `REF-CONV-${Date.now()}`,
+                userId: user.telegramId,
+                type: "referral_conversion",
+                amountIdr: available,
+                creditsAmount: creditsToAdd,
+                gateway: "internal",
+                status: "success",
+                paymentMethod: "referral_commission",
+              },
+            });
+          });
+          return {
+            ok: true,
+            action: "convert_credits",
+            creditsAdded: creditsToAdd,
+            commissionUsed: available,
+          };
+        }
+
+        // sell_admin
+        const cashoutAmount = Math.floor(available / 2);
+        if (cashoutAmount <= 0) {
+          return reply
+            .status(400)
+            .send({ error: "Commission too low for cashout" });
+        }
+        await prisma.commission.updateMany({
+          where: { referrerId: user.telegramId, status: "available" },
+          data: { status: "pending_cashout" },
+        });
+        await prisma.transaction.create({
+          data: {
+            orderId: `REF-CASH-${Date.now()}`,
+            userId: user.telegramId,
+            type: "referral_cashout",
+            amountIdr: cashoutAmount,
+            creditsAmount: 0,
+            gateway: "admin_transfer",
+            status: "pending",
+            paymentMethod: "admin_transfer",
+          },
+        });
+        return {
+          ok: true,
+          action: "sell_admin",
+          cashoutAmount,
+          commissionUsed: available,
+        };
+      } catch (error) {
+        server.log.error({ error }, "Referral withdraw error");
+        return reply
+          .status(500)
+          .send({ error: "Failed to process withdrawal" });
       }
-      await prisma.commission.updateMany({
-        where: { referrerId: user.telegramId, status: "available" },
-        data: { status: "pending_cashout" },
-      });
-      await prisma.transaction.create({
-        data: {
-          orderId: `REF-CASH-${Date.now()}`, userId: user.telegramId,
-          type: "referral_cashout", amountIdr: cashoutAmount,
-          creditsAmount: 0, gateway: "admin_transfer",
-          status: "pending", paymentMethod: "admin_transfer",
-        },
-      });
-      return { ok: true, action: "sell_admin", cashoutAmount, commissionUsed: available };
-    } catch (error) {
-      server.log.error({ error }, "Referral withdraw error");
-      return reply.status(500).send({ error: "Failed to process withdrawal" });
-    }
-  });
+    },
+  );
 
   // ── GET /api/subscriptions ──
   // Authenticated: returns { plans, current } for the customer SPA.
@@ -276,13 +362,22 @@ td{padding:8px;border-bottom:1px solid #eee}.total{font-size:24px;font-weight:bo
     const user = await getUser(request, reply);
     if (!user) return;
     try {
-      const { plan, cycle, gateway } = (request.body ?? {}) as { plan: string; cycle: string; gateway?: string };
+      const { plan, cycle, gateway } = (request.body ?? {}) as {
+        plan: string;
+        cycle: string;
+        gateway?: string;
+      };
 
-      if (!(plan in SUBSCRIPTION_PLANS) || !["monthly", "annual"].includes(cycle)) {
+      if (
+        !(plan in SUBSCRIPTION_PLANS) ||
+        !["monthly", "annual"].includes(cycle)
+      ) {
         return reply.status(400).send({ error: "Invalid plan or cycle" });
       }
       if (!gateway) {
-        return reply.status(400).send({ error: "No payment methods available" });
+        return reply
+          .status(400)
+          .send({ error: "No payment methods available" });
       }
 
       const planKey = plan as PlanKey;
@@ -293,20 +388,34 @@ td{padding:8px;border-bottom:1px solid #eee}.total{font-size:24px;font-weight:bo
       let result: Record<string, unknown> | null;
       try {
         result = await PaymentService.createTransaction({
-          userId: user.telegramId, packageId,
+          userId: user.telegramId,
+          packageId,
           username: user.username || user.firstName || "Customer",
-          gateway: gateway as 'midtrans' | 'tripay' | 'duitku' | 'nowpayments',
+          gateway: gateway as "midtrans" | "tripay" | "duitku" | "nowpayments",
         });
-      } catch { result = null; }
-
-      if (!result?.redirectUrl) {
-        return reply.status(502).send({ error: "Payment gateway unavailable. Please try again." });
+      } catch {
+        result = null;
       }
 
-      return { ok: true, ...result, paymentUrl: result.redirectUrl, plan: planKey, cycle: billingCycle, amountIdr: price };
+      if (!result?.redirectUrl) {
+        return reply
+          .status(502)
+          .send({ error: "Payment gateway unavailable. Please try again." });
+      }
+
+      return {
+        ok: true,
+        ...result,
+        paymentUrl: result.redirectUrl,
+        plan: planKey,
+        cycle: billingCycle,
+        amountIdr: price,
+      };
     } catch (error) {
       server.log.error({ error }, "Subscription buy error");
-      return reply.status(500).send({ error: "Failed to create subscription payment" });
+      return reply
+        .status(500)
+        .send({ error: "Failed to create subscription payment" });
     }
   });
 
@@ -315,7 +424,8 @@ td{padding:8px;border-bottom:1px solid #eee}.total{font-size:24px;font-weight:bo
     const user = await getUser(request, reply);
     if (!user) return;
     try {
-      const { SubscriptionService } = await import("@/services/subscription.service.js");
+      const { SubscriptionService } =
+        await import("@/services/subscription.service.js");
       await SubscriptionService.cancelSubscription(user.telegramId);
       return { ok: true };
     } catch (error) {

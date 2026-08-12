@@ -113,4 +113,7 @@ export const NICHE_VERTICALS = {
 export type NicheVertical = keyof typeof NICHE_VERTICALS;
 
 // Channel growth tier — consumed by the script-writer service.
-export type ChannelTier = "tier_1_cold_start" | "tier_2_growing" | "tier_3_established";
+export type ChannelTier =
+  | "tier_1_cold_start"
+  | "tier_2_growing"
+  | "tier_3_established";

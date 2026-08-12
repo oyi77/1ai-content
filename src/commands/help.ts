@@ -13,22 +13,21 @@ import { t } from "@/i18n/translations";
  */
 export async function helpCommand(ctx: BotContext): Promise<void> {
   try {
-    const lang = ctx.session?.userLang || ctx.from?.language_code || 'id';
-    await ctx.reply(
-      t('help.full_guide', lang),
-      {
-        parse_mode: "Markdown",
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: t('btn.main_menu', lang), callback_data: "main_menu" }],
-          ],
-        },
+    const lang = ctx.session?.userLang || ctx.from?.language_code || "id";
+    await ctx.reply(t("help.full_guide", lang), {
+      parse_mode: "Markdown",
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: t("btn.main_menu", lang), callback_data: "main_menu" }],
+        ],
       },
-    );
+    });
   } catch (error) {
-    logger.error('helpCommand error:', error);
+    logger.error("helpCommand error:", error);
     try {
-      await ctx.reply(t('error.generic', 'id'));
-    } catch { /* ignore */ }
+      await ctx.reply(t("error.generic", "id"));
+    } catch {
+      /* ignore */
+    }
   }
 }

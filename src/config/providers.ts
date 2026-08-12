@@ -265,7 +265,8 @@ export const PROVIDER_CONFIG: {
       failureThreshold: 3,
       recoveryTimeout: 120000,
       strengths: ["talking_head", "lip_sync", "portrait_animation"],
-      quirks: "D-ID API for talking photo/avatar generation with lip sync. Polls up to 90s.",
+      quirks:
+        "D-ID API for talking photo/avatar generation with lip sync. Polls up to 90s.",
       avoid: [],
       tokenLimit: 500,
       supportsImg2Video: true,
@@ -280,7 +281,8 @@ export const PROVIDER_CONFIG: {
       failureThreshold: 3,
       recoveryTimeout: 120000,
       strengths: ["video_generation"],
-      quirks: "Agnes AI async text-to-video generation. Polls up to 90s; agnes-video-v2.0. Aspect/duration mapped to width/height + num_frames/frame_rate (no native duration/aspect_ratio params).",
+      quirks:
+        "Agnes AI async text-to-video generation. Polls up to 90s; agnes-video-v2.0. Aspect/duration mapped to width/height + num_frames/frame_rate (no native duration/aspect_ratio params).",
       avoid: [],
       tokenLimit: 500,
       supportsImg2Video: false,

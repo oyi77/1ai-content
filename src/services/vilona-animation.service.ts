@@ -3,31 +3,31 @@
  * Text-based animated loading — clean, fast, no background artifacts
  */
 
-import { BotContext } from '@/types';
-import { logger } from '@/utils/logger';
+import { BotContext } from "@/types";
+import { logger } from "@/utils/logger";
 
 // Loading text frames — Vilona "running" via emoji + text
 const LOADING_FRAMES: Record<string, string[]> = {
   start: [
-    '🏃‍♀️💨 _Loading..._',
-    '⚡ _Menyiapkan dashboard..._',
-    '✨ _Hampir siap!_',
+    "🏃‍♀️💨 _Loading..._",
+    "⚡ _Menyiapkan dashboard..._",
+    "✨ _Hampir siap!_",
   ],
   generate: [
-    '🎬 _1AI Content sprint ke server AI..._',
-    '⚡ _AI providers diaktifkan..._',
-    '🎨 _Prompt sedang diproses..._',
-    '✨ _Hampir jadi! Sabar ya..._',
+    "🎬 _1AI Content sprint ke server AI..._",
+    "⚡ _AI providers diaktifkan..._",
+    "🎨 _Prompt sedang diproses..._",
+    "✨ _Hampir jadi! Sabar ya..._",
   ],
   thinking: [
-    '💭 _1AI Content lagi mikir..._',
-    '🧠 _AI sedang bekerja..._',
-    '✨ _Bentar, hampir selesai!_',
+    "💭 _1AI Content lagi mikir..._",
+    "🧠 _AI sedang bekerja..._",
+    "✨ _Bentar, hampir selesai!_",
   ],
   searching: [
-    '🔍 _1AI Content nyari data..._',
-    '📊 _Scanning trending content..._',
-    '✨ _Ketemu!_',
+    "🔍 _1AI Content nyari data..._",
+    "📊 _Scanning trending content..._",
+    "✨ _Ketemu!_",
   ],
 };
 
@@ -37,29 +37,27 @@ const LOADING_FRAMES: Record<string, string[]> = {
  */
 export async function sendVilonaLoading(
   ctx: BotContext,
-  type: 'start' | 'generate' | 'thinking' | 'searching' = 'thinking'
+  type: "start" | "generate" | "thinking" | "searching" = "thinking",
 ): Promise<number | null> {
   try {
     const frames = LOADING_FRAMES[type];
     const first = frames[0];
 
-    const sent = await ctx.reply(first, { parse_mode: 'Markdown' });
+    const sent = await ctx.reply(first, { parse_mode: "Markdown" });
 
     // Animate through remaining frames
     for (let i = 1; i < frames.length; i++) {
-      await new Promise(r => setTimeout(r, 600));
-      await ctx.telegram.editMessageText(
-        ctx.chat!.id,
-        sent.message_id,
-        undefined,
-        frames[i],
-        { parse_mode: 'Markdown' }
-      ).catch(() => {});
+      await new Promise((r) => setTimeout(r, 600));
+      await ctx.telegram
+        .editMessageText(ctx.chat!.id, sent.message_id, undefined, frames[i], {
+          parse_mode: "Markdown",
+        })
+        .catch(() => {});
     }
 
     return sent.message_id;
   } catch (err) {
-    logger.debug('Vilona animation error (non-critical):', err);
+    logger.debug("Vilona animation error (non-critical):", err);
     return null;
   }
 }
@@ -69,15 +67,17 @@ export async function sendVilonaLoading(
  */
 export async function sendVilonaLoadingAutoDelete(
   ctx: BotContext,
-  type: 'start' | 'generate' | 'thinking' | 'searching' = 'thinking',
-  deleteAfterMs = 2000
+  type: "start" | "generate" | "thinking" | "searching" = "thinking",
+  deleteAfterMs = 2000,
 ): Promise<void> {
   const msgId = await sendVilonaLoading(ctx, type);
   if (msgId) {
     setTimeout(async () => {
       try {
         await ctx.telegram.deleteMessage(ctx.chat!.id, msgId);
-      } catch (err) { logger.debug("Vilona: delete already deleted:", err); }
+      } catch (err) {
+        logger.debug("Vilona: delete already deleted:", err);
+      }
     }, deleteAfterMs);
   }
 }
@@ -85,28 +85,36 @@ export async function sendVilonaLoadingAutoDelete(
 /**
  * Welcome animation for /start — quick animated text, auto-delete.
  */
-export async function sendVilonaWelcomeAnimation(ctx: BotContext): Promise<void> {
+export async function sendVilonaWelcomeAnimation(
+  ctx: BotContext,
+): Promise<void> {
   try {
     const welcomeFrames = [
-      '🏃‍♀️💨 _1AI Content masuk..._',
-      '🏃‍♀️✨ _Hampir siap!_',
-      '👋✨ _Halo! 1AI Content siap bantu kamu!_',
+      "🏃‍♀️💨 _1AI Content masuk..._",
+      "🏃‍♀️✨ _Hampir siap!_",
+      "👋✨ _Halo! 1AI Content siap bantu kamu!_",
     ];
 
-    const sent = await ctx.reply(welcomeFrames[0], { parse_mode: 'Markdown' });
+    const sent = await ctx.reply(welcomeFrames[0], { parse_mode: "Markdown" });
 
     for (let i = 1; i < welcomeFrames.length; i++) {
-      await new Promise(r => setTimeout(r, 500));
-      await ctx.telegram.editMessageText(
-        ctx.chat!.id,
-        sent.message_id,
-        undefined,
-        welcomeFrames[i],
-        { parse_mode: 'Markdown' }
-      ).catch(() => {});
+      await new Promise((r) => setTimeout(r, 500));
+      await ctx.telegram
+        .editMessageText(
+          ctx.chat!.id,
+          sent.message_id,
+          undefined,
+          welcomeFrames[i],
+          { parse_mode: "Markdown" },
+        )
+        .catch(() => {});
     }
 
-    await new Promise(r => setTimeout(r, 600));
-    await ctx.telegram.deleteMessage(ctx.chat!.id, sent.message_id).catch(() => {});
-  } catch (err) { logger.debug("Vilona: non-critical error:", err); }
+    await new Promise((r) => setTimeout(r, 600));
+    await ctx.telegram
+      .deleteMessage(ctx.chat!.id, sent.message_id)
+      .catch(() => {});
+  } catch (err) {
+    logger.debug("Vilona: non-critical error:", err);
+  }
 }

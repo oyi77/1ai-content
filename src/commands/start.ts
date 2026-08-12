@@ -120,17 +120,38 @@ export async function startCommand(ctx: BotContext): Promise<void> {
       // Persona picker for users who haven't set one yet (non-blocking)
       if (!existingUser.userMode) {
         await ctx.reply(
-          '🎯 *Atur profil kamu untuk pengalaman yang lebih personal:*',
+          "🎯 *Atur profil kamu untuk pengalaman yang lebih personal:*",
           {
-            parse_mode: 'Markdown',
+            parse_mode: "Markdown",
             reply_markup: {
               inline_keyboard: [
-                [{ text: '🏪 UMKM', callback_data: 'persona_set_umkm' }, { text: '🎥 Creator', callback_data: 'persona_set_content_creator' }],
-                [{ text: '🎬 Director', callback_data: 'persona_set_movie_director' }, { text: '🎌 Anime', callback_data: 'persona_set_anime_studio' }],
-                [{ text: '💼 Corporate', callback_data: 'persona_set_corporate' }, { text: '🏢 Agency', callback_data: 'persona_set_agency' }],
+                [
+                  { text: "🏪 UMKM", callback_data: "persona_set_umkm" },
+                  {
+                    text: "🎥 Creator",
+                    callback_data: "persona_set_content_creator",
+                  },
+                ],
+                [
+                  {
+                    text: "🎬 Director",
+                    callback_data: "persona_set_movie_director",
+                  },
+                  {
+                    text: "🎌 Anime",
+                    callback_data: "persona_set_anime_studio",
+                  },
+                ],
+                [
+                  {
+                    text: "💼 Corporate",
+                    callback_data: "persona_set_corporate",
+                  },
+                  { text: "🏢 Agency", callback_data: "persona_set_agency" },
+                ],
               ],
             },
-          }
+          },
         );
       }
 

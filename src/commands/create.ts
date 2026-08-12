@@ -17,8 +17,21 @@
  * export surface of the monolithic create.ts.
  */
 
-export { createCommand } from './create.redirect';
-export { handleDurationSelection, handleNicheSelection, handleStyleSelection, handlePlatformSelection } from './create.steps';
-export { generateCaption } from './create.caption';
-export { handleVOToggle, handleVOContinue, handleCustomPromptRequest, handleSkipPrompt } from './create.vo';
-export { generateVideoAsync, generateExtendedVideoAsync } from './create.generation';
+export { createCommand } from "./create.redirect";
+export {
+  handleDurationSelection,
+  handleNicheSelection,
+  handleStyleSelection,
+  handlePlatformSelection,
+} from "./create.steps";
+export { generateCaption } from "./create.caption";
+export {
+  handleVOToggle,
+  handleVOContinue,
+  handleCustomPromptRequest,
+  handleSkipPrompt,
+} from "./create.vo";
+export {
+  generateVideoAsync,
+  generateExtendedVideoAsync,
+} from "./create.generation";

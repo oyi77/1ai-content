@@ -5,33 +5,33 @@
  * Supports USDT (BSC), BNB, MATIC, TON.
  */
 
-import axios from 'axios';
-import { prisma } from '@/config/database';
-import { getSubscriptionPlansAsync } from '@/config/pricing';
-import { ReferralService } from '@/services/referral.service';
-import { AnalyticsService } from '@/services/analytics.service';
-import { PaymentService } from '@/services/payment.service';
-import { logger } from '@/utils/logger';
-import { getConfig } from '@/config/env';
-import { secureRandomString } from '@/utils/crypto';
-import { ValidationError, ApiError } from '@/types';
+import axios from "axios";
+import { prisma } from "@/config/database";
+import { getSubscriptionPlansAsync } from "@/config/pricing";
+import { ReferralService } from "@/services/referral.service";
+import { AnalyticsService } from "@/services/analytics.service";
+import { PaymentService } from "@/services/payment.service";
+import { logger } from "@/utils/logger";
+import { getConfig } from "@/config/env";
+import { secureRandomString } from "@/utils/crypto";
+import { ValidationError, ApiError } from "@/types";
 
-const BASE_URL = 'https://api.nowpayments.io/v1';
+const BASE_URL = "https://api.nowpayments.io/v1";
 
 // USD pricing per credit package
 // Note: NOWPayments minimum is ~$19 USD, so all packages must meet this threshold
 export const CRYPTO_PACKAGES = [
-  { credits: 10,  usd: 20.00 },  // ~Rp 320K — Starter crypto
-  { credits: 30,  usd: 50.00 },  // ~Rp 800K — Growth crypto
-  { credits: 75,  usd: 100.00 }, // ~Rp 1.6M — Scale crypto
-  { credits: 200, usd: 250.00 }, // ~Rp 4M   — Enterprise crypto
+  { credits: 10, usd: 20.0 }, // ~Rp 320K — Starter crypto
+  { credits: 30, usd: 50.0 }, // ~Rp 800K — Growth crypto
+  { credits: 75, usd: 100.0 }, // ~Rp 1.6M — Scale crypto
+  { credits: 200, usd: 250.0 }, // ~Rp 4M   — Enterprise crypto
 ] as const;
 
 export const CRYPTO_COINS = [
-  { id: 'usdtbsc', label: 'USDT (BSC)', emoji: '💵' },
-  { id: 'bnbbsc', label: 'BNB (BSC)', emoji: '🔶' },
-  { id: 'matic', label: 'MATIC (Polygon)', emoji: '🟣' },
-  { id: 'ton', label: 'TON', emoji: '💎' },
+  { id: "usdtbsc", label: "USDT (BSC)", emoji: "💵" },
+  { id: "bnbbsc", label: "BNB (BSC)", emoji: "🔶" },
+  { id: "matic", label: "MATIC (Polygon)", emoji: "🟣" },
+  { id: "ton", label: "TON", emoji: "💎" },
 ] as const;
 
 export interface NowPaymentResult {
@@ -52,11 +52,15 @@ export class NowPaymentsService {
     credits: number;
     coin: string;
   }): Promise<NowPaymentResult> {
-    const pkg = CRYPTO_PACKAGES.find(p => p.credits === params.credits);
-    if (!pkg) throw new ValidationError('Invalid credit package', { credits: params.credits });
+    const pkg = CRYPTO_PACKAGES.find((p) => p.credits === params.credits);
+    if (!pkg)
+      throw new ValidationError("Invalid credit package", {
+        credits: params.credits,
+      });
 
-    const validCoin = CRYPTO_COINS.find(c => c.id === params.coin);
-    if (!validCoin) throw new ValidationError('Invalid coin', { coin: params.coin });
+    const validCoin = CRYPTO_COINS.find((c) => c.id === params.coin);
+    if (!validCoin)
+      throw new ValidationError("Invalid coin", { coin: params.coin });
 
     const random = secureRandomString(6);
     const orderId = `CRYPTO-${Date.now()}-${params.userId}-${random}`;
@@ -66,7 +70,7 @@ export class NowPaymentsService {
       `${BASE_URL}/payment`,
       {
         price_amount: pkg.usd,
-        price_currency: 'usd',
+        price_currency: "usd",
         pay_currency: params.coin,
         order_id: orderId,
         order_description: `${params.credits} credits for @vilona_content_bot`,
@@ -74,10 +78,10 @@ export class NowPaymentsService {
       },
       {
         headers: {
-          'x-api-key': getConfig().NOWPAYMENTS_API_KEY || '',
-          'Content-Type': 'application/json',
+          "x-api-key": getConfig().NOWPAYMENTS_API_KEY || "",
+          "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     const data = response.data;
@@ -87,12 +91,12 @@ export class NowPaymentsService {
       data: {
         orderId,
         userId: params.userId,
-        type: 'topup',
+        type: "topup",
         packageName: `crypto_${params.credits}`,
         amountIdr: Math.round(pkg.usd * getConfig().USD_TO_IDR_RATE),
         creditsAmount: params.credits,
-        gateway: 'nowpayments',
-        status: 'pending',
+        gateway: "nowpayments",
+        status: "pending",
         gatewayTransactionId: String(data.payment_id),
         metadata: {
           coin: params.coin,
@@ -116,13 +120,21 @@ export class NowPaymentsService {
   /**
    * Handle NOWPayments IPN webhook callback
    */
-  static async handleWebhook(body: Record<string, unknown>): Promise<{ success: boolean; message: string }> {
-    const { payment_status, order_id, payment_id } = body as { payment_status: string; order_id: string; payment_id: string };
+  static async handleWebhook(
+    body: Record<string, unknown>,
+  ): Promise<{ success: boolean; message: string }> {
+    const { payment_status, order_id, payment_id } = body as {
+      payment_status: string;
+      order_id: string;
+      payment_id: string;
+    };
 
-    logger.info(`NOWPayments webhook: order=${order_id} status=${payment_status} payment_id=${payment_id}`);
+    logger.info(
+      `NOWPayments webhook: order=${order_id} status=${payment_status} payment_id=${payment_id}`,
+    );
 
     if (!order_id) {
-      return { success: false, message: 'Missing order_id' };
+      return { success: false, message: "Missing order_id" };
     }
 
     const transaction = await prisma.transaction.findUnique({
@@ -130,39 +142,52 @@ export class NowPaymentsService {
     });
 
     if (!transaction) {
-      logger.warn(`NOWPayments webhook: transaction not found for order ${order_id}`);
-      return { success: false, message: 'Transaction not found' };
+      logger.warn(
+        `NOWPayments webhook: transaction not found for order ${order_id}`,
+      );
+      return { success: false, message: "Transaction not found" };
     }
 
-    if (payment_status === 'finished' || payment_status === 'confirmed') {
+    if (payment_status === "finished" || payment_status === "confirmed") {
       // Atomic guard: only one concurrent webhook wins this update
       const updateResult = await prisma.transaction.updateMany({
-        where: { orderId: order_id, status: { not: 'success' } },
+        where: { orderId: order_id, status: { not: "success" } },
         data: {
-          status: 'success',
+          status: "success",
           paidAt: new Date(),
           gatewayTransactionId: String(payment_id),
         },
       });
 
       if (updateResult.count === 0) {
-        return { success: true, message: 'Already processed' };
+        return { success: true, message: "Already processed" };
       }
 
-      if (transaction.type === 'subscription') {
-        const { SubscriptionService } = await import('./subscription.service.js');
-        const parts = (transaction.packageName ?? '').split('_');
-        const planId = parts[0] || 'lite';
-        const cycle: 'monthly' | 'annual' = parts[1] === 'annual' ? 'annual' : 'monthly';
-        await SubscriptionService.createSubscription(transaction.userId, planId as 'lite' | 'pro' | 'agency', cycle, order_id);
-        logger.info(`NOWPayments: subscription activated: ${planId}/${cycle} for user ${transaction.userId} (order ${order_id})`);
+      if (transaction.type === "subscription") {
+        const { SubscriptionService } =
+          await import("./subscription.service.js");
+        const parts = (transaction.packageName ?? "").split("_");
+        const planId = parts[0] || "lite";
+        const cycle: "monthly" | "annual" =
+          parts[1] === "annual" ? "annual" : "monthly";
+        await SubscriptionService.createSubscription(
+          transaction.userId,
+          planId as "lite" | "pro" | "agency",
+          cycle,
+          order_id,
+        );
+        logger.info(
+          `NOWPayments: subscription activated: ${planId}/${cycle} for user ${transaction.userId} (order ${order_id})`,
+        );
       } else {
         const credits = Number(transaction.creditsAmount);
 
         // Determine and update user tier — only change tier for subscription packages
         const plans = await getSubscriptionPlansAsync();
-        const plan = plans[transaction.packageName ?? ''];
-        const userUpdateData: Record<string, unknown> = { creditBalance: { increment: credits } };
+        const plan = plans[transaction.packageName ?? ""];
+        const userUpdateData: Record<string, unknown> = {
+          creditBalance: { increment: credits },
+        };
         if (plan && plan.tier) {
           userUpdateData.tier = plan.tier; // Only set tier for subscription packages
         }
@@ -171,21 +196,32 @@ export class NowPaymentsService {
           data: userUpdateData,
         });
 
-        await prisma.user.update({
-          where: { telegramId: transaction.userId },
-          data: { totalSpent: { increment: Number(transaction.amountIdr) } },
-        }).catch(() => {}); // non-critical
+        await prisma.user
+          .update({
+            where: { telegramId: transaction.userId },
+            data: { totalSpent: { increment: Number(transaction.amountIdr) } },
+          })
+          .catch(() => {}); // non-critical
 
-        logger.info(`NOWPayments: ${credits} credits added for user ${transaction.userId} (order ${order_id})`);
+        logger.info(
+          `NOWPayments: ${credits} credits added for user ${transaction.userId} (order ${order_id})`,
+        );
       }
 
       // Process referral commissions using IDR amount (0 for crypto — acceptable)
       const amountIdr = Number(transaction.amountIdr) || 0;
       if (amountIdr > 0) {
         try {
-          await ReferralService.processCommissions(order_id, amountIdr, transaction.userId);
+          await ReferralService.processCommissions(
+            order_id,
+            amountIdr,
+            transaction.userId,
+          );
         } catch (refErr) {
-          logger.warn('NOWPayments: referral commission error (non-fatal):', refErr);
+          logger.warn(
+            "NOWPayments: referral commission error (non-fatal):",
+            refErr,
+          );
         }
       }
 
@@ -237,17 +273,19 @@ export class NowPaymentsService {
 
         logger.info(`Analytics tracked for NOWPayments purchase: ${order_id}`);
       } catch (analyticsError) {
-        logger.warn(`Analytics tracking failed for NOWPayments (non-blocking): ${analyticsError}`);
+        logger.warn(
+          `Analytics tracking failed for NOWPayments (non-blocking): ${analyticsError}`,
+        );
       }
 
-      return { success: true, message: 'Credits added' };
+      return { success: true, message: "Credits added" };
     }
 
-    if (payment_status === 'refunded') {
+    if (payment_status === "refunded") {
       // Refund: reverse previously granted credits
       const refundResult = await prisma.transaction.updateMany({
-        where: { orderId: order_id, status: 'success' },
-        data: { status: 'refunded' },
+        where: { orderId: order_id, status: "success" },
+        data: { status: "refunded" },
       });
 
       if (refundResult.count === 1) {
@@ -265,29 +303,35 @@ export class NowPaymentsService {
               data: { creditBalance: { decrement: decrementAmount } },
             });
           }
-          logger.info(`NOWPayments refund: reversed ${decrementAmount} credits for user ${transaction.userId} (order ${order_id})`);
+          logger.info(
+            `NOWPayments refund: reversed ${decrementAmount} credits for user ${transaction.userId} (order ${order_id})`,
+          );
         }
       } else {
-        logger.warn(`NOWPayments refund for ${order_id} — transaction was not in success state, skipping credit reversal`);
+        logger.warn(
+          `NOWPayments refund for ${order_id} — transaction was not in success state, skipping credit reversal`,
+        );
       }
-      return { success: true, message: 'Payment refunded' };
+      return { success: true, message: "Payment refunded" };
     }
 
-    if (payment_status === 'failed' || payment_status === 'expired') {
+    if (payment_status === "failed" || payment_status === "expired") {
       await prisma.transaction.update({
         where: { orderId: order_id },
-        data: { status: 'failed' },
+        data: { status: "failed" },
       });
       PaymentService.sendFailureNotification(
         transaction.userId,
         order_id,
-        payment_status as 'failed' | 'expired',
+        payment_status as "failed" | "expired",
       ).catch(() => {});
       return { success: true, message: `Payment ${payment_status}` };
     }
 
     // Other statuses (waiting, confirming, sending) — just log
-    logger.info(`NOWPayments: intermediate status ${payment_status} for order ${order_id}`);
-    return { success: true, message: 'Status noted' };
+    logger.info(
+      `NOWPayments: intermediate status ${payment_status} for order ${order_id}`,
+    );
+    return { success: true, message: "Status noted" };
   }
 }

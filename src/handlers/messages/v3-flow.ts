@@ -13,8 +13,14 @@ import { CUSTOM_DURATION_MIN } from "@/config/pricing";
 /**
  * Handle CUSTOM_DURATION_INPUT_V3 state — user enters custom video duration.
  */
-export async function handleCustomDurationV3(ctx: BotContext, text: string): Promise<boolean> {
-  if (ctx.session?.state !== "CUSTOM_DURATION_INPUT_V3" || !("text" in ctx.message!)) {
+export async function handleCustomDurationV3(
+  ctx: BotContext,
+  text: string,
+): Promise<boolean> {
+  if (
+    ctx.session?.state !== "CUSTOM_DURATION_INPUT_V3" ||
+    !("text" in ctx.message!)
+  ) {
     return false;
   }
 
@@ -22,7 +28,10 @@ export async function handleCustomDurationV3(ctx: BotContext, text: string): Pro
   const duration = parseInt(message.text.trim());
 
   if (isNaN(duration) || duration < CUSTOM_DURATION_MIN) {
-    await ctx.reply(t("msg.duration_range_error", ctx.session?.userLang || "id"), { parse_mode: "Markdown" });
+    await ctx.reply(
+      t("msg.duration_range_error", ctx.session?.userLang || "id"),
+      { parse_mode: "Markdown" },
+    );
     return true;
   }
 
@@ -31,14 +40,18 @@ export async function handleCustomDurationV3(ctx: BotContext, text: string): Pro
 
   if (ctx.session) {
     ctx.session.generatePreset = "custom";
-    ctx.session.customPresetConfig = presetConfig as unknown as Record<string, unknown>;
+    ctx.session.customPresetConfig = presetConfig as unknown as Record<
+      string,
+      unknown
+    >;
     ctx.session.state = "DASHBOARD";
   }
 
   const cdLang = ctx.session?.userLang || "id";
   const minutes = Math.floor(duration / 60);
   const secs = duration % 60;
-  const durLabel = minutes > 0 ? `${minutes}m${secs > 0 ? ` ${secs}s` : ""}` : `${secs}s`;
+  const durLabel =
+    minutes > 0 ? `${minutes}m${secs > 0 ? ` ${secs}s` : ""}` : `${secs}s`;
 
   await ctx.reply(
     t("msg.custom_duration_set", cdLang, {
@@ -51,7 +64,12 @@ export async function handleCustomDurationV3(ctx: BotContext, text: string): Pro
       reply_markup: {
         inline_keyboard: [
           [{ text: "🎵 TikTok (9:16)", callback_data: "platform_tiktok" }],
-          [{ text: "📸 Instagram (9:16)", callback_data: "platform_instagram" }],
+          [
+            {
+              text: "📸 Instagram (9:16)",
+              callback_data: "platform_instagram",
+            },
+          ],
           [{ text: "▶️ YouTube (16:9)", callback_data: "platform_youtube" }],
           [{ text: "⬛ Square (1:1)", callback_data: "platform_square" }],
           [{ text: t("btn.main_menu", cdLang), callback_data: "main_menu" }],
@@ -65,7 +83,9 @@ export async function handleCustomDurationV3(ctx: BotContext, text: string): Pro
 /**
  * Handle AWAITING_GENERATE_IMAGE state — user uploads reference image or skips.
  */
-export async function handleAwaitingGenerateImage(ctx: BotContext): Promise<boolean> {
+export async function handleAwaitingGenerateImage(
+  ctx: BotContext,
+): Promise<boolean> {
   if (ctx.session?.state !== "AWAITING_GENERATE_IMAGE") {
     return false;
   }
@@ -88,7 +108,8 @@ export async function handleAwaitingGenerateImage(ctx: BotContext): Promise<bool
     ctx.session.generatePhotoUrl = fileLink.toString();
     ctx.session.state = "DASHBOARD";
     await ctx.reply(t("msg.photo_received", lang), { parse_mode: "Markdown" });
-    const { continueAfterImagePreference } = await import("@/flows/generate.js");
+    const { continueAfterImagePreference } =
+      await import("@/flows/generate.js");
     await continueAfterImagePreference(ctx);
     return true;
   }
@@ -97,7 +118,8 @@ export async function handleAwaitingGenerateImage(ctx: BotContext): Promise<bool
     ctx.session.state = "DASHBOARD";
     delete ctx.session.generatePhotoUrl;
     await ctx.reply(t("msg.skip_photo", lang));
-    const { continueAfterImagePreference } = await import("@/flows/generate.js");
+    const { continueAfterImagePreference } =
+      await import("@/flows/generate.js");
     await continueAfterImagePreference(ctx);
     return true;
   }
@@ -109,8 +131,13 @@ export async function handleAwaitingGenerateImage(ctx: BotContext): Promise<bool
 /**
  * Handle CUSTOM_DURATION_INPUT state — legacy v2 custom duration input.
  */
-export async function handleCustomDurationInput(ctx: BotContext): Promise<boolean> {
-  if (ctx.session?.state !== "CUSTOM_DURATION_INPUT" || !("text" in ctx.message!)) {
+export async function handleCustomDurationInput(
+  ctx: BotContext,
+): Promise<boolean> {
+  if (
+    ctx.session?.state !== "CUSTOM_DURATION_INPUT" ||
+    !("text" in ctx.message!)
+  ) {
     return false;
   }
 
@@ -122,7 +149,9 @@ export async function handleCustomDurationInput(ctx: BotContext): Promise<boolea
     if (ctx.session) ctx.session.state = "DASHBOARD";
     await ctx.reply(t("msg.invalid_duration", errLang), {
       reply_markup: {
-        inline_keyboard: [[{ text: t("btn.main_menu", errLang), callback_data: "main_menu" }]],
+        inline_keyboard: [
+          [{ text: t("btn.main_menu", errLang), callback_data: "main_menu" }],
+        ],
       },
     });
     return true;
@@ -140,7 +169,8 @@ export async function handleCustomDurationInput(ctx: BotContext): Promise<boolea
 
   const { getVideoCreditCost } = await import("@/config/pricing.js");
   const { UserService } = await import("@/services/user.service.js");
-  const { generateStoryboard } = await import("@/services/video-generation.service.js");
+  const { generateStoryboard } =
+    await import("@/services/video-generation.service.js");
 
   const creditCost = getVideoCreditCost(finalDuration);
   const telegramId = BigInt(ctx.from!.id);
@@ -178,7 +208,12 @@ export async function handleCustomDurationInput(ctx: BotContext): Promise<boolea
     platform,
     totalDuration: finalDuration,
     scenes: bestFit.scenes,
-    storyboard: generateStoryboard(niche, styles, finalDuration, bestFit.scenes),
+    storyboard: generateStoryboard(
+      niche,
+      styles,
+      finalDuration,
+      bestFit.scenes,
+    ),
     jobId: "",
     waitingForImage: true,
     enableVO: true,

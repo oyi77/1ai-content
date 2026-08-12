@@ -1,4 +1,4 @@
-import { prisma } from '@/config/database';
+import { prisma } from "@/config/database";
 
 // TemplateVideo model available after prisma generate with updated schema
 const tv = () => prisma.templateVideo;
@@ -7,23 +7,25 @@ export class TemplateVideoService {
   static async getByNiche(niche: string) {
     return tv().findMany({
       where: { niche, isActive: true },
-      orderBy: { sortOrder: 'asc' },
+      orderBy: { sortOrder: "asc" },
     });
   }
 
   static async getRandom(niche: string): Promise<any | null> {
     const templates = await this.getByNiche(niche);
     if (templates.length === 0) {
-      const generalTemplates = await this.getByNiche('general');
+      const generalTemplates = await this.getByNiche("general");
       if (generalTemplates.length === 0) return null;
-      return generalTemplates[Math.floor(Math.random() * generalTemplates.length)];
+      return generalTemplates[
+        Math.floor(Math.random() * generalTemplates.length)
+      ];
     }
     return templates[Math.floor(Math.random() * templates.length)];
   }
 
   static async getAll() {
     return tv().findMany({
-      orderBy: [{ niche: 'asc' }, { sortOrder: 'asc' }],
+      orderBy: [{ niche: "asc" }, { sortOrder: "asc" }],
     });
   }
 
@@ -52,7 +54,12 @@ export class TemplateVideoService {
    * Called when no template exists and a free trial user triggers generation.
    * Stores the generated video as a reusable template for future users.
    */
-  static async cacheGeneratedVideo(niche: string, videoUrl: string, thumbnailUrl?: string, duration = 15) {
+  static async cacheGeneratedVideo(
+    niche: string,
+    videoUrl: string,
+    thumbnailUrl?: string,
+    duration = 15,
+  ) {
     return tv().create({
       data: {
         niche,
@@ -60,7 +67,7 @@ export class TemplateVideoService {
         videoUrl,
         thumbnailUrl: thumbnailUrl || null,
         duration,
-        platform: 'tiktok',
+        platform: "tiktok",
         isActive: true,
         sortOrder: 0,
       },

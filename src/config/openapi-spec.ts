@@ -15,7 +15,8 @@ export const openApiSpec = {
   openapi: "3.0.3",
   info: {
     title: "OpenClaw Bot API",
-    description: "AI-powered video generation SaaS platform. Telegram bot + web dashboard + REST API.",
+    description:
+      "AI-powered video generation SaaS platform. Telegram bot + web dashboard + REST API.",
     version: "3.0.0",
     contact: {
       name: "OpenClaw Support",
@@ -24,18 +25,31 @@ export const openApiSpec = {
   },
   servers: [
     { url: "https://api.openclaw.ai", description: "Production" },
-    { url: `http://localhost:${process.env.PORT || '3000'}`, description: "Local development" },
+    {
+      url: `http://localhost:${process.env.PORT || "3000"}`,
+      description: "Local development",
+    },
   ],
   tags: [
     { name: "Web", description: "Public web pages (landing, FAQ, terms)" },
     { name: "Auth", description: "Telegram authentication" },
     { name: "User", description: "User profile and account management" },
-    { name: "Videos", description: "Video generation, listing, and management" },
+    {
+      name: "Videos",
+      description: "Video generation, listing, and management",
+    },
     { name: "Images", description: "Image generation and analysis" },
     { name: "Storyboard", description: "AI storyboard generation" },
-    { name: "Payments", description: "Packages, transactions, and P2P transfers" },
+    {
+      name: "Payments",
+      description: "Packages, transactions, and P2P transfers",
+    },
     { name: "Referral", description: "Referral and affiliate system" },
-    { name: "Webhooks", description: "Payment gateway webhooks (Tripay, DuitKu, NOWPayments, Midtrans, Telegram Stars)" },
+    {
+      name: "Webhooks",
+      description:
+        "Payment gateway webhooks (Tripay, DuitKu, NOWPayments, Midtrans, Telegram Stars)",
+    },
     { name: "Health", description: "Health check endpoints" },
   ],
   paths: {
@@ -43,18 +57,31 @@ export const openApiSpec = {
       get: {
         tags: ["Web"],
         summary: "Landing page",
-        description: "Returns the marketing landing page with current package pricing.",
+        description:
+          "Returns the marketing landing page with current package pricing.",
         responses: { "200": { description: "HTML landing page" } },
       },
     },
     "/faq": {
-      get: { tags: ["Web"], summary: "FAQ page", responses: { "200": { description: "HTML" } } },
+      get: {
+        tags: ["Web"],
+        summary: "FAQ page",
+        responses: { "200": { description: "HTML" } },
+      },
     },
     "/terms": {
-      get: { tags: ["Web"], summary: "Terms of service", responses: { "200": { description: "HTML" } } },
+      get: {
+        tags: ["Web"],
+        summary: "Terms of service",
+        responses: { "200": { description: "HTML" } },
+      },
     },
     "/privacy": {
-      get: { tags: ["Web"], summary: "Privacy policy", responses: { "200": { description: "HTML" } } },
+      get: {
+        tags: ["Web"],
+        summary: "Privacy policy",
+        responses: { "200": { description: "HTML" } },
+      },
     },
     "/auth/telegram": {
       post: {
@@ -68,14 +95,27 @@ export const openApiSpec = {
                 type: "object",
                 required: ["initData"],
                 properties: {
-                  initData: { type: "string", description: "Telegram Mini App initData string" },
+                  initData: {
+                    type: "string",
+                    description: "Telegram Mini App initData string",
+                  },
                 },
               },
             },
           },
         },
         responses: {
-          "200": { description: "Session created", content: { "application/json": { schema: { type: "object", properties: { token: { type: "string" } } } } } },
+          "200": {
+            description: "Session created",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: { token: { type: "string" } },
+                },
+              },
+            },
+          },
           "401": { description: "Invalid initData" },
         },
       },
@@ -92,8 +132,16 @@ export const openApiSpec = {
         tags: ["Videos"],
         summary: "List user's videos",
         parameters: [
-          { name: "limit", in: "query", schema: { type: "integer", default: 10 } },
-          { name: "offset", in: "query", schema: { type: "integer", default: 0 } },
+          {
+            name: "limit",
+            in: "query",
+            schema: { type: "integer", default: 10 },
+          },
+          {
+            name: "offset",
+            in: "query",
+            schema: { type: "integer", default: 0 },
+          },
         ],
         responses: { "200": { description: "Array of video records" } },
       },
@@ -109,7 +157,14 @@ export const openApiSpec = {
       delete: {
         tags: ["Videos"],
         summary: "Soft-delete a video (move to trash)",
-        parameters: [{ name: "jobId", in: "path", required: true, schema: { type: "string" } }],
+        parameters: [
+          {
+            name: "jobId",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+          },
+        ],
         responses: { "200": { description: "Video moved to trash" } },
       },
     },
@@ -117,7 +172,14 @@ export const openApiSpec = {
       get: {
         tags: ["Videos"],
         summary: "Get video generation status",
-        parameters: [{ name: "jobId", in: "path", required: true, schema: { type: "string" } }],
+        parameters: [
+          {
+            name: "jobId",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+          },
+        ],
         responses: { "200": { description: "Video status and progress" } },
       },
     },
@@ -127,7 +189,14 @@ export const openApiSpec = {
         summary: "Analyze a video for content insights",
         requestBody: {
           required: true,
-          content: { "application/json": { schema: { type: "object", properties: { url: { type: "string" } } } } },
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: { url: { type: "string" } },
+              },
+            },
+          },
         },
         responses: { "200": { description: "Analysis result" } },
       },
@@ -180,7 +249,14 @@ export const openApiSpec = {
       get: {
         tags: ["Payments"],
         summary: "Download transaction receipt",
-        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+          },
+        ],
         responses: { "200": { description: "Receipt PDF/image" } },
       },
     },
@@ -190,7 +266,17 @@ export const openApiSpec = {
         summary: "Transfer credits to another user (P2P)",
         requestBody: {
           required: true,
-          content: { "application/json": { schema: { type: "object", properties: { recipientId: { type: "string" }, amount: { type: "number" } } } } },
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  recipientId: { type: "string" },
+                  amount: { type: "number" },
+                },
+              },
+            },
+          },
         },
         responses: { "200": { description: "Transfer completed" } },
       },
@@ -199,7 +285,9 @@ export const openApiSpec = {
       get: {
         tags: ["Referral"],
         summary: "Get user's referral info and stats",
-        responses: { "200": { description: "Referral code, count, commissions" } },
+        responses: {
+          "200": { description: "Referral code, count, commissions" },
+        },
       },
     },
     "/payment/finish": {

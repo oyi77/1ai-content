@@ -1,15 +1,15 @@
 /**
  * Vision provider chain — orchestrates fallback across Gemini → Groq → OmniRoute.
  */
-import { logger } from '@/utils/logger';
-import { AIConfigService } from '@/services/ai-config.service';
-import { getConfig } from '@/config/env';
-import { redis } from '@/config/redis';
-import { extractViaGemini } from './providers/vision-gemini';
-import { extractViaGroq } from './providers/vision-groq';
-import { extractViaOmniRoute } from './providers/vision-omniroute';
-import { getFallbackResult } from './fallback';
-import type { AnalysisResult } from './types';
+import { logger } from "@/utils/logger";
+import { AIConfigService } from "@/services/ai-config.service";
+import { getConfig } from "@/config/env";
+import { redis } from "@/config/redis";
+import { extractViaGemini } from "./providers/vision-gemini";
+import { extractViaGroq } from "./providers/vision-groq";
+import { extractViaOmniRoute } from "./providers/vision-omniroute";
+import { getFallbackResult } from "./fallback";
+import type { AnalysisResult } from "./types";
 
 /**
  * System prompt used for image analysis (fallback when no configured prompt).
@@ -78,12 +78,17 @@ interface ProviderCfg {
  * Extract prompt from video/image using config-driven fallback chain.
  * Primary → transcriptFallback1 → transcriptFallback2 → hardcoded fallback.
  */
-export async function extractPrompt(mediaUrl: string, mediaType: 'video' | 'image'): Promise<AnalysisResult> {
-  logger.info(`Extracting prompt from ${mediaType}: ${mediaUrl.slice(0, 50)}...`);
+export async function extractPrompt(
+  mediaUrl: string,
+  mediaType: "video" | "image",
+): Promise<AnalysisResult> {
+  logger.info(
+    `Extracting prompt from ${mediaType}: ${mediaUrl.slice(0, 50)}...`,
+  );
 
   // Check vision cache
-  const cacheKey = `vision:cache:${mediaType}:${Buffer.from(mediaUrl).toString('base64').slice(0, 48)}`;
-  const cacheTTL = mediaType === 'image' ? 86400 : 21600; // 24h images, 6h videos
+  const cacheKey = `vision:cache:${mediaType}:${Buffer.from(mediaUrl).toString("base64").slice(0, 48)}`;
+  const cacheTTL = mediaType === "image" ? 86400 : 21600; // 24h images, 6h videos
   try {
     const cached = await redis.get(cacheKey);
     if (cached) {
@@ -91,7 +96,7 @@ export async function extractPrompt(mediaUrl: string, mediaType: 'video' | 'imag
       return JSON.parse(cached) as AnalysisResult;
     }
   } catch (err) {
-    logger.debug('Cache miss:', err);
+    logger.debug("Cache miss:", err);
   }
 
   // Load config-driven prompts and provider chain
@@ -100,32 +105,54 @@ export async function extractPrompt(mediaUrl: string, mediaType: 'video' | 'imag
     AIConfigService.getPromptsConfig().catch(() => null),
   ]);
 
-  const primary: ProviderCfg = tasksConfig?.transcript ?? { provider: 'gemini', model: 'gemini-2.5-flash' };
-  const fallback1: ProviderCfg = tasksConfig?.transcriptFallback1 ?? { provider: 'omniroute', model: 'antigravity/gemini-2.5-flash' };
-  const fallback2: ProviderCfg = tasksConfig?.transcriptFallback2 ?? { provider: 'groq', model: 'meta-llama/llama-4-scout-17b-16e-instruct' };
+  const primary: ProviderCfg = tasksConfig?.transcript ?? {
+    provider: "gemini",
+    model: "gemini-2.5-flash",
+  };
+  const fallback1: ProviderCfg = tasksConfig?.transcriptFallback1 ?? {
+    provider: "omniroute",
+    model: "antigravity/gemini-2.5-flash",
+  };
+  const fallback2: ProviderCfg = tasksConfig?.transcriptFallback2 ?? {
+    provider: "groq",
+    model: "meta-llama/llama-4-scout-17b-16e-instruct",
+  };
 
-  const configuredImagePrompt = promptsConfig?.imageAnalysisPrompt || '';
-  const configuredVideoPrompt = promptsConfig?.videoAnalysisPrompt || '';
+  const configuredImagePrompt = promptsConfig?.imageAnalysisPrompt || "";
+  const configuredVideoPrompt = promptsConfig?.videoAnalysisPrompt || "";
 
-  const chain: Array<{ provider: string; model: string }> = [primary, fallback1, fallback2];
+  const chain: Array<{ provider: string; model: string }> = [
+    primary,
+    fallback1,
+    fallback2,
+  ];
 
   for (const cfg of chain) {
     try {
-      const result = await extractViaProvider(cfg.provider, cfg.model, mediaUrl, mediaType, configuredImagePrompt, configuredVideoPrompt);
+      const result = await extractViaProvider(
+        cfg.provider,
+        cfg.model,
+        mediaUrl,
+        mediaType,
+        configuredImagePrompt,
+        configuredVideoPrompt,
+      );
       if (result.success && result.prompt) {
         try {
-          await redis.set(cacheKey, JSON.stringify(result), 'EX', cacheTTL);
+          await redis.set(cacheKey, JSON.stringify(result), "EX", cacheTTL);
         } catch (err) {
-          logger.debug('Cache write non-fatal:', err);
+          logger.debug("Cache write non-fatal:", err);
         }
         return result;
       }
     } catch (err) {
-      logger.warn(`Vision provider ${cfg.provider}/${cfg.model} failed: ${(err as Error).message}`);
+      logger.warn(
+        `Vision provider ${cfg.provider}/${cfg.model} failed: ${(err as Error).message}`,
+      );
     }
   }
 
-  logger.warn('All vision providers failed, returning fallback result');
+  logger.warn("All vision providers failed, returning fallback result");
   return getFallbackResult(mediaType);
 }
 
@@ -136,22 +163,27 @@ async function extractViaProvider(
   provider: string,
   model: string,
   mediaUrl: string,
-  mediaType: 'video' | 'image',
+  mediaType: "video" | "image",
   configuredImagePrompt: string,
   configuredVideoPrompt: string,
 ): Promise<AnalysisResult> {
   const systemPrompt =
-    mediaType === 'image'
-      ? (configuredImagePrompt || FALLBACK_IMAGE_SYSTEM_PROMPT)
-      : (configuredVideoPrompt || FALLBACK_VIDEO_SYSTEM_PROMPT);
+    mediaType === "image"
+      ? configuredImagePrompt || FALLBACK_IMAGE_SYSTEM_PROMPT
+      : configuredVideoPrompt || FALLBACK_VIDEO_SYSTEM_PROMPT;
 
   switch (provider) {
-    case 'gemini':
+    case "gemini":
       return extractViaGemini(mediaUrl, mediaType, systemPrompt);
-    case 'groq':
+    case "groq":
       return extractViaGroq(mediaUrl, mediaType, model, systemPrompt);
     default:
       // omniroute or any custom provider
-      return extractViaOmniRoute(mediaUrl, mediaType, model || 'antigravity/gemini-2.5-flash', systemPrompt);
+      return extractViaOmniRoute(
+        mediaUrl,
+        mediaType,
+        model || "antigravity/gemini-2.5-flash",
+        systemPrompt,
+      );
   }
 }

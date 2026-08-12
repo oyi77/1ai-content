@@ -19,8 +19,13 @@ interface ReoptimizeResult {
   updated: boolean;
 }
 
-export async function reoptimizeVideo(videoId: string, breakoutPrimaryElement: string): Promise<ReoptimizeResult> {
-  const video = await prisma.ytPublishedVideo.findUnique({ where: { videoId } });
+export async function reoptimizeVideo(
+  videoId: string,
+  breakoutPrimaryElement: string,
+): Promise<ReoptimizeResult> {
+  const video = await prisma.ytPublishedVideo.findUnique({
+    where: { videoId },
+  });
   if (!video) throw new NotFoundError("Video", videoId);
 
   const oldTitle = video.title || "";
@@ -45,6 +50,8 @@ export async function reoptimizeVideo(videoId: string, breakoutPrimaryElement: s
     });
   }
 
-  logger.info(`[reoptimizer] ${updated ? "Updated" : "Failed"}: ${videoId} | "${oldTitle}" → "${newSeo.title}"`);
+  logger.info(
+    `[reoptimizer] ${updated ? "Updated" : "Failed"}: ${videoId} | "${oldTitle}" → "${newSeo.title}"`,
+  );
   return { videoId, oldTitle, newTitle: newSeo.title, updated };
 }

@@ -4,13 +4,13 @@
  * Redis cache key: 'admin:custom_providers' (no TTL — DB is source of truth).
  */
 
-import { prisma } from '@/config/database';
-import { redis } from '@/config/redis';
-import axios from 'axios';
-import { randomUUID } from 'crypto';
-import { NotFoundError, ProviderError } from '@/utils/app-errors';
-import { checkProviderBalance } from '@/services/balance-checker.service';
-export { BalanceResult } from '@/services/balance-checker.service';
+import { prisma } from "@/config/database";
+import { redis } from "@/config/redis";
+import axios from "axios";
+import { randomUUID } from "crypto";
+import { NotFoundError, ProviderError } from "@/utils/app-errors";
+import { checkProviderBalance } from "@/services/balance-checker.service";
+export { BalanceResult } from "@/services/balance-checker.service";
 
 export interface CustomProviderModel {
   id: string;
@@ -43,9 +43,11 @@ export interface CustomProvider {
   createdAt: string;
 }
 
-const REDIS_KEY = 'admin:custom_providers';
+const REDIS_KEY = "admin:custom_providers";
 
-function applyModelHeuristics(modelId: string): Pick<CustomProviderModel, 'vision' | 'reasoning' | 'toolCall'> {
+function applyModelHeuristics(
+  modelId: string,
+): Pick<CustomProviderModel, "vision" | "reasoning" | "toolCall"> {
   const id = modelId.toLowerCase();
   const vision = /vision|vl|4o|4v|llava|intern|gemini|claude|gpt-4/.test(id);
   const reasoning = /thinking|reasoning|r1|o1|o3|qwq/.test(id);
@@ -82,9 +84,11 @@ export class CustomProviderService {
     // Query DB
     try {
       const rows = await prisma.pricingConfig.findMany({
-        where: { category: 'custom_provider' },
+        where: { category: "custom_provider" },
       });
-      const providers = rows.map((row) => row.value as unknown as CustomProvider);
+      const providers = rows.map(
+        (row) => row.value as unknown as CustomProvider,
+      );
       await saveToCache(providers);
       return providers;
     } catch {
@@ -95,7 +99,7 @@ export class CustomProviderService {
   static async getById(id: string): Promise<CustomProvider | null> {
     try {
       const row = await prisma.pricingConfig.findUnique({
-        where: { category_key: { category: 'custom_provider', key: id } },
+        where: { category_key: { category: "custom_provider", key: id } },
       });
       if (!row) return null;
       return row.value as unknown as CustomProvider;
@@ -104,7 +108,9 @@ export class CustomProviderService {
     }
   }
 
-  static async create(data: Pick<CustomProvider, 'name' | 'baseUrl' | 'apiKey'>): Promise<CustomProvider> {
+  static async create(
+    data: Pick<CustomProvider, "name" | "baseUrl" | "apiKey">,
+  ): Promise<CustomProvider> {
     const provider: CustomProvider = {
       id: randomUUID(),
       name: data.name,
@@ -118,9 +124,19 @@ export class CustomProviderService {
     };
 
     await prisma.pricingConfig.upsert({
-      where: { category_key: { category: 'custom_provider', key: provider.id } },
-      create: { category: 'custom_provider', key: provider.id, value: JSON.parse(JSON.stringify(provider)), updatedBy: BigInt(0) },
-      update: { value: JSON.parse(JSON.stringify(provider)), updatedBy: BigInt(0) },
+      where: {
+        category_key: { category: "custom_provider", key: provider.id },
+      },
+      create: {
+        category: "custom_provider",
+        key: provider.id,
+        value: JSON.parse(JSON.stringify(provider)),
+        updatedBy: BigInt(0),
+      },
+      update: {
+        value: JSON.parse(JSON.stringify(provider)),
+        updatedBy: BigInt(0),
+      },
     });
 
     await invalidateCache();
@@ -129,17 +145,27 @@ export class CustomProviderService {
 
   static async update(
     id: string,
-    data: Partial<Pick<CustomProvider, 'name' | 'baseUrl' | 'apiKey' | 'enabled'>>,
+    data: Partial<
+      Pick<CustomProvider, "name" | "baseUrl" | "apiKey" | "enabled">
+    >,
   ): Promise<CustomProvider> {
     const existing = await CustomProviderService.getById(id);
-    if (!existing) throw new NotFoundError('CustomProvider', String(id));
+    if (!existing) throw new NotFoundError("CustomProvider", String(id));
 
     const updated: CustomProvider = { ...existing, ...data };
 
     await prisma.pricingConfig.upsert({
-      where: { category_key: { category: 'custom_provider', key: id } },
-      create: { category: 'custom_provider', key: id, value: JSON.parse(JSON.stringify(updated)), updatedBy: BigInt(0) },
-      update: { value: JSON.parse(JSON.stringify(updated)), updatedBy: BigInt(0) },
+      where: { category_key: { category: "custom_provider", key: id } },
+      create: {
+        category: "custom_provider",
+        key: id,
+        value: JSON.parse(JSON.stringify(updated)),
+        updatedBy: BigInt(0),
+      },
+      update: {
+        value: JSON.parse(JSON.stringify(updated)),
+        updatedBy: BigInt(0),
+      },
     });
 
     await invalidateCache();
@@ -148,14 +174,14 @@ export class CustomProviderService {
 
   static async delete(id: string): Promise<void> {
     await prisma.pricingConfig.deleteMany({
-      where: { category: 'custom_provider', key: id },
+      where: { category: "custom_provider", key: id },
     });
     await invalidateCache();
   }
 
   static async fetchModels(id: string): Promise<CustomProviderModel[]> {
     const provider = await CustomProviderService.getById(id);
-    if (!provider) throw new NotFoundError('CustomProvider', String(id));
+    if (!provider) throw new NotFoundError("CustomProvider", String(id));
 
     const response = await axios.get(`${provider.baseUrl}/models`, {
       headers: { Authorization: `Bearer ${provider.apiKey}` },
@@ -176,7 +202,7 @@ export class CustomProviderService {
         name: m.name || modelId,
         ...heuristics,
         contextWindow: m.context_window ?? m.contextWindow ?? null,
-        family: m.owned_by || m.family || '',
+        family: m.owned_by || m.family || "",
       };
     });
 
@@ -187,9 +213,17 @@ export class CustomProviderService {
     };
 
     await prisma.pricingConfig.upsert({
-      where: { category_key: { category: 'custom_provider', key: id } },
-      create: { category: 'custom_provider', key: id, value: JSON.parse(JSON.stringify(updated)), updatedBy: BigInt(0) },
-      update: { value: JSON.parse(JSON.stringify(updated)), updatedBy: BigInt(0) },
+      where: { category_key: { category: "custom_provider", key: id } },
+      create: {
+        category: "custom_provider",
+        key: id,
+        value: JSON.parse(JSON.stringify(updated)),
+        updatedBy: BigInt(0),
+      },
+      update: {
+        value: JSON.parse(JSON.stringify(updated)),
+        updatedBy: BigInt(0),
+      },
     });
 
     await invalidateCache();
@@ -199,18 +233,23 @@ export class CustomProviderService {
   static async testProvider(
     id: string,
     model?: string,
-  ): Promise<{ success: boolean; model: string; response: string; latencyMs: number }> {
+  ): Promise<{
+    success: boolean;
+    model: string;
+    response: string;
+    latencyMs: number;
+  }> {
     const provider = await CustomProviderService.getById(id);
-    if (!provider) throw new NotFoundError('CustomProvider', String(id));
+    if (!provider) throw new NotFoundError("CustomProvider", String(id));
 
-    const modelToUse = model || provider.models[0]?.id || 'gpt-4o-mini';
+    const modelToUse = model || provider.models[0]?.id || "gpt-4o-mini";
     const start = Date.now();
 
     const axiosResponse = await axios.post(
       `${provider.baseUrl}/chat/completions`,
       {
         model: modelToUse,
-        messages: [{ role: 'user', content: 'Reply with: OK' }],
+        messages: [{ role: "user", content: "Reply with: OK" }],
         max_tokens: 5,
       },
       {
@@ -221,7 +260,7 @@ export class CustomProviderService {
 
     const latencyMs = Date.now() - start;
     const content: string =
-      axiosResponse.data?.choices?.[0]?.message?.content ?? '';
+      axiosResponse.data?.choices?.[0]?.message?.content ?? "";
 
     return { success: true, model: modelToUse, response: content, latencyMs };
   }
@@ -230,13 +269,17 @@ export class CustomProviderService {
     id: string,
     model: string,
     messages: Record<string, unknown>[],
-    options?: { maxTokens?: number; temperature?: number; systemPrompt?: string },
+    options?: {
+      maxTokens?: number;
+      temperature?: number;
+      systemPrompt?: string;
+    },
   ): Promise<string> {
     const provider = await CustomProviderService.getById(id);
-    if (!provider) throw new NotFoundError('CustomProvider', String(id));
+    if (!provider) throw new NotFoundError("CustomProvider", String(id));
 
     const allMessages = options?.systemPrompt
-      ? [{ role: 'system', content: options.systemPrompt }, ...messages]
+      ? [{ role: "system", content: options.systemPrompt }, ...messages]
       : messages;
 
     const response = await axios.post(
@@ -244,8 +287,12 @@ export class CustomProviderService {
       {
         model,
         messages: allMessages,
-        ...(options?.maxTokens !== undefined && { max_tokens: options.maxTokens }),
-        ...(options?.temperature !== undefined && { temperature: options.temperature }),
+        ...(options?.maxTokens !== undefined && {
+          max_tokens: options.maxTokens,
+        }),
+        ...(options?.temperature !== undefined && {
+          temperature: options.temperature,
+        }),
       },
       {
         headers: { Authorization: `Bearer ${provider.apiKey}` },
@@ -254,7 +301,11 @@ export class CustomProviderService {
     );
 
     const content: string = response.data?.choices?.[0]?.message?.content;
-    if (!content) throw new ProviderError('CustomProvider', 'Empty response from custom provider');
+    if (!content)
+      throw new ProviderError(
+        "CustomProvider",
+        "Empty response from custom provider",
+      );
     return content;
   }
 
@@ -265,9 +316,12 @@ export class CustomProviderService {
    */
   static async checkBalance(id: string): Promise<CustomProviderBalance> {
     const provider = await CustomProviderService.getById(id);
-    if (!provider) throw new NotFoundError('CustomProvider', String(id));
+    if (!provider) throw new NotFoundError("CustomProvider", String(id));
 
-    const result = await checkProviderBalance(provider.baseUrl, provider.apiKey);
+    const result = await checkProviderBalance(
+      provider.baseUrl,
+      provider.apiKey,
+    );
 
     const lastBalance: CustomProviderBalance = {
       balance: result.balance,
@@ -281,9 +335,17 @@ export class CustomProviderService {
     // Persist the balance result back to the provider record
     const updated: CustomProvider = { ...provider, lastBalance };
     await prisma.pricingConfig.upsert({
-      where: { category_key: { category: 'custom_provider', key: id } },
-      create: { category: 'custom_provider', key: id, value: JSON.parse(JSON.stringify(updated)), updatedBy: BigInt(0) },
-      update: { value: JSON.parse(JSON.stringify(updated)), updatedBy: BigInt(0) },
+      where: { category_key: { category: "custom_provider", key: id } },
+      create: {
+        category: "custom_provider",
+        key: id,
+        value: JSON.parse(JSON.stringify(updated)),
+        updatedBy: BigInt(0),
+      },
+      update: {
+        value: JSON.parse(JSON.stringify(updated)),
+        updatedBy: BigInt(0),
+      },
     });
     await invalidateCache();
 

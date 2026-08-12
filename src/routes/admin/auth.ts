@@ -19,7 +19,10 @@ export function makeAdminToken(password: string): string {
 }
 
 /** Verify admin authentication from request (Basic auth, cookie, or query token) */
-export async function verifyAdmin(request: FastifyRequest, reply: FastifyReply) {
+export async function verifyAdmin(
+  request: FastifyRequest,
+  reply: FastifyReply,
+) {
   const ADMIN_PASSWORD = getConfig().ADMIN_PASSWORD;
   if (!ADMIN_PASSWORD) {
     return reply.status(503).send({ error: "Admin password not configured" });
@@ -36,7 +39,9 @@ export async function verifyAdmin(request: FastifyRequest, reply: FastifyReply) 
         const password = decoded.slice(separator + 1);
         if (timingSafeCompare(password, ADMIN_PASSWORD)) return true;
       }
-    } catch { /* continue */ }
+    } catch {
+      /* continue */
+    }
   }
 
   // 2) Cookie token
@@ -45,7 +50,8 @@ export async function verifyAdmin(request: FastifyRequest, reply: FastifyReply) 
     .find((c) => c.trim().startsWith("admin_token="));
   if (cookie) {
     const token = cookie.split("=")[1]?.trim();
-    if (token && timingSafeCompare(token, makeAdminToken(ADMIN_PASSWORD))) return true;
+    if (token && timingSafeCompare(token, makeAdminToken(ADMIN_PASSWORD)))
+      return true;
   }
 
   // 3) Query token
@@ -54,8 +60,11 @@ export async function verifyAdmin(request: FastifyRequest, reply: FastifyReply) 
     if (timingSafeCompare(queryToken, makeAdminToken(ADMIN_PASSWORD))) {
       const token = makeAdminToken(ADMIN_PASSWORD);
       reply.setCookie("admin_token", token, {
-        path: "/", httpOnly: true, sameSite: "strict",
-        maxAge: 86400, secure: request.protocol === "https",
+        path: "/",
+        httpOnly: true,
+        sameSite: "strict",
+        maxAge: 86400,
+        secure: request.protocol === "https",
       });
       return true;
     }
@@ -83,7 +92,9 @@ export function registerLoginRoutes(server: FastifyInstance) {
     const rateLimitKey = `admin_login:${ip}`;
     const attempts = await redis.get(rateLimitKey);
     if (attempts && parseInt(attempts) >= LOGIN_RATE_LIMIT_MAX) {
-      return reply.status(429).send({ error: "Too many login attempts. Try again in 15 minutes." });
+      return reply
+        .status(429)
+        .send({ error: "Too many login attempts. Try again in 15 minutes." });
     }
 
     const ADMIN_PASSWORD = getConfig().ADMIN_PASSWORD;
@@ -91,9 +102,13 @@ export function registerLoginRoutes(server: FastifyInstance) {
     if (password && timingSafeCompare(password, ADMIN_PASSWORD)) {
       await redis.del(rateLimitKey);
       const token = makeAdminToken(ADMIN_PASSWORD);
-      const secureSuffix = getConfig().NODE_ENV === "production" ? "; Secure" : "";
+      const secureSuffix =
+        getConfig().NODE_ENV === "production" ? "; Secure" : "";
       return reply
-        .header("Set-Cookie", `admin_token=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400${secureSuffix}`)
+        .header(
+          "Set-Cookie",
+          `admin_token=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400${secureSuffix}`,
+        )
         .send({ success: true });
     }
 

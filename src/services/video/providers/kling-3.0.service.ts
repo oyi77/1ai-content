@@ -119,7 +119,7 @@ export class KlingVideoService {
       await redis.setex(
         `${CACHE_PREFIX}${task.task_id}`,
         720, // 12 min TTL
-        JSON.stringify({ status: "processing", startedAt: Date.now() })
+        JSON.stringify({ status: "processing", startedAt: Date.now() }),
       );
 
       // Step 3: Poll for completion
@@ -164,7 +164,9 @@ export class KlingVideoService {
   /**
    * Submit video generation request to Kling API
    */
-  private async submitGeneration(request: KlingVideoRequest): Promise<KlingTask> {
+  private async submitGeneration(
+    request: KlingVideoRequest,
+  ): Promise<KlingTask> {
     const resolution = request.resolution || "4k";
     const fps = request.fps || 60;
     const aspectRatio = request.aspectRatio || "16:9";
@@ -195,7 +197,7 @@ export class KlingVideoService {
           "Content-Type": "application/json",
         },
         timeout: 30000,
-      }
+      },
     );
 
     return {
@@ -207,7 +209,9 @@ export class KlingVideoService {
   /**
    * Poll for video generation completion
    */
-  private async pollForCompletion(taskId: string): Promise<{ videoUrl: string }> {
+  private async pollForCompletion(
+    taskId: string,
+  ): Promise<{ videoUrl: string }> {
     for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS; attempt++) {
       await this.sleep(POLL_INTERVAL_MS);
 
@@ -218,7 +222,7 @@ export class KlingVideoService {
             Authorization: `Bearer ${this.apiKey}`,
           },
           timeout: 10000,
-        }
+        },
       );
 
       const task = response.data;
@@ -227,10 +231,16 @@ export class KlingVideoService {
         if (task.task_result?.video_url) {
           return { videoUrl: task.task_result.video_url };
         }
-        throw new ProviderError("kling", "Task completed but no video URL returned");
+        throw new ProviderError(
+          "kling",
+          "Task completed but no video URL returned",
+        );
       }
       if (task.task_status === "failed") {
-        throw new ProviderError("kling", `Task failed: ${task.task_error?.message || "Unknown error"}`);
+        throw new ProviderError(
+          "kling",
+          `Task failed: ${task.task_error?.message || "Unknown error"}`,
+        );
       }
 
       // Update cache with progress
@@ -241,7 +251,7 @@ export class KlingVideoService {
           status: "processing",
           attempt,
           startedAt: Date.now(),
-        })
+        }),
       );
 
       logger.debug({
@@ -251,7 +261,10 @@ export class KlingVideoService {
       });
     }
 
-    throw new ProviderError("kling", "Video generation timed out after 12 minutes");
+    throw new ProviderError(
+      "kling",
+      "Video generation timed out after 12 minutes",
+    );
   }
 
   /**

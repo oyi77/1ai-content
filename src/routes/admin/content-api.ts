@@ -1,7 +1,9 @@
 import { FastifyInstance } from "fastify";
 import { prisma } from "@/config/database";
 
-export async function registerContentRoutes(server: FastifyInstance): Promise<void> {
+export async function registerContentRoutes(
+  server: FastifyInstance,
+): Promise<void> {
   /** GET /api/admin/content — list videos with pagination */
   server.get("/api/admin/content", async (_request, reply) => {
     const videos = await prisma.video.findMany({

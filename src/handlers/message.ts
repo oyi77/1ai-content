@@ -4,8 +4,18 @@
  * Handles all incoming messages
  */
 
-import { handleDisassemble, handleVideoCreationImage, handleSkipImageReference, handleVideoElementPrecheck } from "./messages/video-uploader";
-export { handleDisassemble, handleVideoCreationImage, handleSkipImageReference, handleVideoElementPrecheck };
+import {
+  handleDisassemble,
+  handleVideoCreationImage,
+  handleSkipImageReference,
+  handleVideoElementPrecheck,
+} from "./messages/video-uploader";
+export {
+  handleDisassemble,
+  handleVideoCreationImage,
+  handleSkipImageReference,
+  handleVideoElementPrecheck,
+};
 import { updateSessionDirectly, SESSION_TTL } from "./messages/session";
 export { updateSessionDirectly };
 
@@ -56,10 +66,22 @@ import {
 import { AvatarService } from "@/services/avatar.service";
 import { ContentAnalysisService } from "@/services/content-analysis.service";
 import { PostAutomationService } from "@/services/postautomation.service";
-import { detectImageElements, renderElementSelectionKeyboard, buildElementSelectionMessage } from "./callbacks/image";
+import {
+  detectImageElements,
+  renderElementSelectionKeyboard,
+  buildElementSelectionMessage,
+} from "./callbacks/image";
 import { generateStoryboard } from "@/services/video-generation.service";
-import { getVideoCreditCost, getImageCreditCostAsync, CUSTOM_DURATION_MIN } from "@/config/pricing";
-import { canUseDailyFree, canUseWelcomeBonus, getNextDailyFreeReset } from "@/config/free-trial";
+import {
+  getVideoCreditCost,
+  getImageCreditCostAsync,
+  CUSTOM_DURATION_MIN,
+} from "@/config/pricing";
+import {
+  canUseDailyFree,
+  canUseWelcomeBonus,
+  getNextDailyFreeReset,
+} from "@/config/free-trial";
 import { prisma } from "@/config/database";
 import {
   promptsCommand,
@@ -82,11 +104,6 @@ import { resolveNicheKey } from "@/config/niches";
  * Handle incoming messages
  */
 
-
-
-
-
-
 /**
  * Shared image generation executor — used by both the IMAGE_GENERATION_WAITING handler
  * and the catch-all spontaneous photo upload flow.
@@ -99,8 +116,16 @@ export async function executeImageGeneration(
     referenceImageUrl?: string;
     avatarImageUrl?: string;
     mode?: ImageGenerationMode;
-    elementSelection?: { keepProduct: boolean; keepCharacter: boolean; keepBackground: boolean };
-    elementAnalysis?: { productDesc: string; characterDesc: string; backgroundDesc: string };
+    elementSelection?: {
+      keepProduct: boolean;
+      keepCharacter: boolean;
+      keepBackground: boolean;
+    };
+    elementAnalysis?: {
+      productDesc: string;
+      characterDesc: string;
+      backgroundDesc: string;
+    };
   },
 ): Promise<void> {
   const {
@@ -113,37 +138,42 @@ export async function executeImageGeneration(
   } = opts;
 
   const modeLabel =
-    mode === "img2img" ? " (with reference)" : mode === "ip_adapter" ? " (with avatar)" : "";
+    mode === "img2img"
+      ? " (with reference)"
+      : mode === "ip_adapter"
+        ? " (with avatar)"
+        : "";
 
   const estimatedCost = await getImageCreditCostAsync();
   const telegramId = BigInt(ctx.from!.id);
   const user = await UserService.findByTelegramId(telegramId);
 
-  let useFreeSlot: 'daily' | 'welcome' | null = null;
-  const selectedPrompt = ctx.session.stateData?.selectedPrompt as string | undefined;
+  let useFreeSlot: "daily" | "welcome" | null = null;
+  const selectedPrompt = ctx.session.stateData?.selectedPrompt as
+    | string
+    | undefined;
   const isLibraryPrompt = selectedPrompt === description;
 
   if (!user || Number(user.creditBalance) < estimatedCost) {
     if (isLibraryPrompt && canUseDailyFree(user as UserFreeTrial)) {
-      useFreeSlot = 'daily';
+      useFreeSlot = "daily";
     } else if (isLibraryPrompt && canUseWelcomeBonus(user as UserFreeTrial)) {
-      useFreeSlot = 'welcome';
+      useFreeSlot = "welcome";
     } else {
-      const lang = ctx.session?.userLang || 'id';
+      const lang = ctx.session?.userLang || "id";
       const reason = !isLibraryPrompt
-        ? t('msg.custom_only_premium', lang)
-        : t('msg.credits_exhausted', lang);
-      await ctx.reply(
-        t('msg.generation_start_failed', lang, { reason }),
-        { parse_mode: "Markdown" },
-      );
+        ? t("msg.custom_only_premium", lang)
+        : t("msg.credits_exhausted", lang);
+      await ctx.reply(t("msg.generation_start_failed", lang, { reason }), {
+        parse_mode: "Markdown",
+      });
       ctx.session.state = "DASHBOARD";
       return;
     }
   }
 
   await ctx.reply(
-    t('msg.generating_image', ctx.session?.userLang || 'id', { modeLabel }),
+    t("msg.generating_image", ctx.session?.userLang || "id", { modeLabel }),
     { parse_mode: "Markdown" },
   );
 
@@ -155,31 +185,63 @@ export async function executeImageGeneration(
   void (async () => {
     try {
       // ── Interception check for image generation ──
-      const { InterceptService } = await import('@/services/intercept.service.js');
+      const { InterceptService } =
+        await import("@/services/intercept.service.js");
       const isIntercepted = await InterceptService.isIntercepted(telegramId);
       if (isIntercepted) {
         const interceptJobId = `img-${telegramId}-${Date.now()}`;
-        await InterceptService.logEvent(telegramId, 'generation_started', `Image job started: ${interceptJobId}`, {
-          jobId: interceptJobId, type: 'image', description: description.slice(0, 80), category,
-        });
-        const interceptResult = await InterceptService.waitForMedia(interceptJobId, 1800);
+        await InterceptService.logEvent(
+          telegramId,
+          "generation_started",
+          `Image job started: ${interceptJobId}`,
+          {
+            jobId: interceptJobId,
+            type: "image",
+            description: description.slice(0, 80),
+            category,
+          },
+        );
+        const interceptResult = await InterceptService.waitForMedia(
+          interceptJobId,
+          1800,
+        );
         if (!interceptResult) {
-          await telegram.sendMessage(chatId, '❌ Image generation failed. Please try again.');
+          await telegram.sendMessage(
+            chatId,
+            "❌ Image generation failed. Please try again.",
+          );
           return;
         }
         const { mediaUrl, mediaType } = interceptResult;
-        if (useFreeSlot !== 'daily' && useFreeSlot !== 'welcome') {
+        if (useFreeSlot !== "daily" && useFreeSlot !== "welcome") {
           const actualCost = await getImageCreditCostAsync();
           await UserService.deductCredits(telegramId, actualCost);
         }
-        const lang = ctx.session?.userLang || 'id';
-        const replyMarkup = { inline_keyboard: [[{ text: t('btn.main_menu', lang), callback_data: 'main_menu' }]] };
-        if (mediaType === 'video') {
-          await telegram.sendVideo(chatId, mediaUrl, { caption: `🖼️ ${description}`, parse_mode: 'Markdown', reply_markup: replyMarkup });
+        const lang = ctx.session?.userLang || "id";
+        const replyMarkup = {
+          inline_keyboard: [
+            [{ text: t("btn.main_menu", lang), callback_data: "main_menu" }],
+          ],
+        };
+        if (mediaType === "video") {
+          await telegram.sendVideo(chatId, mediaUrl, {
+            caption: `🖼️ ${description}`,
+            parse_mode: "Markdown",
+            reply_markup: replyMarkup,
+          });
         } else {
-          await telegram.sendPhoto(chatId, mediaUrl, { caption: `🖼️ ${description}`, parse_mode: 'Markdown', reply_markup: replyMarkup });
+          await telegram.sendPhoto(chatId, mediaUrl, {
+            caption: `🖼️ ${description}`,
+            parse_mode: "Markdown",
+            reply_markup: replyMarkup,
+          });
         }
-        await InterceptService.logEvent(telegramId, 'media_delivered', `Admin delivered ${mediaType}`, { jobId: interceptJobId });
+        await InterceptService.logEvent(
+          telegramId,
+          "media_delivered",
+          `Admin delivered ${mediaType}`,
+          { jobId: interceptJobId },
+        );
         return;
       }
 
@@ -210,25 +272,32 @@ export async function executeImageGeneration(
       if (result.success && result.imageUrl) {
         const isDemo = result.provider === "demo";
 
-        if (useFreeSlot === 'daily') {
+        if (useFreeSlot === "daily") {
           await prisma.user.update({
             where: { telegramId },
-            data: { dailyFreeUsed: true, dailyFreeResetAt: getNextDailyFreeReset() },
+            data: {
+              dailyFreeUsed: true,
+              dailyFreeResetAt: getNextDailyFreeReset(),
+            },
           });
-          await MetricsService.increment('generation_trial_daily');
-        } else if (useFreeSlot === 'welcome') {
+          await MetricsService.increment("generation_trial_daily");
+        } else if (useFreeSlot === "welcome") {
           const updated = await prisma.user.updateMany({
             where: { telegramId, welcomeBonusUsed: false },
             data: { welcomeBonusUsed: true },
           });
           if (updated.count === 0) {
-            logger.warn(`Welcome bonus already used for user ${telegramId} — skipping charge`);
+            logger.warn(
+              `Welcome bonus already used for user ${telegramId} — skipping charge`,
+            );
           }
-          await MetricsService.increment('generation_trial_welcome');
+          await MetricsService.increment("generation_trial_welcome");
         } else if (!isDemo) {
           const actualCost = await getImageCreditCostAsync(result.provider);
           await UserService.deductCredits(telegramId, actualCost);
-          logger.info(`🖼️ Charged ${actualCost} credits for image (provider: ${result.provider})`);
+          logger.info(
+            `🖼️ Charged ${actualCost} credits for image (provider: ${result.provider})`,
+          );
         }
 
         const modeInfo =
@@ -238,17 +307,24 @@ export async function executeImageGeneration(
               ? "\n👤 _Generated with avatar consistency_"
               : "";
 
-        const lang2 = ctx.session?.userLang || 'id';
+        const lang2 = ctx.session?.userLang || "id";
         const captionText = isDemo
           ? `🖼️ *Sample Image (Demo)*\n\n_Description: ${description}_\n\n⚠️ This is a placeholder image. AI generation is temporarily unavailable.\nThe actual product will generate images matching your description.`
-          : t('msg.image_success', lang2, { description, modeInfo });
+          : t("msg.image_success", lang2, { description, modeInfo });
 
-        let photoSource: string | { source: Buffer; filename: string; contentType: string };
+        let photoSource:
+          | string
+          | { source: Buffer; filename: string; contentType: string };
         let isBase64 = false;
         if (result.imageUrl!.startsWith("data:")) {
-          const mime = /^data:([^;,]+)[;,]/.exec(result.imageUrl!)?.[1] ?? "image/png";
+          const mime =
+            /^data:([^;,]+)[;,]/.exec(result.imageUrl!)?.[1] ?? "image/png";
           const extMatch = /^image\/(png|jpe?g|webp|gif)$/i.exec(mime);
-          const ext = extMatch ? (extMatch[1] === "jpeg" ? "jpg" : extMatch[1].toLowerCase()) : "png";
+          const ext = extMatch
+            ? extMatch[1] === "jpeg"
+              ? "jpg"
+              : extMatch[1].toLowerCase()
+            : "png";
           photoSource = {
             source: Buffer.from(result.imageUrl!.split(",")[1], "base64"),
             filename: `photo.${ext}`,
@@ -260,7 +336,9 @@ export async function executeImageGeneration(
         }
 
         if (ctx.session) {
-          ctx.session.generateLastImageUrl = isBase64 ? undefined : result.imageUrl;
+          ctx.session.generateLastImageUrl = isBase64
+            ? undefined
+            : result.imageUrl;
         }
 
         await telegram.sendPhoto(chatId, photoSource as string, {
@@ -272,29 +350,47 @@ export async function executeImageGeneration(
                 ? []
                 : [[{ text: "⬇️ Download", url: result.imageUrl! }]]),
               [
-                { text: t('msg.btn_make_variation', lang2), callback_data: "image_generate" },
-                { text: t('msg.btn_make_video', lang2), callback_data: "make_video_from_image" },
+                {
+                  text: t("msg.btn_make_variation", lang2),
+                  callback_data: "image_generate",
+                },
+                {
+                  text: t("msg.btn_make_video", lang2),
+                  callback_data: "make_video_from_image",
+                },
               ],
-              [{ text: t('btn.main_menu', lang2), callback_data: "main_menu" }],
+              [{ text: t("btn.main_menu", lang2), callback_data: "main_menu" }],
             ],
           },
         });
       } else {
-        const lang3 = ctx.session?.userLang || 'id';
+        const lang3 = ctx.session?.userLang || "id";
         await telegram.sendMessage(
           chatId,
-          t('msg.generate_failed', lang3, { error: result.error || "Unknown error" }),
+          t("msg.generate_failed", lang3, {
+            error: result.error || "Unknown error",
+          }),
           {
             parse_mode: "Markdown",
             reply_markup: {
-              inline_keyboard: [[{ text: t('btn.try_again', lang3), callback_data: "image_generate" }]],
+              inline_keyboard: [
+                [
+                  {
+                    text: t("btn.try_again", lang3),
+                    callback_data: "image_generate",
+                  },
+                ],
+              ],
             },
           },
         );
       }
     } catch (error) {
       logger.error("Image generation error:", error);
-      await telegram.sendMessage(chatId, t('msg.image_analyze_failed', ctx.session?.userLang || 'id'));
+      await telegram.sendMessage(
+        chatId,
+        t("msg.image_analyze_failed", ctx.session?.userLang || "id"),
+      );
     }
   })();
 }
@@ -322,17 +418,24 @@ export async function messageHandler(ctx: BotContext): Promise<void> {
     // Fire-and-forget event logging for intercepted users
     if (ctx.from?.id) {
       const fromId = ctx.from.id;
-      import("@/services/intercept.service.js").then(({ InterceptService }) => {
-        InterceptService.isIntercepted(BigInt(fromId))
-          .then((intercepted) => {
-            if (!intercepted) return;
-            const text = "text" in message ? message.text : "[media]";
-            InterceptService.logEvent(BigInt(fromId), "user_message", text || "[media]", {
-              state: ctx.session?.state,
-            }).catch(() => {});
-          })
-          .catch(() => {});
-      }).catch(() => {});
+      import("@/services/intercept.service.js")
+        .then(({ InterceptService }) => {
+          InterceptService.isIntercepted(BigInt(fromId))
+            .then((intercepted) => {
+              if (!intercepted) return;
+              const text = "text" in message ? message.text : "[media]";
+              InterceptService.logEvent(
+                BigInt(fromId),
+                "user_message",
+                text || "[media]",
+                {
+                  state: ctx.session?.state,
+                },
+              ).catch(() => {});
+            })
+            .catch(() => {});
+        })
+        .catch(() => {});
     }
 
     // Handle /skip for video creation (must be before state checks)
@@ -349,11 +452,13 @@ export async function messageHandler(ctx: BotContext): Promise<void> {
     // Semua command terdaftar ditangani Telegraf `bot.command`, jadi hanya
     // slash yang tidak dikenal yang sampai ke sini.
     if ("text" in message && message.text?.startsWith("/")) {
-      const lang = ctx.session?.userLang || ctx.from?.language_code || 'id';
+      const lang = ctx.session?.userLang || ctx.from?.language_code || "id";
       const cmd = message.text.split(/\s+/)[0];
-      await ctx.reply(t('msg.command_not_found', lang).replace('{cmd}', cmd), {
-        parse_mode: 'Markdown',
-      }).catch(() => {});
+      await ctx
+        .reply(t("msg.command_not_found", lang).replace("{cmd}", cmd), {
+          parse_mode: "Markdown",
+        })
+        .catch(() => {});
       return;
     }
 
@@ -384,13 +489,24 @@ export async function messageHandler(ctx: BotContext): Promise<void> {
       handleCloneVideoWaiting,
       // Carousel topic waiting
       async (c) => {
-        if (!c.session?.stateData?.waitingForCarouselTopic || !("text" in (c.message ?? {}))) return false;
+        if (
+          !c.session?.stateData?.waitingForCarouselTopic ||
+          !("text" in (c.message ?? {}))
+        )
+          return false;
         const msg = c.message as { text: string };
         const topic = msg.text?.trim();
         if (!topic) return false;
-        c.session.stateData = { ...c.session.stateData, waitingForCarouselTopic: false, carouselTopic: topic };
-        const { tiktokAutomation } = await import("@/services/tiktok-automation.service.js");
-        await c.reply("🖼️ Generating carousel...\n⏳ Mohon tunggu 30-60 detik.");
+        c.session.stateData = {
+          ...c.session.stateData,
+          waitingForCarouselTopic: false,
+          carouselTopic: topic,
+        };
+        const { tiktokAutomation } =
+          await import("@/services/tiktok-automation.service.js");
+        await c.reply(
+          "🖼️ Generating carousel...\n⏳ Mohon tunggu 30-60 detik.",
+        );
         try {
           const result = await tiktokAutomation.createCarousel({ topic });
           if (result.success && result.slides) {
@@ -400,7 +516,10 @@ export async function messageHandler(ctx: BotContext): Promise<void> {
                 await c.replyWithPhoto({ source: slidePath });
               }
             }
-            await c.reply(`✅ Carousel *${result.content?.title ?? topic}* selesai!`, { parse_mode: "Markdown" });
+            await c.reply(
+              `✅ Carousel *${result.content?.title ?? topic}* selesai!`,
+              { parse_mode: "Markdown" },
+            );
           } else {
             await c.reply(`❌ Gagal: ${result.error ?? "Unknown error"}`);
           }
@@ -413,28 +532,48 @@ export async function messageHandler(ctx: BotContext): Promise<void> {
       // Re-metadata video waiting
       async (c) => {
         if (!c.session?.stateData?.waitingForRemetaVideo) return false;
-        if (!("video" in (c.message ?? {})) && !("document" in (c.message ?? {}))) return false;
+        if (
+          !("video" in (c.message ?? {})) &&
+          !("document" in (c.message ?? {}))
+        )
+          return false;
 
-        const message = c.message as { video?: { file_id: string }; document?: { file_id: string; mime_type?: string } };
-        const fileId = message.video?.file_id ?? (message.document?.mime_type?.startsWith("video/") ? message.document?.file_id : undefined);
+        const message = c.message as {
+          video?: { file_id: string };
+          document?: { file_id: string; mime_type?: string };
+        };
+        const fileId =
+          message.video?.file_id ??
+          (message.document?.mime_type?.startsWith("video/")
+            ? message.document?.file_id
+            : undefined);
         if (!fileId) return false;
 
         const overlay = String(c.session.stateData?.remetaOverlay ?? "");
         const args = String(c.session.stateData?.remetaArgs ?? overlay);
-        c.session.stateData = { ...c.session.stateData, waitingForRemetaVideo: false };
+        c.session.stateData = {
+          ...c.session.stateData,
+          waitingForRemetaVideo: false,
+        };
 
         // Download video
         const fs = await import("fs");
         const path = await import("path");
         const fileLink = await c.telegram.getFileLink(fileId);
         const ext = fileLink.pathname.endsWith(".mp4") ? ".mp4" : ".mov";
-        const downloadPath = path.join("/tmp", `remeta_input_${Date.now()}${ext}`);
+        const downloadPath = path.join(
+          "/tmp",
+          `remeta_input_${Date.now()}${ext}`,
+        );
 
         const response = await fetch(fileLink.href);
         const buffer = Buffer.from(await response.arrayBuffer());
         fs.writeFileSync(downloadPath, buffer);
 
-        c.session.stateData = { ...c.session.stateData, lastVideoPath: downloadPath };
+        c.session.stateData = {
+          ...c.session.stateData,
+          lastVideoPath: downloadPath,
+        };
 
         // Process
         // Parse args inline
@@ -443,14 +582,22 @@ export async function messageHandler(ctx: BotContext): Promise<void> {
         let watermark = "";
         let niche = "general";
         for (let i = 1; i < parts.length; i++) {
-          if (parts[i] === "--watermark" && parts[i + 1]) { watermark = parts[i + 1]; i++; }
-          else if (parts[i] === "--niche" && parts[i + 1]) { niche = parts[i + 1]; i++; }
+          if (parts[i] === "--watermark" && parts[i + 1]) {
+            watermark = parts[i + 1];
+            i++;
+          } else if (parts[i] === "--niche" && parts[i + 1]) {
+            niche = parts[i + 1];
+            i++;
+          }
         }
 
-        await c.reply(`🔄 Re-rendering video with overlay "${overlayText}"...\n⏳ 30-60 detik...`);
+        await c.reply(
+          `🔄 Re-rendering video with overlay "${overlayText}"...\n⏳ 30-60 detik...`,
+        );
 
         try {
-          const { tiktokAutomation } = await import("@/services/tiktok-automation.service.js");
+          const { tiktokAutomation } =
+            await import("@/services/tiktok-automation.service.js");
           const result = await tiktokAutomation.remetaContent({
             source: downloadPath,
             overlay: overlayText,
@@ -460,9 +607,13 @@ export async function messageHandler(ctx: BotContext): Promise<void> {
 
           if (result.success) {
             const newVideoPath = result.video_path as string;
-            const metadata = result.metadata as Record<string, unknown> | undefined;
+            const metadata = result.metadata as
+              | Record<string, unknown>
+              | undefined;
             const changes = result.changes_applied as string[] | undefined;
-            const hashtags = Array.isArray(metadata?.hashtags) ? (metadata.hashtags as string[]).slice(0, 5).join(" ") : "";
+            const hashtags = Array.isArray(metadata?.hashtags)
+              ? (metadata.hashtags as string[]).slice(0, 5).join(" ")
+              : "";
 
             if (newVideoPath && fs.existsSync(newVideoPath)) {
               await c.replyWithVideo(

@@ -7,14 +7,18 @@
  */
 
 import { BotContext } from "@/types";
-import type { InlineKeyboardButton } from '@telegraf/types/markup';
+import type { InlineKeyboardButton } from "@telegraf/types/markup";
 import { logger } from "@/utils/logger";
 import { UserService } from "@/services/user.service";
 import {
   NICHES,
   generateStoryboard as genStoryboardFromService,
 } from "@/services/video-generation.service";
-import { getVideoCreditCost, SUBSCRIPTION_PLANS, CUSTOM_DURATION_MIN } from "@/config/pricing";
+import {
+  getVideoCreditCost,
+  SUBSCRIPTION_PLANS,
+  CUSTOM_DURATION_MIN,
+} from "@/config/pricing";
 import { t } from "@/i18n/translations";
 
 /** Resolve the user's preferred language from the DB record. */
@@ -63,7 +67,9 @@ export async function handleDurationSelection(
 
     // Validate duration
     if (duration < CUSTOM_DURATION_MIN) {
-      await ctx.answerCbQuery(t('msg.invalid_duration', ctx.session?.userLang || 'id')).catch(() => {});
+      await ctx
+        .answerCbQuery(t("msg.invalid_duration", ctx.session?.userLang || "id"))
+        .catch(() => {});
       return;
     }
 
@@ -84,7 +90,7 @@ export async function handleDurationSelection(
         });
         await ctx.reply(`👋 Welcome to 1AI Content!`);
       } catch (err) {
-        if ((err as {code: string})?.code === 'P2002') {
+        if ((err as { code: string })?.code === "P2002") {
           // Created concurrently by another handler — fetch the existing record
           dbUser = await UserService.findByTelegramId(BigInt(user.id));
         } else {
@@ -96,21 +102,28 @@ export async function handleDurationSelection(
     if (!dbUser) return;
 
     if (ctx.session) {
-      ctx.session.userMode = dbUser.userMode || 'content_creator';
+      ctx.session.userMode = dbUser.userMode || "content_creator";
     }
 
     const creditCost = getVideoCreditCost(duration);
 
     if (Number(dbUser.creditBalance) < creditCost) {
-      await ctx.answerCbQuery(t('gen.insufficient_credits', ctx.session?.userLang || 'id', { cost: '?', balance: '0' })).catch(() => {});
+      await ctx
+        .answerCbQuery(
+          t("gen.insufficient_credits", ctx.session?.userLang || "id", {
+            cost: "?",
+            balance: "0",
+          }),
+        )
+        .catch(() => {});
       const minPlan = SUBSCRIPTION_PLANS.lite;
       const maxPlan = SUBSCRIPTION_PLANS.agency;
       await ctx.reply(
         `Insufficient credits.\n\n` +
-        `Current: ${dbUser.creditBalance} | Needed: ${creditCost}\n\n` +
-        `Top Up -- Buy credits instantly\n` +
-        `Subscribe -- Get ${minPlan.monthlyCredits}-${maxPlan.monthlyCredits} credits/month (better value!)\n\n` +
-        `Which would you like?`,
+          `Current: ${dbUser.creditBalance} | Needed: ${creditCost}\n\n` +
+          `Top Up -- Buy credits instantly\n` +
+          `Subscribe -- Get ${minPlan.monthlyCredits}-${maxPlan.monthlyCredits} credits/month (better value!)\n\n` +
+          `Which would you like?`,
         {
           reply_markup: {
             inline_keyboard: [
@@ -160,11 +173,11 @@ export async function handleDurationSelection(
 
     await ctx.editMessageText(
       `${t("create.almost_ready", lang)}\n\n` +
-      `${t("create.niche_label", lang)}: ${niche}\n` +
-      `${t("create.duration_label", lang)}: ${duration}s (${scenes} ${sceneLabel})\n` +
-      `${t("create.credit_cost_label", lang)}: ${creditCost}\n\n` +
-      `🎙️ Voice Over: ${voLabel}\n` +
-      `📝 Subtitles: ${subLabel}\n`,
+        `${t("create.niche_label", lang)}: ${niche}\n` +
+        `${t("create.duration_label", lang)}: ${duration}s (${scenes} ${sceneLabel})\n` +
+        `${t("create.credit_cost_label", lang)}: ${creditCost}\n\n` +
+        `🎙️ Voice Over: ${voLabel}\n` +
+        `📝 Subtitles: ${subLabel}\n`,
       {
         parse_mode: "Markdown",
         reply_markup: {
@@ -186,7 +199,9 @@ export async function handleDurationSelection(
     );
   } catch (error) {
     logger.error("Error handling duration selection:", error);
-    await ctx.answerCbQuery(t('error.generic', ctx.session?.userLang || 'id')).catch(() => {});
+    await ctx
+      .answerCbQuery(t("error.generic", ctx.session?.userLang || "id"))
+      .catch(() => {});
   }
 }
 
@@ -200,9 +215,15 @@ export async function handleNicheSelection(
   try {
     if (!ctx.session) return;
 
-    const nicheConfig = (NICHES as Record<string, typeof NICHES[keyof typeof NICHES] | undefined>)[nicheKey];
+    const nicheConfig = (
+      NICHES as Record<string, (typeof NICHES)[keyof typeof NICHES] | undefined>
+    )[nicheKey];
     if (!nicheConfig) {
-      await ctx.answerCbQuery(t('topup.invalid_package', ctx.session?.userLang || 'id')).catch(() => {});
+      await ctx
+        .answerCbQuery(
+          t("topup.invalid_package", ctx.session?.userLang || "id"),
+        )
+        .catch(() => {});
       return;
     }
 
@@ -235,7 +256,7 @@ export async function handleNicheSelection(
 
     await ctx.editMessageText(
       `✅ ${nicheConfig.emoji} ${nicheConfig.name} ${t("create.niche_selected", lang)}\n\n` +
-      t("create.select_style", lang),
+        t("create.select_style", lang),
       {
         reply_markup: {
           inline_keyboard: styleButtons,
@@ -244,7 +265,9 @@ export async function handleNicheSelection(
     );
   } catch (error) {
     logger.error("Error handling niche selection:", error);
-    await ctx.answerCbQuery(t('error.generic', ctx.session?.userLang || 'id')).catch(() => {});
+    await ctx
+      .answerCbQuery(t("error.generic", ctx.session?.userLang || "id"))
+      .catch(() => {});
   }
 }
 
@@ -269,7 +292,7 @@ export async function handleStyleSelection(
     // Show platform picker (new step between style and duration)
     await ctx.editMessageText(
       `${t("create.style_selected", lang)}\n\n` +
-      t("create.select_platform", lang),
+        t("create.select_platform", lang),
       {
         reply_markup: {
           inline_keyboard: [
@@ -305,7 +328,9 @@ export async function handleStyleSelection(
     );
   } catch (error) {
     logger.error("Error handling style selection:", error);
-    await ctx.answerCbQuery(t('error.generic', ctx.session?.userLang || 'id')).catch(() => {});
+    await ctx
+      .answerCbQuery(t("error.generic", ctx.session?.userLang || "id"))
+      .catch(() => {});
   }
 }
 
@@ -344,8 +369,8 @@ export async function handlePlatformSelection(
     // Show duration picker
     await ctx.editMessageText(
       `${t("create.platform_selected", lang)} (${aspectRatio})\n\n` +
-      `${t("create.extend_mode", lang)}\n\n` +
-      t("create.select_duration", lang),
+        `${t("create.extend_mode", lang)}\n\n` +
+        t("create.select_duration", lang),
       {
         reply_markup: {
           inline_keyboard: [
@@ -387,6 +412,8 @@ export async function handlePlatformSelection(
     );
   } catch (error) {
     logger.error("Error handling platform selection:", error);
-    await ctx.answerCbQuery(t('error.generic', ctx.session?.userLang || 'id')).catch(() => {});
+    await ctx
+      .answerCbQuery(t("error.generic", ctx.session?.userLang || "id"))
+      .catch(() => {});
   }
 }

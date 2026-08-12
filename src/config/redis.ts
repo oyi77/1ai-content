@@ -1,12 +1,12 @@
 /**
  * Redis Configuration
- * 
+ *
  * Redis client initialization
  */
 
-import Redis from 'ioredis';
-import { logger } from '@/utils/logger';
-import { getConfig } from '@/config/env';
+import Redis from "ioredis";
+import { logger } from "@/utils/logger";
+import { getConfig } from "@/config/env";
 
 // Redis client instance (general use)
 export const redis = new Redis(getConfig().REDIS_URL, {
@@ -27,16 +27,16 @@ export const bullmqRedis = new Redis(getConfig().REDIS_URL, {
 });
 
 // Event handlers
-redis.on('connect', () => {
-  logger.info('✅ Redis connected');
+redis.on("connect", () => {
+  logger.info("✅ Redis connected");
 });
 
-redis.on('error', (error) => {
-  logger.error('❌ Redis error:', error);
+redis.on("error", (error) => {
+  logger.error("❌ Redis error:", error);
 });
 
-redis.on('reconnecting', () => {
-  logger.warn('🔄 Redis reconnecting...');
+redis.on("reconnecting", () => {
+  logger.warn("🔄 Redis reconnecting...");
 });
 
 /**
@@ -46,9 +46,9 @@ export async function initializeRedis(): Promise<void> {
   try {
     // Test connection
     await redis.ping();
-    logger.info('✅ Redis initialized successfully');
+    logger.info("✅ Redis initialized successfully");
   } catch (error) {
-    logger.error('❌ Redis initialization failed:', error);
+    logger.error("❌ Redis initialization failed:", error);
     throw error;
   }
 }
@@ -58,5 +58,5 @@ export async function initializeRedis(): Promise<void> {
  */
 export async function disconnectRedis(): Promise<void> {
   await redis.quit();
-  logger.info('Redis disconnected');
+  logger.info("Redis disconnected");
 }

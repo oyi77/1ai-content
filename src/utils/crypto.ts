@@ -1,8 +1,8 @@
-import crypto from 'crypto';
+import crypto from "crypto";
 
 /** Timing-safe string comparison to prevent timing attacks */
 export function timingSafeCompare(a: string, b: string): boolean {
-  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  if (typeof a !== "string" || typeof b !== "string") return false;
   const bufA = Buffer.from(a);
   const bufB = Buffer.from(b);
   if (bufA.length !== bufB.length) {
@@ -18,8 +18,9 @@ export function timingSafeCompare(a: string, b: string): boolean {
  * Do NOT use for: random array selection (Math.random() is fine for that).
  */
 export function secureRandomString(length: number = 8): string {
-  return crypto.randomBytes(Math.ceil(length / 2))
-    .toString('hex')
+  return crypto
+    .randomBytes(Math.ceil(length / 2))
+    .toString("hex")
     .slice(0, length)
     .toUpperCase();
 }

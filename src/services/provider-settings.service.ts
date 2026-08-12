@@ -1,10 +1,14 @@
-import { redis } from '@/config/redis';
-import { prisma } from '@/config/database';
-import { PROVIDER_CONFIG, VideoProviderConfig, ImageProviderConfig } from '@/config/providers';
+import { redis } from "@/config/redis";
+import { prisma } from "@/config/database";
+import {
+  PROVIDER_CONFIG,
+  VideoProviderConfig,
+  ImageProviderConfig,
+} from "@/config/providers";
 
-const PROVIDER_KEY = 'admin:provider_settings';
-const PROVIDER_VERSION_KEY = 'admin:provider_settings:version';
-const PROVIDER_VERSIONED_PREFIX = 'admin:provider_settings:v';
+const PROVIDER_KEY = "admin:provider_settings";
+const PROVIDER_VERSION_KEY = "admin:provider_settings:version";
+const PROVIDER_VERSIONED_PREFIX = "admin:provider_settings:v";
 const PROVIDER_CACHE_TTL_SECONDS = 300;
 
 function getVersionedProviderKey(version: string | number): string {
@@ -50,10 +54,13 @@ export class ProviderSettingsService {
     try {
       // DB fallback (persistent store)
       const dbRow = await prisma.pricingConfig.findUnique({
-        where: { category_key: { category: 'provider', key: 'settings' } },
+        where: { category_key: { category: "provider", key: "settings" } },
       });
       if (dbRow) {
-        const settings = dbRow.value as { video?: Record<string, { priority: number; enabled?: boolean }>; image?: Record<string, { priority: number; enabled?: boolean }> };
+        const settings = dbRow.value as {
+          video?: Record<string, { priority: number; enabled?: boolean }>;
+          image?: Record<string, { priority: number; enabled?: boolean }>;
+        };
         // Warm Redis cache with versioned + TTL entries.
         await writeProviderSettingsCache(settings);
         return settings;
@@ -64,11 +71,19 @@ export class ProviderSettingsService {
     return { video: {}, image: {} }; // Empty overrides returns default sorting
   }
 
-  static async updateSettings(settings: { video?: Record<string, { priority: number; enabled?: boolean }>; image?: Record<string, { priority: number; enabled?: boolean }> }) {
+  static async updateSettings(settings: {
+    video?: Record<string, { priority: number; enabled?: boolean }>;
+    image?: Record<string, { priority: number; enabled?: boolean }>;
+  }) {
     // Persist to DB (survives restarts)
     await prisma.pricingConfig.upsert({
-      where: { category_key: { category: 'provider', key: 'settings' } },
-      create: { category: 'provider', key: 'settings', value: settings, updatedBy: BigInt(0) },
+      where: { category_key: { category: "provider", key: "settings" } },
+      create: {
+        category: "provider",
+        key: "settings",
+        value: settings,
+        updatedBy: BigInt(0),
+      },
       update: { value: settings, updatedBy: BigInt(0) },
     });
 
@@ -76,7 +91,9 @@ export class ProviderSettingsService {
     await writeProviderSettingsCache(settings);
   }
 
-  static async getSortedVideoProviders(): Promise<Array<{ key: string } & VideoProviderConfig>> {
+  static async getSortedVideoProviders(): Promise<
+    Array<{ key: string } & VideoProviderConfig>
+  > {
     const overrides = await this.getDynamicSettings();
     const activeOverrides = overrides.video || {};
 
@@ -90,11 +107,13 @@ export class ProviderSettingsService {
           enabled: override?.enabled ?? true, // Allow soft disabling
         };
       })
-      .filter(p => p.enabled)
+      .filter((p) => p.enabled)
       .sort((a, b) => a.priority - b.priority);
   }
 
-  static async getSortedImageProviders(): Promise<Array<{ key: string } & ImageProviderConfig>> {
+  static async getSortedImageProviders(): Promise<
+    Array<{ key: string } & ImageProviderConfig>
+  > {
     const overrides = await this.getDynamicSettings();
     const activeOverrides = overrides.image || {};
 
@@ -108,7 +127,7 @@ export class ProviderSettingsService {
           enabled: override?.enabled ?? true, // Allow soft disabling
         };
       })
-      .filter(p => p.enabled)
+      .filter((p) => p.enabled)
       .sort((a, b) => a.priority - b.priority);
   }
 }

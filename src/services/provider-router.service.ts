@@ -11,14 +11,14 @@
  * Replaces the static getProviders() ordering in video-fallback.service.ts.
  */
 
-import { VideoProviderConfig } from '@/config/providers';
-import { CircuitBreaker } from './circuit-breaker.service';
-import { redis } from '@/config/redis';
-import { logger } from '@/utils/logger';
-import { ProviderSettingsService } from './provider-settings.service';
+import { VideoProviderConfig } from "@/config/providers";
+import { CircuitBreaker } from "./circuit-breaker.service";
+import { redis } from "@/config/redis";
+import { logger } from "@/utils/logger";
+import { ProviderSettingsService } from "./provider-settings.service";
 
 // Redis key prefix for provider history counters
-const HISTORY_PREFIX = 'provider:history:';
+const HISTORY_PREFIX = "provider:history:";
 const HISTORY_TTL = 86400; // 24 hour window — scores accumulate over a full day
 
 interface ProviderScore {
@@ -43,8 +43,10 @@ export class ProviderRouter {
    */
   static async getOrderedProviders(
     niche: string,
-    styles: string[]
-  ): Promise<Array<{ key: string; config: VideoProviderConfig; score: number }>> {
+    styles: string[],
+  ): Promise<
+    Array<{ key: string; config: VideoProviderConfig; score: number }>
+  > {
     // Merge static config with dynamic admin overrides
     const providers = await ProviderSettingsService.getSortedVideoProviders();
     const scored: ProviderScore[] = [];
@@ -58,8 +60,8 @@ export class ProviderRouter {
     scored.sort((a, b) => b.score - a.score);
 
     logger.debug(
-      `Provider routing for niche="${niche}" styles=[${styles.join(',')}]: ` +
-      scored.map((s) => `${s.key}(${s.score})`).join(' > ')
+      `Provider routing for niche="${niche}" styles=[${styles.join(",")}]: ` +
+        scored.map((s) => `${s.key}(${s.score})`).join(" > "),
     );
 
     return scored;
@@ -80,7 +82,7 @@ export class ProviderRouter {
     key: string,
     config: VideoProviderConfig,
     niche: string,
-    styles: string[]
+    styles: string[],
   ): Promise<number> {
     // Base score from priority (priority 1 = score 90, priority 9 = score 10)
     let score = (10 - config.priority) * 10;
@@ -88,7 +90,9 @@ export class ProviderRouter {
     // Niche match bonus
     const nicheLower = niche.toLowerCase();
     const hasNicheMatch = config.strengths.some(
-      (s) => nicheLower.includes(s.toLowerCase()) || s.toLowerCase().includes(nicheLower)
+      (s) =>
+        nicheLower.includes(s.toLowerCase()) ||
+        s.toLowerCase().includes(nicheLower),
     );
     if (hasNicheMatch) {
       score += 20;
@@ -97,7 +101,9 @@ export class ProviderRouter {
     // Style avoid penalty
     const stylesLower = styles.map((s) => s.toLowerCase());
     const hasAvoidMatch = config.avoid.some((a) =>
-      stylesLower.some((s) => s.includes(a.toLowerCase()) || a.toLowerCase().includes(s))
+      stylesLower.some(
+        (s) => s.includes(a.toLowerCase()) || a.toLowerCase().includes(s),
+      ),
     );
     if (hasAvoidMatch) {
       score -= 50;
@@ -119,8 +125,8 @@ export class ProviderRouter {
         redis.get(`${HISTORY_PREFIX}${key}:success`),
         redis.get(`${HISTORY_PREFIX}${key}:failure`),
       ]);
-      const successes = Math.min(parseInt(successStr || '0', 10), 5);
-      const failures = Math.min(parseInt(failureStr || '0', 10), 5);
+      const successes = Math.min(parseInt(successStr || "0", 10), 5);
+      const failures = Math.min(parseInt(failureStr || "0", 10), 5);
       score += successes * 10;
       score -= failures * 10;
     } catch (_) {
@@ -159,7 +165,10 @@ export class ProviderRouter {
   /**
    * Get ordered provider keys as a simple string array (convenience method).
    */
-  static async getOrderedProviderKeys(niche: string, styles: string[]): Promise<string[]> {
+  static async getOrderedProviderKeys(
+    niche: string,
+    styles: string[],
+  ): Promise<string[]> {
     const ordered = await this.getOrderedProviders(niche, styles);
     return ordered.map((p) => p.key);
   }

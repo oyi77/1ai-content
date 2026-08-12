@@ -49,11 +49,15 @@ export async function authRoutes(server: FastifyInstance): Promise<void> {
         }
         const isValid = checkTelegramHash(userData, getBotToken());
         if (!isValid) {
-          return reply.status(401).send({ error: "Auth hash verification failed" });
+          return reply
+            .status(401)
+            .send({ error: "Auth hash verification failed" });
         }
       }
 
-      let user = await UserService.findByTelegramId(BigInt(String(userData.id)));
+      let user = await UserService.findByTelegramId(
+        BigInt(String(userData.id)),
+      );
       if (!user) {
         try {
           user = await UserService.create({
@@ -64,8 +68,10 @@ export async function authRoutes(server: FastifyInstance): Promise<void> {
           });
         } catch (err: unknown) {
           const error = err as { code?: string };
-          if ((error as {code: string})?.code === "P2002") {
-            user = await UserService.findByTelegramId(BigInt(String(userData.id)));
+          if ((error as { code: string })?.code === "P2002") {
+            user = await UserService.findByTelegramId(
+              BigInt(String(userData.id)),
+            );
           } else {
             throw err;
           }

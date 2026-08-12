@@ -54,30 +54,32 @@ const envSchema = z.object({
   PEXELS_API_KEYS: z.string().optional(),
   PEXELS_API_KEY: z.string().optional(),
   // ── YouTube Workflow (all optional — sensible defaults) ──
-  YT_QUARANTINE_EARLY_MIN_AGE: z.string().default('150').transform(Number),
-  YT_TIER1_DURATION_MIN: z.string().default('15').transform(Number),
-  YT_TIER2_DURATION_MIN: z.string().default('30').transform(Number),
-  YT_TIER3_DURATION_MIN: z.string().default('60').transform(Number),
-  YT_QUARANTINE_TRIGGER_AGE_DAYS: z.string().default('200,230'),
-  YT_TRAFFIC_DROP_THRESHOLD: z.string().default('0.40').transform(Number),
-  YT_RECOVERY_THRESHOLD: z.string().default('0.80').transform(Number),
-  YT_MIN_SAMPLE_RATE: z.string().default('44100').transform(Number),
-  YT_MIN_VIDEO_WIDTH: z.string().default('1920').transform(Number),
-  YT_MIN_VIDEO_HEIGHT: z.string().default('1080').transform(Number),
-  YT_MAX_VIDEO_FILE_SIZE_MB: z.string().default('2048').transform(Number),
-  YT_MIN_THUMB_WIDTH: z.string().default('1280').transform(Number),
-  YT_MIN_THUMB_HEIGHT: z.string().default('720').transform(Number),
-  YT_MAX_TITLE_LENGTH: z.string().default('100').transform(Number),
-  YT_MIN_TAGS: z.string().default('15').transform(Number),
-  YT_MAX_TAGS: z.string().default('30').transform(Number),
-  YT_AUDIO_DURATION_TOLERANCE_PCT: z.string().default('0.10').transform(Number),
-  YT_VIDEO_DURATION_TOLERANCE_SEC: z.string().default('2').transform(Number),
-  YT_MIN_DESCRIPTION_LENGTH: z.string().default('200').transform(Number),
+  YT_QUARANTINE_EARLY_MIN_AGE: z.string().default("150").transform(Number),
+  YT_TIER1_DURATION_MIN: z.string().default("15").transform(Number),
+  YT_TIER2_DURATION_MIN: z.string().default("30").transform(Number),
+  YT_TIER3_DURATION_MIN: z.string().default("60").transform(Number),
+  YT_QUARANTINE_TRIGGER_AGE_DAYS: z.string().default("200,230"),
+  YT_TRAFFIC_DROP_THRESHOLD: z.string().default("0.40").transform(Number),
+  YT_RECOVERY_THRESHOLD: z.string().default("0.80").transform(Number),
+  YT_MIN_SAMPLE_RATE: z.string().default("44100").transform(Number),
+  YT_MIN_VIDEO_WIDTH: z.string().default("1920").transform(Number),
+  YT_MIN_VIDEO_HEIGHT: z.string().default("1080").transform(Number),
+  YT_MAX_VIDEO_FILE_SIZE_MB: z.string().default("2048").transform(Number),
+  YT_MIN_THUMB_WIDTH: z.string().default("1280").transform(Number),
+  YT_MIN_THUMB_HEIGHT: z.string().default("720").transform(Number),
+  YT_MAX_TITLE_LENGTH: z.string().default("100").transform(Number),
+  YT_MIN_TAGS: z.string().default("15").transform(Number),
+  YT_MAX_TAGS: z.string().default("30").transform(Number),
+  YT_AUDIO_DURATION_TOLERANCE_PCT: z.string().default("0.10").transform(Number),
+  YT_VIDEO_DURATION_TOLERANCE_SEC: z.string().default("2").transform(Number),
+  YT_MIN_DESCRIPTION_LENGTH: z.string().default("200").transform(Number),
   OPENAI_API_KEY: z.string().optional(),
   CLOAKBROWSER_URL: z.string().default("http://localhost:8090"),
   // Media/Content Factory API — single media backend (media-api :8767, services/run_api.py)
   CONTENT_FACTORY_URL: z.string().default("http://localhost:8767"),
-  SOCIAL_WEBHOOK_URL: z.string().default("http://localhost:8200/api/webhooks/content"),
+  SOCIAL_WEBHOOK_URL: z
+    .string()
+    .default("http://localhost:8200/api/webhooks/content"),
   SOCIAL_API_URL: z.string().default("http://localhost:8200"),
   CONTENT_WEBHOOK_SECRET: z.string().optional(),
   BYTEPLUS_API_KEY: z.string().optional(),
@@ -121,10 +123,10 @@ const envSchema = z.object({
   DUITKU_ENVIRONMENT: z.string().default("sandbox"),
   NOWPAYMENTS_API_KEY: z.string().optional(),
   NOWPAYMENTS_IPN_SECRET: z.string().optional(),
-  '1AI_PAYMENT_URL': z.string().default("http://localhost:3100"),
-  '1AI_PAYMENT_API_KEY': z.string().optional(),
-  '1AI_PAYMENT_WEBHOOK_SECRET': z.string().optional(),
-  'ECOSYSTEM_API_KEY': z.string().optional(),
+  "1AI_PAYMENT_URL": z.string().default("http://localhost:3100"),
+  "1AI_PAYMENT_API_KEY": z.string().optional(),
+  "1AI_PAYMENT_WEBHOOK_SECRET": z.string().optional(),
+  ECOSYSTEM_API_KEY: z.string().optional(),
 
   // ── AI / Chat ──
   OMNIROUTE_URL: z.string().default("http://localhost:20128/v1"),
@@ -134,26 +136,37 @@ const envSchema = z.object({
   GROK_API_REPO: z.string().optional(),
   GROQ_API_KEY: z.string().optional(),
   GROK_NIM_URL: z.string().default("http://localhost:30000/v1"),
-  
+
   // ── Video Providers (4K / 60fps) ──
   VEO_API_KEY: z.string().optional(),
-  VEO_API_URL: z.string().default("https://generativelanguage.googleapis.com/v1beta"),
+  VEO_API_URL: z
+    .string()
+    .default("https://generativelanguage.googleapis.com/v1beta"),
   VEO_MODEL: z.string().default("veo-3.1"),
   VEO_MAX_DURATION: z.string().default("60").transform(Number),
-  VEO_SUPPORTS_4K: z.string().default("true").transform((v) => v === "true"),
-  
+  VEO_SUPPORTS_4K: z
+    .string()
+    .default("true")
+    .transform((v) => v === "true"),
+
   KLING_API_KEY: z.string().optional(),
   KLING_API_URL: z.string().default("https://api.klingai.com/v1"),
   KLING_MODEL: z.string().default("kling-3.0"),
   KLING_MAX_DURATION: z.string().default("120").transform(Number),
-  KLING_SUPPORTS_60FPS: z.string().default("true").transform((v) => v === "true"),
-  
+  KLING_SUPPORTS_60FPS: z
+    .string()
+    .default("true")
+    .transform((v) => v === "true"),
+
   // ── Audio Generation ──
   ELEVENLABS_API_KEY: z.string().optional(),
   ELEVENLABS_API_URL: z.string().default("https://api.elevenlabs.io/v1"),
   ELEVENLABS_VOICE_ID: z.string().default("21m00Tcm4TlvDq8ikWAM"),
-  AUDIO_GENERATION_ENABLED: z.string().default("false").transform((v) => v === "true"),
-  
+  AUDIO_GENERATION_ENABLED: z
+    .string()
+    .default("false")
+    .transform((v) => v === "true"),
+
   AI_PIPELINE_DIRECT_URL: z.string().default("http://localhost:20128/v1"),
   AI_PIPELINE_DIRECT_API_KEY: z.string().optional(),
   AI_PIPELINE_HUB_URL: z.string().optional(),
@@ -181,7 +194,6 @@ const envSchema = z.object({
   FEATURE_PAYMENT: boolStr,
   FEATURE_REFERRAL: boolStr,
   FEATURE_VIDEO_GENERATION: boolStr,
-
 
   // ── Other ──
   USD_TO_IDR_RATE: z.string().default("16000").transform(Number),
@@ -322,9 +334,7 @@ const CONFIG_GROUPS: Record<string, { keys: string[]; sensitive: string[] }> = {
       "ELEVENLABS_VOICE_ID",
       "AUDIO_GENERATION_ENABLED",
     ],
-    sensitive: [
-      "ELEVENLABS_API_KEY",
-    ],
+    sensitive: ["ELEVENLABS_API_KEY"],
   },
   "Image Providers": {
     keys: [
@@ -390,7 +400,13 @@ const CONFIG_GROUPS: Record<string, { keys: string[]; sensitive: string[] }> = {
       "AI_PIPELINE_MODE",
       "AGENTROUTER_API_KEY",
     ],
-    sensitive: ["OMNIROUTE_API_KEY", "GROQ_API_KEY", "AI_PIPELINE_DIRECT_API_KEY", "AI_PIPELINE_HUB_API_KEY", "AGENTROUTER_API_KEY"],
+    sensitive: [
+      "OMNIROUTE_API_KEY",
+      "GROQ_API_KEY",
+      "AI_PIPELINE_DIRECT_API_KEY",
+      "AI_PIPELINE_HUB_API_KEY",
+      "AGENTROUTER_API_KEY",
+    ],
   },
   Analytics: {
     keys: [

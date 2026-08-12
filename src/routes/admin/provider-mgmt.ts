@@ -9,15 +9,18 @@ import { trackingVars } from "./shared";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 
-const providerOverrideSchema = zodToJsonSchema(z.record(z.string(), z.unknown()), "providerOverride");
+const providerOverrideSchema = zodToJsonSchema(
+  z.record(z.string(), z.unknown()),
+  "providerOverride",
+);
 
 export async function registerProviderMgmtRoutes(
   server: FastifyInstance,
-  verifyAdmin: (request: FastifyRequest, reply: FastifyReply) => Promise<boolean>,
+  verifyAdmin: (
+    request: FastifyRequest,
+    reply: FastifyReply,
+  ) => Promise<boolean>,
 ) {
-
-
-
   /** GET /api/admin/providers/all — Full provider list with health + overrides + env status */
   server.get("/api/admin/providers/all", async () => {
     const overrides = await ProviderSettingsService.getDynamicSettings();
@@ -162,7 +165,9 @@ export async function registerProviderMgmtRoutes(
       const result = await ProviderBalanceService.testProvider(key);
       return result;
     } catch (err) {
-      return reply.status(500).send({ success: false, error: (err as Error).message });
+      return reply
+        .status(500)
+        .send({ success: false, error: (err as Error).message });
     }
   });
 
@@ -181,22 +186,28 @@ export async function registerProviderMgmtRoutes(
   });
 
   /** POST /api/admin/settings/providers — Update dynamic provider overrides */
-  server.post("/api/admin/settings/providers", {
-    schema: {
-      body: providerOverrideSchema,
+  server.post(
+    "/api/admin/settings/providers",
+    {
+      schema: {
+        body: providerOverrideSchema,
+      },
     },
-  }, async (request, reply) => {
-    if (!await verifyAdmin(request, reply)) return;
-    const body = request.body as Record<string, unknown>;
-    await ProviderSettingsService.updateSettings(body as Parameters<typeof ProviderSettingsService.updateSettings>[0]);
-    await redis.publish(
-      "admin_events",
-      JSON.stringify({
-        type: "settings_updated",
-        category: "providers",
-        timestamp: new Date().toISOString(),
-      }),
-    );
-    return { success: true };
-  });
+    async (request, reply) => {
+      if (!(await verifyAdmin(request, reply))) return;
+      const body = request.body as Record<string, unknown>;
+      await ProviderSettingsService.updateSettings(
+        body as Parameters<typeof ProviderSettingsService.updateSettings>[0],
+      );
+      await redis.publish(
+        "admin_events",
+        JSON.stringify({
+          type: "settings_updated",
+          category: "providers",
+          timestamp: new Date().toISOString(),
+        }),
+      );
+      return { success: true };
+    },
+  );
 }

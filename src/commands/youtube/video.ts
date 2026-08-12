@@ -17,15 +17,23 @@ export function registerVideoCommands(bot: Telegraf<Context>): void {
       return;
     }
 
-    await ctx.reply(`⏳ Approving video \`${videoId}\`...`, { parse_mode: "Markdown" });
+    await ctx.reply(`⏳ Approving video \`${videoId}\`...`, {
+      parse_mode: "Markdown",
+    });
 
-    const video = await prisma.ytPublishedVideo.findUnique({ where: { videoId } });
+    const video = await prisma.ytPublishedVideo.findUnique({
+      where: { videoId },
+    });
     if (!video) {
-      await ctx.reply(`❌ Video \`${videoId}\` not found.`, { parse_mode: "Markdown" });
+      await ctx.reply(`❌ Video \`${videoId}\` not found.`, {
+        parse_mode: "Markdown",
+      });
       return;
     }
 
-    await ctx.reply(`✅ Video \`${videoId}\` approved for publish.`, { parse_mode: "Markdown" });
+    await ctx.reply(`✅ Video \`${videoId}\` approved for publish.`, {
+      parse_mode: "Markdown",
+    });
   });
 
   bot.command("yt_reject", async (ctx) => {
@@ -37,7 +45,9 @@ export function registerVideoCommands(bot: Telegraf<Context>): void {
       return;
     }
 
-    await ctx.reply(`❌ Video \`${videoId}\` rejected.\nReason: ${reason}`, { parse_mode: "Markdown" });
+    await ctx.reply(`❌ Video \`${videoId}\` rejected.\nReason: ${reason}`, {
+      parse_mode: "Markdown",
+    });
   });
 
   bot.command("yt_edit_title", async (ctx) => {
@@ -54,6 +64,8 @@ export function registerVideoCommands(bot: Telegraf<Context>): void {
       data: { title: newTitle },
     });
 
-    await ctx.reply(`✏️ Title updated for \`${videoId}\`:\n*${newTitle}*`, { parse_mode: "Markdown" });
+    await ctx.reply(`✏️ Title updated for \`${videoId}\`:\n*${newTitle}*`, {
+      parse_mode: "Markdown",
+    });
   });
 }

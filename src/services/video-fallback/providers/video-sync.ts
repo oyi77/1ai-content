@@ -29,9 +29,11 @@ function readRefImageBase64(refPath: string): string | null {
 async function generateViaLaoZhang(
   params: VideoFallbackParams,
 ): Promise<VideoFallbackResult> {
-  const content: Array<{ type: string; text?: string; image_url?: { url: string } }> = [
-    { type: "text", text: params.prompt },
-  ];
+  const content: Array<{
+    type: string;
+    text?: string;
+    image_url?: { url: string };
+  }> = [{ type: "text", text: params.prompt }];
 
   if (params.referenceImage && fs.existsSync(params.referenceImage)) {
     const imgBase64 = readRefImageBase64(params.referenceImage);
@@ -63,7 +65,8 @@ async function generateViaLaoZhang(
   );
 
   const choices = response.data?.choices;
-  if (!choices?.length) throw new ProviderError("laozhang", "No choices in response");
+  if (!choices?.length)
+    throw new ProviderError("laozhang", "No choices in response");
 
   const messageContent = choices[0]?.message?.content || "";
   const urlMatch =
@@ -72,7 +75,10 @@ async function generateViaLaoZhang(
       : null;
 
   if (!urlMatch) {
-    throw new ProviderError("laozhang", `No video URL in response: ${String(messageContent).substring(0, 200)}`);
+    throw new ProviderError(
+      "laozhang",
+      `No video URL in response: ${String(messageContent).substring(0, 200)}`,
+    );
   }
 
   return { success: true, videoUrl: urlMatch[0], provider: "laozhang" };

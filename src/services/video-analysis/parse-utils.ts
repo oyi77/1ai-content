@@ -1,7 +1,7 @@
 /**
  * Parse utilities — JSON extraction, fallback result builder.
  */
-import type { VideoAnalysisResult } from './types';
+import type { VideoAnalysisResult } from "./types";
 
 /**
  * Extract JSON from a string that may contain markdown code fences or extra text.
@@ -24,16 +24,16 @@ export function extractJSON(text: string): string {
 export function buildFallbackResult(videoUrl: string): VideoAnalysisResult {
   return {
     success: true,
-    niche: 'general',
-    style: 'unknown',
+    niche: "general",
+    style: "unknown",
     totalDuration: 15,
-    transcript: '',
+    transcript: "",
     storyboard: [
       {
         scene: 1,
         startTime: 0,
         duration: 15,
-        description: 'Full video content (analysis unavailable)',
+        description: "Full video content (analysis unavailable)",
         prompt: `cinematic video recreation based on source: ${videoUrl.slice(0, 80)}`,
       },
     ],

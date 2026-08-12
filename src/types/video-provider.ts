@@ -29,7 +29,7 @@ export interface GenerateVideoResult {
 }
 
 export interface PollResult {
-  status: 'pending' | 'completed' | 'failed';
+  status: "pending" | "completed" | "failed";
   videoUrl?: string;
 }
 

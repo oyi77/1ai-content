@@ -1,9 +1,9 @@
 /**
  * User Service (Facade)
- * 
+ *
  * Re-exports all user-related operations from domain-specific services.
  * Maintains backward compatibility with existing imports.
- * 
+ *
  * Domain breakdown:
  * - user-crud.service.ts: CRUD operations (find, create, update, ban/unban)
  * - user-credits.service.ts: Credit management and refund processing
@@ -13,28 +13,28 @@
  */
 
 // Re-export all CRUD operations
-export { UserCrudService } from './user-crud.service';
+export { UserCrudService } from "./user-crud.service";
 
 // Re-export credit operations
-export { UserCreditsService } from './user-credits.service';
+export { UserCreditsService } from "./user-credits.service";
 
 // Re-export referral operations
-export { UserReferralService } from './user-referral.service';
+export { UserReferralService } from "./user-referral.service";
 
 // Re-export Telegram operations
-export { UserTelegramService } from './user-telegram.service';
+export { UserTelegramService } from "./user-telegram.service";
 
 // Re-export stats operations
-export { UserStatsService } from './user-stats.service';
+export { UserStatsService } from "./user-stats.service";
 
 // Facade that re-exports everything as static methods on UserService
 // This maintains backward compatibility with code that imports UserService directly
-import { UserCrudService } from './user-crud.service';
-import { UserCreditsService } from './user-credits.service';
-import { UserReferralService } from './user-referral.service';
-import { UserTelegramService } from './user-telegram.service';
-import { UserStatsService } from './user-stats.service';
-import { User, Prisma } from '@prisma/client';
+import { UserCrudService } from "./user-crud.service";
+import { UserCreditsService } from "./user-credits.service";
+import { UserReferralService } from "./user-referral.service";
+import { UserTelegramService } from "./user-telegram.service";
+import { UserStatsService } from "./user-stats.service";
+import { User, Prisma } from "@prisma/client";
 
 /**
  * @deprecated Use domain-specific services instead:
@@ -43,7 +43,7 @@ import { User, Prisma } from '@prisma/client';
  * - UserReferralService for referral codes
  * - UserTelegramService for Telegram DMs
  * - UserStatsService for stats
- * 
+ *
  * For backward compatibility, this class re-exports all methods as static:
  * UserService.findByTelegramId() === UserCrudService.findByTelegramId()
  */

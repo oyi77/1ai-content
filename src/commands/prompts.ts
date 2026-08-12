@@ -10,6 +10,25 @@
  *   (this file)       — promptsCommand, dailyCommand, trendingCommand, fingerprintCommand, saveLibraryPrompt
  */
 
-export { PROMPT_LIBRARY, TRENDING_PROMPTS, MYSTERY_PROMPTS, findAnyPrompt, getPromptById, getUserDailyPrompt } from './prompts.data';
-export { showNichePrompts, showPromptDetail, showCustomizePrompt, showMyPrompts, startAddCustomPrompt } from './prompts.ui';
-export { promptsCommand, dailyCommand, trendingCommand, fingerprintCommand, saveLibraryPrompt } from './prompts.commands';
+export {
+  PROMPT_LIBRARY,
+  TRENDING_PROMPTS,
+  MYSTERY_PROMPTS,
+  findAnyPrompt,
+  getPromptById,
+  getUserDailyPrompt,
+} from "./prompts.data";
+export {
+  showNichePrompts,
+  showPromptDetail,
+  showCustomizePrompt,
+  showMyPrompts,
+  startAddCustomPrompt,
+} from "./prompts.ui";
+export {
+  promptsCommand,
+  dailyCommand,
+  trendingCommand,
+  fingerprintCommand,
+  saveLibraryPrompt,
+} from "./prompts.commands";

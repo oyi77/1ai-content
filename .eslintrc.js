@@ -5,6 +5,9 @@ module.exports = {
     project: ['./tsconfig.json'],
     sourceType: 'module',
   },
+  ignorePatterns: [
+    'src/tools/vidbee/**',
+  ],
   plugins: [
     '@typescript-eslint',
   ],

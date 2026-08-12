@@ -19,27 +19,31 @@ import { getUser } from "./middleware";
 
 export async function userRoutes(server: FastifyInstance): Promise<void> {
   // ── GET /api/user ──
-  server.get("/api/user", { preHandler: [readLimiter] }, async (request, reply) => {
-    const user = await getUser(request, reply);
-    if (!user) return;
-    return {
-      id: user.uuid,
-      telegramId: user.telegramId.toString(),
-      username: user.username,
-      firstName: user.firstName,
-      credits: user.creditBalance,
-      tier: user.tier,
-      referralCode: user.referralCode,
-      email: user.email,
-      emailVerified: user.emailVerifiedAt != null,
-      dailyFreeUsed: user.dailyFreeUsed,
-      dailyFreeResetAt: user.dailyFreeResetAt,
-      selectedNiche: user.selectedNiche ?? null,
-      userMode: user.userMode ?? null,
-      welcomeBonusUsed: user.welcomeBonusUsed ?? false,
-      createdAt: user.createdAt,
-    };
-  });
+  server.get(
+    "/api/user",
+    { preHandler: [readLimiter] },
+    async (request, reply) => {
+      const user = await getUser(request, reply);
+      if (!user) return;
+      return {
+        id: user.uuid,
+        telegramId: user.telegramId.toString(),
+        username: user.username,
+        firstName: user.firstName,
+        credits: user.creditBalance,
+        tier: user.tier,
+        referralCode: user.referralCode,
+        email: user.email,
+        emailVerified: user.emailVerifiedAt != null,
+        dailyFreeUsed: user.dailyFreeUsed,
+        dailyFreeResetAt: user.dailyFreeResetAt,
+        selectedNiche: user.selectedNiche ?? null,
+        userMode: user.userMode ?? null,
+        welcomeBonusUsed: user.welcomeBonusUsed ?? false,
+        createdAt: user.createdAt,
+      };
+    },
+  );
 
   // ── DELETE /api/user ──
   server.delete("/api/user", async (request, reply) => {
@@ -66,7 +70,13 @@ export async function userRoutes(server: FastifyInstance): Promise<void> {
   server.patch("/api/user/settings", async (request, reply) => {
     const user = await getUser(request, reply);
     if (!user) return;
-    const { language, notificationsEnabled, firstName, selectedNiche, userMode } = (request.body ?? {}) as {
+    const {
+      language,
+      notificationsEnabled,
+      firstName,
+      selectedNiche,
+      userMode,
+    } = (request.body ?? {}) as {
       language?: string;
       notificationsEnabled?: boolean;
       firstName?: string;
@@ -81,7 +91,11 @@ export async function userRoutes(server: FastifyInstance): Promise<void> {
       data.language = language;
     }
     if (firstName !== undefined) {
-      if (typeof firstName !== "string" || firstName.trim().length === 0 || firstName.length > 64)
+      if (
+        typeof firstName !== "string" ||
+        firstName.trim().length === 0 ||
+        firstName.length > 64
+      )
         return reply.status(400).send({ error: "Invalid name (1-64 chars)" });
       data.firstName = firstName.trim();
     }
@@ -118,7 +132,10 @@ export async function userRoutes(server: FastifyInstance): Promise<void> {
         where: { uuid: user.uuid },
         select: { creditBalance: true },
       });
-      return { granted, creditBalance: fresh?.creditBalance ?? user.creditBalance };
+      return {
+        granted,
+        creditBalance: fresh?.creditBalance ?? user.creditBalance,
+      };
     } catch (error) {
       logger.error("Welcome bonus error:", error);
       return reply.status(500).send({ error: "Failed to claim welcome bonus" });
@@ -127,17 +144,22 @@ export async function userRoutes(server: FastifyInstance): Promise<void> {
 
   // ── GET /api/user/videos ──
   server.get("/api/user/videos", async (request, reply) => {
-    if ((request.headers as Record<string, string>)['x-api-key']) { if (!await tryApiKeyAuth(request, reply)) return; }
+    if ((request.headers as Record<string, string>)["x-api-key"]) {
+      if (!(await tryApiKeyAuth(request, reply))) return;
+    }
     const user = await getUser(request, reply);
     if (!user) return;
     try {
       const query = request.query as { limit?: string; cursor?: string };
-      const limit = Math.min(Math.max(1, parseInt(query.limit || '20') || 20), 50);
+      const limit = Math.min(
+        Math.max(1, parseInt(query.limit || "20") || 20),
+        50,
+      );
       const cursor = query.cursor as string | undefined;
 
       const videoRows = await prisma.video.findMany({
         where: { userId: user.telegramId },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         take: limit + 1,
         ...(cursor ? { cursor: { jobId: cursor }, skip: 1 } : {}),
       });
@@ -147,7 +169,9 @@ export async function userRoutes(server: FastifyInstance): Promise<void> {
 
       return {
         videos: videoRows,
-        nextCursor: hasMore ? videoRows[videoRows.length - 1]?.jobId ?? null : null,
+        nextCursor: hasMore
+          ? (videoRows[videoRows.length - 1]?.jobId ?? null)
+          : null,
       };
     } catch {
       return reply.status(500).send({ error: "Failed to fetch videos" });
@@ -156,17 +180,22 @@ export async function userRoutes(server: FastifyInstance): Promise<void> {
 
   // ── GET /api/user/history ──
   server.get("/api/user/history", async (request, reply) => {
-    if ((request.headers as Record<string, string>)['x-api-key']) { if (!await tryApiKeyAuth(request, reply)) return; }
+    if ((request.headers as Record<string, string>)["x-api-key"]) {
+      if (!(await tryApiKeyAuth(request, reply))) return;
+    }
     const user = await getUser(request, reply);
     if (!user) return;
     try {
       const query = request.query as { limit?: string; cursor?: string };
-      const limit = Math.min(Math.max(1, parseInt(query.limit || '20') || 20), 50);
+      const limit = Math.min(
+        Math.max(1, parseInt(query.limit || "20") || 20),
+        50,
+      );
       const cursor = query.cursor as string | undefined;
 
       const jobRows = await prisma.video.findMany({
         where: { userId: user.telegramId },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         take: limit + 1,
         ...(cursor ? { cursor: { jobId: cursor }, skip: 1 } : {}),
         select: {
@@ -195,7 +224,9 @@ export async function userRoutes(server: FastifyInstance): Promise<void> {
           createdAt: r.createdAt,
           creditsUsed: r.creditsUsed,
         })),
-        nextCursor: hasMore ? jobRows[jobRows.length - 1]?.jobId ?? null : null,
+        nextCursor: hasMore
+          ? (jobRows[jobRows.length - 1]?.jobId ?? null)
+          : null,
       };
     } catch {
       return reply.status(500).send({ error: "Failed to fetch history" });

@@ -1,9 +1,9 @@
 /**
  * Image Generation — Utility functions
  */
-import { getConfig } from '@/config/env';
-import { RESOLUTION_MULTIPLIERS } from './constants';
-import type { ImageGenerationMode, ImageGenerationParams } from './types';
+import { getConfig } from "@/config/env";
+import { RESOLUTION_MULTIPLIERS } from "./constants";
+import type { ImageGenerationMode, ImageGenerationParams } from "./types";
 
 /** Read dynamically so tests can toggle it */
 export function isDemoMode(): boolean {

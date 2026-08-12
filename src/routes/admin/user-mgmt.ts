@@ -29,20 +29,26 @@ export async function registerUserMgmtRoutes(server: FastifyInstance) {
   });
 
   // Change User Tier
-  server.patch("/api/users/:id/tier", { preHandler: validate({ params: idParamSchema, body: tierBodySchema }) }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const { id } = request.params as { id: string };
-    const { tier } = (request.body ?? {}) as { tier: string };
-    const validTiers = ["free", "basic", "lite", "pro", "agency"];
-    if (!tier || !validTiers.includes(tier.toLowerCase()))
-      return reply.status(400).send({ error: "Invalid tier" });
-    try {
-      const user = await prisma.user.update({
-        where: { telegramId: BigInt(id) },
-        data: { tier: tier.toLowerCase() },
-      });
-      return { success: true, tier: user.tier };
-    } catch (error) {
-      return reply.status(404).send({ error: "User not found or invalid ID" });
-    }
-  });
+  server.patch(
+    "/api/users/:id/tier",
+    { preHandler: validate({ params: idParamSchema, body: tierBodySchema }) },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { id } = request.params as { id: string };
+      const { tier } = (request.body ?? {}) as { tier: string };
+      const validTiers = ["free", "basic", "lite", "pro", "agency"];
+      if (!tier || !validTiers.includes(tier.toLowerCase()))
+        return reply.status(400).send({ error: "Invalid tier" });
+      try {
+        const user = await prisma.user.update({
+          where: { telegramId: BigInt(id) },
+          data: { tier: tier.toLowerCase() },
+        });
+        return { success: true, tier: user.tier };
+      } catch (error) {
+        return reply
+          .status(404)
+          .send({ error: "User not found or invalid ID" });
+      }
+    },
+  );
 }

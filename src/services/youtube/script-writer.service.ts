@@ -6,7 +6,11 @@
  */
 
 import { logger } from "@/utils/logger";
-import { getTier1Duration, getTier2Duration, getTier3Duration } from "@/config/youtube.config";
+import {
+  getTier1Duration,
+  getTier2Duration,
+  getTier3Duration,
+} from "@/config/youtube.config";
 import type { ChannelTier } from "@/config/youtube.config";
 
 interface TimestampMarker {
@@ -25,10 +29,14 @@ interface ScriptResult {
 
 function getTargetDuration(tier: ChannelTier): number {
   switch (tier) {
-    case "tier_1_cold_start": return getTier1Duration();
-    case "tier_2_growing": return getTier2Duration();
-    case "tier_3_established": return getTier3Duration();
-    default: return getTier1Duration();
+    case "tier_1_cold_start":
+      return getTier1Duration();
+    case "tier_2_growing":
+      return getTier2Duration();
+    case "tier_3_established":
+      return getTier3Duration();
+    default:
+      return getTier1Duration();
   }
 }
 
@@ -41,10 +49,20 @@ export async function generateScript(
   const targetMinutes = getTargetDuration(channelTier);
   const targetSeconds = targetMinutes * 60;
 
-  const hookTypes = ["mystery_question", "shocking_fact", "controversial_claim", "unresolved_mystery"];
+  const hookTypes = [
+    "mystery_question",
+    "shocking_fact",
+    "controversial_claim",
+    "unresolved_mystery",
+  ];
   const hookType = hookTypes[Math.floor(Math.random() * hookTypes.length)];
 
-  const segments = generateSegments(ideaSummary, toneVariant, hookType, targetMinutes);
+  const segments = generateSegments(
+    ideaSummary,
+    toneVariant,
+    hookType,
+    targetMinutes,
+  );
   const timestamps: TimestampMarker[] = [];
   let currentTime = 0;
 
@@ -61,8 +79,16 @@ export async function generateScript(
 
   const script = segments.map((s) => s.text).join("\n\n");
 
-  logger.info(`[script-writer] Generated ${targetMinutes}min script for "${titleDraft}"`);
-  return { script, timestamps, durationEstimate: targetSeconds, hookType, toneVariant };
+  logger.info(
+    `[script-writer] Generated ${targetMinutes}min script for "${titleDraft}"`,
+  );
+  return {
+    script,
+    timestamps,
+    durationEstimate: targetSeconds,
+    hookType,
+    toneVariant,
+  };
 }
 
 interface Segment {
@@ -71,7 +97,12 @@ interface Segment {
   durationSec: number;
 }
 
-function generateSegments(summary: string, tone: string, hookType: string, targetMinutes: number): Segment[] {
+function generateSegments(
+  summary: string,
+  tone: string,
+  hookType: string,
+  targetMinutes: number,
+): Segment[] {
   const totalSec = targetMinutes * 60;
   const hookSec = 10;
   const bodySec = Math.floor(totalSec * 0.7);

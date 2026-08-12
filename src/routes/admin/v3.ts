@@ -6,14 +6,22 @@ import { getConfig } from "@/config/env";
 import { GamificationService, BADGES } from "@/services/gamification.service";
 import { retentionQueue } from "@/workers/retention.worker";
 import { HOOK_VARIATIONS } from "@/services/campaign.service";
-import { CREDIT_PACKAGES_V3, SUBSCRIPTION_PLANS_V3, UNIT_COSTS, COMMISSIONS } from "@/config/packages";
+import {
+  CREDIT_PACKAGES_V3,
+  SUBSCRIPTION_PLANS_V3,
+  UNIT_COSTS,
+  COMMISSIONS,
+} from "@/config/packages";
 import { INDUSTRY_TEMPLATES, DURATION_PRESETS } from "@/config/hpas-engine";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 
-const retentionTriggerSchema = zodToJsonSchema(z.object({
-  type: z.enum(["dormancy", "reengagement", "winback", "upgrade"]),
-}), "retentionTrigger");
+const retentionTriggerSchema = zodToJsonSchema(
+  z.object({
+    type: z.enum(["dormancy", "reengagement", "winback", "upgrade"]),
+  }),
+  "retentionTrigger",
+);
 
 export async function registerV3Routes(server: FastifyInstance) {
   // ── v3.0 Gamification ──
@@ -59,36 +67,46 @@ export async function registerV3Routes(server: FastifyInstance) {
   });
 
   /** POST /api/v3/retention/trigger — Manual trigger for testing */
-  server.post("/api/v3/retention/trigger", {
-    schema: { body: retentionTriggerSchema },
-  }, async (request, reply) => {
-    const { type } = (request.body ?? {}) as { type: string };
-    try {
-      await retentionQueue.add("run_checks", { type });
-      return { queued: true, type };
-    } catch (error) {
-      return reply
-        .status(500)
-        .send({ error: "Failed to queue retention check" });
-    }
-  });
+  server.post(
+    "/api/v3/retention/trigger",
+    {
+      schema: { body: retentionTriggerSchema },
+    },
+    async (request, reply) => {
+      const { type } = (request.body ?? {}) as { type: string };
+      try {
+        await retentionQueue.add("run_checks", { type });
+        return { queued: true, type };
+      } catch (error) {
+        return reply
+          .status(500)
+          .send({ error: "Failed to queue retention check" });
+      }
+    },
+  );
 
   // ── v3.0 User Gamification ──
 
   /** GET /api/v3/users/:id/gamification — admin-only (per-user gamification lookup) */
-  server.get("/api/v3/users/:id/gamification", { onRequest: [verifyAdmin] }, async (request: FastifyRequest, reply) => {
-    try {
-      const userId = BigInt((request.params as { id: string }).id);
-      const [summary, streak, badges] = await Promise.all([
-        GamificationService.getUserGamificationSummary(userId),
-        prisma.userStreak.findUnique({ where: { userId } }),
-        prisma.userBadge.findMany({ where: { userId } }),
-      ]);
-      return { summary, streak, badges };
-    } catch (error) {
-      return reply.status(404).send({ error: "User not found or invalid ID" });
-    }
-  });
+  server.get(
+    "/api/v3/users/:id/gamification",
+    { onRequest: [verifyAdmin] },
+    async (request: FastifyRequest, reply) => {
+      try {
+        const userId = BigInt((request.params as { id: string }).id);
+        const [summary, streak, badges] = await Promise.all([
+          GamificationService.getUserGamificationSummary(userId),
+          prisma.userStreak.findUnique({ where: { userId } }),
+          prisma.userBadge.findMany({ where: { userId } }),
+        ]);
+        return { summary, streak, badges };
+      } catch (error) {
+        return reply
+          .status(404)
+          .send({ error: "User not found or invalid ID" });
+      }
+    },
+  );
 
   // ── v3.0 Campaign & Pricing ──
 
@@ -151,20 +169,26 @@ export async function registerV3Routes(server: FastifyInstance) {
       subscriber.on("message", (_channel: string, message: string) => {
         try {
           reply.raw.write(`data: ${message}\n\n`);
-        } catch { /* client disconnected */ }
+        } catch {
+          /* client disconnected */
+        }
       });
 
       const heartbeat = setInterval(() => {
         try {
           reply.raw.write(`: heartbeat\n\n`);
-        } catch { /* client disconnected */ }
+        } catch {
+          /* client disconnected */
+        }
       }, 30000);
 
       request.raw.on("close", () => {
         clearInterval(heartbeat);
         try {
           subscriber.disconnect();
-        } catch { /* already disconnected */ }
+        } catch {
+          /* already disconnected */
+        }
       });
     } catch (error) {
       reply.raw.write(

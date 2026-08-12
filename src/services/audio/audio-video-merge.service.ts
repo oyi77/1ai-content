@@ -69,7 +69,9 @@ export class AudioVideoMergeService {
   /**
    * Merge audio with video
    */
-  async mergeAudioVideo(request: AudioMergeRequest): Promise<AudioMergeResponse> {
+  async mergeAudioVideo(
+    request: AudioMergeRequest,
+  ): Promise<AudioMergeResponse> {
     await this.init();
 
     const options = request.options || {};
@@ -105,13 +107,20 @@ export class AudioVideoMergeService {
       const command = [
         "ffmpeg",
         "-y",
-        "-i", request.videoPath,
-        "-i", request.audioPath,
-        "-filter_complex", filterComplex,
-        "-c:v", "copy",
-        "-c:a", "aac",
-        "-b:a", "192k",
-        "-ar", "48000", // 48kHz for Veo compatibility
+        "-i",
+        request.videoPath,
+        "-i",
+        request.audioPath,
+        "-filter_complex",
+        filterComplex,
+        "-c:v",
+        "copy",
+        "-c:a",
+        "aac",
+        "-b:a",
+        "192k",
+        "-ar",
+        "48000", // 48kHz for Veo compatibility
         "-shortest",
         request.outputPath,
       ].join(" ");
@@ -138,7 +147,10 @@ export class AudioVideoMergeService {
     } catch (err) {
       const error = err instanceof Error ? err.message : "Unknown error";
       logger.error({ msg: "Audio-Video merge: Failed", error });
-      throw new ExternalServiceError("AudioVideoMerge", `Audio-Video merge failed: ${error}`);
+      throw new ExternalServiceError(
+        "AudioVideoMerge",
+        `Audio-Video merge failed: ${error}`,
+      );
     }
   }
 
@@ -168,27 +180,43 @@ export class AudioVideoMergeService {
     if (options.fadeOut > 0) {
       const fadeOutStart = options.audioDuration - options.fadeOut;
       const input = options.fadeIn > 0 ? "[a2]" : "[a1]";
-      filters.push(`${input}afade=t=out:st=${fadeOutStart}:d=${options.fadeOut}[a3]`);
+      filters.push(
+        `${input}afade=t=out:st=${fadeOutStart}:d=${options.fadeOut}[a3]`,
+      );
     }
 
     // Delay audio start
     if (options.startTime > 0) {
-      const input = options.fadeOut > 0 ? "[a3]" : options.fadeIn > 0 ? "[a2]" : "[a1]";
-      filters.push(`${input}adelay=${options.startTime * 1000}|${options.startTime * 1000}[a4]`);
+      const input =
+        options.fadeOut > 0 ? "[a3]" : options.fadeIn > 0 ? "[a2]" : "[a1]";
+      filters.push(
+        `${input}adelay=${options.startTime * 1000}|${options.startTime * 1000}[a4]`,
+      );
     }
 
     // Loop audio if needed
     if (options.loop && options.audioDuration < options.videoDuration) {
-      const input = options.startTime > 0 ? "[a4]" : options.fadeOut > 0 ? "[a3]" : options.fadeIn > 0 ? "[a2]" : "[a1]";
+      const input =
+        options.startTime > 0
+          ? "[a4]"
+          : options.fadeOut > 0
+            ? "[a3]"
+            : options.fadeIn > 0
+              ? "[a2]"
+              : "[a1]";
       filters.push(`${input}aloop=loop=-1:size=2e+09[a5]`);
     }
 
     // Select final audio stream
-    const finalStream = options.loop ? "[a5]" :
-      options.startTime > 0 ? "[a4]" :
-      options.fadeOut > 0 ? "[a3]" :
-      options.fadeIn > 0 ? "[a2]" :
-      "[a1]";
+    const finalStream = options.loop
+      ? "[a5]"
+      : options.startTime > 0
+        ? "[a4]"
+        : options.fadeOut > 0
+          ? "[a3]"
+          : options.fadeIn > 0
+            ? "[a2]"
+            : "[a1]";
 
     filters.push(`[0:a]${finalStream}amix=inputs=2:duration=first[out]`);
 
@@ -202,7 +230,7 @@ export class AudioVideoMergeService {
     try {
       const { stdout } = await execAsync(
         `ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${filePath}"`,
-        { timeout: 10000 }
+        { timeout: 10000 },
       );
       return parseFloat(stdout.trim());
     } catch {
@@ -219,7 +247,12 @@ export class AudioVideoMergeService {
   } {
     return {
       available: true, // FFmpeg is always available
-      capabilities: ["audio-overlay", "fade-in-out", "volume-control", "timeline-sync"],
+      capabilities: [
+        "audio-overlay",
+        "fade-in-out",
+        "volume-control",
+        "timeline-sync",
+      ],
     };
   }
 }

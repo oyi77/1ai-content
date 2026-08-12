@@ -1,10 +1,13 @@
 /** Shared helper functions for balance-checker strategies. */
 
-import axios from 'axios';
-import { logger } from '@/utils/logger';
+import axios from "axios";
+import { logger } from "@/utils/logger";
 
-export function matchesPattern(baseUrl: string, pattern: string | RegExp): boolean {
-  if (typeof pattern === 'string') {
+export function matchesPattern(
+  baseUrl: string,
+  pattern: string | RegExp,
+): boolean {
+  if (typeof pattern === "string") {
     return baseUrl.toLowerCase().includes(pattern.toLowerCase());
   }
   return pattern.test(baseUrl);
@@ -38,7 +41,7 @@ export async function httpPost(
   const res = await axios.post(url, body, {
     headers: {
       Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     timeout,
   });

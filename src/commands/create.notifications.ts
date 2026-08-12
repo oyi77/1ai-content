@@ -6,12 +6,12 @@
  */
 
 import { BotContext } from "@/types";
-import type { InlineKeyboardButton } from '@telegraf/types/markup';
+import type { InlineKeyboardButton } from "@telegraf/types/markup";
 import { logger } from "@/utils/logger";
 import { VideoService } from "@/services/video.service";
 import { PostAutomationService } from "@/services/postautomation.service";
 import { getConfig } from "@/config/env";
-import { ConfigError } from '@/utils/app-errors';
+import { ConfigError } from "@/utils/app-errors";
 import { actionableError } from "@/utils/errors";
 import { generateCaption } from "./create.caption";
 import { getVideoCreditCost } from "@/config/pricing";
@@ -32,7 +32,7 @@ export async function sendSuccessNotification(
   const webhookUrl = getConfig().WEBHOOK_URL.replace(/\/webhook.*$/, "");
   const videoUserId = video.userId.toString();
   const jwtSecret = getConfig().JWT_SECRET;
-  if (!jwtSecret) throw new ConfigError('JWT_SECRET');
+  if (!jwtSecret) throw new ConfigError("JWT_SECRET");
   const downloadToken = (await import("jsonwebtoken")).default.sign(
     { telegramId: videoUserId, jobId },
     jwtSecret,
@@ -91,7 +91,7 @@ export async function sendSuccessNotification(
     `✅ *Video Selesai!*\n\n` +
     `🎬 Durasi: ${duration}s | Platform: ${platform.toUpperCase()}`;
 
-  if (video.downloadUrl && (await import('fs')).existsSync(video.downloadUrl)) {
+  if (video.downloadUrl && (await import("fs")).existsSync(video.downloadUrl)) {
     // Local file: stream directly to Telegram
     await ctx.replyWithVideo(
       { source: video.downloadUrl },

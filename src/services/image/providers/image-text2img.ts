@@ -7,10 +7,17 @@
 
 import { logger } from "@/utils/logger";
 import { getConfig } from "@/config/env";
-import { ProviderError, ProviderTimeoutError, AllProvidersFailedError } from "@/utils/app-errors";
+import {
+  ProviderError,
+  ProviderTimeoutError,
+  AllProvidersFailedError,
+} from "@/utils/app-errors";
 import axios from "axios";
 import FormData from "form-data";
-import type { ImageGenerationParams, ImageGenerationResult } from "../../image.service";
+import type {
+  ImageGenerationParams,
+  ImageGenerationResult,
+} from "../../image.service";
 
 // ── Shared Constants & Helpers ─────────────────────────────────────────────
 
@@ -22,7 +29,10 @@ export type ProviderFn = (
 ) => Promise<ImageGenerationResult>;
 
 /** Get target width/height from params or fall back to aspect-ratio lookup */
-export function getDims(params: ImageGenerationParams): { width: number; height: number } {
+export function getDims(params: ImageGenerationParams): {
+  width: number;
+  height: number;
+} {
   const p = params as unknown as Record<string, unknown>;
   const w = p._targetWidth as number | undefined;
   const h = p._targetHeight as number | undefined;
@@ -45,10 +55,16 @@ export function getImageDimensions(
 ): { width: number; height: number } {
   const base = getDims({ aspectRatio } as ImageGenerationParams);
   if (resolution === "ultra") {
-    return { width: Math.round(base.width * 1.5), height: Math.round(base.height * 1.5) };
+    return {
+      width: Math.round(base.width * 1.5),
+      height: Math.round(base.height * 1.5),
+    };
   }
   if (resolution === "hd") {
-    return { width: Math.round(base.width * 1.25), height: Math.round(base.height * 1.25) };
+    return {
+      width: Math.round(base.width * 1.25),
+      height: Math.round(base.height * 1.25),
+    };
   }
   return base;
 }
@@ -76,13 +92,17 @@ export async function generateViaGeminiGen(
   formData.append("resolution", "1K");
   formData.append("aspect_ratio", mapAspectRatio(params.aspectRatio));
 
-  const response = await axios.post(`${GEMINIGEN_API_BASE}/generate_image`, formData, {
-    headers: {
-      "x-api-key": getConfig().GEMINIGEN_API_KEY || "",
-      ...formData.getHeaders(),
+  const response = await axios.post(
+    `${GEMINIGEN_API_BASE}/generate_image`,
+    formData,
+    {
+      headers: {
+        "x-api-key": getConfig().GEMINIGEN_API_KEY || "",
+        ...formData.getHeaders(),
+      },
+      timeout: 60000,
     },
-    timeout: 60000,
-  });
+  );
 
   const { uuid, status } = response.data;
   if (status === 2 || status === 1) {
@@ -96,7 +116,8 @@ export async function generateViaGeminiGen(
         return {
           success: true,
           imageUrl: generated_image[0].image_url || "",
-          thumbnailUrl: thumbnail_url || generated_image[0].thumbnails?.[0]?.url || "",
+          thumbnailUrl:
+            thumbnail_url || generated_image[0].thumbnails?.[0]?.url || "",
           provider: "geminigen",
           mode: "text2img",
         };
@@ -135,8 +156,15 @@ export async function generateViaSiliconFlow(
     const url = images[0].url || images[0].b64_json;
     if (url) {
       const imageUrl =
-        url.startsWith("data:") || url.startsWith("http") ? url : `data:image/png;base64,${url}`;
-      return { success: true, imageUrl, provider: "siliconflow", mode: "text2img" };
+        url.startsWith("data:") || url.startsWith("http")
+          ? url
+          : `data:image/png;base64,${url}`;
+      return {
+        success: true,
+        imageUrl,
+        provider: "siliconflow",
+        mode: "text2img",
+      };
     }
   }
   throw new ProviderError("SiliconFlow", "no images returned");
@@ -185,7 +213,9 @@ export async function generateViaGemini(
   const response = await axios.post(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${getConfig().GEMINI_API_KEY || ""}`,
     {
-      contents: [{ parts: [{ text: `Generate a high-quality image: ${prompt}` }] }],
+      contents: [
+        { parts: [{ text: `Generate a high-quality image: ${prompt}` }] },
+      ],
       generationConfig: { responseModalities: ["TEXT", "IMAGE"] },
     },
     { headers: { "Content-Type": "application/json" }, timeout: 60000 },
@@ -230,7 +260,10 @@ export async function generateViaLaoZhangGptImage(
       const data = response.data?.data;
       if (data?.length > 0) {
         const url =
-          data[0].url || (data[0].b64_json ? `data:image/png;base64,${data[0].b64_json}` : null);
+          data[0].url ||
+          (data[0].b64_json
+            ? `data:image/png;base64,${data[0].b64_json}`
+            : null);
         if (url)
           return {
             success: true,
@@ -240,7 +273,9 @@ export async function generateViaLaoZhangGptImage(
           };
       }
     } catch (err) {
-      logger.warn(`LaoZhang ${model} failed: ${(err as any).response?.status || (err as Error).message}`);
+      logger.warn(
+        `LaoZhang ${model} failed: ${(err as any).response?.status || (err as Error).message}`,
+      );
     }
   }
   throw new AllProvidersFailedError("LaoZhang text2img");
@@ -271,8 +306,16 @@ export async function generateViaTogether(
 
   const data = response.data?.data;
   if (data?.length > 0) {
-    const url = data[0].url || (data[0].b64_json ? `data:image/png;base64,${data[0].b64_json}` : null);
-    if (url) return { success: true, imageUrl: url, provider: "together_schnell", mode: "text2img" };
+    const url =
+      data[0].url ||
+      (data[0].b64_json ? `data:image/png;base64,${data[0].b64_json}` : null);
+    if (url)
+      return {
+        success: true,
+        imageUrl: url,
+        provider: "together_schnell",
+        mode: "text2img",
+      };
   }
   throw new ProviderError("Together.ai", "no image returned");
 }
@@ -282,18 +325,28 @@ export async function generateViaRunwareImg(
   params: ImageGenerationParams,
 ): Promise<ImageGenerationResult> {
   const API_KEY = getConfig().RUNWARE_API_KEY;
-  if (!API_KEY) return { success: false, error: "RUNWARE_API_KEY not configured" };
+  if (!API_KEY)
+    return { success: false, error: "RUNWARE_API_KEY not configured" };
   const dims = getDims(params);
   const resp = await axios.post(
     "https://api.runware.ai/v1/images",
     { prompt, model: "runware-100", width: dims.width, height: dims.height },
     {
-      headers: { Authorization: `Bearer ${API_KEY}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${API_KEY}`,
+        "Content-Type": "application/json",
+      },
       timeout: 30000,
     },
   );
   const url = resp.data?.data?.[0]?.url || resp.data?.image_url;
-  if (url) return { success: true, imageUrl: url, provider: "runware", mode: "text2img" };
+  if (url)
+    return {
+      success: true,
+      imageUrl: url,
+      provider: "runware",
+      mode: "text2img",
+    };
   throw new ProviderError("Runware", "image: no URL returned");
 }
 
@@ -302,18 +355,28 @@ export async function generateViaWaveSpeedImg(
   params: ImageGenerationParams,
 ): Promise<ImageGenerationResult> {
   const API_KEY = getConfig().WAVESPEED_API_KEY;
-  if (!API_KEY) return { success: false, error: "WAVESPEED_API_KEY not configured" };
+  if (!API_KEY)
+    return { success: false, error: "WAVESPEED_API_KEY not configured" };
   const dims = getDims(params);
   const resp = await axios.post(
     "https://api.wavespeed.ai/v1/image/generations",
     { prompt, width: dims.width, height: dims.height },
     {
-      headers: { Authorization: `Bearer ${API_KEY}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${API_KEY}`,
+        "Content-Type": "application/json",
+      },
       timeout: 30000,
     },
   );
   const url = resp.data?.url || resp.data?.image_url || resp.data?.output?.url;
-  if (url) return { success: true, imageUrl: url, provider: "wavespeed", mode: "text2img" };
+  if (url)
+    return {
+      success: true,
+      imageUrl: url,
+      provider: "wavespeed",
+      mode: "text2img",
+    };
   throw new ProviderError("WaveSpeed", "image: no URL returned");
 }
 
@@ -328,12 +391,17 @@ export async function generateViaZAIImg(
     "https://api.z.ai/v1/images/generate",
     { prompt, width: dims.width, height: dims.height },
     {
-      headers: { Authorization: `Bearer ${API_KEY}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${API_KEY}`,
+        "Content-Type": "application/json",
+      },
       timeout: 30000,
     },
   );
-  const url = resp.data?.url || resp.data?.image_url || resp.data?.data?.[0]?.url;
-  if (url) return { success: true, imageUrl: url, provider: "zai", mode: "text2img" };
+  const url =
+    resp.data?.url || resp.data?.image_url || resp.data?.data?.[0]?.url;
+  if (url)
+    return { success: true, imageUrl: url, provider: "zai", mode: "text2img" };
   throw new ProviderError("Z.ai", "image: no URL returned");
 }
 
@@ -344,21 +412,36 @@ export async function generateViaOmniRoute(
   const config = getConfig();
   const OMNIROUTE_URL = config.OMNIROUTE_URL;
   const OMNIROUTE_API_KEY = config.OMNIROUTE_API_KEY || "";
-  if (!OMNIROUTE_API_KEY) return { success: false, error: "OMNIROUTE_API_KEY not configured" };
+  if (!OMNIROUTE_API_KEY)
+    return { success: false, error: "OMNIROUTE_API_KEY not configured" };
 
   const dims = getDims(params);
   const response = await axios.post(
     `${OMNIROUTE_URL}/images/generations`,
-    { model: "dall-e-3", prompt, n: 1, size: `${dims.width}x${dims.height}`, response_format: "url" },
     {
-      headers: { Authorization: `Bearer ${OMNIROUTE_API_KEY}`, "Content-Type": "application/json" },
+      model: "dall-e-3",
+      prompt,
+      n: 1,
+      size: `${dims.width}x${dims.height}`,
+      response_format: "url",
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${OMNIROUTE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
       timeout: 60000,
     },
   );
 
   const data = response.data?.data;
   if (data?.length > 0 && data[0].url) {
-    return { success: true, imageUrl: data[0].url, provider: "omniroute", mode: "text2img" };
+    return {
+      success: true,
+      imageUrl: data[0].url,
+      provider: "omniroute",
+      mode: "text2img",
+    };
   }
   throw new ProviderError("OmniRoute", "no image returned");
 }

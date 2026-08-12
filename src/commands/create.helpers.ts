@@ -12,9 +12,11 @@ export function buildPrompt(
   description: string,
   platform: string,
   duration: number,
-  customPrompt?: string | null
+  customPrompt?: string | null,
 ): string {
-  const baseDescription = customPrompt ? `${customPrompt} - ${description}` : description;
+  const baseDescription = customPrompt
+    ? `${customPrompt} - ${description}`
+    : description;
   return `${duration}s ${baseDescription}, high quality, ${platform} format, professional style`;
 }
 

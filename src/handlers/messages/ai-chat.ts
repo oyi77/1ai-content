@@ -15,7 +15,10 @@ import { showMainMenu } from "@/menus/main";
  * Try to handle the text as an AI chat message.
  * Returns true if the message was sent to AI chat (regardless of success).
  */
-export async function tryAIChat(ctx: BotContext, text: string): Promise<boolean> {
+export async function tryAIChat(
+  ctx: BotContext,
+  text: string,
+): Promise<boolean> {
   const trimmed = text.trim();
   if (trimmed.length <= 2 || trimmed.startsWith("/")) {
     return false;

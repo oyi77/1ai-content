@@ -13,22 +13,49 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
  * exchange rate, pixel tracking IDs.
  */
 
-const exchangeRateBodySchema = zodToJsonSchema(z.object({
-  rate: z.string().refine((v) => {
-    const n = Number(v);
-    return !isNaN(n) && n >= 10_000 && n <= 50_000;
-  }, { message: "Rate must be a number between 10,000 and 50,000 IDR/USD" }),
-}), "exchangeRateBody");
+const exchangeRateBodySchema = zodToJsonSchema(
+  z.object({
+    rate: z.string().refine(
+      (v) => {
+        const n = Number(v);
+        return !isNaN(n) && n >= 10_000 && n <= 50_000;
+      },
+      { message: "Rate must be a number between 10,000 and 50,000 IDR/USD" },
+    ),
+  }),
+  "exchangeRateBody",
+);
 
-const pixelConfigBodySchema = zodToJsonSchema(z.object({
-  fbPixelId: z.string().regex(/^[a-zA-Z0-9_-]*$/).optional().default(""),
-  ga4Id: z.string().regex(/^[a-zA-Z0-9_-]*$/).optional().default(""),
-  ttPixelId: z.string().regex(/^[a-zA-Z0-9_-]*$/).optional().default(""),
-}), "pixelConfigBody");
+const pixelConfigBodySchema = zodToJsonSchema(
+  z.object({
+    fbPixelId: z
+      .string()
+      .regex(/^[a-zA-Z0-9_-]*$/)
+      .optional()
+      .default(""),
+    ga4Id: z
+      .string()
+      .regex(/^[a-zA-Z0-9_-]*$/)
+      .optional()
+      .default(""),
+    ttPixelId: z
+      .string()
+      .regex(/^[a-zA-Z0-9_-]*$/)
+      .optional()
+      .default(""),
+  }),
+  "pixelConfigBody",
+);
 
-type AdminVerifier = (request: FastifyRequest, reply: FastifyReply) => Promise<boolean>;
+type AdminVerifier = (
+  request: FastifyRequest,
+  reply: FastifyReply,
+) => Promise<boolean>;
 
-export async function registerSystemSettingsRoutes(server: FastifyInstance, verifyAdmin: AdminVerifier) {
+export async function registerSystemSettingsRoutes(
+  server: FastifyInstance,
+  verifyAdmin: AdminVerifier,
+) {
   // GET /api/settings/exchange-rate
   server.get("/api/settings/exchange-rate", async () => {
     return ExchangeRateService.getRate();
@@ -40,24 +67,28 @@ export async function registerSystemSettingsRoutes(server: FastifyInstance, veri
   });
 
   // POST /api/settings/exchange-rate
-  server.post("/api/settings/exchange-rate", {
-    schema: { body: exchangeRateBodySchema },
-  }, async (request, reply) => {
-    const { rate } = (request.body ?? {}) as { rate: string };
-    const numRate = Number(rate);
-    await prisma.pricingConfig.upsert({
-      where: { category_key: { category: "system", key: "exchange_rate" } },
-      create: {
-        category: "system",
-        key: "exchange_rate",
-        value: numRate,
-        updatedBy: BigInt(0),
-      },
-      update: { value: numRate, updatedBy: BigInt(0) },
-    });
-    await redis.set("admin:exchange_rate", String(numRate));
-    return { success: true, rate: numRate };
-  });
+  server.post(
+    "/api/settings/exchange-rate",
+    {
+      schema: { body: exchangeRateBodySchema },
+    },
+    async (request, reply) => {
+      const { rate } = (request.body ?? {}) as { rate: string };
+      const numRate = Number(rate);
+      await prisma.pricingConfig.upsert({
+        where: { category_key: { category: "system", key: "exchange_rate" } },
+        create: {
+          category: "system",
+          key: "exchange_rate",
+          value: numRate,
+          updatedBy: BigInt(0),
+        },
+        update: { value: numRate, updatedBy: BigInt(0) },
+      });
+      await redis.set("admin:exchange_rate", String(numRate));
+      return { success: true, rate: numRate };
+    },
+  );
 
   // GET /api/settings/pixels
   server.get("/api/settings/pixels", async () => {
@@ -84,26 +115,30 @@ export async function registerSystemSettingsRoutes(server: FastifyInstance, veri
   });
 
   // POST /api/settings/pixels
-  server.post("/api/settings/pixels", {
-    schema: { body: pixelConfigBodySchema },
-  }, async (request, reply) => {
-    const body = (request.body ?? {}) as Record<string, unknown>;
-    const config = {
-      fbPixelId: (body.fbPixelId as string) || "",
-      ga4Id: (body.ga4Id as string) || "",
-      ttPixelId: (body.ttPixelId as string) || "",
-    };
-    await prisma.pricingConfig.upsert({
-      where: { category_key: { category: "system", key: "pixel_config" } },
-      create: {
-        category: "system",
-        key: "pixel_config",
-        value: config,
-        updatedBy: BigInt(0),
-      },
-      update: { value: config, updatedBy: BigInt(0) },
-    });
-    await redis.set("admin:pixel_config", JSON.stringify(config));
-    return { success: true };
-  });
+  server.post(
+    "/api/settings/pixels",
+    {
+      schema: { body: pixelConfigBodySchema },
+    },
+    async (request, reply) => {
+      const body = (request.body ?? {}) as Record<string, unknown>;
+      const config = {
+        fbPixelId: (body.fbPixelId as string) || "",
+        ga4Id: (body.ga4Id as string) || "",
+        ttPixelId: (body.ttPixelId as string) || "",
+      };
+      await prisma.pricingConfig.upsert({
+        where: { category_key: { category: "system", key: "pixel_config" } },
+        create: {
+          category: "system",
+          key: "pixel_config",
+          value: config,
+          updatedBy: BigInt(0),
+        },
+        update: { value: config, updatedBy: BigInt(0) },
+      });
+      await redis.set("admin:pixel_config", JSON.stringify(config));
+      return { success: true };
+    },
+  );
 }

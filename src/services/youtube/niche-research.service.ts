@@ -61,36 +61,116 @@ export async function runNicheCpmResearch(): Promise<ResearchResult> {
     {
       nicheVertical: "folklore_history",
       subNiches: [
-        { name: "Appalachian Folk Horror", targetCountries: ["USA", "UK"], language: "English", searchVolume: "HIGH", competitionLevel: "LOW", priorityScore: 8.5 },
-        { name: "Norse Mythology Deep Dives", targetCountries: ["Norway", "UK", "USA"], language: "English", searchVolume: "MEDIUM", competitionLevel: "MEDIUM", priorityScore: 7.0 },
-        { name: "Nusantara Legends", targetCountries: ["Indonesia", "Malaysia"], language: "Indonesian", searchVolume: "HIGH", competitionLevel: "LOW", priorityScore: 7.5 },
+        {
+          name: "Appalachian Folk Horror",
+          targetCountries: ["USA", "UK"],
+          language: "English",
+          searchVolume: "HIGH",
+          competitionLevel: "LOW",
+          priorityScore: 8.5,
+        },
+        {
+          name: "Norse Mythology Deep Dives",
+          targetCountries: ["Norway", "UK", "USA"],
+          language: "English",
+          searchVolume: "MEDIUM",
+          competitionLevel: "MEDIUM",
+          priorityScore: 7.0,
+        },
+        {
+          name: "Nusantara Legends",
+          targetCountries: ["Indonesia", "Malaysia"],
+          language: "Indonesian",
+          searchVolume: "HIGH",
+          competitionLevel: "LOW",
+          priorityScore: 7.5,
+        },
       ],
     },
     {
       nicheVertical: "music",
       subNiches: [
-        { name: "Dark Ambient Sleep", targetCountries: ["USA", "UK", "Germany"], language: "English", searchVolume: "HIGH", competitionLevel: "LOW", priorityScore: 9.0 },
-        { name: "Lofi Hip Hop Study", targetCountries: ["USA", "Japan"], language: "English", searchVolume: "HIGH", competitionLevel: "HIGH", priorityScore: 6.0 },
-        { name: "Classical Piano Focus", targetCountries: ["USA", "UK", "Germany"], language: "English", searchVolume: "MEDIUM", competitionLevel: "MEDIUM", priorityScore: 7.5 },
+        {
+          name: "Dark Ambient Sleep",
+          targetCountries: ["USA", "UK", "Germany"],
+          language: "English",
+          searchVolume: "HIGH",
+          competitionLevel: "LOW",
+          priorityScore: 9.0,
+        },
+        {
+          name: "Lofi Hip Hop Study",
+          targetCountries: ["USA", "Japan"],
+          language: "English",
+          searchVolume: "HIGH",
+          competitionLevel: "HIGH",
+          priorityScore: 6.0,
+        },
+        {
+          name: "Classical Piano Focus",
+          targetCountries: ["USA", "UK", "Germany"],
+          language: "English",
+          searchVolume: "MEDIUM",
+          competitionLevel: "MEDIUM",
+          priorityScore: 7.5,
+        },
       ],
     },
     {
       nicheVertical: "true_crime",
       subNiches: [
-        { name: "Cold Case Files", targetCountries: ["USA", "UK"], language: "English", searchVolume: "HIGH", competitionLevel: "MEDIUM", priorityScore: 7.0 },
-        { name: "Forensic Science Explained", targetCountries: ["USA"], language: "English", searchVolume: "MEDIUM", competitionLevel: "LOW", priorityScore: 8.0 },
+        {
+          name: "Cold Case Files",
+          targetCountries: ["USA", "UK"],
+          language: "English",
+          searchVolume: "HIGH",
+          competitionLevel: "MEDIUM",
+          priorityScore: 7.0,
+        },
+        {
+          name: "Forensic Science Explained",
+          targetCountries: ["USA"],
+          language: "English",
+          searchVolume: "MEDIUM",
+          competitionLevel: "LOW",
+          priorityScore: 8.0,
+        },
       ],
     },
   ];
 
   const crossNiche = [
-    { combination: ["music", "folklore_history"], name: "Mythology Ambient Music", description: "Ambient music based on mythologies", priorityScore: 7.5 },
-    { combination: ["music", "true_crime"], name: "Dark Crime Atmospheres", description: "Atmospheric music for crime content", priorityScore: 6.5 },
+    {
+      combination: ["music", "folklore_history"],
+      name: "Mythology Ambient Music",
+      description: "Ambient music based on mythologies",
+      priorityScore: 7.5,
+    },
+    {
+      combination: ["music", "true_crime"],
+      name: "Dark Crime Atmospheres",
+      description: "Atmospheric music for crime content",
+      priorityScore: 6.5,
+    },
   ];
 
   const recommendations = [
-    { nicheVertical: "music", subNiche: "Dark Ambient Sleep", targetCountry: "USA", targetLanguage: "English", estimatedCpm: 12.5, priority: "OPEN_NOW" },
-    { nicheVertical: "folklore_history", subNiche: "Appalachian Folk Horror", targetCountry: "USA", targetLanguage: "English", estimatedCpm: 18.5, priority: "OPEN_NOW" },
+    {
+      nicheVertical: "music",
+      subNiche: "Dark Ambient Sleep",
+      targetCountry: "USA",
+      targetLanguage: "English",
+      estimatedCpm: 12.5,
+      priority: "OPEN_NOW",
+    },
+    {
+      nicheVertical: "folklore_history",
+      subNiche: "Appalachian Folk Horror",
+      targetCountry: "USA",
+      targetLanguage: "English",
+      estimatedCpm: 18.5,
+      priority: "OPEN_NOW",
+    },
   ];
 
   const result: ResearchResult = {
@@ -117,13 +197,20 @@ export async function runNicheCpmResearch(): Promise<ResearchResult> {
 }
 
 export async function getLatestResearch(): Promise<ResearchResult | null> {
-  const latest = await prisma.ytNicheCpmResearch.findFirst({ orderBy: { researchDate: "desc" } });
+  const latest = await prisma.ytNicheCpmResearch.findFirst({
+    orderBy: { researchDate: "desc" },
+  });
   if (!latest) return null;
   return {
     researchDate: latest.researchDate.toISOString(),
     cpmSnapshot: (latest.cpmSnapshot as unknown as YtCpmSnapshot) || {},
-    nicheAnalysis: (latest.nicheAnalysis as unknown as ResearchResult["nicheAnalysis"]) || [],
-    crossNiche: (latest.crossNiche as unknown as ResearchResult["crossNiche"]) || [],
-    recommendations: (latest.recommendations as unknown as ResearchResult["recommendations"]) || [],
+    nicheAnalysis:
+      (latest.nicheAnalysis as unknown as ResearchResult["nicheAnalysis"]) ||
+      [],
+    crossNiche:
+      (latest.crossNiche as unknown as ResearchResult["crossNiche"]) || [],
+    recommendations:
+      (latest.recommendations as unknown as ResearchResult["recommendations"]) ||
+      [],
   };
 }

@@ -73,13 +73,24 @@ const API_KEY_MAP: Record<string, string> = {
   agentrouter: "AGENTROUTER_API_KEY",
 };
 
-const INVALID_API_KEYS = ["xai", "siliconflow", "together", "agentrouter", "falai", "piapi", "wavespeed", "zai_video"];
+const INVALID_API_KEYS = [
+  "xai",
+  "siliconflow",
+  "together",
+  "agentrouter",
+  "falai",
+  "piapi",
+  "wavespeed",
+  "zai_video",
+];
 
 export class ProviderBalanceService {
   static async fetchBalance(providerKey: string): Promise<BalanceResult> {
     const config = getConfig();
     const apiKeyEnv = API_KEY_MAP[providerKey];
-    const apiKeyRaw = apiKeyEnv ? (config as unknown as Record<string, unknown>)[apiKeyEnv] : undefined;
+    const apiKeyRaw = apiKeyEnv
+      ? (config as unknown as Record<string, unknown>)[apiKeyEnv]
+      : undefined;
     const apiKey = apiKeyRaw ? String(apiKeyRaw) : undefined;
     if (!apiKey)
       return {
@@ -101,7 +112,9 @@ export class ProviderBalanceService {
     try {
       const cached = await redis.get(cacheKey);
       if (cached) return JSON.parse(cached);
-    } catch (err) { logger.debug("Cache miss:", err); }
+    } catch (err) {
+      logger.debug("Cache miss:", err);
+    }
 
     const omnirouteUrl = config.OMNIROUTE_URL;
 
@@ -141,7 +154,7 @@ export class ProviderBalanceService {
 
     try {
       const checkerResult = await checkProviderBalance(baseUrl, apiKey);
-      
+
       const result: BalanceResult = {
         provider: providerKey,
         balance: checkerResult.balance ?? null,
@@ -149,7 +162,7 @@ export class ProviderBalanceService {
         status: checkerResult.success ? "ok" : "error",
         error: checkerResult.error,
       };
-      
+
       try {
         await redis.set(
           cacheKey,
@@ -157,7 +170,9 @@ export class ProviderBalanceService {
           "EX",
           BALANCE_CACHE_TTL,
         );
-      } catch (err) { logger.debug("Cache write failed:", err); }
+      } catch (err) {
+        logger.debug("Cache write failed:", err);
+      }
       return result;
     } catch (err) {
       return {
@@ -190,7 +205,9 @@ export class ProviderBalanceService {
   static async fetchModels(providerKey: string): Promise<ModelResult> {
     const config = getConfig();
     const apiKeyEnv = API_KEY_MAP[providerKey];
-    const apiKey = apiKeyEnv ? (config as unknown as Record<string, unknown>)[apiKeyEnv] : undefined;
+    const apiKey = apiKeyEnv
+      ? (config as unknown as Record<string, unknown>)[apiKeyEnv]
+      : undefined;
     if (!apiKey) return { provider: providerKey, models: [], cached: false };
 
     const cacheKey = `provider:models:${providerKey}`;
@@ -202,7 +219,9 @@ export class ProviderBalanceService {
           models: JSON.parse(cached),
           cached: true,
         };
-    } catch (err) { logger.debug("Cache miss:", err); }
+    } catch (err) {
+      logger.debug("Cache miss:", err);
+    }
 
     const omnirouteUrl = config.OMNIROUTE_URL;
 
@@ -234,7 +253,9 @@ export class ProviderBalanceService {
           "EX",
           MODELS_CACHE_TTL,
         );
-      } catch (err) { logger.debug("Cache write failed:", err); }
+      } catch (err) {
+        logger.debug("Cache write failed:", err);
+      }
       return { provider: providerKey, models, cached: false };
     } catch {
       return { provider: providerKey, models: [], cached: false };

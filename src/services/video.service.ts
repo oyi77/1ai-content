@@ -49,5 +49,6 @@ export class VideoService {
   static generateScenePrompt = VideoStoryboardService.generateScenePrompt;
   static generateCaption = VideoStoryboardService.generateCaption;
   static getStoryboardTemplate = VideoStoryboardService.getStoryboardTemplate;
-  static updateStoryboardTemplate = VideoStoryboardService.updateStoryboardTemplate;
+  static updateStoryboardTemplate =
+    VideoStoryboardService.updateStoryboardTemplate;
 }

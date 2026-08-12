@@ -8,7 +8,7 @@
 import axios, { AxiosInstance } from "axios";
 import { logger } from "@/utils/logger";
 import { getConfig } from "@/config/env";
-import { ProviderError, ProviderTimeoutError } from '@/utils/app-errors';
+import { ProviderError, ProviderTimeoutError } from "@/utils/app-errors";
 
 export interface EbookProject {
   id: number;
@@ -61,7 +61,7 @@ export class EbookService {
   constructor() {
     const config = getConfig();
     const baseUrl = getConfig().EBOOK_API_URL;
-    this.apiKey = getConfig().EBOOK_API_KEY || '';
+    this.apiKey = getConfig().EBOOK_API_KEY || "";
 
     this.client = axios.create({
       baseURL: baseUrl,
@@ -100,36 +100,47 @@ export class EbookService {
   /**
    * Create a new ebook project
    */
-  async createProject(req: CreateEbookRequest, owner?: string | number): Promise<EbookProject> {
+  async createProject(
+    req: CreateEbookRequest,
+    owner?: string | number,
+  ): Promise<EbookProject> {
     try {
-      const resp = await this.client.post(`/text/ebook/projects${this.ownerQS("?", owner)}`, {
-        idea: req.idea,
-        title: req.title || null,
-        chapter_count: req.chapter_count,
-        target_language: req.target_language,
-        product_mode: req.product_mode || "paid_ebook",
-        quality_level: req.quality_level || "standard",
-      });
+      const resp = await this.client.post(
+        `/text/ebook/projects${this.ownerQS("?", owner)}`,
+        {
+          idea: req.idea,
+          title: req.title || null,
+          chapter_count: req.chapter_count,
+          target_language: req.target_language,
+          product_mode: req.product_mode || "paid_ebook",
+          quality_level: req.quality_level || "standard",
+        },
+      );
       logger.info(`Ebook project created: ${resp.data.id}`);
       return resp.data;
     } catch (err: unknown) {
       const error = err as Error;
       logger.error("Failed to create ebook project:", error);
-      throw new ProviderError('Ebook', `creation failed: ${error.message}`);
+      throw new ProviderError("Ebook", `creation failed: ${error.message}`);
     }
   }
 
   /**
    * Get project details
    */
-  async getProject(projectId: number, owner?: string | number): Promise<EbookProject> {
+  async getProject(
+    projectId: number,
+    owner?: string | number,
+  ): Promise<EbookProject> {
     try {
-      const resp = await this.client.get(`/text/ebook/projects/${projectId}${this.ownerQS("?", owner)}`);
+      const resp = await this.client.get(
+        `/text/ebook/projects/${projectId}${this.ownerQS("?", owner)}`,
+      );
       return resp.data;
     } catch (err: unknown) {
       const error = err as Error;
       logger.error(`Failed to get ebook project ${projectId}:`, error);
-      throw new ProviderError('Ebook', `fetch failed: ${error.message}`);
+      throw new ProviderError("Ebook", `fetch failed: ${error.message}`);
     }
   }
 
@@ -138,40 +149,52 @@ export class EbookService {
    */
   async generate(projectId: number, owner?: string | number): Promise<void> {
     try {
-      await this.client.post(`/text/ebook/projects/${projectId}/generate${this.ownerQS("?", owner)}`);
+      await this.client.post(
+        `/text/ebook/projects/${projectId}/generate${this.ownerQS("?", owner)}`,
+      );
       logger.info(`Ebook generation started: ${projectId}`);
     } catch (err: unknown) {
       const error = err as Error;
       logger.error(`Failed to start ebook generation ${projectId}:`, error);
-      throw new ProviderError('Ebook', `generation failed: ${error.message}`);
+      throw new ProviderError("Ebook", `generation failed: ${error.message}`);
     }
   }
 
   /**
    * Get generation status
    */
-  async getStatus(projectId: number, owner?: string | number): Promise<EbookStatus> {
+  async getStatus(
+    projectId: number,
+    owner?: string | number,
+  ): Promise<EbookStatus> {
     try {
-      const resp = await this.client.get(`/text/ebook/projects/${projectId}/status${this.ownerQS("?", owner)}`);
+      const resp = await this.client.get(
+        `/text/ebook/projects/${projectId}/status${this.ownerQS("?", owner)}`,
+      );
       return resp.data;
     } catch (err: unknown) {
       const error = err as Error;
       logger.error(`Failed to get ebook status ${projectId}:`, error);
-      throw new ProviderError('Ebook', `status failed: ${error.message}`);
+      throw new ProviderError("Ebook", `status failed: ${error.message}`);
     }
   }
 
   /**
    * Get exported ebook content
    */
-  async getExport(projectId: number, owner?: string | number): Promise<EbookExport> {
+  async getExport(
+    projectId: number,
+    owner?: string | number,
+  ): Promise<EbookExport> {
     try {
-      const resp = await this.client.get(`/text/ebook/projects/${projectId}/export${this.ownerQS("?", owner)}`);
+      const resp = await this.client.get(
+        `/text/ebook/projects/${projectId}/export${this.ownerQS("?", owner)}`,
+      );
       return resp.data;
     } catch (err: unknown) {
       const error = err as Error;
       logger.error(`Failed to get ebook export ${projectId}:`, error);
-      throw new ProviderError('Ebook', `export failed: ${error.message}`);
+      throw new ProviderError("Ebook", `export failed: ${error.message}`);
     }
   }
 
@@ -183,7 +206,7 @@ export class EbookService {
   async download(
     projectId: number,
     format: "pdf" | "docx" | "epub",
-    owner?: string | number
+    owner?: string | number,
   ): Promise<{ buffer: Buffer; contentType: string; filename: string }> {
     const contentTypeMap: Record<string, string> = {
       docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -194,7 +217,7 @@ export class EbookService {
     try {
       const resp = await this.client.get(
         `/text/ebook/projects/${projectId}/download/${format}${this.ownerQS("?", owner)}`,
-        { responseType: "arraybuffer" }
+        { responseType: "arraybuffer" },
       );
       return {
         buffer: Buffer.from(resp.data),
@@ -204,7 +227,7 @@ export class EbookService {
     } catch (err: unknown) {
       const error = err as Error;
       logger.error(`Failed to download ebook ${projectId} (${format}):`, error);
-      throw new ProviderError('Ebook', `download failed: ${error.message}`);
+      throw new ProviderError("Ebook", `download failed: ${error.message}`);
     }
   }
 
@@ -212,7 +235,11 @@ export class EbookService {
    * Get download URL for ebook file (clean URL, never embeds the API key).
    * Used only as a fallback when direct file delivery is unavailable.
    */
-  getDownloadUrl(projectId: number, format: "pdf" | "docx" | "epub", owner?: string | number): string {
+  getDownloadUrl(
+    projectId: number,
+    format: "pdf" | "docx" | "epub",
+    owner?: string | number,
+  ): string {
     const baseUrl = getConfig().EBOOK_API_URL;
     return `${baseUrl}/text/ebook/projects/${projectId}/download/${format}${this.ownerQS("?", owner)}`;
   }
@@ -220,14 +247,19 @@ export class EbookService {
   /**
    * List all projects
    */
-  async listProjects(limit: number = 10, owner?: string | number): Promise<EbookProject[]> {
+  async listProjects(
+    limit: number = 10,
+    owner?: string | number,
+  ): Promise<EbookProject[]> {
     try {
-      const resp = await this.client.get(`/text/ebook/projects?limit=${limit}${this.ownerQS("&", owner)}`);
+      const resp = await this.client.get(
+        `/text/ebook/projects?limit=${limit}${this.ownerQS("&", owner)}`,
+      );
       return resp.data;
     } catch (err: unknown) {
       const error = err as Error;
       logger.error("Failed to list ebook projects:", error);
-      throw new ProviderError('Ebook', `list failed: ${error.message}`);
+      throw new ProviderError("Ebook", `list failed: ${error.message}`);
     }
   }
 
@@ -238,7 +270,7 @@ export class EbookService {
     projectId: number,
     owner?: string | number,
     maxWaitMs: number = 600000,
-    pollIntervalMs: number = 5000
+    pollIntervalMs: number = 5000,
   ): Promise<EbookStatus> {
     const startTime = Date.now();
 
@@ -250,13 +282,16 @@ export class EbookService {
       }
 
       if (status.status === "failed") {
-        throw new ProviderError('Ebook', `generation failed: ${status.message}`);
+        throw new ProviderError(
+          "Ebook",
+          `generation failed: ${status.message}`,
+        );
       }
 
       await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
     }
 
-    throw new ProviderTimeoutError('Ebook', 90000);
+    throw new ProviderTimeoutError("Ebook", 90000);
   }
 }
 

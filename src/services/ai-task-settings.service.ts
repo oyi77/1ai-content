@@ -7,13 +7,13 @@
  *   - DB: PricingConfig table { category: 'ai_tasks', key: 'settings' }
  */
 
-import { redis } from '@/config/redis';
-import { prisma } from '@/config/database';
+import { redis } from "@/config/redis";
+import { prisma } from "@/config/database";
 
-const AI_TASK_KEY = 'admin:ai_task_settings';
+const AI_TASK_KEY = "admin:ai_task_settings";
 
 export interface AITaskProvider {
-  provider: 'groq' | 'gemini' | 'omniroute' | 'builtin';
+  provider: "groq" | "gemini" | "omniroute" | "builtin";
   model: string;
 }
 
@@ -25,10 +25,10 @@ export interface AITaskSettings {
 }
 
 const DEFAULTS: AITaskSettings = {
-  storyboard: { provider: 'builtin', model: '' },
-  transcript: { provider: 'gemini', model: 'gemini-2.5-flash' },
-  promptEnhancement: { provider: 'groq', model: 'llama-3.3-70b-versatile' },
-  promptGeneration: { provider: 'builtin', model: '' },
+  storyboard: { provider: "builtin", model: "" },
+  transcript: { provider: "gemini", model: "gemini-2.5-flash" },
+  promptEnhancement: { provider: "groq", model: "llama-3.3-70b-versatile" },
+  promptGeneration: { provider: "builtin", model: "" },
 };
 
 export class AITaskSettingsService {
@@ -43,7 +43,7 @@ export class AITaskSettingsService {
     }
     try {
       const dbRow = await prisma.pricingConfig.findUnique({
-        where: { category_key: { category: 'ai_tasks', key: 'settings' } },
+        where: { category_key: { category: "ai_tasks", key: "settings" } },
       });
       if (dbRow) {
         const settings = dbRow.value as Partial<AITaskSettings>;
@@ -56,15 +56,25 @@ export class AITaskSettingsService {
     return { ...DEFAULTS };
   }
 
-  static async updateSettings(settings: Partial<AITaskSettings>): Promise<void> {
+  static async updateSettings(
+    settings: Partial<AITaskSettings>,
+  ): Promise<void> {
     // Merge with current settings to allow partial updates
     const current = await AITaskSettingsService.getSettings();
     const merged = { ...current, ...settings };
 
     await prisma.pricingConfig.upsert({
-      where: { category_key: { category: 'ai_tasks', key: 'settings' } },
-      create: { category: 'ai_tasks', key: 'settings', value: JSON.parse(JSON.stringify(merged)), updatedBy: BigInt(0) },
-      update: { value: JSON.parse(JSON.stringify(merged)), updatedBy: BigInt(0) },
+      where: { category_key: { category: "ai_tasks", key: "settings" } },
+      create: {
+        category: "ai_tasks",
+        key: "settings",
+        value: JSON.parse(JSON.stringify(merged)),
+        updatedBy: BigInt(0),
+      },
+      update: {
+        value: JSON.parse(JSON.stringify(merged)),
+        updatedBy: BigInt(0),
+      },
     });
     await redis.set(AI_TASK_KEY, JSON.stringify(merged));
   }

@@ -8,12 +8,20 @@ import type { AvatarTalkJobData } from "@/workers/avatar-talk.worker";
 
 const avatarTalkQueue = new Queue<AvatarTalkJobData>("avatar-talk", {
   connection: bullmqRedis,
-  defaultJobOptions: { attempts: 2, backoff: { type: "exponential", delay: 5000 }, removeOnComplete: 50, removeOnFail: 100 },
+  defaultJobOptions: {
+    attempts: 2,
+    backoff: { type: "exponential", delay: 5000 },
+    removeOnComplete: 50,
+    removeOnFail: 100,
+  },
 });
 
 const TALKING_PHOTO_CREDIT_COST = 0.8;
 
-export async function handleAvatarTalkCallbacks(ctx: BotContext, data: string): Promise<boolean> {
+export async function handleAvatarTalkCallbacks(
+  ctx: BotContext,
+  data: string,
+): Promise<boolean> {
   if (data === "avatar_talk_start") {
     await ctx.answerCbQuery();
     const lang = ctx.session?.userLang || "id";
@@ -22,7 +30,9 @@ export async function handleAvatarTalkCallbacks(ctx: BotContext, data: string): 
     const user = await UserService.findByTelegramId(telegramId);
     if (!user || Number(user.creditBalance) < TALKING_PHOTO_CREDIT_COST) {
       await ctx.reply(
-        t("cb.insufficient_credits_cost", lang, { cost: TALKING_PHOTO_CREDIT_COST }),
+        t("cb.insufficient_credits_cost", lang, {
+          cost: TALKING_PHOTO_CREDIT_COST,
+        }),
       );
       return true;
     }
@@ -55,9 +65,15 @@ export async function handleAvatarTalkCallbacks(ctx: BotContext, data: string): 
  * Handle the photo upload step (state: avatar_talk_photo)
  * Called from message handler when state === 'avatar_talk_photo' and a photo is received.
  */
-export async function handleAvatarTalkPhoto(ctx: BotContext, photoUrl: string): Promise<void> {
+export async function handleAvatarTalkPhoto(
+  ctx: BotContext,
+  photoUrl: string,
+): Promise<void> {
   const lang = ctx.session?.userLang || "id";
-  ctx.session.stateData = { ...ctx.session.stateData, avatarTalkPhotoUrl: photoUrl };
+  ctx.session.stateData = {
+    ...ctx.session.stateData,
+    avatarTalkPhotoUrl: photoUrl,
+  };
   ctx.session.state = "avatar_talk_text";
 
   await ctx.reply(
@@ -82,10 +98,15 @@ export async function handleAvatarTalkPhoto(ctx: BotContext, photoUrl: string): 
  * Handle the text input step (state: avatar_talk_text)
  * Called from message handler when state === 'avatar_talk_text' and text is received.
  */
-export async function handleAvatarTalkText(ctx: BotContext, text: string): Promise<void> {
+export async function handleAvatarTalkText(
+  ctx: BotContext,
+  text: string,
+): Promise<void> {
   const lang = ctx.session?.userLang || "id";
   const telegramId = BigInt(ctx.from!.id);
-  const photoUrl = ctx.session.stateData?.avatarTalkPhotoUrl as string | undefined;
+  const photoUrl = ctx.session.stateData?.avatarTalkPhotoUrl as
+    | string
+    | undefined;
 
   if (!photoUrl) {
     await ctx.reply(
@@ -99,7 +120,11 @@ export async function handleAvatarTalkText(ctx: BotContext, text: string): Promi
 
   const user = await UserService.findByTelegramId(telegramId);
   if (!user || Number(user.creditBalance) < TALKING_PHOTO_CREDIT_COST) {
-    await ctx.reply(t("cb.insufficient_credits_cost", lang, { cost: TALKING_PHOTO_CREDIT_COST }));
+    await ctx.reply(
+      t("cb.insufficient_credits_cost", lang, {
+        cost: TALKING_PHOTO_CREDIT_COST,
+      }),
+    );
     ctx.session.state = "DASHBOARD";
     return;
   }

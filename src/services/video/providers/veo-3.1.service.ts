@@ -128,7 +128,7 @@ export class VeoVideoService {
       await redis.setex(
         `${CACHE_PREFIX}${operation.name}`,
         600, // 10 min TTL
-        JSON.stringify({ status: "processing", startedAt: Date.now() })
+        JSON.stringify({ status: "processing", startedAt: Date.now() }),
       );
 
       // Step 3: Poll for completion
@@ -173,7 +173,9 @@ export class VeoVideoService {
   /**
    * Submit video generation request to Veo API
    */
-  private async submitGeneration(request: VeoVideoRequest): Promise<VeoOperation> {
+  private async submitGeneration(
+    request: VeoVideoRequest,
+  ): Promise<VeoOperation> {
     const resolution = request.resolution || "4k";
     const fps = request.fps || 30;
     const aspectRatio = request.aspectRatio || "16:9";
@@ -201,7 +203,8 @@ export class VeoVideoService {
         ],
         generationConfig: {
           durationSeconds: request.duration,
-          resolution: resolution === "4k" ? "RESOLUTION_4K" : "RESOLUTION_1080P",
+          resolution:
+            resolution === "4k" ? "RESOLUTION_4K" : "RESOLUTION_1080P",
           fps,
           aspectRatio: this.mapAspectRatio(aspectRatio),
         },
@@ -212,7 +215,7 @@ export class VeoVideoService {
           "Content-Type": "application/json",
         },
         timeout: 30000,
-      }
+      },
     );
 
     return response.data;
@@ -221,7 +224,9 @@ export class VeoVideoService {
   /**
    * Poll for video generation completion
    */
-  private async pollForCompletion(operationName: string): Promise<{ videoUrl: string }> {
+  private async pollForCompletion(
+    operationName: string,
+  ): Promise<{ videoUrl: string }> {
     for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS; attempt++) {
       await this.sleep(POLL_INTERVAL_MS);
 
@@ -232,23 +237,31 @@ export class VeoVideoService {
             Authorization: `Bearer ${this.apiKey}`,
           },
           timeout: 10000,
-        }
+        },
       );
 
       const operation = response.data;
 
       if (operation.done) {
         if (operation.error) {
-          throw new ProviderError("veo", `Operation failed: ${operation.error.message}`);
+          throw new ProviderError(
+            "veo",
+            `Operation failed: ${operation.error.message}`,
+          );
         }
 
         if (operation.response?.videoUri) {
           // Download and cache the video
-          const videoUrl = await this.downloadVideo(operation.response.videoUri);
+          const videoUrl = await this.downloadVideo(
+            operation.response.videoUri,
+          );
           return { videoUrl };
         }
 
-        throw new ProviderError("veo", "Operation completed but no video URL returned");
+        throw new ProviderError(
+          "veo",
+          "Operation completed but no video URL returned",
+        );
       }
 
       // Update cache with progress
@@ -259,7 +272,7 @@ export class VeoVideoService {
           status: "processing",
           attempt,
           startedAt: Date.now(),
-        })
+        }),
       );
 
       logger.debug({
@@ -269,7 +282,10 @@ export class VeoVideoService {
       });
     }
 
-    throw new ProviderError("veo", "Video generation timed out after 10 minutes");
+    throw new ProviderError(
+      "veo",
+      "Video generation timed out after 10 minutes",
+    );
   }
 
   /**
@@ -280,7 +296,13 @@ export class VeoVideoService {
       await fs.mkdir(VEO_VIDEO_DIR, { recursive: true });
       const filename = `veo-${Date.now()}.mp4`;
       const outputPath = path.join(VEO_VIDEO_DIR, filename);
-      await execFileAsync("wget", ["-q", "--timeout=120", "-O", outputPath, videoUri]);
+      await execFileAsync("wget", [
+        "-q",
+        "--timeout=120",
+        "-O",
+        outputPath,
+        videoUri,
+      ]);
       logger.info({
         msg: "Veo 3.1: Video downloaded",
         videoUri,

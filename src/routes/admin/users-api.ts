@@ -1,7 +1,9 @@
 import { FastifyInstance } from "fastify";
 import { prisma } from "@/config/database";
 
-export async function registerUsersApiRoutes(server: FastifyInstance): Promise<void> {
+export async function registerUsersApiRoutes(
+  server: FastifyInstance,
+): Promise<void> {
   /** GET /api/admin/users — list users with pagination */
   server.get("/api/admin/users", async (_request, reply) => {
     const users = await prisma.user.findMany({

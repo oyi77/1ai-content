@@ -11,28 +11,38 @@ import { generateCaption } from "@/commands/create";
 import { NICHES } from "@/services/video-generation.service";
 import { t } from "@/i18n/translations";
 
-export async function handleVideoCallbacks(ctx: BotContext, data: string): Promise<boolean> {
+export async function handleVideoCallbacks(
+  ctx: BotContext,
+  data: string,
+): Promise<boolean> {
   // ── Favorites list ─────────────────────────────────────────────────────
   if (data === "videos_favorites") {
-    const lang = ctx.session?.userLang || 'id';
+    const lang = ctx.session?.userLang || "id";
     const userId = ctx.from?.id ? BigInt(ctx.from.id) : null;
     if (!userId) return true;
 
     const favorites = await VideoService.getUserFavorites(userId);
     if (favorites.length === 0) {
-      await ctx.editMessageText(
-        t('cb2.favorites_empty', lang),
-        { parse_mode: "Markdown", reply_markup: { inline_keyboard: [[{ text: t('btn.back', lang), callback_data: "videos_back" }]] } },
-      );
+      await ctx.editMessageText(t("cb2.favorites_empty", lang), {
+        parse_mode: "Markdown",
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: t("btn.back", lang), callback_data: "videos_back" }],
+          ],
+        },
+      });
       return true;
     }
 
     const buttons = favorites.map((v) => [
-      { text: `${v.niche} — ${v.platform} (${v.duration}s)`, callback_data: `video_view_${v.jobId}` },
+      {
+        text: `${v.niche} — ${v.platform} (${v.duration}s)`,
+        callback_data: `video_view_${v.jobId}`,
+      },
     ]);
-    buttons.push([{ text: t('btn.back', lang), callback_data: "videos_back" }]);
+    buttons.push([{ text: t("btn.back", lang), callback_data: "videos_back" }]);
     await ctx.editMessageText(
-      t('cb2.favorites_title', lang) + `\n\n${favorites.length} video`,
+      t("cb2.favorites_title", lang) + `\n\n${favorites.length} video`,
       { parse_mode: "Markdown", reply_markup: { inline_keyboard: buttons } },
     );
     return true;
@@ -40,25 +50,32 @@ export async function handleVideoCallbacks(ctx: BotContext, data: string): Promi
 
   // ── Trash list ─────────────────────────────────────────────────────────
   if (data === "videos_trash") {
-    const lang = ctx.session?.userLang || 'id';
+    const lang = ctx.session?.userLang || "id";
     const userId = ctx.from?.id ? BigInt(ctx.from.id) : null;
     if (!userId) return true;
 
     const trash = await VideoService.getUserTrash(userId);
     if (trash.length === 0) {
-      await ctx.editMessageText(
-        t('cb2.trash_empty', lang),
-        { parse_mode: "Markdown", reply_markup: { inline_keyboard: [[{ text: t('btn.back', lang), callback_data: "videos_back" }]] } },
-      );
+      await ctx.editMessageText(t("cb2.trash_empty", lang), {
+        parse_mode: "Markdown",
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: t("btn.back", lang), callback_data: "videos_back" }],
+          ],
+        },
+      });
       return true;
     }
 
     const buttons = trash.map((v) => [
-      { text: `🗑️ ${v.niche} — ${v.platform}`, callback_data: `video_restore_${v.jobId}` },
+      {
+        text: `🗑️ ${v.niche} — ${v.platform}`,
+        callback_data: `video_restore_${v.jobId}`,
+      },
     ]);
-    buttons.push([{ text: t('btn.back', lang), callback_data: "videos_back" }]);
+    buttons.push([{ text: t("btn.back", lang), callback_data: "videos_back" }]);
     await ctx.editMessageText(
-      t('cb2.trash_title', lang) + `\n\n${trash.length} video`,
+      t("cb2.trash_title", lang) + `\n\n${trash.length} video`,
       { parse_mode: "Markdown", reply_markup: { inline_keyboard: buttons } },
     );
     return true;
@@ -67,14 +84,16 @@ export async function handleVideoCallbacks(ctx: BotContext, data: string): Promi
   // ── Toggle favorite ────────────────────────────────────────────────────
   if (data.startsWith("video_fav_")) {
     const jobId = data.replace("video_fav_", "");
-    const lang = ctx.session?.userLang || 'id';
+    const lang = ctx.session?.userLang || "id";
     const video = await VideoService.getByJobId(jobId);
     if (!video || (ctx.from && video.userId !== BigInt(ctx.from.id))) {
-      await ctx.answerCbQuery(t('cb.access_denied', lang));
+      await ctx.answerCbQuery(t("cb.access_denied", lang));
       return true;
     }
     const isFav = await VideoService.toggleFavorite(jobId);
-    await ctx.answerCbQuery(isFav ? '⭐ Added to favorites' : '☆ Removed from favorites');
+    await ctx.answerCbQuery(
+      isFav ? "⭐ Added to favorites" : "☆ Removed from favorites",
+    );
     await viewVideo(ctx, jobId);
     return true;
   }
@@ -82,35 +101,36 @@ export async function handleVideoCallbacks(ctx: BotContext, data: string): Promi
   // ── Restore from trash ─────────────────────────────────────────────────
   if (data.startsWith("video_restore_")) {
     const jobId = data.replace("video_restore_", "");
-    const lang = ctx.session?.userLang || 'id';
+    const lang = ctx.session?.userLang || "id";
     const video = await VideoService.getByJobId(jobId);
     if (!video || (ctx.from && video.userId !== BigInt(ctx.from.id))) {
-      await ctx.answerCbQuery(t('cb.access_denied', lang));
+      await ctx.answerCbQuery(t("cb.access_denied", lang));
       return true;
     }
     await VideoService.restoreVideo(jobId);
-    await ctx.answerCbQuery(t('cb2.video_restored', lang));
+    await ctx.answerCbQuery(t("cb2.video_restored", lang));
     // Refresh trash list
     await handleVideoCallbacks(ctx, "videos_trash");
     return true;
   }
 
-  if (data === 'videos_prev' || data === 'videos_next') {
+  if (data === "videos_prev" || data === "videos_next") {
     const sessionExt = ctx.session as unknown as Record<string, unknown>;
     const currentPage = parseInt(sessionExt?.videosPage as string) || 0;
-    const newPage = data === 'videos_next' ? currentPage + 1 : Math.max(0, currentPage - 1);
+    const newPage =
+      data === "videos_next" ? currentPage + 1 : Math.max(0, currentPage - 1);
     if (ctx.session) sessionExt.videosPage = String(newPage);
     await videosCommand(ctx);
     return true;
   }
 
-  if (data === 'videos_page') {
+  if (data === "videos_page") {
     await ctx.answerCbQuery().catch(() => {});
     return true;
   }
 
   if (data === "videos_back" || data === "videos_list") {
-    await ctx.deleteMessage().catch(() => { });
+    await ctx.deleteMessage().catch(() => {});
     await videosCommand(ctx);
     return true;
   }
@@ -137,22 +157,25 @@ export async function handleVideoCallbacks(ctx: BotContext, data: string): Promi
     await ctx.answerCbQuery();
     const jobId = data.replace("video_confirm_delete_", "");
     const videoToDelete = await VideoService.getByJobId(jobId);
-    if (!videoToDelete || (ctx.from && videoToDelete.userId !== BigInt(ctx.from.id))) {
-      const lang = ctx.session?.userLang || 'id';
-      await ctx.editMessageText(t('cb.access_denied_video', lang));
+    if (
+      !videoToDelete ||
+      (ctx.from && videoToDelete.userId !== BigInt(ctx.from.id))
+    ) {
+      const lang = ctx.session?.userLang || "id";
+      await ctx.editMessageText(t("cb.access_denied_video", lang));
       return true;
     }
     await VideoService.deleteVideo(jobId);
     await ctx.editMessageText(
-      t('cb2.video_moved_trash', ctx.session?.userLang || 'id'),
+      t("cb2.video_moved_trash", ctx.session?.userLang || "id"),
       { parse_mode: "Markdown" },
     );
     return true;
   }
 
   if (data.startsWith("video_retry_")) {
-    const lang = ctx.session?.userLang || 'id';
-    await ctx.answerCbQuery(t('cb.retrying_video', lang));
+    const lang = ctx.session?.userLang || "id";
+    await ctx.answerCbQuery(t("cb.retrying_video", lang));
     const { createCommand } = await import("../../commands/create.js");
     await createCommand(ctx);
     return true;
@@ -160,13 +183,13 @@ export async function handleVideoCallbacks(ctx: BotContext, data: string): Promi
 
   if (data.startsWith("copy_caption_")) {
     const jobId = data.replace("copy_caption_", "");
-    const lang = ctx.session?.userLang || 'id';
-    await ctx.answerCbQuery(t('cb.caption_copied', lang));
+    const lang = ctx.session?.userLang || "id";
+    await ctx.answerCbQuery(t("cb.caption_copied", lang));
 
     try {
       const video = await VideoService.getByJobId(jobId);
       if (video && ctx.from && video.userId !== BigInt(ctx.from.id)) {
-        await ctx.reply(t('cb.access_denied', lang));
+        await ctx.reply(t("cb.access_denied", lang));
         return true;
       }
       const niche =
@@ -188,25 +211,25 @@ export async function handleVideoCallbacks(ctx: BotContext, data: string): Promi
       await ctx.reply(`${caption.text}\n\n${caption.hashtags}`);
     } catch (err) {
       logger.error("Failed to generate caption for copy:", err);
-      await ctx.reply(t('cb.caption_failed', lang));
+      await ctx.reply(t("cb.caption_failed", lang));
     }
     return true;
   }
 
   if (data.startsWith("create_similar_")) {
     const jobId = data.replace("create_similar_", "");
-    const lang = ctx.session?.userLang || 'id';
-    await ctx.answerCbQuery(t('cb.loading_settings', lang));
+    const lang = ctx.session?.userLang || "id";
+    await ctx.answerCbQuery(t("cb.loading_settings", lang));
 
     try {
       const video = await VideoService.getByJobId(jobId);
       if (!video) {
-        await ctx.reply(t('cb.video_not_found_create', lang));
+        await ctx.reply(t("cb.video_not_found_create", lang));
         return true;
       }
 
       if (ctx.from && video.userId !== BigInt(ctx.from.id)) {
-        await ctx.reply(t('cb.access_denied', lang));
+        await ctx.reply(t("cb.access_denied", lang));
         return true;
       }
 
@@ -223,7 +246,8 @@ export async function handleVideoCallbacks(ctx: BotContext, data: string): Promi
             : ["professional"];
       ctx.session.selectedStyles = videoStyles as string[];
 
-      const videoStoryboard = (video as unknown as Record<string, unknown>).storyboard as Array<{
+      const videoStoryboard = (video as unknown as Record<string, unknown>)
+        .storyboard as Array<{
         scene: number;
         duration: number;
         description: string;
@@ -248,7 +272,7 @@ export async function handleVideoCallbacks(ctx: BotContext, data: string): Promi
         : `${videoScenes} scenes`;
 
       await ctx.editMessageText(
-        t('cb2.creating_similar', lang, {
+        t("cb2.creating_similar", lang, {
           nicheInfo: `${nicheConfig?.emoji || ""} ${nicheConfig?.name || nicheKey}`,
           duration: videoDuration,
           storyboardInfo,
@@ -260,13 +284,13 @@ export async function handleVideoCallbacks(ctx: BotContext, data: string): Promi
             inline_keyboard: [
               [
                 {
-                  text: t('cb2.skip_ref_image', lang),
+                  text: t("cb2.skip_ref_image", lang),
                   callback_data: `duration_${videoDuration}_${videoScenes}`,
                 },
               ],
               [
                 {
-                  text: t('cb2.change_niche_style', lang),
+                  text: t("cb2.change_niche_style", lang),
                   callback_data: "create_video_new",
                 },
               ],
@@ -277,7 +301,7 @@ export async function handleVideoCallbacks(ctx: BotContext, data: string): Promi
     } catch (error) {
       logger.error("Create similar error:", error);
       await ctx.reply(
-        t('cb2.create_similar_failed', ctx.session?.userLang || 'id'),
+        t("cb2.create_similar_failed", ctx.session?.userLang || "id"),
       );
     }
     return true;
@@ -294,7 +318,9 @@ export async function handleVideoCallbacks(ctx: BotContext, data: string): Promi
       /* Redis optional */
     }
     const feedbackUser = ctx.from
-      ? await (await import("../../services/user.service.js")).UserService.findByTelegramId(BigInt(ctx.from.id.toString()))
+      ? await (
+          await import("../../services/user.service.js")
+        ).UserService.findByTelegramId(BigInt(ctx.from.id.toString()))
       : null;
     const feedbackLang = feedbackUser?.language || "id";
     await ctx.reply(t("feedback.thanks_good", feedbackLang));
@@ -311,13 +337,20 @@ export async function handleVideoCallbacks(ctx: BotContext, data: string): Promi
       /* Redis optional */
     }
     const feedbackUser = ctx.from
-      ? await (await import("../../services/user.service.js")).UserService.findByTelegramId(BigInt(ctx.from.id.toString()))
+      ? await (
+          await import("../../services/user.service.js")
+        ).UserService.findByTelegramId(BigInt(ctx.from.id.toString()))
       : null;
     const feedbackLang = feedbackUser?.language || "id";
     await ctx.reply(t("feedback.thanks_bad", feedbackLang), {
       reply_markup: {
         inline_keyboard: [
-          [{ text: t('btn.try_again', feedbackLang), callback_data: "back_prompts" }],
+          [
+            {
+              text: t("btn.try_again", feedbackLang),
+              callback_data: "back_prompts",
+            },
+          ],
         ],
       },
     });
@@ -329,16 +362,14 @@ export async function handleVideoCallbacks(ctx: BotContext, data: string): Promi
     await ctx.answerCbQuery();
 
     if (!ctx.session?.videoCreation?.waitingForImage) {
-      const lang = ctx.session?.userLang || 'id';
-      await ctx.reply(t('error.no_session', lang));
+      const lang = ctx.session?.userLang || "id";
+      await ctx.reply(t("error.no_session", lang));
       return true;
     }
 
     const uploadedPhotos = ctx.session.videoCreation.uploadedPhotos || [];
     if (uploadedPhotos.length === 0) {
-      await ctx.reply(
-        t('cb2.no_photos_yet', ctx.session?.userLang || 'id'),
-      );
+      await ctx.reply(t("cb2.no_photos_yet", ctx.session?.userLang || "id"));
       return true;
     }
 
@@ -352,7 +383,7 @@ export async function handleVideoCallbacks(ctx: BotContext, data: string): Promi
     const count = ctx.session?.videoCreation?.uploadedPhotos?.length || 0;
     const remaining = 5 - count;
     await ctx.reply(
-      t('cb2.add_more_photos', ctx.session?.userLang || 'id', { remaining }),
+      t("cb2.add_more_photos", ctx.session?.userLang || "id", { remaining }),
     );
     return true;
   }

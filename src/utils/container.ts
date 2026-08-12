@@ -5,7 +5,7 @@
  * Services are lazily initialized on first access.
  */
 
-import { AppError } from '@/utils/app-errors';
+import { AppError } from "@/utils/app-errors";
 type ServiceFactory<T> = () => T;
 
 class Container {
@@ -24,7 +24,10 @@ class Container {
     if (!this.services.has(name)) {
       const factory = this.factories.get(name);
       if (!factory) {
-        throw new AppError("SERVICE_NOT_REGISTERED", `Service not registered: ${name}`);
+        throw new AppError(
+          "SERVICE_NOT_REGISTERED",
+          `Service not registered: ${name}`,
+        );
       }
       this.services.set(name, factory());
     }
@@ -58,16 +61,16 @@ class Container {
 export const container = new Container();
 
 // Register singleton services
-import { VideoEditorService } from '@/services/video-editor.service';
-import { ViralScannerService } from '@/services/viral-scanner.service';
-import { ContentWebhookService } from '@/services/content-webhook.service';
-import { VideoClipperService } from '@/services/video-clipper.service';
-import { ContentReworkService } from '@/services/content-rework.service';
-import { EbookService } from '@/services/ebook.service';
+import { VideoEditorService } from "@/services/video-editor.service";
+import { ViralScannerService } from "@/services/viral-scanner.service";
+import { ContentWebhookService } from "@/services/content-webhook.service";
+import { VideoClipperService } from "@/services/video-clipper.service";
+import { ContentReworkService } from "@/services/content-rework.service";
+import { EbookService } from "@/services/ebook.service";
 
-container.register('videoEditor', () => new VideoEditorService());
-container.register('viralScanner', () => new ViralScannerService());
-container.register('contentWebhook', () => new ContentWebhookService());
-container.register('videoClipper', () => new VideoClipperService());
-container.register('contentRework', () => new ContentReworkService());
-container.register('ebook', () => new EbookService());
+container.register("videoEditor", () => new VideoEditorService());
+container.register("viralScanner", () => new ViralScannerService());
+container.register("contentWebhook", () => new ContentWebhookService());
+container.register("videoClipper", () => new VideoClipperService());
+container.register("contentRework", () => new ContentReworkService());
+container.register("ebook", () => new EbookService());

@@ -15,5 +15,8 @@
  *   video-generation.init.ts       — startVideoWorker (main export)
  */
 
-export type { VideoGenerationJobData, GeneratedCaption } from './video-generation.types';
-export { startVideoWorker } from './video-generation.init';
+export type {
+  VideoGenerationJobData,
+  GeneratedCaption,
+} from "./video-generation.types";
+export { startVideoWorker } from "./video-generation.init";

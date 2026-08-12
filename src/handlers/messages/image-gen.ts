@@ -13,8 +13,13 @@ import { executeImageGeneration } from "@/handlers/message";
 /**
  * Handle IMAGE_GENERATION_WAITING state — user types description for image generation.
  */
-export async function handleImageGenerationWaiting(ctx: BotContext): Promise<boolean> {
-  if (ctx.session?.state !== "IMAGE_GENERATION_WAITING" || !("text" in ctx.message!)) {
+export async function handleImageGenerationWaiting(
+  ctx: BotContext,
+): Promise<boolean> {
+  if (
+    ctx.session?.state !== "IMAGE_GENERATION_WAITING" ||
+    !("text" in ctx.message!)
+  ) {
     return false;
   }
 
@@ -27,9 +32,15 @@ export async function handleImageGenerationWaiting(ctx: BotContext): Promise<boo
   }
 
   // Get mode from session state data (default: text2img)
-  const mode = (ctx.session.stateData?.mode as "text2img" | "img2img" | "ip_adapter") || "text2img";
-  const referenceImageUrl = ctx.session.stateData?.referenceImageUrl as string | undefined;
-  const avatarImageUrl = ctx.session.stateData?.avatarImageUrl as string | undefined;
+  const mode =
+    (ctx.session.stateData?.mode as "text2img" | "img2img" | "ip_adapter") ||
+    "text2img";
+  const referenceImageUrl = ctx.session.stateData?.referenceImageUrl as
+    | string
+    | undefined;
+  const avatarImageUrl = ctx.session.stateData?.avatarImageUrl as
+    | string
+    | undefined;
   const category = (ctx.session.stateData?.category as string) || "product";
   const elementSelection = ctx.session.stateData?.imageElementSelection as
     | { keepProduct: boolean; keepCharacter: boolean; keepBackground: boolean }
@@ -52,8 +63,13 @@ export async function handleImageGenerationWaiting(ctx: BotContext): Promise<boo
 /**
  * Handle CLONE_EDIT_DESC_WAITING state — user edits clone style description.
  */
-export async function handleCloneEditDescWaiting(ctx: BotContext): Promise<boolean> {
-  if (ctx.session?.state !== "CLONE_EDIT_DESC_WAITING" || !("text" in ctx.message!)) {
+export async function handleCloneEditDescWaiting(
+  ctx: BotContext,
+): Promise<boolean> {
+  if (
+    ctx.session?.state !== "CLONE_EDIT_DESC_WAITING" ||
+    !("text" in ctx.message!)
+  ) {
     return false;
   }
 
@@ -74,14 +90,18 @@ export async function handleCloneEditDescWaiting(ctx: BotContext): Promise<boole
     ctx.session.state = "DASHBOARD";
   }
 
-  await ctx.reply(t("msg.clone_desc_updated", lang), { parse_mode: "Markdown" });
+  await ctx.reply(t("msg.clone_desc_updated", lang), {
+    parse_mode: "Markdown",
+  });
   return true;
 }
 
 /**
  * Handle CLONE_VIDEO_WAITING state — user provides reference for video clone.
  */
-export async function handleCloneVideoWaiting(ctx: BotContext): Promise<boolean> {
+export async function handleCloneVideoWaiting(
+  ctx: BotContext,
+): Promise<boolean> {
   if (ctx.session?.state !== "CLONE_VIDEO_WAITING") {
     return false;
   }
@@ -104,7 +124,9 @@ export async function handleCloneVideoWaiting(ctx: BotContext): Promise<boolean>
         cloneReferenceUrl: fileLink.toString(),
       };
     }
-    await ctx.reply(t("msg.clone_reference_received", lang), { parse_mode: "Markdown" });
+    await ctx.reply(t("msg.clone_reference_received", lang), {
+      parse_mode: "Markdown",
+    });
     return true;
   }
 
@@ -116,7 +138,9 @@ export async function handleCloneVideoWaiting(ctx: BotContext): Promise<boolean>
         cloneDescription: description,
       };
     }
-    await ctx.reply(t("msg.clone_desc_updated", lang), { parse_mode: "Markdown" });
+    await ctx.reply(t("msg.clone_desc_updated", lang), {
+      parse_mode: "Markdown",
+    });
     return true;
   }
 

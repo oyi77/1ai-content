@@ -26,7 +26,9 @@ export async function handleVOToggle(
 ): Promise<void> {
   try {
     if (!ctx.session?.videoCreation) {
-      await ctx.answerCbQuery(t('error.no_session', ctx.session?.userLang || 'id')).catch(() => {});
+      await ctx
+        .answerCbQuery(t("error.no_session", ctx.session?.userLang || "id"))
+        .catch(() => {});
       return;
     }
 
@@ -52,11 +54,11 @@ export async function handleVOToggle(
 
     await ctx.editMessageText(
       `${t("create.almost_ready", lang)}\n\n` +
-      `${t("create.niche_label", lang)}: ${niche}\n` +
-      `${t("create.duration_label", lang)}: ${totalDuration}s (${scenes} ${sceneLabel})\n` +
-      `${t("create.credit_cost_label", lang)}: ${creditCost}\n\n` +
-      `🎙️ Voice Over: ${voLabel}\n` +
-      `📝 Subtitles: ${subLabel}\n`,
+        `${t("create.niche_label", lang)}: ${niche}\n` +
+        `${t("create.duration_label", lang)}: ${totalDuration}s (${scenes} ${sceneLabel})\n` +
+        `${t("create.credit_cost_label", lang)}: ${creditCost}\n\n` +
+        `🎙️ Voice Over: ${voLabel}\n` +
+        `📝 Subtitles: ${subLabel}\n`,
       {
         parse_mode: "Markdown",
         reply_markup: {
@@ -80,7 +82,9 @@ export async function handleVOToggle(
     await ctx.answerCbQuery();
   } catch (error) {
     logger.error("Error handling VO toggle:", error);
-    await ctx.answerCbQuery(t('error.generic', ctx.session?.userLang || 'id')).catch(() => {});
+    await ctx
+      .answerCbQuery(t("error.generic", ctx.session?.userLang || "id"))
+      .catch(() => {});
   }
 }
 
@@ -90,7 +94,9 @@ export async function handleVOToggle(
 export async function handleVOContinue(ctx: BotContext): Promise<void> {
   try {
     if (!ctx.session?.videoCreation) {
-      await ctx.answerCbQuery(t('error.no_session', ctx.session?.userLang || 'id')).catch(() => {});
+      await ctx
+        .answerCbQuery(t("error.no_session", ctx.session?.userLang || "id"))
+        .catch(() => {});
       return;
     }
 
@@ -100,10 +106,10 @@ export async function handleVOContinue(ctx: BotContext): Promise<void> {
       // Auto-trigger generation immediately
       await ctx.editMessageText(
         `🚀 *Siap generate!*\n\n` +
-        `📋 Prompt: \`${ctx.session.videoCreation.customPrompt.slice(0, 120)}...\`\n` +
-        `⏱️ Durasi: *${ctx.session.videoCreation.totalDuration} detik*\n` +
-        `🎙️ Voice Over: ON · 📝 Subtitles: ON\n\n` +
-        `Tap Generate untuk mulai!`,
+          `📋 Prompt: \`${ctx.session.videoCreation.customPrompt.slice(0, 120)}...\`\n` +
+          `⏱️ Durasi: *${ctx.session.videoCreation.totalDuration} detik*\n` +
+          `🎙️ Voice Over: ON · 📝 Subtitles: ON\n\n` +
+          `Tap Generate untuk mulai!`,
         {
           parse_mode: "Markdown",
           reply_markup: {
@@ -138,9 +144,9 @@ export async function handleVOContinue(ctx: BotContext): Promise<void> {
 
     await ctx.editMessageText(
       `🎙️ *Pengaturan Suara & Teks*\n\n` +
-      `Voice Over: *${voOn ? "✅ ON" : "❌ OFF"}*\n` +
-      `Subtitles: *${subOn ? "✅ ON" : "❌ OFF"}*\n\n` +
-      `_Voice Over = narasi otomatis AI\nSubtitles = teks di layar_`,
+        `Voice Over: *${voOn ? "✅ ON" : "❌ OFF"}*\n` +
+        `Subtitles: *${subOn ? "✅ ON" : "❌ OFF"}*\n\n` +
+        `_Voice Over = narasi otomatis AI\nSubtitles = teks di layar_`,
       {
         parse_mode: "Markdown",
         reply_markup: {
@@ -175,7 +181,9 @@ export async function handleVOContinue(ctx: BotContext): Promise<void> {
     await ctx.answerCbQuery();
   } catch (error) {
     logger.error("Error handling VO continue:", error);
-    await ctx.answerCbQuery(t('error.generic', ctx.session?.userLang || 'id')).catch(() => {});
+    await ctx
+      .answerCbQuery(t("error.generic", ctx.session?.userLang || "id"))
+      .catch(() => {});
   }
 }
 
@@ -187,7 +195,9 @@ export async function handleCustomPromptRequest(
 ): Promise<void> {
   try {
     if (!ctx.session?.videoCreation) {
-      await ctx.answerCbQuery(t('error.no_session', ctx.session?.userLang || 'id')).catch(() => {});
+      await ctx
+        .answerCbQuery(t("error.no_session", ctx.session?.userLang || "id"))
+        .catch(() => {});
       return;
     }
 
@@ -196,13 +206,15 @@ export async function handleCustomPromptRequest(
 
     await ctx.editMessageText(
       `✍️ Type your custom prompt below:\n\n` +
-      `Describe the scenes, mood, style, or specific content you want in your video.`,
+        `Describe the scenes, mood, style, or specific content you want in your video.`,
     );
 
     await ctx.answerCbQuery();
   } catch (error) {
     logger.error("Error handling custom prompt request:", error);
-    await ctx.answerCbQuery(t('error.generic', ctx.session?.userLang || 'id')).catch(() => {});
+    await ctx
+      .answerCbQuery(t("error.generic", ctx.session?.userLang || "id"))
+      .catch(() => {});
   }
 }
 
@@ -212,7 +224,9 @@ export async function handleCustomPromptRequest(
 export async function handleSkipPrompt(ctx: BotContext): Promise<void> {
   try {
     if (!ctx.session?.videoCreation) {
-      await ctx.answerCbQuery(t('error.no_session', ctx.session?.userLang || 'id')).catch(() => {});
+      await ctx
+        .answerCbQuery(t("error.no_session", ctx.session?.userLang || "id"))
+        .catch(() => {});
       return;
     }
 
@@ -230,6 +244,8 @@ export async function handleSkipPrompt(ctx: BotContext): Promise<void> {
     await ctx.answerCbQuery();
   } catch (error) {
     logger.error("Error handling skip prompt:", error);
-    await ctx.answerCbQuery(t('error.generic', ctx.session?.userLang || 'id')).catch(() => {});
+    await ctx
+      .answerCbQuery(t("error.generic", ctx.session?.userLang || "id"))
+      .catch(() => {});
   }
 }

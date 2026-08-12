@@ -4,9 +4,9 @@
  * User statistics and quota management
  */
 
-import { prisma } from '@/config/database';
-import { logger } from '@/utils/logger';
-import { UserCrudService } from './user-crud.service';
+import { prisma } from "@/config/database";
+import { logger } from "@/utils/logger";
+import { UserCrudService } from "./user-crud.service";
 
 export class UserStatsService {
   /**
@@ -30,7 +30,9 @@ export class UserStatsService {
    * Check whether the user is allowed to generate another video today.
    * Returns the allowed flag, remaining count, and daily limit for the tier.
    */
-  static async canGenerate(telegramId: bigint): Promise<{ allowed: boolean; remaining: number; limit: number }> {
+  static async canGenerate(
+    telegramId: bigint,
+  ): Promise<{ allowed: boolean; remaining: number; limit: number }> {
     const user = await UserCrudService.findByTelegramId(telegramId);
     if (!user) {
       return { allowed: false, remaining: 0, limit: 0 };
@@ -45,7 +47,7 @@ export class UserStatsService {
       agency: 30,
     };
 
-    const tier = user.tier || 'free';
+    const tier = user.tier || "free";
     const limit = DAILY_LIMITS[tier] ?? 2;
     const used = await this.getDailyGenerationCount(telegramId);
     const remaining = Math.max(0, limit - used);
@@ -65,25 +67,38 @@ export class UserStatsService {
     try {
       const user = await UserCrudService.findByTelegramId(telegramId);
       if (!user) {
-        return { videosCreated: 0, totalSpent: 0, referralCount: 0, commissionEarned: 0 };
+        return {
+          videosCreated: 0,
+          totalSpent: 0,
+          referralCount: 0,
+          commissionEarned: 0,
+        };
       }
 
       // Run queries with individual error handling or safe defaults
-      const videosCreated = await prisma.video.count({ where: { userId: telegramId } }).catch(() => 0);
-      
-      const transactions = await prisma.transaction.aggregate({
-        where: { userId: telegramId, status: 'success' },
-        _sum: { amountIdr: true },
-      }).catch(() => ({ _sum: { amountIdr: 0 } }));
+      const videosCreated = await prisma.video
+        .count({ where: { userId: telegramId } })
+        .catch(() => 0);
 
-      const referralCount = await prisma.user.count({ 
-        where: { referredBy: user.uuid } 
-      }).catch(() => 0);
+      const transactions = await prisma.transaction
+        .aggregate({
+          where: { userId: telegramId, status: "success" },
+          _sum: { amountIdr: true },
+        })
+        .catch(() => ({ _sum: { amountIdr: 0 } }));
 
-      const commissions = await prisma.commission.aggregate({
-        where: { referrerId: telegramId },
-        _sum: { amount: true },
-      }).catch(() => ({ _sum: { amount: 0 } }));
+      const referralCount = await prisma.user
+        .count({
+          where: { referredBy: user.uuid },
+        })
+        .catch(() => 0);
+
+      const commissions = await prisma.commission
+        .aggregate({
+          where: { referrerId: telegramId },
+          _sum: { amount: true },
+        })
+        .catch(() => ({ _sum: { amount: 0 } }));
 
       return {
         videosCreated,
@@ -93,7 +108,12 @@ export class UserStatsService {
       };
     } catch (error) {
       logger.error(`Error fetching stats for user ${telegramId}:`, error);
-      return { videosCreated: 0, totalSpent: 0, referralCount: 0, commissionEarned: 0 };
+      return {
+        videosCreated: 0,
+        totalSpent: 0,
+        referralCount: 0,
+        commissionEarned: 0,
+      };
     }
   }
 }

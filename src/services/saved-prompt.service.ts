@@ -1,18 +1,17 @@
 /**
  * SavedPrompt Service — User's personal prompt library
  */
-import { prisma } from '@/config/database';
+import { prisma } from "@/config/database";
 
 export interface SavedPromptData {
   title: string;
   prompt: string;
   niche: string;
-  source?: 'custom' | 'library' | 'daily';
+  source?: "custom" | "library" | "daily";
   sourceId?: string;
 }
 
 export class SavedPromptService {
-
   /** Save a prompt to user's personal library */
   static async save(userId: bigint, data: SavedPromptData) {
     return prisma.savedPrompt.create({
@@ -21,7 +20,7 @@ export class SavedPromptService {
         title: data.title.slice(0, 100),
         prompt: data.prompt,
         niche: data.niche,
-        source: data.source || 'custom',
+        source: data.source || "custom",
         sourceId: data.sourceId,
       },
     });
@@ -34,10 +33,7 @@ export class SavedPromptService {
         userId,
         ...(niche ? { niche } : {}),
       },
-      orderBy: [
-        { usageCount: 'desc' },
-        { createdAt: 'desc' },
-      ],
+      orderBy: [{ usageCount: "desc" }, { createdAt: "desc" }],
       take: 10,
     });
   }

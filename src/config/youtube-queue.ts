@@ -15,7 +15,10 @@ const defaultOpts = { connection: bullmqRedis, prefix: "yt" };
 // --- Workflow Phase Queues ---
 
 /** FASE 0B: Niche + CPM research (monthly cron) */
-export const nicheCpmResearchQueue = new Queue("yt-niche-cpm-research", defaultOpts);
+export const nicheCpmResearchQueue = new Queue(
+  "yt-niche-cpm-research",
+  defaultOpts,
+);
 
 /** FASE 1: Content ideation */
 export const ideationQueue = new Queue("yt-ideation", defaultOpts);

@@ -18,16 +18,17 @@ export function registerProviderCostRoutes(server: FastifyInstance): void {
 
       // Add last update time from DB
       const dbCosts = await prisma.pricingConfig.findMany({
-        where: { category: 'provider_cost' },
-        orderBy: { updatedAt: 'desc' },
+        where: { category: "provider_cost" },
+        orderBy: { updatedAt: "desc" },
       });
 
-      const costsWithTimestamp = costs.map(cost => {
-        const dbCost = dbCosts.find(c => c.key === cost.providerKey);
+      const costsWithTimestamp = costs.map((cost) => {
+        const dbCost = dbCosts.find((c) => c.key === cost.providerKey);
         return {
           ...cost,
           lastUpdated: dbCost?.updatedAt || null,
-          sourcePriority: cost.source === 'api' ? 1 : cost.source === 'manual' ? 2 : 3,
+          sourcePriority:
+            cost.source === "api" ? 1 : cost.source === "manual" ? 2 : 3,
         };
       });
 
@@ -38,9 +39,9 @@ export function registerProviderCostRoutes(server: FastifyInstance): void {
         costs: costsWithTimestamp,
         summary: {
           total: costs.length,
-          apiTracked: costs.filter(c => c.source === 'api').length,
-          manual: costs.filter(c => c.source === 'manual').length,
-          static: costs.filter(c => c.source === 'static').length,
+          apiTracked: costs.filter((c) => c.source === "api").length,
+          manual: costs.filter((c) => c.source === "manual").length,
+          static: costs.filter((c) => c.source === "static").length,
         },
       });
     } catch (error) {
@@ -50,82 +51,94 @@ export function registerProviderCostRoutes(server: FastifyInstance): void {
   });
 
   // POST /api/admin/provider-costs/:key/refresh — Manually refresh a provider's cost
-  server.post<{ Params: { key: string } }>("/api/admin/provider-costs/:key/refresh", async (request, reply) => {
-    try {
-      const { key } = request.params;
+  server.post<{ Params: { key: string } }>(
+    "/api/admin/provider-costs/:key/refresh",
+    async (request, reply) => {
+      try {
+        const { key } = request.params;
 
-      // For now, this would trigger an API call to the provider to fetch current pricing
-      // Most providers don't have pricing APIs, so this is mostly for manual input
-      // DEFERRED: Provider-specific pricing APIs not universally available.
-      // Most providers (Gemini, OpenAI) don't expose pricing endpoints.
-      // Using manual admin input + static config as fallback. See ProviderCostTrackerService.
+        // For now, this would trigger an API call to the provider to fetch current pricing
+        // Most providers don't have pricing APIs, so this is mostly for manual input
+        // DEFERRED: Provider-specific pricing APIs not universally available.
+        // Most providers (Gemini, OpenAI) don't expose pricing endpoints.
+        // Using manual admin input + static config as fallback. See ProviderCostTrackerService.
 
-      // For now, just re-sync from static config
-      const cost = await ProviderCostTrackerService.getProviderCost(key);
+        // For now, just re-sync from static config
+        const cost = await ProviderCostTrackerService.getProviderCost(key);
 
-      if (!cost) {
-        return reply.status(404).send({ error: "Provider not found" });
+        if (!cost) {
+          return reply.status(404).send({ error: "Provider not found" });
+        }
+
+        return reply.send({
+          success: true,
+          provider: key,
+          cost,
+          message: `Cost refreshed for ${key}`,
+        });
+      } catch (error) {
+        logger.error(
+          `Failed to refresh provider cost ${request.params.key}:`,
+          error,
+        );
+        return reply.status(500).send({ error: (error as Error).message });
       }
-
-      return reply.send({
-        success: true,
-        provider: key,
-        cost,
-        message: `Cost refreshed for ${key}`,
-      });
-    } catch (error) {
-      logger.error(`Failed to refresh provider cost ${request.params.key}:`, error);
-      return reply.status(500).send({ error: (error as Error).message });
-    }
-  });
+    },
+  );
 
   // PUT /api/admin/provider-costs/:key — Manually set provider cost
-  server.put<{ Params: { key: string } }>("/api/admin/provider-costs/:key", async (request, reply) => {
-    const { key } = request.params;
-    try {
-      const { costUsd, metadata } = (request.body ?? {}) as {
-        costUsd: number;
-        metadata?: Record<string, any>;
-      };
+  server.put<{ Params: { key: string } }>(
+    "/api/admin/provider-costs/:key",
+    async (request, reply) => {
+      const { key } = request.params;
+      try {
+        const { costUsd, metadata } = (request.body ?? {}) as {
+          costUsd: number;
+          metadata?: Record<string, any>;
+        };
 
-      if (typeof costUsd !== 'number' || costUsd < 0) {
-        return reply.status(400).send({ error: "Invalid costUsd value" });
+        if (typeof costUsd !== "number" || costUsd < 0) {
+          return reply.status(400).send({ error: "Invalid costUsd value" });
+        }
+
+        await ProviderCostTrackerService.setManualCost(key, costUsd, metadata);
+
+        return reply.send({
+          success: true,
+          provider: key,
+          cost: costUsd,
+          message: `Provider cost updated for ${key}`,
+        });
+      } catch (error) {
+        logger.error(`Failed to set provider cost ${key}:`, error);
+        return reply.status(500).send({ error: (error as Error).message });
       }
-
-      await ProviderCostTrackerService.setManualCost(key, costUsd, metadata);
-
-      return reply.send({
-        success: true,
-        provider: key,
-        cost: costUsd,
-        message: `Provider cost updated for ${key}`,
-      });
-    } catch (error) {
-      logger.error(`Failed to set provider cost ${key}:`, error);
-      return reply.status(500).send({ error: (error as Error).message });
-    }
-  });
+    },
+  );
 
   // GET /api/admin/provider-costs/:key/history — Get cost history for a provider
-  server.get<{ Params: { key: string } }>("/api/admin/provider-costs/:key/history", async (request, reply) => {
-    const { key } = request.params;
-    try {
-      const history = await ProviderCostTrackerService.getCostHistory(key);
+  server.get<{ Params: { key: string } }>(
+    "/api/admin/provider-costs/:key/history",
+    async (request, reply) => {
+      const { key } = request.params;
+      try {
+        const history = await ProviderCostTrackerService.getCostHistory(key);
 
-      return reply.send({
-        provider: key,
-        history,
-        summary: {
-          total: history.length,
-          latest: history[history.length - 1],
-          oldest: history[0],
-        },
-      });
-    } catch (error) {
-      logger.error(`Failed to fetch cost history for ${key}:`, error);
-      return reply.status(500).send({ error: (error as Error).message });
-    }
-  });
+        return reply.send({
+          provider: key,
+          history,
+          summary: {
+            total: history.length,
+            latest: history[history.length - 1],
+            oldest: history[0],
+          },
+        });
+      } catch (error) {
+        logger.error(`Failed to fetch cost history for ${key}:`, error);
+        return reply.status(500).send({ error: (error as Error).message });
+      }
+    },
+  );
 
   // POST /api/admin/provider-costs/sync — Sync all provider costs from config
   server.post("/api/admin/provider-costs/sync", async (_request, reply) => {
@@ -144,66 +157,78 @@ export function registerProviderCostRoutes(server: FastifyInstance): void {
   });
 
   // GET /api/admin/dynamic-pricing/recommendations — Get dynamic pricing recommendations
-  server.get("/api/admin/dynamic-pricing/recommendations", async (_request, reply) => {
-    try {
-      const recommendations = await DynamicPricingService.getRecommendedUnitCosts();
+  server.get(
+    "/api/admin/dynamic-pricing/recommendations",
+    async (_request, reply) => {
+      try {
+        const recommendations =
+          await DynamicPricingService.getRecommendedUnitCosts();
 
-      // Get current unit costs for comparison
-      const currentCosts = await prisma.pricingConfig.findMany({
-        where: { category: 'unit_cost' },
-      });
+        // Get current unit costs for comparison
+        const currentCosts = await prisma.pricingConfig.findMany({
+          where: { category: "unit_cost" },
+        });
 
-      const currentCostsMap = Object.fromEntries(
-        currentCosts.map(c => [c.key, c.value])
-      );
+        const currentCostsMap = Object.fromEntries(
+          currentCosts.map((c) => [c.key, c.value]),
+        );
 
-      const getCostEntry = (key: string): { units?: number } | undefined => {
-        const v = currentCostsMap[key];
-        if (v && typeof v === 'object' && !Array.isArray(v)) return v as { units?: number };
-        return undefined;
-      };
+        const getCostEntry = (key: string): { units?: number } | undefined => {
+          const v = currentCostsMap[key];
+          if (v && typeof v === "object" && !Array.isArray(v))
+            return v as { units?: number };
+          return undefined;
+        };
 
-      const withComparison = Object.entries(recommendations).map(([key, rec]) => ({
-        ...rec,
-        key,
-        currentUnits: (getCostEntry(key)?.units || 0),
-        difference: rec.units - (getCostEntry(key)?.units || 0),
-        needsUpdate: rec.units !== (getCostEntry(key)?.units || 0),
-      }));
+        const withComparison = Object.entries(recommendations).map(
+          ([key, rec]) => ({
+            ...rec,
+            key,
+            currentUnits: getCostEntry(key)?.units || 0,
+            difference: rec.units - (getCostEntry(key)?.units || 0),
+            needsUpdate: rec.units !== (getCostEntry(key)?.units || 0),
+          }),
+        );
 
-      return reply.send({
-        recommendations: withComparison,
-        summary: {
-          total: Object.keys(recommendations).length,
-          needsUpdate: withComparison.filter(r => r.needsUpdate).length,
-        },
-      });
-    } catch (error) {
-      logger.error("Failed to calculate pricing recommendations:", error);
-      return reply.status(500).send({ error: (error as Error).message });
-    }
-  });
+        return reply.send({
+          recommendations: withComparison,
+          summary: {
+            total: Object.keys(recommendations).length,
+            needsUpdate: withComparison.filter((r) => r.needsUpdate).length,
+          },
+        });
+      } catch (error) {
+        logger.error("Failed to calculate pricing recommendations:", error);
+        return reply.status(500).send({ error: (error as Error).message });
+      }
+    },
+  );
 
   // POST /api/admin/dynamic-pricing/recalculate — Recalculate all prices based on current costs
-  server.post("/api/admin/dynamic-pricing/recalculate", async (_request, reply) => {
-    try {
-      const result = await DynamicPricingService.recalculateAllPrices();
+  server.post(
+    "/api/admin/dynamic-pricing/recalculate",
+    async (_request, reply) => {
+      try {
+        const result = await DynamicPricingService.recalculateAllPrices();
 
-      return reply.send({
-        success: true,
-        ...result,
-        message: `Recalculated ${result.updated} unit costs`,
-      });
-    } catch (error) {
-      logger.error("Failed to recalculate prices:", error);
-      return reply.status(500).send({ error: (error as Error).message });
-    }
-  });
+        return reply.send({
+          success: true,
+          ...result,
+          message: `Recalculated ${result.updated} unit costs`,
+        });
+      } catch (error) {
+        logger.error("Failed to recalculate prices:", error);
+        return reply.status(500).send({ error: (error as Error).message });
+      }
+    },
+  );
 
   // GET /api/admin/dynamic-pricing/drift — Check for price drift
   server.get("/api/admin/dynamic-pricing/drift", async (request, reply) => {
     try {
-      const threshold = Number((request.query as Record<string, string>).threshold || 10);
+      const threshold = Number(
+        (request.query as Record<string, string>).threshold || 10,
+      );
       const drift = await DynamicPricingService.checkPriceDrift(threshold);
 
       return reply.send({
@@ -220,31 +245,34 @@ export function registerProviderCostRoutes(server: FastifyInstance): void {
   });
 
   // GET /api/admin/dynamic-pricing/simulation — Simulate price for a scenario
-  server.get("/api/admin/dynamic-pricing/simulation", async (request, reply) => {
-    try {
-      const { providerKey, units } = request.query as {
-        providerKey?: string;
-        units?: string;
-      };
+  server.get(
+    "/api/admin/dynamic-pricing/simulation",
+    async (request, reply) => {
+      try {
+        const { providerKey, units } = request.query as {
+          providerKey?: string;
+          units?: string;
+        };
 
-      if (!providerKey || !units) {
-        return reply.status(400).send({
-          error: "Missing required parameters: providerKey and units"
+        if (!providerKey || !units) {
+          return reply.status(400).send({
+            error: "Missing required parameters: providerKey and units",
+          });
+        }
+
+        const calculation = await DynamicPricingService.calculatePrice({
+          providerKey,
+          units: parseInt(units),
         });
+
+        return reply.send({
+          ...calculation,
+          input: { providerKey, units: parseInt(units) },
+        });
+      } catch (error) {
+        logger.error("Failed to simulate pricing:", error);
+        return reply.status(500).send({ error: (error as Error).message });
       }
-
-      const calculation = await DynamicPricingService.calculatePrice({
-        providerKey,
-        units: parseInt(units),
-      });
-
-      return reply.send({
-        ...calculation,
-        input: { providerKey, units: parseInt(units) },
-      });
-    } catch (error) {
-      logger.error("Failed to simulate pricing:", error);
-      return reply.status(500).send({ error: (error as Error).message });
-    }
-  });
+    },
+  );
 }

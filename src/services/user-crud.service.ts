@@ -4,12 +4,12 @@
  * Database CREATE, READ, UPDATE operations for users
  */
 
-import { prisma } from '@/config/database';
-import { logger } from '@/utils/logger';
-import { User, Prisma } from '@prisma/client';
-import { NotFoundError } from '@/utils/app-errors';
-import { UserReferralService } from './user-referral.service';
-import { generateSyntheticId } from '@/utils/id-generator';
+import { prisma } from "@/config/database";
+import { logger } from "@/utils/logger";
+import { User, Prisma } from "@prisma/client";
+import { NotFoundError } from "@/utils/app-errors";
+import { UserReferralService } from "./user-referral.service";
+import { generateSyntheticId } from "@/utils/id-generator";
 
 export class UserCrudService {
   /**
@@ -52,20 +52,22 @@ export class UserCrudService {
     ttclid?: string;
   }): Promise<User> {
     // Generate referral code
-    const referralCode = await UserReferralService.generateReferralCode(data.username || data.firstName);
+    const referralCode = await UserReferralService.generateReferralCode(
+      data.username || data.firstName,
+    );
     const user = await prisma.user.create({
       data: {
         telegramId: data.telegramId,
         username: data.username,
         firstName: data.firstName,
         lastName: data.lastName,
-        tier: 'free',
+        tier: "free",
         creditBalance: 0, // Standardize on reward slot system
         welcomeBonusUsed: false,
         dailyFreeUsed: false,
         referralCode,
         referredBy: data.referredBy,
-        language: data.language || 'id',
+        language: data.language || "id",
         notificationsEnabled: true,
         // UTM Parameters
         utmSource: data.utmSource,
@@ -79,14 +81,19 @@ export class UserCrudService {
         ttclid: data.ttclid,
       },
     });
-    logger.info(`Created new user: ${user.telegramId} (${user.username || 'no username'}) [LP: ${data.lpVariant || 'direct'}]`);
+    logger.info(
+      `Created new user: ${user.telegramId} (${user.username || "no username"}) [LP: ${data.lpVariant || "direct"}]`,
+    );
     return user;
   }
 
   /**
    * Update user
    */
-  static async update(telegramId: bigint, data: Prisma.UserUpdateInput): Promise<User> {
+  static async update(
+    telegramId: bigint,
+    data: Prisma.UserUpdateInput,
+  ): Promise<User> {
     return prisma.user.update({
       where: { telegramId },
       data: {
@@ -142,101 +149,110 @@ export class UserCrudService {
       },
     });
   }
-    // ── Email Auth ────────────────────────────────────────────────────────
+  // ── Email Auth ────────────────────────────────────────────────────────
 
-    /**
-     * Find user by email
-     */
-    static async findByEmail(email: string): Promise<User | null> {
-      return prisma.user.findUnique({ where: { email } });
-    }
-
-    /**
-     * Find user by verification token
-     */
-    static async findByVerificationToken(token: string): Promise<User | null> {
-      return prisma.user.findFirst({ where: { verificationToken: token } });
-    }
-
-    /**
-     * Find user by password reset token
-     */
-    static async findByPasswordResetToken(token: string): Promise<User | null> {
-      return prisma.user.findFirst({ where: { passwordResetToken: token } });
-    }
-
-    /**
-     * Create an email-only user with a synthetic telegramId
-     */
-    static async createEmailUser(data: {
-      email: string;
-      passwordHash: string;
-      firstName: string;
-      lastName?: string;
-      verificationToken: string;
-      language?: string;
-    }): Promise<User> {
-      const telegramId = generateSyntheticId();
-      const referralCode = await UserReferralService.generateReferralCode(data.firstName);
-
-      const user = await prisma.user.create({
-        data: {
-          telegramId,
-          email: data.email,
-          passwordHash: data.passwordHash,
-          verificationToken: data.verificationToken,
-          firstName: data.firstName,
-          lastName: data.lastName,
-          tier: 'free',
-          creditBalance: 0,
-          welcomeBonusUsed: false,
-          dailyFreeUsed: false,
-          referralCode,
-          language: data.language || 'id',
-          notificationsEnabled: true,
-        },
-      });
-      logger.info(`Created email-only user: ${user.uuid} (${data.email})`);
-      return user;
-    }
-
-    /**
-     * Mark a user's email as verified
-     */
-    static async verifyEmail(email: string): Promise<User> {
-      return prisma.user.update({
-        where: { email },
-        data: {
-          emailVerifiedAt: new Date(),
-          verificationToken: null,
-        },
-      });
-    }
-
-    /**
-     * Set password reset token for a user
-     */
-    static async setPasswordResetToken(email: string, token: string, expiresAt: Date): Promise<User> {
-      return prisma.user.update({
-        where: { email },
-        data: {
-          passwordResetToken: token,
-          passwordResetExpiresAt: expiresAt,
-        },
-      });
-    }
-
-    /**
-     * Reset password (clear reset token, update hash)
-     */
-    static async resetPassword(email: string, passwordHash: string): Promise<User> {
-      return prisma.user.update({
-        where: { email },
-        data: {
-          passwordHash,
-          passwordResetToken: null,
-          passwordResetExpiresAt: null,
-        },
-      });
-    }
+  /**
+   * Find user by email
+   */
+  static async findByEmail(email: string): Promise<User | null> {
+    return prisma.user.findUnique({ where: { email } });
   }
+
+  /**
+   * Find user by verification token
+   */
+  static async findByVerificationToken(token: string): Promise<User | null> {
+    return prisma.user.findFirst({ where: { verificationToken: token } });
+  }
+
+  /**
+   * Find user by password reset token
+   */
+  static async findByPasswordResetToken(token: string): Promise<User | null> {
+    return prisma.user.findFirst({ where: { passwordResetToken: token } });
+  }
+
+  /**
+   * Create an email-only user with a synthetic telegramId
+   */
+  static async createEmailUser(data: {
+    email: string;
+    passwordHash: string;
+    firstName: string;
+    lastName?: string;
+    verificationToken: string;
+    language?: string;
+  }): Promise<User> {
+    const telegramId = generateSyntheticId();
+    const referralCode = await UserReferralService.generateReferralCode(
+      data.firstName,
+    );
+
+    const user = await prisma.user.create({
+      data: {
+        telegramId,
+        email: data.email,
+        passwordHash: data.passwordHash,
+        verificationToken: data.verificationToken,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        tier: "free",
+        creditBalance: 0,
+        welcomeBonusUsed: false,
+        dailyFreeUsed: false,
+        referralCode,
+        language: data.language || "id",
+        notificationsEnabled: true,
+      },
+    });
+    logger.info(`Created email-only user: ${user.uuid} (${data.email})`);
+    return user;
+  }
+
+  /**
+   * Mark a user's email as verified
+   */
+  static async verifyEmail(email: string): Promise<User> {
+    return prisma.user.update({
+      where: { email },
+      data: {
+        emailVerifiedAt: new Date(),
+        verificationToken: null,
+      },
+    });
+  }
+
+  /**
+   * Set password reset token for a user
+   */
+  static async setPasswordResetToken(
+    email: string,
+    token: string,
+    expiresAt: Date,
+  ): Promise<User> {
+    return prisma.user.update({
+      where: { email },
+      data: {
+        passwordResetToken: token,
+        passwordResetExpiresAt: expiresAt,
+      },
+    });
+  }
+
+  /**
+   * Reset password (clear reset token, update hash)
+   */
+  static async resetPassword(
+    email: string,
+    passwordHash: string,
+  ): Promise<User> {
+    return prisma.user.update({
+      where: { email },
+      data: {
+        passwordHash,
+        passwordResetToken: null,
+        passwordResetExpiresAt: null,
+      },
+    });
+  }
+}

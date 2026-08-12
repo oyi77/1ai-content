@@ -1,5 +1,5 @@
 import { BotContext } from "@/types";
-import type { InlineKeyboardButton } from '@telegraf/types/markup';
+import type { InlineKeyboardButton } from "@telegraf/types/markup";
 import { UserService } from "@/services/user.service";
 import { SavedPromptService } from "@/services/saved-prompt.service";
 import {
@@ -18,7 +18,10 @@ import {
 } from "@/commands/prompts";
 import { t } from "@/i18n/translations";
 
-export async function handlePromptLibraryCallbacks(ctx: BotContext, data: string): Promise<boolean> {
+export async function handlePromptLibraryCallbacks(
+  ctx: BotContext,
+  data: string,
+): Promise<boolean> {
   // Route prompts_niche_*, use_prompt_*, use_admin_prompt_*, use_saved_*, generate_free_* to existing module
   if (
     data.startsWith("prompts_niche_") ||
@@ -38,14 +41,14 @@ export async function handlePromptLibraryCallbacks(ctx: BotContext, data: string
     await ctx.answerCbQuery();
     const nicheKey = data.replace("prompts_", "");
     if (nicheKey === "trending") {
-      const lang = ctx.session?.userLang || 'id';
+      const lang = ctx.session?.userLang || "id";
       const TP = TRENDING_PROMPTS;
       const PL = PROMPT_LIBRARY;
-      let msg = t('cb.trending_header', lang) + '\n\n';
+      let msg = t("cb.trending_header", lang) + "\n\n";
       const buttons: InlineKeyboardButton[][] = [];
       TP.forEach((tp, i: number) => {
         const niche = PL[tp.niche];
-        const p = niche.prompts.find(x => x.id === tp.promptId)!;
+        const p = niche.prompts.find((x) => x.id === tp.promptId)!;
         msg += `*#${i + 1}* ${niche.emoji} ${p.title} — ⭐${p.successRate}% | 📈+${tp.usageChange}%\n\n`;
         buttons.push([
           {
@@ -55,7 +58,7 @@ export async function handlePromptLibraryCallbacks(ctx: BotContext, data: string
         ]);
       });
       buttons.push([
-        { text: t('btn.back_to_niche', lang), callback_data: "back_prompts" },
+        { text: t("btn.back_to_niche", lang), callback_data: "back_prompts" },
       ]);
       try {
         await ctx.editMessageText(msg, {
@@ -66,18 +69,15 @@ export async function handlePromptLibraryCallbacks(ctx: BotContext, data: string
         await promptsTrendingCommand(ctx);
       }
     } else if (nicheKey === "custom") {
-      const lang = ctx.session?.userLang || 'id';
-      await ctx.editMessageText(
-        t('cb.custom_prompt_gen', lang),
-        {
-          parse_mode: "Markdown",
-          reply_markup: {
-            inline_keyboard: [
-              [{ text: t('btn.back', lang), callback_data: "back_prompts" }],
-            ],
-          },
+      const lang = ctx.session?.userLang || "id";
+      await ctx.editMessageText(t("cb.custom_prompt_gen", lang), {
+        parse_mode: "Markdown",
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: t("btn.back", lang), callback_data: "back_prompts" }],
+          ],
         },
-      );
+      });
       if (ctx.session) ctx.session.state = "CUSTOM_PROMPT_CREATION";
     } else {
       await showNichePrompts(ctx, nicheKey, true);
@@ -116,21 +116,31 @@ export async function handlePromptLibraryCallbacks(ctx: BotContext, data: string
         ...(ctx.session.stateData || {}),
         selectedPrompt: newPrompt,
       };
-    const lang = ctx.session?.userLang || 'id';
+    const lang = ctx.session?.userLang || "id";
     const typeLabel = type === "style" ? "Style" : "Lighting";
     await ctx.editMessageText(
-      t('cb.prompt_updated', lang, { prompt: newPrompt.slice(0, 300), typeLabel, value }),
+      t("cb.prompt_updated", lang, {
+        prompt: newPrompt.slice(0, 300),
+        typeLabel,
+        value,
+      }),
       {
         parse_mode: "Markdown",
         reply_markup: {
           inline_keyboard: [
             [
-              { text: t('btn.create_video', lang), callback_data: "create_video_new" },
-              { text: t('btn.create_image', lang), callback_data: "image_from_prompt" },
+              {
+                text: t("btn.create_video", lang),
+                callback_data: "create_video_new",
+              },
+              {
+                text: t("btn.create_image", lang),
+                callback_data: "image_from_prompt",
+              },
             ],
             [
               {
-                text: t('btn.customize_again', lang),
+                text: t("btn.customize_again", lang),
                 callback_data: `customize_prompt_${promptId}`,
               },
             ],
@@ -169,8 +179,8 @@ export async function handlePromptLibraryCallbacks(ctx: BotContext, data: string
           savedId,
           dbUser.id as unknown as bigint,
         );
-        const lang = ctx.session?.userLang || 'id';
-        await ctx.answerCbQuery(t('prompt.deleted', lang));
+        const lang = ctx.session?.userLang || "id";
+        await ctx.answerCbQuery(t("prompt.deleted", lang));
         await showMyPrompts(ctx, nicheKey, true);
       }
     }
@@ -188,41 +198,59 @@ export async function handlePromptLibraryCallbacks(ctx: BotContext, data: string
   // back_prompts
   if (data === "back_prompts") {
     await ctx.answerCbQuery();
-    const lang = ctx.session?.userLang || 'id';
+    const lang = ctx.session?.userLang || "id";
     try {
-      await ctx.editMessageText(
-        t('cb.prompt_library_title', lang),
-        {
-          parse_mode: "Markdown",
-          reply_markup: {
-            inline_keyboard: [
-              [
-                { text: t('niche.food', lang), callback_data: "prompts_fnb" },
-                { text: t('niche.fashion', lang), callback_data: "prompts_fashion" },
-              ],
-              [
-                { text: t('niche.tech', lang), callback_data: "prompts_tech" },
-                { text: t('niche.health', lang), callback_data: "prompts_health" },
-              ],
-              [
-                { text: t('niche.travel', lang), callback_data: "prompts_travel" },
-                { text: t('niche.education', lang), callback_data: "prompts_education" },
-              ],
-              [
-                { text: t('niche.finance', lang), callback_data: "prompts_finance" },
-                {
-                  text: t('niche.entertainment', lang),
-                  callback_data: "prompts_entertainment",
-                },
-              ],
-              [
-                { text: t('btn.trending', lang), callback_data: "prompts_trending" },
-                { text: t('btn.custom_ai', lang), callback_data: "prompts_custom" },
-              ],
+      await ctx.editMessageText(t("cb.prompt_library_title", lang), {
+        parse_mode: "Markdown",
+        reply_markup: {
+          inline_keyboard: [
+            [
+              { text: t("niche.food", lang), callback_data: "prompts_fnb" },
+              {
+                text: t("niche.fashion", lang),
+                callback_data: "prompts_fashion",
+              },
             ],
-          },
+            [
+              { text: t("niche.tech", lang), callback_data: "prompts_tech" },
+              {
+                text: t("niche.health", lang),
+                callback_data: "prompts_health",
+              },
+            ],
+            [
+              {
+                text: t("niche.travel", lang),
+                callback_data: "prompts_travel",
+              },
+              {
+                text: t("niche.education", lang),
+                callback_data: "prompts_education",
+              },
+            ],
+            [
+              {
+                text: t("niche.finance", lang),
+                callback_data: "prompts_finance",
+              },
+              {
+                text: t("niche.entertainment", lang),
+                callback_data: "prompts_entertainment",
+              },
+            ],
+            [
+              {
+                text: t("btn.trending", lang),
+                callback_data: "prompts_trending",
+              },
+              {
+                text: t("btn.custom_ai", lang),
+                callback_data: "prompts_custom",
+              },
+            ],
+          ],
         },
-      );
+      });
     } catch {
       await promptsCommand(ctx);
     }
@@ -231,8 +259,8 @@ export async function handlePromptLibraryCallbacks(ctx: BotContext, data: string
 
   // daily_save_
   if (data.startsWith("daily_save_")) {
-    const lang = ctx.session?.userLang || 'id';
-    await ctx.answerCbQuery(t('prompt.saved_to_session', lang));
+    const lang = ctx.session?.userLang || "id";
+    await ctx.answerCbQuery(t("prompt.saved_to_session", lang));
     const promptId = data.replace("daily_save_", "");
     const p = await getPromptById(promptId);
     if (p && ctx.session)
@@ -251,20 +279,30 @@ export async function handlePromptLibraryCallbacks(ctx: BotContext, data: string
     const niche = PROMPT_LIBRARY[mystery.niche];
     const p = niche?.prompts.find((x) => x.id === mystery.promptId);
     if (p) {
-      const lang = ctx.session?.userLang || 'id';
+      const lang = ctx.session?.userLang || "id";
       await ctx.editMessageText(
-        t('cb.another_mystery', lang, { emoji: niche.emoji, title: p.title, prompt: p.prompt, rate: p.successRate }),
+        t("cb.another_mystery", lang, {
+          emoji: niche.emoji,
+          title: p.title,
+          prompt: p.prompt,
+          rate: p.successRate,
+        }),
         {
           parse_mode: "Markdown",
           reply_markup: {
             inline_keyboard: [
               [
                 {
-                  text: t('btn.use_now', lang),
+                  text: t("btn.use_now", lang),
                   callback_data: `use_prompt_${p.id}`,
                 },
               ],
-              [{ text: t('btn.browse_all', lang), callback_data: "back_prompts" }],
+              [
+                {
+                  text: t("btn.browse_all", lang),
+                  callback_data: "back_prompts",
+                },
+              ],
             ],
           },
         },
@@ -281,10 +319,10 @@ export async function handlePromptLibraryCallbacks(ctx: BotContext, data: string
     const dayOfWeek = new Date().getDay();
     const mystery = MP[dayOfWeek % MP.length];
     const niche = PL2[mystery.niche];
-    const p = niche?.prompts.find(x => x.id === mystery.promptId);
+    const p = niche?.prompts.find((x) => x.id === mystery.promptId);
     if (p) {
-      const lang = ctx.session?.userLang || 'id';
-      const msg = t('cb2.mystery_prompt_box', lang, {
+      const lang = ctx.session?.userLang || "id";
+      const msg = t("cb2.mystery_prompt_box", lang, {
         nicheEmoji: niche.emoji,
         nicheLabel: niche.label,
         rarity: mystery.rarity,
@@ -299,17 +337,27 @@ export async function handlePromptLibraryCallbacks(ctx: BotContext, data: string
             inline_keyboard: [
               [
                 {
-                  text: t('cb2.use_now', lang),
+                  text: t("cb2.use_now", lang),
                   callback_data: `use_prompt_${p.id}`,
                 },
               ],
-              [{ text: t('cb2.another_prompt', lang), callback_data: "daily_another" }],
-              [{ text: t('cb2.back_to_menu', lang), callback_data: "back_prompts" }],
+              [
+                {
+                  text: t("cb2.another_prompt", lang),
+                  callback_data: "daily_another",
+                },
+              ],
+              [
+                {
+                  text: t("cb2.back_to_menu", lang),
+                  callback_data: "back_prompts",
+                },
+              ],
             ],
           },
         });
       } catch {
-        await ctx.deleteMessage().catch(() => { });
+        await ctx.deleteMessage().catch(() => {});
         await promptsDailyCommand(ctx);
       }
     }
@@ -319,79 +367,72 @@ export async function handlePromptLibraryCallbacks(ctx: BotContext, data: string
   // rate_*
   if (data === "generate_rate") {
     await ctx.answerCbQuery();
-    const lang = ctx.session?.userLang || 'id';
-    await ctx.editMessageText(
-      t('cb.rate_title', lang),
-      {
-        parse_mode: "Markdown",
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: t('cb.rate_5', lang), callback_data: "rate_5" }],
-            [{ text: t('cb.rate_4', lang), callback_data: "rate_4" }],
-            [{ text: t('cb.rate_3', lang), callback_data: "rate_3" }],
-            [{ text: t('cb.rate_2', lang), callback_data: "rate_2" }],
-            [{ text: t('btn.main_menu', lang), callback_data: "main_menu" }],
-          ],
-        },
+    const lang = ctx.session?.userLang || "id";
+    await ctx.editMessageText(t("cb.rate_title", lang), {
+      parse_mode: "Markdown",
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: t("cb.rate_5", lang), callback_data: "rate_5" }],
+          [{ text: t("cb.rate_4", lang), callback_data: "rate_4" }],
+          [{ text: t("cb.rate_3", lang), callback_data: "rate_3" }],
+          [{ text: t("cb.rate_2", lang), callback_data: "rate_2" }],
+          [{ text: t("btn.main_menu", lang), callback_data: "main_menu" }],
+        ],
       },
-    );
+    });
     return true;
   }
 
   if (data.startsWith("rate_")) {
-    const lang = ctx.session?.userLang || 'id';
+    const lang = ctx.session?.userLang || "id";
     const score = parseInt(data.replace("rate_", ""));
     const stars = "⭐".repeat(score);
-    await ctx.answerCbQuery(t('cb.rate_thanks', lang, { stars }));
-    await ctx.editMessageText(
-      t('cb.rate_thanks_msg', lang, { stars }),
-      {
-        parse_mode: "Markdown",
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: t('btn.generate_again', lang), callback_data: "generate_start" }],
-            [{ text: t('btn.home_menu', lang), callback_data: "main_menu" }],
+    await ctx.answerCbQuery(t("cb.rate_thanks", lang, { stars }));
+    await ctx.editMessageText(t("cb.rate_thanks_msg", lang, { stars }), {
+      parse_mode: "Markdown",
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: t("btn.generate_again", lang),
+              callback_data: "generate_start",
+            },
           ],
-        },
+          [{ text: t("btn.home_menu", lang), callback_data: "main_menu" }],
+        ],
       },
-    );
+    });
     return true;
   }
 
   // view_tutorial
   if (data === "view_tutorial") {
     await ctx.answerCbQuery();
-    const lang = ctx.session?.userLang || 'id';
-    await ctx.editMessageText(
-      t('cb.tutorial', lang),
-      {
-        parse_mode: "Markdown",
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: t('btn.back', lang), callback_data: "main_menu" }],
-          ],
-        },
+    const lang = ctx.session?.userLang || "id";
+    await ctx.editMessageText(t("cb.tutorial", lang), {
+      parse_mode: "Markdown",
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: t("btn.back", lang), callback_data: "main_menu" }],
+        ],
       },
-    );
+    });
     return true;
   }
 
   if (data === "report_bug") {
     await ctx.answerCbQuery();
-    const lang = ctx.session?.userLang || 'id';
+    const lang = ctx.session?.userLang || "id";
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- BotState string assignment
-    if (ctx.session) ctx.session.state = 'WAITING_BUG_REPORT' as any;
-    await ctx.editMessageText(
-      t('cb.report_bug', lang),
-      {
-        parse_mode: "Markdown",
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: t('btn.back', lang), callback_data: "main_menu" }],
-          ],
-        },
+    if (ctx.session) ctx.session.state = "WAITING_BUG_REPORT" as any;
+    await ctx.editMessageText(t("cb.report_bug", lang), {
+      parse_mode: "Markdown",
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: t("btn.back", lang), callback_data: "main_menu" }],
+        ],
       },
-    );
+    });
     return true;
   }
 

@@ -71,7 +71,7 @@ export function generateCaption(
   const sceneText =
     sceneDescriptions.length > 0
       ? sceneDescriptions[0].charAt(0).toUpperCase() +
-      sceneDescriptions[0].slice(1)
+        sceneDescriptions[0].slice(1)
       : "";
 
   const captionText = sceneText

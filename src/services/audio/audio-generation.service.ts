@@ -84,7 +84,9 @@ export class AudioGenerationService {
   /**
    * Generate audio from text
    */
-  async generateAudio(request: AudioGenerationRequest): Promise<AudioGenerationResponse> {
+  async generateAudio(
+    request: AudioGenerationRequest,
+  ): Promise<AudioGenerationResponse> {
     if (!this.isAvailable()) {
       throw new ConfigError("ELEVENLABS_API_KEY");
     }
@@ -118,7 +120,7 @@ export class AudioGenerationService {
           },
           responseType: "arraybuffer",
           timeout: 60000,
-        }
+        },
       );
 
       // Convert to base64 for storage/transport
@@ -147,7 +149,10 @@ export class AudioGenerationService {
     } catch (err) {
       const error = err instanceof Error ? err.message : "Unknown error";
       logger.error({ msg: "Audio generation: Failed", error });
-      throw new ExternalServiceError("ElevenLabs", `Audio generation failed: ${error}`);
+      throw new ExternalServiceError(
+        "ElevenLabs",
+        `Audio generation failed: ${error}`,
+      );
     }
   }
 
@@ -167,7 +172,7 @@ export class AudioGenerationService {
             "xi-api-key": this.apiKey,
           },
           timeout: 10000,
-        }
+        },
       );
 
       return response.data.voices;

@@ -31,20 +31,37 @@ interface TrackingEvent {
 }
 
 export class AnalyticsService {
-  private static get GA4_MEASUREMENT_ID() { return getConfig().GA4_MEASUREMENT_ID || "G-V9C14XZ9SG"; }
-  private static get GA4_API_SECRET() { return getConfig().GA4_API_SECRET || ""; }
-  private static get TIKTOK_PIXEL_ID() { return getConfig().TIKTOK_PIXEL_ID || "D6IA84RC77UCTB9KG9OG"; }
-  private static get TIKTOK_PIXEL_EVENT_TOKEN() { return getConfig().TIKTOK_PIXEL_EVENT_TOKEN || ""; }
-  private static get META_PIXEL_ID() { return getConfig().META_PIXEL_ID || "771021905629860"; }
-  private static get META_PIXEL_ACCESS_TOKEN() { return getConfig().META_PIXEL_ACCESS_TOKEN || ""; }
-  private static get META_PIXEL_DATA_SET_ID() { return getConfig().META_PIXEL_DATA_SET_ID || ""; }
+  private static get GA4_MEASUREMENT_ID() {
+    return getConfig().GA4_MEASUREMENT_ID || "G-V9C14XZ9SG";
+  }
+  private static get GA4_API_SECRET() {
+    return getConfig().GA4_API_SECRET || "";
+  }
+  private static get TIKTOK_PIXEL_ID() {
+    return getConfig().TIKTOK_PIXEL_ID || "D6IA84RC77UCTB9KG9OG";
+  }
+  private static get TIKTOK_PIXEL_EVENT_TOKEN() {
+    return getConfig().TIKTOK_PIXEL_EVENT_TOKEN || "";
+  }
+  private static get META_PIXEL_ID() {
+    return getConfig().META_PIXEL_ID || "771021905629860";
+  }
+  private static get META_PIXEL_ACCESS_TOKEN() {
+    return getConfig().META_PIXEL_ACCESS_TOKEN || "";
+  }
+  private static get META_PIXEL_DATA_SET_ID() {
+    return getConfig().META_PIXEL_DATA_SET_ID || "";
+  }
 
   /**
    * SHA256 hash for PII (email, phone, user ID)
    */
   private static hashPII(value: string): string {
     if (!value) return "";
-    return crypto.createHash("sha256").update(value.trim().toLowerCase()).digest("hex");
+    return crypto
+      .createHash("sha256")
+      .update(value.trim().toLowerCase())
+      .digest("hex");
   }
 
   /**
@@ -242,7 +259,7 @@ export class AnalyticsService {
       await axios.post(
         `https://www.google-analytics.com/mp/collect?measurement_id=${this.GA4_MEASUREMENT_ID}&api_secret=${this.GA4_API_SECRET}`,
         payload,
-        { timeout: 5000 }
+        { timeout: 5000 },
       );
 
       logger.debug(`✅ GA4 tracked: ${event.event_name}`);
@@ -268,7 +285,7 @@ export class AnalyticsService {
         ...(event.ip_address && { client_ip_address: event.ip_address }),
         ...(event.user_agent && { client_user_agent: event.user_agent }),
       };
-      
+
       // Add attribution IDs if available (for click matching)
       if (event.custom_data?.fbc) {
         userData.fbc = event.custom_data.fbc;
@@ -281,7 +298,7 @@ export class AnalyticsService {
         value: event.custom_data?.value,
         currency: event.custom_data?.currency || "IDR",
       };
-      
+
       // Add UTM parameters to custom data for reporting
       if (event.custom_data?.utm_campaign) {
         customData.utm_campaign = event.custom_data.utm_campaign;
@@ -296,16 +313,19 @@ export class AnalyticsService {
       await axios.post(
         `https://graph.facebook.com/v19.0/${this.META_PIXEL_ID}/events`,
         {
-          data: [{ 
-            user_data: userData, 
-            custom_data: customData, 
-            event_name: event.event_name, 
-            event_time: Math.floor(Date.now() / 1000),
-            event_source_url: event.event_source_url || "https://bot.aitradepulse.com",
-          }],
+          data: [
+            {
+              user_data: userData,
+              custom_data: customData,
+              event_name: event.event_name,
+              event_time: Math.floor(Date.now() / 1000),
+              event_source_url:
+                event.event_source_url || "https://bot.aitradepulse.com",
+            },
+          ],
           access_token: this.META_PIXEL_ACCESS_TOKEN,
         },
-        { timeout: 5000 }
+        { timeout: 5000 },
       );
 
       logger.debug(`✅ Meta CAPI tracked: ${event.event_name}`);
@@ -331,7 +351,7 @@ export class AnalyticsService {
         ...(event.ip_address && { ip: event.ip_address }),
         ...(event.user_agent && { user_agent: event.user_agent }),
       };
-      
+
       // Add TikTok Click ID if available (for attribution matching)
       if (event.custom_data?.ttclid) {
         userData.ttclid = event.custom_data.ttclid;
@@ -339,12 +359,14 @@ export class AnalyticsService {
 
       const properties: Record<string, unknown> = {
         ...(event.custom_data?.value && { value: event.custom_data.value }),
-        ...(event.custom_data?.currency && { currency: event.custom_data.currency }),
+        ...(event.custom_data?.currency && {
+          currency: event.custom_data.currency,
+        }),
         content_id: event.custom_data?.content_id,
         content_name: event.custom_data?.content_name,
         content_type: event.custom_data?.content_type,
       };
-      
+
       // Add UTM parameters for reporting
       if (event.custom_data?.utm_campaign) {
         properties.utm_campaign = event.custom_data.utm_campaign;
@@ -370,7 +392,7 @@ export class AnalyticsService {
             "Content-Type": "application/json",
           },
           timeout: 5000,
-        }
+        },
       );
 
       logger.debug(`✅ TikTok tracked: ${event.event_name}`);

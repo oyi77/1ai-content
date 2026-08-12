@@ -6,7 +6,10 @@ import {
   handlePaymentSetDefault,
 } from "@/commands/admin/paymentSettings";
 
-export async function handleAdminCallbacks(ctx: BotContext, data: string): Promise<boolean> {
+export async function handleAdminCallbacks(
+  ctx: BotContext,
+  data: string,
+): Promise<boolean> {
   if (data === "admin_payment_settings") {
     await paymentSettingsCommand(ctx);
     return true;

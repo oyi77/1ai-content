@@ -1,24 +1,24 @@
 /**
  * Middleware Module
- * 
+ *
  * Registers all bot middleware
  */
 
-import { Telegraf } from 'telegraf';
-import { BotContext } from '@/types';
-import { logger } from '@/utils/logger';
+import { Telegraf } from "telegraf";
+import { BotContext } from "@/types";
+import { logger } from "@/utils/logger";
 
 // Import middleware
-import { sessionMiddleware } from './session';
-import { rateLimitMiddleware } from './rateLimit';
-import { userMiddleware } from './user';
-import { loggingMiddleware } from './logging';
+import { sessionMiddleware } from "./session";
+import { rateLimitMiddleware } from "./rateLimit";
+import { userMiddleware } from "./user";
+import { loggingMiddleware } from "./logging";
 
 /**
  * Setup all middleware
  */
 export function setupMiddleware(bot: Telegraf<BotContext>): void {
-  logger.info('Registering middleware...');
+  logger.info("Registering middleware...");
 
   // Session middleware (must be first)
   bot.use(sessionMiddleware);
@@ -32,5 +32,5 @@ export function setupMiddleware(bot: Telegraf<BotContext>): void {
   // User middleware (load user from database)
   bot.use(userMiddleware);
 
-  logger.info('Middleware registered successfully');
+  logger.info("Middleware registered successfully");
 }

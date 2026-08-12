@@ -16,7 +16,9 @@ import { PROMPT_LIBRARY as _PL } from "@/commands/prompts";
 /**
  * Handle CUSTOM_PROMPT_CREATION state — user adds a custom prompt to their library.
  */
-export async function handleCustomPromptCreation(ctx: BotContext): Promise<boolean> {
+export async function handleCustomPromptCreation(
+  ctx: BotContext,
+): Promise<boolean> {
   if (
     ctx.session?.state !== "CUSTOM_PROMPT_CREATION" ||
     !ctx.session?.stateData?.addingPromptNiche ||
@@ -59,9 +61,24 @@ export async function handleCustomPromptCreation(ctx: BotContext): Promise<boole
           parse_mode: "Markdown",
           reply_markup: {
             inline_keyboard: [
-              [{ text: t("msg.btn_create_video_now", psLang), callback_data: "create_video_new" }],
-              [{ text: t("msg.btn_view_saved", psLang), callback_data: `my_prompts_${nicheKey}` }],
-              [{ text: t("btn.main_menu", psLang), callback_data: "main_menu" }],
+              [
+                {
+                  text: t("msg.btn_create_video_now", psLang),
+                  callback_data: "create_video_new",
+                },
+              ],
+              [
+                {
+                  text: t("msg.btn_view_saved", psLang),
+                  callback_data: `my_prompts_${nicheKey}`,
+                },
+              ],
+              [
+                {
+                  text: t("btn.main_menu", psLang),
+                  callback_data: "main_menu",
+                },
+              ],
             ],
           },
         },
@@ -81,7 +98,9 @@ export async function handleCustomPromptCreation(ctx: BotContext): Promise<boole
 /**
  * Handle CUSTOM_PROMPT_INPUT state — user enters custom prompt for video creation.
  */
-export async function handleCustomPromptInput(ctx: BotContext): Promise<boolean> {
+export async function handleCustomPromptInput(
+  ctx: BotContext,
+): Promise<boolean> {
   if (
     ctx.session?.state !== "CUSTOM_PROMPT_INPUT" ||
     !ctx.session?.videoCreation?.waitingForCustomPrompt ||
@@ -94,7 +113,9 @@ export async function handleCustomPromptInput(ctx: BotContext): Promise<boolean>
   const promptText = message.text.trim();
 
   if (!promptText) {
-    await ctx.reply(t("msg.send_prompt_or_create", ctx.session?.userLang || "id"));
+    await ctx.reply(
+      t("msg.send_prompt_or_create", ctx.session?.userLang || "id"),
+    );
     return true;
   }
 
@@ -105,7 +126,9 @@ export async function handleCustomPromptInput(ctx: BotContext): Promise<boolean>
 
   const cpLang = ctx.session?.userLang || "id";
   await ctx.reply(
-    t("msg.photo_received", cpLang) + "\n\n" + t("msg.send_photo_or_skip", cpLang),
+    t("msg.photo_received", cpLang) +
+      "\n\n" +
+      t("msg.send_photo_or_skip", cpLang),
     { parse_mode: "Markdown" },
   );
   return true;
@@ -114,8 +137,13 @@ export async function handleCustomPromptInput(ctx: BotContext): Promise<boolean>
 /**
  * Handle WAITING_ACCOUNT_ID state — user connects a social media account.
  */
-export async function handleWaitingAccountId(ctx: BotContext): Promise<boolean> {
-  if (ctx.session?.state !== "WAITING_ACCOUNT_ID" || !("text" in ctx.message!)) {
+export async function handleWaitingAccountId(
+  ctx: BotContext,
+): Promise<boolean> {
+  if (
+    ctx.session?.state !== "WAITING_ACCOUNT_ID" ||
+    !("text" in ctx.message!)
+  ) {
     return false;
   }
 
@@ -133,13 +161,26 @@ export async function handleWaitingAccountId(ctx: BotContext): Promise<boolean> 
     await PostAutomationService.connectAccount(telegramId, platform, accountId);
     const acLang = ctx.session?.userLang || "id";
     await ctx.reply(
-      t("msg.account_connected", acLang, { platform: platform.toUpperCase(), accountId }),
+      t("msg.account_connected", acLang, {
+        platform: platform.toUpperCase(),
+        accountId,
+      }),
       {
         parse_mode: "Markdown",
         reply_markup: {
           inline_keyboard: [
-            [{ text: t("msg.btn_manage_accounts", acLang), callback_data: "manage_accounts" }],
-            [{ text: t("msg.btn_create_video_new", acLang), callback_data: "create_video_new" }],
+            [
+              {
+                text: t("msg.btn_manage_accounts", acLang),
+                callback_data: "manage_accounts",
+              },
+            ],
+            [
+              {
+                text: t("msg.btn_create_video_new", acLang),
+                callback_data: "create_video_new",
+              },
+            ],
           ],
         },
       },
@@ -148,7 +189,9 @@ export async function handleWaitingAccountId(ctx: BotContext): Promise<boolean> 
     logger.error("Failed to connect account:", error);
     const cfLang = ctx.session?.userLang || "id";
     await ctx.reply(
-      t("msg.connect_failed", cfLang, { error: (error as Error).message || "Unknown error" }),
+      t("msg.connect_failed", cfLang, {
+        error: (error as Error).message || "Unknown error",
+      }),
     );
   }
 
@@ -162,7 +205,11 @@ export async function handleWaitingAccountId(ctx: BotContext): Promise<boolean> 
  */
 export async function handleEbookStates(ctx: BotContext): Promise<boolean> {
   const state = ctx.session?.state;
-  if (state !== "EBOOK_IDEA" && state !== "EBOOK_TITLE" && state !== "EBOOK_CHAPTERS") {
+  if (
+    state !== "EBOOK_IDEA" &&
+    state !== "EBOOK_TITLE" &&
+    state !== "EBOOK_CHAPTERS"
+  ) {
     return false;
   }
 
@@ -181,7 +228,10 @@ export async function handleEbookStates(ctx: BotContext): Promise<boolean> {
   }
   if (state === "EBOOK_CHAPTERS") {
     const { handleEbookChapters } = await import("@/commands/ebook.js");
-    await handleEbookChapters(ctx, message as unknown as Record<string, unknown>);
+    await handleEbookChapters(
+      ctx,
+      message as unknown as Record<string, unknown>,
+    );
     return true;
   }
   return false;

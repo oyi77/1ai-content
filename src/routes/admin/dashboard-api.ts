@@ -31,7 +31,10 @@ function fiveMinutesAgo(): Date {
  * Map internal circuit-breaker / DB health status to the simplified three-state set
  * the React dashboard expects.
  */
-function mapHealthState(cbState: string, dbStatus: string): "online" | "degraded" | "offline" {
+function mapHealthState(
+  cbState: string,
+  dbStatus: string,
+): "online" | "degraded" | "offline" {
   // Circuit breaker takes precedence — it reflects real-time liveness
   if (cbState === "closed") return "online";
   if (cbState === "half_open") return "degraded";
@@ -149,10 +152,14 @@ export async function registerDashboardRoutes(server: FastifyInstance) {
       healthMap.set(row.provider, row.status);
     }
 
-    const providerHealth: Record<string, "online" | "degraded" | "offline"> = {};
+    const providerHealth: Record<string, "online" | "degraded" | "offline"> =
+      {};
     const allProviders = new Set([...providerKeys, ...healthMap.keys()]);
     for (const p of allProviders) {
-      providerHealth[p] = mapHealthState(cbStates[p] ?? "closed", healthMap.get(p) ?? "healthy");
+      providerHealth[p] = mapHealthState(
+        cbStates[p] ?? "closed",
+        healthMap.get(p) ?? "healthy",
+      );
     }
 
     // Active users list with status
@@ -163,7 +170,9 @@ export async function registerDashboardRoutes(server: FastifyInstance) {
       tier: u.tier,
       status: u.isBanned
         ? ("offline" as const)
-        : (u.lastActivityAt && u.lastActivityAt >= nowThreshold ? "online" as const : "offline" as const),
+        : u.lastActivityAt && u.lastActivityAt >= nowThreshold
+          ? ("online" as const)
+          : ("offline" as const),
       lastActivity: u.lastActivityAt?.toISOString() ?? new Date().toISOString(),
     }));
 
@@ -172,7 +181,9 @@ export async function registerDashboardRoutes(server: FastifyInstance) {
         newUsers: newUsersToday,
         activeUsers: activeUserCount,
         totalTransactions: txnsToday,
-        revenue: (Number(revenueAgg._sum.amountIdr ?? 0) / IDR_TO_USD).toFixed(2),
+        revenue: (Number(revenueAgg._sum.amountIdr ?? 0) / IDR_TO_USD).toFixed(
+          2,
+        ),
         creditsUsed: Number(creditsAgg._sum.creditsUsed ?? 0),
       },
       activeUsersList,

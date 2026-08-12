@@ -1,18 +1,21 @@
 /**
  * Error Handler
- * 
+ *
  * Handles all bot errors
  */
 
-import { BotContext } from '@/types';
-import { logger } from '@/utils/logger';
+import { BotContext } from "@/types";
+import { logger } from "@/utils/logger";
 
 /**
  * Handle bot errors
  */
-export async function errorHandler(err: unknown, ctx: BotContext): Promise<void> {
+export async function errorHandler(
+  err: unknown,
+  ctx: BotContext,
+): Promise<void> {
   const error = err instanceof Error ? err : new Error(String(err));
-  logger.error('Bot error:', {
+  logger.error("Bot error:", {
     error: error.message,
     stack: error.stack,
     update: ctx.update,
@@ -25,19 +28,28 @@ export async function errorHandler(err: unknown, ctx: BotContext): Promise<void>
   try {
     // Only reply if this is a callback query (user tapped a button) — prevents spam
     if (ctx.callbackQuery) {
-      await ctx.answerCbQuery('').catch(() => {});
+      await ctx.answerCbQuery("").catch(() => {});
     }
     // Don't send error message to user — handlers already handle errors gracefully.
     // The global error handler is a safety net for truly unhandled exceptions.
   } catch (replyError) {
-    logger.error('Failed in error handler:', replyError);
+    logger.error("Failed in error handler:", replyError);
   }
 
   try {
-    const sessionExt = ctx.session as unknown as Record<string, unknown> | undefined;
-    const lang = (sessionExt?.userLang as string) || 'id';
-    const { t } = await import('../i18n/translations.js');
-    const { safeReply } = await import('../utils/safe-reply.js');
-    await safeReply(ctx, t('error.something_went_wrong', lang) + '\n\n' + t('error.try_start', lang));
-  } catch { /* prevent error-in-error-handler */ }
+    const sessionExt = ctx.session as unknown as
+      | Record<string, unknown>
+      | undefined;
+    const lang = (sessionExt?.userLang as string) || "id";
+    const { t } = await import("../i18n/translations.js");
+    const { safeReply } = await import("../utils/safe-reply.js");
+    await safeReply(
+      ctx,
+      t("error.something_went_wrong", lang) +
+        "\n\n" +
+        t("error.try_start", lang),
+    );
+  } catch {
+    /* prevent error-in-error-handler */
+  }
 }

@@ -3,9 +3,12 @@ import { prisma } from "@/config/database";
 import { UserService } from "@/services/user.service";
 import { logger } from "@/utils/logger";
 import { t } from "@/i18n/translations";
-import { ConflictError, ProviderError } from '@/utils/app-errors';
+import { ConflictError, ProviderError } from "@/utils/app-errors";
 
-export async function handlePromptsCallback(ctx: BotContext, data: string): Promise<boolean> {
+export async function handlePromptsCallback(
+  ctx: BotContext,
+  data: string,
+): Promise<boolean> {
   try {
     // ── PROMPT LIBRARY HANDLERS ───────────────────────────────────────────
     if (data.startsWith("prompts_niche_")) {
@@ -19,7 +22,7 @@ export async function handlePromptsCallback(ctx: BotContext, data: string): Prom
       if (prompts.length === 0) {
         await ctx.editMessageText(
           `⚠️ Prompt library untuk niche ${niche} belum tersedia.\n\n` +
-          `Silakan pilih niche lain atau hubungi support.`,
+            `Silakan pilih niche lain atau hubungi support.`,
           {
             parse_mode: "Markdown",
             reply_markup: {
@@ -43,12 +46,17 @@ export async function handlePromptsCallback(ctx: BotContext, data: string): Prom
         entertainment: "🎬 Entertainment",
       };
 
-      const nicheListLang = ctx.session?.userLang || ctx.from?.language_code || 'id';
+      const nicheListLang =
+        ctx.session?.userLang || ctx.from?.language_code || "id";
       let message = `📚 *Prompt Library: ${nicheLabels[niche] || niche}*\n\n`;
-      message += nicheListLang === 'id' ? `Pilih prompt profesional untuk generate image:\n\n`
-        : nicheListLang === 'ru' ? `Выберите профессиональный промпт для генерации изображения:\n\n`
-        : nicheListLang === 'zh' ? `选择专业提示词来生成图片:\n\n`
-        : `Choose a professional prompt to generate images:\n\n`;
+      message +=
+        nicheListLang === "id"
+          ? `Pilih prompt profesional untuk generate image:\n\n`
+          : nicheListLang === "ru"
+            ? `Выберите профессиональный промпт для генерации изображения:\n\n`
+            : nicheListLang === "zh"
+              ? `选择专业提示词来生成图片:\n\n`
+              : `Choose a professional prompt to generate images:\n\n`;
 
       const buttons: Array<Array<{ text: string; callback_data: string }>> = [];
 
@@ -65,9 +73,17 @@ export async function handlePromptsCallback(ctx: BotContext, data: string): Prom
       });
 
       buttons.push([
-        { text: t('prompt.btn_pick_niche', nicheListLang), callback_data: "onboard_claim_trial" },
+        {
+          text: t("prompt.btn_pick_niche", nicheListLang),
+          callback_data: "onboard_claim_trial",
+        },
       ]);
-      buttons.push([{ text: t('prompt.btn_main_menu', nicheListLang), callback_data: "main_menu" }]);
+      buttons.push([
+        {
+          text: t("prompt.btn_main_menu", nicheListLang),
+          callback_data: "main_menu",
+        },
+      ]);
 
       await ctx.editMessageText(message, {
         parse_mode: "Markdown",
@@ -76,7 +92,11 @@ export async function handlePromptsCallback(ctx: BotContext, data: string): Prom
       return true;
     }
 
-    if (data.startsWith("use_prompt_") || data.startsWith("use_admin_prompt_") || data.startsWith("use_saved_")) {
+    if (
+      data.startsWith("use_prompt_") ||
+      data.startsWith("use_admin_prompt_") ||
+      data.startsWith("use_saved_")
+    ) {
       const promptId = data.replace(/use_(prompt|admin_prompt|saved)_/, "");
       await ctx.answerCbQuery();
 
@@ -84,7 +104,9 @@ export async function handlePromptsCallback(ctx: BotContext, data: string): Prom
       const prompt = await findAnyPrompt(promptId);
 
       if (!prompt) {
-        await ctx.reply(t('cb.prompt_not_found', ctx.session?.userLang || 'id'));
+        await ctx.reply(
+          t("cb.prompt_not_found", ctx.session?.userLang || "id"),
+        );
         return true;
       }
 
@@ -96,7 +118,9 @@ export async function handlePromptsCallback(ctx: BotContext, data: string): Prom
       const dbUser = await UserService.findByTelegramId(telegramId);
 
       if (!dbUser) {
-        await ctx.reply(t('cb.user_not_found_start', ctx.session?.userLang || 'id'));
+        await ctx.reply(
+          t("cb.user_not_found_start", ctx.session?.userLang || "id"),
+        );
         return true;
       }
 
@@ -106,7 +130,7 @@ export async function handlePromptsCallback(ctx: BotContext, data: string): Prom
         ctx.session.stateData = {
           ...(ctx.session.stateData || {}),
           selectedPrompt: prompt.prompt,
-          selectedPromptId: prompt.id
+          selectedPromptId: prompt.id,
         };
       }
 
@@ -118,20 +142,27 @@ export async function handlePromptsCallback(ctx: BotContext, data: string): Prom
       const canUseDaily = canUseDailyFree(dbUser);
 
       // If user has credits, bypass free trial
-      const lang = dbUser?.language || ctx.from?.language_code || 'id';
+      const lang = dbUser?.language || ctx.from?.language_code || "id";
       if (!hasCredits && !canUseWelcome && !canUseDaily) {
-        await ctx.editMessageText(
-          t('prompt.free_trial_exhausted', lang),
-          {
-            parse_mode: "Markdown",
-            reply_markup: {
-              inline_keyboard: [
-                [{ text: t('prompt.btn_buy_credits', lang), callback_data: "topup" }],
-                [{ text: t('prompt.btn_back', lang), callback_data: "main_menu" }],
+        await ctx.editMessageText(t("prompt.free_trial_exhausted", lang), {
+          parse_mode: "Markdown",
+          reply_markup: {
+            inline_keyboard: [
+              [
+                {
+                  text: t("prompt.btn_buy_credits", lang),
+                  callback_data: "topup",
+                },
               ],
-            },
+              [
+                {
+                  text: t("prompt.btn_back", lang),
+                  callback_data: "main_menu",
+                },
+              ],
+            ],
           },
-        );
+        });
         return true;
       }
 
@@ -141,48 +172,53 @@ export async function handlePromptsCallback(ctx: BotContext, data: string): Prom
           ? "Welcome Bonus"
           : "Daily Free";
       const costInfo = hasCredits
-        ? t('prompt.cost_credit', lang).replace('{cost}', '0.2').replace('{balance}', String(dbUser.creditBalance))
-        : t('prompt.cost_bonus', lang).replace('{bonusType}', bonusType);
+        ? t("prompt.cost_credit", lang)
+            .replace("{cost}", "0.2")
+            .replace("{balance}", String(dbUser.creditBalance))
+        : t("prompt.cost_bonus", lang).replace("{bonusType}", bonusType);
 
-      const promptPreview = prompt.prompt.length > 150 ? prompt.prompt.slice(0, 150) + '...' : prompt.prompt;
+      const promptPreview =
+        prompt.prompt.length > 150
+          ? prompt.prompt.slice(0, 150) + "..."
+          : prompt.prompt;
       await ctx.editMessageText(
-        `${t('prompt.selected', lang)}\n\n` +
-        `📋 *${prompt.title}*\n` +
-        `🎨 Niche: ${prompt.niche.toUpperCase()}\n\n` +
-        `📝 _${promptPreview}_\n\n` +
-        `${costInfo}\n\n` +
-        t('prompt.options_label', lang),
+        `${t("prompt.selected", lang)}\n\n` +
+          `📋 *${prompt.title}*\n` +
+          `🎨 Niche: ${prompt.niche.toUpperCase()}\n\n` +
+          `📝 _${promptPreview}_\n\n` +
+          `${costInfo}\n\n` +
+          t("prompt.options_label", lang),
         {
           parse_mode: "Markdown",
           reply_markup: {
             inline_keyboard: [
               [
                 {
-                  text: t('prompt.btn_create_video_hpas', lang),
+                  text: t("prompt.btn_create_video_hpas", lang),
                   callback_data: "create_video_new",
                 },
               ],
               [
                 {
-                  text: t('prompt.btn_generate_image', lang),
+                  text: t("prompt.btn_generate_image", lang),
                   callback_data: `generate_free_${prompt.id}`,
                 },
               ],
               [
                 {
-                  text: t('prompt.btn_generate_i2i', lang),
+                  text: t("prompt.btn_generate_i2i", lang),
                   callback_data: `generate_i2i_${prompt.id}`,
                 },
               ],
               [
                 {
-                  text: t('prompt.btn_edit_prompt', lang),
+                  text: t("prompt.btn_edit_prompt", lang),
                   callback_data: `edit_prompt_${prompt.id}`,
                 },
               ],
               [
                 {
-                  text: t('prompt.btn_pick_another', lang),
+                  text: t("prompt.btn_pick_another", lang),
                   callback_data: `prompts_niche_${prompt.niche}`,
                 },
               ],
@@ -201,21 +237,27 @@ export async function handlePromptsCallback(ctx: BotContext, data: string): Prom
       const { findAnyPrompt } = await import("../../commands/prompts.js");
       const found = await findAnyPrompt(promptId);
       if (!found) {
-        await ctx.reply(t('cb.prompt_not_found', ctx.session?.userLang || 'id'));
+        await ctx.reply(
+          t("cb.prompt_not_found", ctx.session?.userLang || "id"),
+        );
         return true;
       }
 
       // Save prompt to session and ask for reference image
       if (ctx.session) {
         ctx.session.generateProductDesc = found.prompt;
-        ctx.session.state = 'AWAITING_GENERATE_IMAGE';
-        ctx.session.stateData = { ...(ctx.session.stateData || {}), selectedPrompt: found.prompt, selectedPromptId: found.id };
+        ctx.session.state = "AWAITING_GENERATE_IMAGE";
+        ctx.session.stateData = {
+          ...(ctx.session.stateData || {}),
+          selectedPrompt: found.prompt,
+          selectedPromptId: found.id,
+        };
       }
       await ctx.editMessageText(
         `📸 *Image-to-Image Mode*\n\n` +
-        `📋 Prompt: _${found.title}_\n\n` +
-        `Kirim foto referensi untuk generate gambar berdasarkan gaya foto tersebut.\n\nAtau ketik /skip untuk generate tanpa referensi.`,
-        { parse_mode: 'Markdown' },
+          `📋 Prompt: _${found.title}_\n\n` +
+          `Kirim foto referensi untuk generate gambar berdasarkan gaya foto tersebut.\n\nAtau ketik /skip untuk generate tanpa referensi.`,
+        { parse_mode: "Markdown" },
       );
       return true;
     }
@@ -228,20 +270,26 @@ export async function handlePromptsCallback(ctx: BotContext, data: string): Prom
       const { findAnyPrompt } = await import("../../commands/prompts.js");
       const found = await findAnyPrompt(promptId);
       if (!found) {
-        await ctx.reply(t('cb.prompt_not_found', ctx.session?.userLang || 'id'));
+        await ctx.reply(
+          t("cb.prompt_not_found", ctx.session?.userLang || "id"),
+        );
         return true;
       }
 
       // Save prompt to session and let user edit
       if (ctx.session) {
         ctx.session.generateProductDesc = found.prompt;
-        ctx.session.state = 'AWAITING_PRODUCT_INPUT';
-        ctx.session.stateData = { ...(ctx.session.stateData || {}), editingPromptId: found.id, editingPromptNiche: found.niche };
+        ctx.session.state = "AWAITING_PRODUCT_INPUT";
+        ctx.session.stateData = {
+          ...(ctx.session.stateData || {}),
+          editingPromptId: found.id,
+          editingPromptNiche: found.niche,
+        };
       }
-      const editLang = ctx.session?.userLang || ctx.from?.language_code || 'id';
+      const editLang = ctx.session?.userLang || ctx.from?.language_code || "id";
       await ctx.editMessageText(
-        t('prompt.edit_prompt_msg', editLang).replace('{prompt}', found.prompt),
-        { parse_mode: 'Markdown' },
+        t("prompt.edit_prompt_msg", editLang).replace("{prompt}", found.prompt),
+        { parse_mode: "Markdown" },
       );
       return true;
     }
@@ -254,12 +302,20 @@ export async function handlePromptsCallback(ctx: BotContext, data: string): Prom
       const found = await findAnyPrompt(promptId);
 
       if (!found) {
-        await ctx.reply(t('cb.prompt_not_found', ctx.session?.userLang || 'id'));
+        await ctx.reply(
+          t("cb.prompt_not_found", ctx.session?.userLang || "id"),
+        );
         return true;
       }
 
       // Adapt to the shape expected below
-      const prompt = { id: found.id, name: found.title, prompt: found.prompt, niche: found.niche, bestFor: '' };
+      const prompt = {
+        id: found.id,
+        name: found.title,
+        prompt: found.prompt,
+        niche: found.niche,
+        bestFor: "",
+      };
 
       const user = ctx.from;
       if (!user) return true;
@@ -268,7 +324,9 @@ export async function handlePromptsCallback(ctx: BotContext, data: string): Prom
       const dbUser = await UserService.findByTelegramId(telegramId);
 
       if (!dbUser) {
-        await ctx.reply(t('cb.user_not_found_start', ctx.session?.userLang || 'id'));
+        await ctx.reply(
+          t("cb.user_not_found_start", ctx.session?.userLang || "id"),
+        );
         return true;
       }
 
@@ -280,20 +338,27 @@ export async function handlePromptsCallback(ctx: BotContext, data: string): Prom
       const canUseDaily = canUseDailyFree(dbUser);
 
       // If user has no credits and no free trial, block
-      const lang2 = dbUser?.language || ctx.from?.language_code || 'id';
+      const lang2 = dbUser?.language || ctx.from?.language_code || "id";
       if (!hasCredits && !canUseWelcome && !canUseDaily) {
-        await ctx.editMessageText(
-          t('prompt.free_trial_exhausted', lang2),
-          {
-            parse_mode: "Markdown",
-            reply_markup: {
-              inline_keyboard: [
-                [{ text: t('prompt.btn_buy_credits', lang2), callback_data: "topup" }],
-                [{ text: t('prompt.btn_back', lang2), callback_data: "main_menu" }],
+        await ctx.editMessageText(t("prompt.free_trial_exhausted", lang2), {
+          parse_mode: "Markdown",
+          reply_markup: {
+            inline_keyboard: [
+              [
+                {
+                  text: t("prompt.btn_buy_credits", lang2),
+                  callback_data: "topup",
+                },
               ],
-            },
+              [
+                {
+                  text: t("prompt.btn_back", lang2),
+                  callback_data: "main_menu",
+                },
+              ],
+            ],
           },
-        );
+        });
         return true;
       }
 
@@ -309,38 +374,73 @@ export async function handlePromptsCallback(ctx: BotContext, data: string): Prom
           : "Daily Free";
 
       await ctx.editMessageText(
-        t('prompt.generating', lang2).replace('{name}', prompt.name).replace('{cost}', costText),
+        t("prompt.generating", lang2)
+          .replace("{name}", prompt.name)
+          .replace("{cost}", costText),
         { parse_mode: "Markdown" },
       );
 
       const chatId = ctx.chat!.id;
       try {
         // ── Interception check (prompt library image) ──
-        const { InterceptService } = await import('../../services/intercept.service.js');
+        const { InterceptService } =
+          await import("../../services/intercept.service.js");
         const isIntercepted = await InterceptService.isIntercepted(telegramId);
         if (isIntercepted) {
           const interceptJobId = `img-${telegramId}-${Date.now()}`;
-          await InterceptService.logEvent(telegramId, 'generation_started', `Image job started: ${interceptJobId}`, {
-            jobId: interceptJobId, type: 'image', description: prompt.prompt.slice(0, 80), category: prompt.niche,
-          });
-          const interceptResult = await InterceptService.waitForMedia(interceptJobId, 1800);
+          await InterceptService.logEvent(
+            telegramId,
+            "generation_started",
+            `Image job started: ${interceptJobId}`,
+            {
+              jobId: interceptJobId,
+              type: "image",
+              description: prompt.prompt.slice(0, 80),
+              category: prompt.niche,
+            },
+          );
+          const interceptResult = await InterceptService.waitForMedia(
+            interceptJobId,
+            1800,
+          );
           if (!interceptResult) {
-            await ctx.telegram.sendMessage(chatId, '❌ Image generation failed. Please try again.');
+            await ctx.telegram.sendMessage(
+              chatId,
+              "❌ Image generation failed. Please try again.",
+            );
             return true;
           }
           const { mediaUrl, mediaType } = interceptResult;
-          if (bonusType === 'credit') {
+          if (bonusType === "credit") {
             await UserService.deductCredits(telegramId, 0.2);
-          } else if (bonusType === 'welcome') {
-            await prisma.user.updateMany({ where: { id: dbUser.id, welcomeBonusUsed: false }, data: { welcomeBonusUsed: true } });
+          } else if (bonusType === "welcome") {
+            await prisma.user.updateMany({
+              where: { id: dbUser.id, welcomeBonusUsed: false },
+              data: { welcomeBonusUsed: true },
+            });
           } else {
-            await prisma.user.update({ where: { id: dbUser.id }, data: { dailyFreeUsed: true, dailyFreeResetAt: getNextDailyFreeReset() } });
+            await prisma.user.update({
+              where: { id: dbUser.id },
+              data: {
+                dailyFreeUsed: true,
+                dailyFreeResetAt: getNextDailyFreeReset(),
+              },
+            });
           }
-          await InterceptService.logEvent(telegramId, 'media_delivered', `Admin delivered ${mediaType}`, { jobId: interceptJobId });
-          if (mediaType === 'video') {
-            await ctx.telegram.sendVideo(chatId, mediaUrl, { caption: `🖼️ ${prompt.name}` });
+          await InterceptService.logEvent(
+            telegramId,
+            "media_delivered",
+            `Admin delivered ${mediaType}`,
+            { jobId: interceptJobId },
+          );
+          if (mediaType === "video") {
+            await ctx.telegram.sendVideo(chatId, mediaUrl, {
+              caption: `🖼️ ${prompt.name}`,
+            });
           } else {
-            await ctx.telegram.sendPhoto(chatId, mediaUrl, { caption: `🖼️ ${prompt.name}` });
+            await ctx.telegram.sendPhoto(chatId, mediaUrl, {
+              caption: `🖼️ ${prompt.name}`,
+            });
           }
           return true;
         }
@@ -357,7 +457,10 @@ export async function handlePromptsCallback(ctx: BotContext, data: string): Prom
         });
 
         if (!result.success || !result.imageUrl) {
-          throw new ProviderError("prompts", result.error || "Generation failed");
+          throw new ProviderError(
+            "prompts",
+            result.error || "Generation failed",
+          );
         }
 
         // Deduct credits or mark bonus as used
@@ -387,65 +490,92 @@ export async function handlePromptsCallback(ctx: BotContext, data: string): Prom
         const updatedUser = await UserService.findByTelegramId(telegramId);
         const balanceText =
           bonusType === "credit"
-            ? t('prompt.balance_credit', lang2).replace('{balance}', String(updatedUser?.creditBalance || 0))
-            : t('prompt.balance_bonus_used', lang2).replace('{bonusType}', bonusType === "welcome" ? "Welcome Bonus" : "Daily Free");
+            ? t("prompt.balance_credit", lang2).replace(
+                "{balance}",
+                String(updatedUser?.creditBalance || 0),
+              )
+            : t("prompt.balance_bonus_used", lang2).replace(
+                "{bonusType}",
+                bonusType === "welcome" ? "Welcome Bonus" : "Daily Free",
+              );
 
         // Send image — refund if Telegram rejects
         try {
           await ctx.replyWithPhoto(result.imageUrl, {
             caption:
-              `${t('prompt.image_success', lang2)}\n\n` +
+              `${t("prompt.image_success", lang2)}\n\n` +
               `📋 ${prompt.name}\n` +
               `${balanceText}\n\n` +
-              t('prompt.like_result', lang2),
+              t("prompt.like_result", lang2),
             parse_mode: "Markdown",
             reply_markup: {
               inline_keyboard: [
                 [
                   {
-                    text: t('prompt.btn_generate_again', lang2),
+                    text: t("prompt.btn_generate_again", lang2),
                     callback_data: `prompts_niche_${prompt.niche}`,
                   },
                 ],
-                [{ text: t('prompt.btn_buy_credits', lang2), callback_data: "topup" }],
-                [{ text: t('prompt.btn_main_menu', lang2), callback_data: "main_menu" }],
+                [
+                  {
+                    text: t("prompt.btn_buy_credits", lang2),
+                    callback_data: "topup",
+                  },
+                ],
+                [
+                  {
+                    text: t("prompt.btn_main_menu", lang2),
+                    callback_data: "main_menu",
+                  },
+                ],
               ],
             },
           });
         } catch (sendErr) {
-          logger.error('replyWithPhoto failed after credit deduction:', sendErr);
+          logger.error(
+            "replyWithPhoto failed after credit deduction:",
+            sendErr,
+          );
           if (bonusType === "credit") {
-            await UserService.refundCredits(telegramId, 0.2, `prompt-img-${prompt.id}`, 'sendPhoto failed')
-              .catch(err => logger.error('CRITICAL: prompt image refund failed', err));
+            await UserService.refundCredits(
+              telegramId,
+              0.2,
+              `prompt-img-${prompt.id}`,
+              "sendPhoto failed",
+            ).catch((err) =>
+              logger.error("CRITICAL: prompt image refund failed", err),
+            );
           }
-          await ctx.reply(t('cb.video_process_failed_refund', lang2));
+          await ctx.reply(t("cb.video_process_failed_refund", lang2));
         }
       } catch (error) {
         logger.error("Free trial generation error:", error);
 
-        await ctx.reply(
-          t('prompt.generation_failed', lang2),
-          {
-            parse_mode: "Markdown",
-            reply_markup: {
-              inline_keyboard: [
-                [
-                  {
-                    text: t('prompt.btn_try_again', lang2),
-                    callback_data: `generate_free_${promptId}`,
-                  },
-                ],
-                [
-                  {
-                    text: t('prompt.btn_pick_another', lang2),
-                    callback_data: `prompts_niche_${prompt.niche}`,
-                  },
-                ],
-                [{ text: t('prompt.btn_main_menu', lang2), callback_data: "main_menu" }],
+        await ctx.reply(t("prompt.generation_failed", lang2), {
+          parse_mode: "Markdown",
+          reply_markup: {
+            inline_keyboard: [
+              [
+                {
+                  text: t("prompt.btn_try_again", lang2),
+                  callback_data: `generate_free_${promptId}`,
+                },
               ],
-            },
+              [
+                {
+                  text: t("prompt.btn_pick_another", lang2),
+                  callback_data: `prompts_niche_${prompt.niche}`,
+                },
+              ],
+              [
+                {
+                  text: t("prompt.btn_main_menu", lang2),
+                  callback_data: "main_menu",
+                },
+              ],
+            ],
           },
-        );
+        });
       }
 
       return true;
@@ -453,8 +583,12 @@ export async function handlePromptsCallback(ctx: BotContext, data: string): Prom
 
     return false;
   } catch (err) {
-    logger.error('handlePromptsCallback error:', err);
-    try { await ctx.reply(t('error.generic', ctx.session?.userLang || 'id')); } catch { /* ignore */ }
+    logger.error("handlePromptsCallback error:", err);
+    try {
+      await ctx.reply(t("error.generic", ctx.session?.userLang || "id"));
+    } catch {
+      /* ignore */
+    }
     return true;
   }
 }

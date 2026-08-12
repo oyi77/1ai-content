@@ -4,21 +4,22 @@
  * Priority: live cache (1h) → fresh fetch → manual DB → env fallback
  */
 
-import axios from 'axios';
-import { redis } from '@/config/redis';
-import { prisma } from '@/config/database';
-import { getConfig } from '@/config/env';
-import { logger } from '@/utils/logger';
+import axios from "axios";
+import { redis } from "@/config/redis";
+import { prisma } from "@/config/database";
+import { getConfig } from "@/config/env";
+import { logger } from "@/utils/logger";
 
-const REDIS_RATE_KEY  = 'live:usd_idr_rate';
-const REDIS_TS_KEY    = 'live:usd_idr_rate:ts';
-const LIVE_TTL        = 3600; // 1 hour
-const FRANKFURTER_URL = 'https://api.frankfurter.dev/v1/latest?base=USD&symbols=IDR';
+const REDIS_RATE_KEY = "live:usd_idr_rate";
+const REDIS_TS_KEY = "live:usd_idr_rate:ts";
+const LIVE_TTL = 3600; // 1 hour
+const FRANKFURTER_URL =
+  "https://api.frankfurter.dev/v1/latest?base=USD&symbols=IDR";
 
 export interface RateResult {
   rate: number;
-  source: 'live' | 'manual' | 'env';
-  lastUpdated?: string;  // ISO timestamp of last successful live fetch
+  source: "live" | "manual" | "env";
+  lastUpdated?: string; // ISO timestamp of last successful live fetch
 }
 
 export class ExchangeRateService {
@@ -33,9 +34,13 @@ export class ExchangeRateService {
         logger.info(`[ExchangeRate] Live rate fetched: ${rate} IDR/USD`);
         return rate;
       }
-      logger.warn(`[ExchangeRate] Frankfurter returned out-of-range rate: ${rate}`);
+      logger.warn(
+        `[ExchangeRate] Frankfurter returned out-of-range rate: ${rate}`,
+      );
     } catch (err) {
-      logger.warn(`[ExchangeRate] Live fetch failed: ${(err as Error).message}`);
+      logger.warn(
+        `[ExchangeRate] Live fetch failed: ${(err as Error).message}`,
+      );
     }
     return null;
   }
@@ -54,25 +59,33 @@ export class ExchangeRateService {
       redis.get(REDIS_TS_KEY),
     ]);
     if (cached) {
-      return { rate: Number(cached), source: 'live', lastUpdated: ts ?? undefined };
+      return {
+        rate: Number(cached),
+        source: "live",
+        lastUpdated: ts ?? undefined,
+      };
     }
 
     // 2. Fresh live fetch
     const liveRate = await ExchangeRateService.fetchLiveRate();
     if (liveRate) {
       const freshTs = await redis.get(REDIS_TS_KEY);
-      return { rate: liveRate, source: 'live', lastUpdated: freshTs ?? undefined };
+      return {
+        rate: liveRate,
+        source: "live",
+        lastUpdated: freshTs ?? undefined,
+      };
     }
 
     // 3. Manual DB override (admin-set)
     try {
       const dbRow = await prisma.pricingConfig.findUnique({
-        where: { category_key: { category: 'system', key: 'exchange_rate' } },
+        where: { category_key: { category: "system", key: "exchange_rate" } },
       });
       if (dbRow) {
         const rate = Number(dbRow.value);
         if (rate >= 10_000 && rate <= 50_000) {
-          return { rate, source: 'manual' };
+          return { rate, source: "manual" };
         }
       }
     } catch {
@@ -80,7 +93,7 @@ export class ExchangeRateService {
     }
 
     // 4. Env fallback
-    return { rate: getConfig().USD_TO_IDR_RATE, source: 'env' };
+    return { rate: getConfig().USD_TO_IDR_RATE, source: "env" };
   }
 
   /** Force-refresh the live cache and return the new rate. */
@@ -90,7 +103,7 @@ export class ExchangeRateService {
     const liveRate = await ExchangeRateService.fetchLiveRate();
     if (liveRate) {
       const ts = await redis.get(REDIS_TS_KEY);
-      return { rate: liveRate, source: 'live', lastUpdated: ts ?? undefined };
+      return { rate: liveRate, source: "live", lastUpdated: ts ?? undefined };
     }
     // If fetch fails, return whatever is available
     return ExchangeRateService.getRate();

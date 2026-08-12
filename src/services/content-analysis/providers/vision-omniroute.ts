@@ -1,13 +1,13 @@
 /**
  * OmniRoute Vision provider — fallback for custom LLM providers.
  */
-import { logger } from '@/utils/logger';
-import { ProviderError } from '@/utils/app-errors';
-import { AIConfigService } from '@/services/ai-config.service';
-import { getOmniRouteService } from '@/services/omniroute.service';
-import { fetchMediaAsBase64 } from '../media-utils';
-import { parseGeminiResponse } from '../parse-utils';
-import type { AnalysisResult } from '../types';
+import { logger } from "@/utils/logger";
+import { ProviderError } from "@/utils/app-errors";
+import { AIConfigService } from "@/services/ai-config.service";
+import { getOmniRouteService } from "@/services/omniroute.service";
+import { fetchMediaAsBase64 } from "../media-utils";
+import { parseGeminiResponse } from "../parse-utils";
+import type { AnalysisResult } from "../types";
 
 const OMNI_IMAGE_PROMPT = `Analyze this image in detail for AI content creation purposes. Describe:
 1. Subject/product (exact appearance, materials, textures, colors)
@@ -37,43 +37,62 @@ Output 300-500 words total.`;
  */
 export async function extractViaOmniRoute(
   mediaUrl: string,
-  mediaType: 'video' | 'image',
+  mediaType: "video" | "image",
   visionModel?: string,
   promptOverride?: string,
 ): Promise<AnalysisResult> {
   const omni = getOmniRouteService();
 
   if (!visionModel) {
-    const taskCfg = await AIConfigService.getTaskConfig('transcript').catch(() => null);
-    visionModel = (taskCfg?.provider === 'omniroute' && taskCfg.model)
-      ? taskCfg.model
-      : 'antigravity/gemini-2.5-flash';
+    const taskCfg = await AIConfigService.getTaskConfig("transcript").catch(
+      () => null,
+    );
+    visionModel =
+      taskCfg?.provider === "omniroute" && taskCfg.model
+        ? taskCfg.model
+        : "antigravity/gemini-2.5-flash";
   }
 
-  const prompt = promptOverride ?? (mediaType === 'image' ? OMNI_IMAGE_PROMPT : OMNI_VIDEO_PROMPT);
+  const prompt =
+    promptOverride ??
+    (mediaType === "image" ? OMNI_IMAGE_PROMPT : OMNI_VIDEO_PROMPT);
 
   // For HTTP URLs, pass URL directly — avoids large base64 payload
-  if (mediaType === 'image' && mediaUrl.startsWith('http')) {
+  if (mediaType === "image" && mediaUrl.startsWith("http")) {
     try {
       const result = await omni.analyzeImageUrl(mediaUrl, prompt, visionModel);
       if (result.success && result.content) {
-        logger.info(`OmniRoute vision (URL) succeeded for ${mediaType} (${result.model})`);
+        logger.info(
+          `OmniRoute vision (URL) succeeded for ${mediaType} (${result.model})`,
+        );
         return parseGeminiResponse(result.content);
       }
       logger.warn(`OmniRoute analyzeImageUrl returned empty: ${result.error}`);
     } catch (urlErr) {
-      logger.warn(`OmniRoute analyzeImageUrl failed: ${(urlErr as Error).message}, trying base64`);
+      logger.warn(
+        `OmniRoute analyzeImageUrl failed: ${(urlErr as Error).message}, trying base64`,
+      );
     }
   }
 
   // Fallback: download and encode as base64
   const media = await fetchMediaAsBase64(mediaUrl);
-  const result = await omni.analyzeImage(media.data, media.mimeType, prompt, visionModel);
+  const result = await omni.analyzeImage(
+    media.data,
+    media.mimeType,
+    prompt,
+    visionModel,
+  );
 
   if (!result.success || !result.content) {
-    throw new ProviderError('OmniRoute', `vision returned empty: ${result.error}`);
+    throw new ProviderError(
+      "OmniRoute",
+      `vision returned empty: ${result.error}`,
+    );
   }
 
-  logger.info(`OmniRoute vision (base64) succeeded for ${mediaType} (${result.model})`);
+  logger.info(
+    `OmniRoute vision (base64) succeeded for ${mediaType} (${result.model})`,
+  );
   return parseGeminiResponse(result.content);
 }

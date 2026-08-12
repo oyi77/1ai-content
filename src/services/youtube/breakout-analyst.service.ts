@@ -8,11 +8,18 @@
 import { logger } from "@/utils/logger";
 import { prisma } from "@/config/database";
 import { NICHE_VERTICALS } from "@/config/youtube.config";
-import type { YtBreakoutCluster, YtAngleVariation } from "@/types/youtube.types";
+import type {
+  YtBreakoutCluster,
+  YtAngleVariation,
+} from "@/types/youtube.types";
 import { NotFoundError } from "@/utils/app-errors";
 
-export async function analyzeBreakout(videoId: string): Promise<YtBreakoutCluster> {
-  const video = await prisma.ytPublishedVideo.findUnique({ where: { videoId } });
+export async function analyzeBreakout(
+  videoId: string,
+): Promise<YtBreakoutCluster> {
+  const video = await prisma.ytPublishedVideo.findUnique({
+    where: { videoId },
+  });
   if (!video) throw new NotFoundError("Video", videoId);
 
   const _metrics = await prisma.ytVideoMetrics.findFirst({
@@ -30,7 +37,11 @@ export async function analyzeBreakout(videoId: string): Promise<YtBreakoutCluste
     toneVariant: video.toneVariant || "misteri",
     trafficDriver: "suggested",
     bestDurationTier: video.tier || "tier_1",
-    recommendedAngleVariations: generateAngleVariations(video.title || "", niche, video.toneVariant || ""),
+    recommendedAngleVariations: generateAngleVariations(
+      video.title || "",
+      niche,
+      video.toneVariant || "",
+    ),
     relatedOldVideos: [],
     revisitScheduleWeeks: 6,
   };
@@ -47,17 +58,31 @@ export async function analyzeBreakout(videoId: string): Promise<YtBreakoutCluste
       trafficDriver: cluster.trafficDriver,
       bestDurationTier: cluster.bestDurationTier,
       active: true,
-      revisitScheduledAt: new Date(Date.now() + cluster.revisitScheduleWeeks * 7 * 24 * 60 * 60 * 1000),
+      revisitScheduledAt: new Date(
+        Date.now() + cluster.revisitScheduleWeeks * 7 * 24 * 60 * 60 * 1000,
+      ),
     },
   });
 
-  logger.info(`[breakout-analyst] Analyzed breakout: ${videoId} | Primary: ${cluster.primaryElement}`);
+  logger.info(
+    `[breakout-analyst] Analyzed breakout: ${videoId} | Primary: ${cluster.primaryElement}`,
+  );
   return cluster;
 }
 
-function generateAngleVariations(title: string, niche: string, tone: string): YtAngleVariation[] {
+function generateAngleVariations(
+  title: string,
+  niche: string,
+  tone: string,
+): YtAngleVariation[] {
   const angles: YtAngleVariation[] = [];
-  const hooks = ["BAGIAN 2", "YANG SEBENARNYA", "KISAH LANJUTAN", "FAKTA TERSEMBUNYI", "VERSII LAIN"];
+  const hooks = [
+    "BAGIAN 2",
+    "YANG SEBENARNYA",
+    "KISAH LANJUTAN",
+    "FAKTA TERSEMBUNYI",
+    "VERSII LAIN",
+  ];
 
   for (const hook of hooks) {
     angles.push({

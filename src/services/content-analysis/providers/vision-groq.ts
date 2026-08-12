@@ -2,14 +2,14 @@
  * Groq Vision provider — fallback when Gemini fails.
  * Images: sent as base64. Videos: single frame extracted via ffmpeg.
  */
-import axios from 'axios';
-import { ConfigError, ProviderError } from '@/utils/app-errors';
-import { logger } from '@/utils/logger';
-import { getConfig } from '@/config/env';
-import { trackTokens } from '@/services/token-tracker.service';
-import { fetchMediaAsBase64 } from '../media-utils';
-import { parseGeminiResponse } from '../parse-utils';
-import type { AnalysisResult } from '../types';
+import axios from "axios";
+import { ConfigError, ProviderError } from "@/utils/app-errors";
+import { logger } from "@/utils/logger";
+import { getConfig } from "@/config/env";
+import { trackTokens } from "@/services/token-tracker.service";
+import { fetchMediaAsBase64 } from "../media-utils";
+import { parseGeminiResponse } from "../parse-utils";
+import type { AnalysisResult } from "../types";
 
 const OMNI_IMAGE_PROMPT = `Analyze this image in detail for AI content creation purposes. Describe:
 1. Subject/product (exact appearance, materials, textures, colors)
@@ -36,23 +36,32 @@ Output 300-500 words total.`;
 /**
  * Extract a video frame as base64 via ffmpeg.
  */
-async function extractVideoFrame(mediaUrl: string): Promise<{ data: string; mimeType: string }> {
-  const { execFile: execFileCb } = await import('child_process');
-  const { promisify } = await import('util');
+async function extractVideoFrame(
+  mediaUrl: string,
+): Promise<{ data: string; mimeType: string }> {
+  const { execFile: execFileCb } = await import("child_process");
+  const { promisify } = await import("util");
   const execFileAsync = promisify(execFileCb);
   const tmpBase = `/tmp/groq_${Date.now()}`;
   const videoPath = `${tmpBase}.mp4`;
   const framePath = `${tmpBase}.jpg`;
 
   try {
-    const videoRes = await axios.get(mediaUrl, { responseType: 'arraybuffer', timeout: 30000 });
-    const { writeFile, readFile, unlink } = await import('fs/promises');
+    const videoRes = await axios.get(mediaUrl, {
+      responseType: "arraybuffer",
+      timeout: 30000,
+    });
+    const { writeFile, readFile, unlink } = await import("fs/promises");
     await writeFile(videoPath, Buffer.from(videoRes.data));
-    await execFileAsync('ffmpeg', ['-i', videoPath, '-ss', '00:00:01', '-vframes', '1', framePath, '-y'], { timeout: 15000 });
+    await execFileAsync(
+      "ffmpeg",
+      ["-i", videoPath, "-ss", "00:00:01", "-vframes", "1", framePath, "-y"],
+      { timeout: 15000 },
+    );
     const buf = await readFile(framePath);
-    return { data: buf.toString('base64'), mimeType: 'image/jpeg' };
+    return { data: buf.toString("base64"), mimeType: "image/jpeg" };
   } finally {
-    const { unlink } = await import('fs/promises');
+    const { unlink } = await import("fs/promises");
     await unlink(videoPath).catch(() => {});
     await unlink(framePath).catch(() => {});
   }
@@ -64,56 +73,69 @@ async function extractVideoFrame(mediaUrl: string): Promise<{ data: string; mime
  */
 export async function extractViaGroq(
   mediaUrl: string,
-  mediaType: 'video' | 'image',
+  mediaType: "video" | "image",
   modelOverride?: string,
   promptOverride?: string,
 ): Promise<AnalysisResult> {
   const apiKey = getConfig().GROQ_API_KEY;
-  if (!apiKey) throw new ConfigError('GROQ_API_KEY');
+  if (!apiKey) throw new ConfigError("GROQ_API_KEY");
 
-  const groqModel = modelOverride || 'meta-llama/llama-4-scout-17b-16e-instruct';
+  const groqModel =
+    modelOverride || "meta-llama/llama-4-scout-17b-16e-instruct";
 
   let base64Data: string;
-  let imageMime = 'image/jpeg';
+  let imageMime = "image/jpeg";
 
-  if (mediaType === 'video') {
+  if (mediaType === "video") {
     const frame = await extractVideoFrame(mediaUrl);
     base64Data = frame.data;
   } else {
     const media = await fetchMediaAsBase64(mediaUrl);
     base64Data = media.data;
-    imageMime = media.mimeType.startsWith('image/') ? media.mimeType : 'image/jpeg';
+    imageMime = media.mimeType.startsWith("image/")
+      ? media.mimeType
+      : "image/jpeg";
   }
 
-  const prompt = promptOverride ?? (mediaType === 'image' ? OMNI_IMAGE_PROMPT : OMNI_VIDEO_PROMPT);
+  const prompt =
+    promptOverride ??
+    (mediaType === "image" ? OMNI_IMAGE_PROMPT : OMNI_VIDEO_PROMPT);
 
   const response = await axios.post(
-    'https://api.groq.com/openai/v1/chat/completions',
+    "https://api.groq.com/openai/v1/chat/completions",
     {
       model: groqModel,
-      messages: [{
-        role: 'user',
-        content: [
-          { type: 'text', text: prompt },
-          { type: 'image_url', image_url: { url: `data:${imageMime};base64,${base64Data}` } },
-        ],
-      }],
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: prompt },
+            {
+              type: "image_url",
+              image_url: { url: `data:${imageMime};base64,${base64Data}` },
+            },
+          ],
+        },
+      ],
       max_tokens: 2000,
       temperature: 0.65,
     },
     {
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
       timeout: 30000,
     },
   );
 
   const content = response.data?.choices?.[0]?.message?.content;
-  if (!content) throw new ProviderError('Groq', 'Empty response');
+  if (!content) throw new ProviderError("Groq", "Empty response");
 
   logger.info(`Groq vision succeeded for ${mediaType}`);
 
   trackTokens({
-    provider: 'groq',
+    provider: "groq",
     model: groqModel,
     service: `groq_vision_${mediaType}`,
     promptTokens: response.data?.usage?.prompt_tokens || 0,

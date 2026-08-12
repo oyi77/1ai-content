@@ -1,24 +1,33 @@
-import axios from 'axios';
-import crypto from 'crypto';
-import { prisma } from '@/config/database';
-import { logger } from '@/utils/logger';
-import { ReferralService } from '@/services/referral.service';
-import { SubscriptionService } from '@/services/subscription.service';
-import { PlanKey, BillingCycle, getPackagesAsync, getSubscriptionPlansAsync } from '@/config/pricing';
-import { AnalyticsService } from '@/services/analytics.service';
-import { PaymentService } from '@/services/payment.service';
-import { getConfig } from '@/config/env';
-import { secureRandomString } from '@/utils/crypto';
-import { ValidationError, ApiError } from '@/types';
+import axios from "axios";
+import crypto from "crypto";
+import { prisma } from "@/config/database";
+import { logger } from "@/utils/logger";
+import { ReferralService } from "@/services/referral.service";
+import { SubscriptionService } from "@/services/subscription.service";
+import {
+  PlanKey,
+  BillingCycle,
+  getPackagesAsync,
+  getSubscriptionPlansAsync,
+} from "@/config/pricing";
+import { AnalyticsService } from "@/services/analytics.service";
+import { PaymentService } from "@/services/payment.service";
+import { getConfig } from "@/config/env";
+import { secureRandomString } from "@/utils/crypto";
+import { ValidationError, ApiError } from "@/types";
 
 function getDuitkuBaseUrl() {
   const config = getConfig();
-  return (config.DUITKU_ENVIRONMENT || 'sandbox') === 'production'
-    ? 'https://passport.duitku.com'
-    : 'https://sandbox.duitku.com';
+  return (config.DUITKU_ENVIRONMENT || "sandbox") === "production"
+    ? "https://passport.duitku.com"
+    : "https://sandbox.duitku.com";
 }
-function getMerchantCode() { return getConfig().DUITKU_MERCHANT_CODE || ''; }
-function getApiKey() { return getConfig().DUITKU_API_KEY || ''; }
+function getMerchantCode() {
+  return getConfig().DUITKU_MERCHANT_CODE || "";
+}
+function getApiKey() {
+  return getConfig().DUITKU_API_KEY || "";
+}
 
 export interface DuitkuCreateResponse {
   merchantCode: string;
@@ -39,11 +48,14 @@ export interface DuitkuPaymentMethod {
 
 export class DuitkuService {
   /** Fetch available payment methods from Duitku API for a given amount */
-  static async getPaymentMethods(amount: number): Promise<DuitkuPaymentMethod[]> {
-    const datetime = new Date().toISOString().slice(0, 19).replace('T', ' ');
-    const signature = crypto.createHash('sha256')
+  static async getPaymentMethods(
+    amount: number,
+  ): Promise<DuitkuPaymentMethod[]> {
+    const datetime = new Date().toISOString().slice(0, 19).replace("T", " ");
+    const signature = crypto
+      .createHash("sha256")
       .update(getMerchantCode() + amount + datetime + getApiKey())
-      .digest('hex');
+      .digest("hex");
 
     try {
       const response = await axios.post(
@@ -54,13 +66,16 @@ export class DuitkuService {
           datetime,
           signature,
         },
-        { headers: { 'Content-Type': 'application/json' } }
+        { headers: { "Content-Type": "application/json" } },
       );
 
       const methods: DuitkuPaymentMethod[] = response.data?.paymentFee || [];
-      return methods.filter(m => m.paymentMethod && m.paymentName);
+      return methods.filter((m) => m.paymentMethod && m.paymentName);
     } catch (error) {
-      logger.error('Duitku getPaymentMethods error:', (error as any).response?.data || (error as Error).message);
+      logger.error(
+        "Duitku getPaymentMethods error:",
+        (error as any).response?.data || (error as Error).message,
+      );
       return [];
     }
   }
@@ -74,10 +89,12 @@ export class DuitkuService {
     phone?: string;
   }): Promise<{ orderId: string; paymentUrl: string; vaNumber?: string }> {
     const packages = await getPackagesAsync();
-    const pkg = packages.find(p => p.id === params.packageId);
-    
+    const pkg = packages.find((p) => p.id === params.packageId);
+
     if (!pkg) {
-      throw new ValidationError('Invalid package', { packageId: params.packageId });
+      throw new ValidationError("Invalid package", {
+        packageId: params.packageId,
+      });
     }
 
     const price = pkg.priceIdr || pkg.priceIdr;
@@ -85,20 +102,21 @@ export class DuitkuService {
 
     const random = secureRandomString(6);
     const orderId = `OC-${Date.now()}-${params.userId}-${random}`;
-    const signature = crypto.createHash('md5')
+    const signature = crypto
+      .createHash("md5")
       .update(getMerchantCode() + orderId + price + getApiKey())
-      .digest('hex');
+      .digest("hex");
 
     await prisma.transaction.create({
       data: {
         orderId,
         userId: params.userId,
-        type: 'topup',
+        type: "topup",
         packageName: params.packageId,
         amountIdr: price,
         creditsAmount: credits,
-        gateway: 'duitku',
-        status: 'pending',
+        gateway: "duitku",
+        status: "pending",
       },
     });
 
@@ -108,27 +126,32 @@ export class DuitkuService {
         {
           merchantCode: getMerchantCode(),
           paymentAmount: price,
-          paymentMethod: params.paymentMethod || 'VC',
+          paymentMethod: params.paymentMethod || "VC",
           merchantOrderId: orderId,
           productDetails: `${pkg.name} Package - ${credits} Credits`,
-          customerVaName: params.username || 'Customer',
-          email: params.email || `${params.username || 'user'}@telegram.local`,
-          phoneNumber: params.phone || '0000000000',
+          customerVaName: params.username || "Customer",
+          email: params.email || `${params.username || "user"}@telegram.local`,
+          phoneNumber: params.phone || "0000000000",
           callbackUrl: `${getConfig().WEBHOOK_URL}/webhook/duitku`,
           returnUrl: `${getConfig().WEBHOOK_URL}/payment/finish`,
           signature,
           expiryPeriod: 60,
         },
-        { headers: { 'Content-Type': 'application/json' } }
+        { headers: { "Content-Type": "application/json" } },
       );
 
       const data: DuitkuCreateResponse = response.data;
-      logger.info(`Duitku transaction created: ${orderId}, ref: ${data.reference}`);
+      logger.info(
+        `Duitku transaction created: ${orderId}, ref: ${data.reference}`,
+      );
 
       return { orderId, paymentUrl: data.paymentUrl, vaNumber: data.vaNumber };
     } catch (error) {
-      logger.error('Duitku API error:', (error as any).response?.data || (error as Error).message);
-      throw new ApiError('Duitku', 'Failed to create payment');
+      logger.error(
+        "Duitku API error:",
+        (error as any).response?.data || (error as Error).message,
+      );
+      throw new ApiError("Duitku", "Failed to create payment");
     }
   }
 
@@ -140,13 +163,19 @@ export class DuitkuService {
     reference: string;
     signature: string;
   }): Promise<{ success: boolean; message: string }> {
-    const expectedSignature = crypto.createHash('md5')
-      .update(params.merchantCode + params.amount + params.merchantOrderId + getApiKey())
-      .digest('hex');
+    const expectedSignature = crypto
+      .createHash("md5")
+      .update(
+        params.merchantCode +
+          params.amount +
+          params.merchantOrderId +
+          getApiKey(),
+      )
+      .digest("hex");
 
     if (params.signature !== expectedSignature) {
-      logger.error('Invalid Duitku signature');
-      return { success: false, message: 'Invalid signature' };
+      logger.error("Invalid Duitku signature");
+      return { success: false, message: "Invalid signature" };
     }
 
     const transaction = await prisma.transaction.findUnique({
@@ -155,47 +184,52 @@ export class DuitkuService {
 
     if (!transaction) {
       logger.error(`Transaction not found: ${params.merchantOrderId}`);
-      return { success: false, message: 'Transaction not found' };
+      return { success: false, message: "Transaction not found" };
     }
 
     let newStatus = transaction.status;
-    if (params.resultCode === '00') newStatus = 'success';
-    else if (params.resultCode === '01') newStatus = 'pending';
-    else if (params.resultCode === '02') newStatus = 'refunded';
-    else newStatus = 'failed';
+    if (params.resultCode === "00") newStatus = "success";
+    else if (params.resultCode === "01") newStatus = "pending";
+    else if (params.resultCode === "02") newStatus = "refunded";
+    else newStatus = "failed";
 
     const updateResult = await prisma.transaction.updateMany({
-      where: { orderId: params.merchantOrderId, status: { not: 'success' } },
+      where: { orderId: params.merchantOrderId, status: { not: "success" } },
       data: {
         status: newStatus,
         gatewayTransactionId: params.reference,
-        paidAt: newStatus === 'success' ? new Date() : undefined,
+        paidAt: newStatus === "success" ? new Date() : undefined,
       },
     });
 
-    if (newStatus === 'success') {
+    if (newStatus === "success") {
       if (updateResult.count === 0) {
         // Already processed — skip credit grant
-        return { success: true, message: 'Already processed' };
+        return { success: true, message: "Already processed" };
       }
 
-      if (transaction.type === 'subscription') {
-        const parts = (transaction.packageName ?? '').split('_');
+      if (transaction.type === "subscription") {
+        const parts = (transaction.packageName ?? "").split("_");
         const plan = parts[0] as PlanKey;
-        const billingCycle: BillingCycle = parts[1] === 'annual' ? 'annual' : 'monthly';
+        const billingCycle: BillingCycle =
+          parts[1] === "annual" ? "annual" : "monthly";
 
         await SubscriptionService.createSubscription(
           transaction.userId,
           plan,
           billingCycle,
-          params.merchantOrderId
+          params.merchantOrderId,
         );
-        logger.info(`Subscription activated: ${plan}/${billingCycle} for user ${transaction.userId}`);
+        logger.info(
+          `Subscription activated: ${plan}/${billingCycle} for user ${transaction.userId}`,
+        );
       } else {
         const credits = Number(transaction.creditsAmount) || 0;
         const plans = await getSubscriptionPlansAsync();
-        const plan = plans[transaction.packageName ?? ''];
-        const userUpdateData: Record<string, unknown> = { creditBalance: { increment: credits } };
+        const plan = plans[transaction.packageName ?? ""];
+        const userUpdateData: Record<string, unknown> = {
+          creditBalance: { increment: credits },
+        };
         if (plan && plan.tier) {
           userUpdateData.tier = plan.tier; // Only set tier for subscription packages
         }
@@ -204,25 +238,29 @@ export class DuitkuService {
           data: userUpdateData,
         });
 
-        await prisma.user.update({
-          where: { telegramId: transaction.userId },
-          data: { totalSpent: { increment: Number(transaction.amountIdr) } },
-        }).catch(() => {}); // non-critical
+        await prisma.user
+          .update({
+            where: { telegramId: transaction.userId },
+            data: { totalSpent: { increment: Number(transaction.amountIdr) } },
+          })
+          .catch(() => {}); // non-critical
 
-        logger.info(`Added ${credits} credits for user ${transaction.userId} (tier: ${plan?.tier || 'unchanged'})`);
+        logger.info(
+          `Added ${credits} credits for user ${transaction.userId} (tier: ${plan?.tier || "unchanged"})`,
+        );
       }
 
       await ReferralService.processCommissions(
         params.merchantOrderId,
         Number(transaction.amountIdr),
-        transaction.userId
+        transaction.userId,
       );
-    } else if (newStatus === 'refunded') {
+    } else if (newStatus === "refunded") {
       // Refund: reverse previously granted credits
       const refundResult = await prisma.transaction.updateMany({
-        where: { orderId: params.merchantOrderId, status: 'success' },
+        where: { orderId: params.merchantOrderId, status: "success" },
         data: {
-          status: 'refunded',
+          status: "refunded",
           gatewayTransactionId: params.reference,
         },
       });
@@ -242,26 +280,30 @@ export class DuitkuService {
               data: { creditBalance: { decrement: decrementAmount } },
             });
           }
-          logger.info(`Duitku refund: reversed ${decrementAmount} credits for user ${transaction.userId} (order ${params.merchantOrderId})`);
+          logger.info(
+            `Duitku refund: reversed ${decrementAmount} credits for user ${transaction.userId} (order ${params.merchantOrderId})`,
+          );
         }
       } else {
-        logger.warn(`Duitku refund for ${params.merchantOrderId} — transaction was not in success state, skipping credit reversal`);
+        logger.warn(
+          `Duitku refund for ${params.merchantOrderId} — transaction was not in success state, skipping credit reversal`,
+        );
       }
-    } else if (newStatus === 'failed') {
+    } else if (newStatus === "failed") {
       // Notify user of terminal failure
       PaymentService.sendFailureNotification(
         transaction.userId,
         params.merchantOrderId,
-        'failed',
+        "failed",
       ).catch(() => {});
     }
 
-    if (newStatus === 'success') {
+    if (newStatus === "success") {
       // Track purchase event
       try {
         const user = await prisma.user.findUnique({
           where: { telegramId: transaction.userId },
-          select: { 
+          select: {
             username: true,
             utmSource: true,
             utmCampaign: true,
@@ -273,11 +315,11 @@ export class DuitkuService {
             createdAt: true,
           },
         });
-        
-        const daysToConversion = user?.createdAt 
+
+        const daysToConversion = user?.createdAt
           ? Math.floor((Date.now() - user.createdAt.getTime()) / 86400000)
           : 0;
-        
+
         await AnalyticsService.trackPurchase({
           user_id: transaction.userId.toString(),
           amount_idr: Number(transaction.amountIdr),
@@ -292,7 +334,7 @@ export class DuitkuService {
           ttclid: user?.ttclid ?? undefined,
           days_to_conversion: daysToConversion,
         });
-        
+
         await prisma.transaction.update({
           where: { orderId: params.merchantOrderId },
           data: {
@@ -302,35 +344,44 @@ export class DuitkuService {
             daysToConversion,
           },
         });
-        
-        logger.info(`✅ Analytics tracked for Duitku purchase: ${params.merchantOrderId}`);
+
+        logger.info(
+          `✅ Analytics tracked for Duitku purchase: ${params.merchantOrderId}`,
+        );
       } catch (analyticsError) {
-        logger.warn(`⚠️ Analytics tracking failed (non-blocking): ${analyticsError}`);
+        logger.warn(
+          `⚠️ Analytics tracking failed (non-blocking): ${analyticsError}`,
+        );
       }
     }
 
-    return { success: true, message: 'Callback processed' };
+    return { success: true, message: "Callback processed" };
   }
 
   static async checkTransaction(orderId: string): Promise<{
     status: string;
     amount: number;
   } | null> {
-    const signature = crypto.createHash('md5')
+    const signature = crypto
+      .createHash("md5")
       .update(getMerchantCode() + orderId + getApiKey())
-      .digest('hex');
+      .digest("hex");
 
     try {
       const response = await axios.post(
         `${getDuitkuBaseUrl()}/webapi/api/merchant/transactionStatus`,
-        { merchantCode: getMerchantCode(), merchantOrderId: orderId, signature },
-        { headers: { 'Content-Type': 'application/json' } }
+        {
+          merchantCode: getMerchantCode(),
+          merchantOrderId: orderId,
+          signature,
+        },
+        { headers: { "Content-Type": "application/json" } },
       );
 
       const data = response.data;
       return { status: data.statusCode, amount: parseInt(data.amount) };
     } catch (error) {
-      logger.error('Duitku check error:', error);
+      logger.error("Duitku check error:", error);
       return null;
     }
   }

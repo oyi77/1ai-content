@@ -48,7 +48,10 @@ import cron from "node-cron";
 import { retentionQueue } from "@/workers/retention.worker";
 import { UserService } from "@/services/user.service";
 import { SubscriptionService } from "@/services/subscription.service";
-import { setAlertTelegram, sendAdminAlert as sendGroupAlert } from "@/services/admin-alert.service";
+import {
+  setAlertTelegram,
+  sendAdminAlert as sendGroupAlert,
+} from "@/services/admin-alert.service";
 import { PaymentSettingsService } from "@/services/payment-settings.service";
 import { AdminConfigService } from "@/services/admin-config.service";
 import axios from "axios";
@@ -66,20 +69,26 @@ SubscriptionService.setBotInstance(bot);
 
 // Global BigInt serializer patch (Prisma returns BigInt for telegramId)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- BigInt JSON serialization polyfill
-(BigInt.prototype as any).toJSON = function () { return this.toString(); };
+(BigInt.prototype as any).toJSON = function () {
+  return this.toString();
+};
 
 // Initialize Fastify server
 export const app = Fastify({
   logger: false,
   // Hanya percaya X-Forwarded-For dari peer localhost/nginx — spoofing dari client mati
-  trustProxy: (address: string) => address === "127.0.0.1" || address === "::1" || address === "::ffff:127.0.0.1",
+  trustProxy: (address: string) =>
+    address === "127.0.0.1" ||
+    address === "::1" ||
+    address === "::ffff:127.0.0.1",
 });
 
 async function main() {
   const port = appConfig.PORT;
 
   try {
-    const isPlaceholderToken = !appConfig.BOT_TOKEN || appConfig.BOT_TOKEN.startsWith("placeholder");
+    const isPlaceholderToken =
+      !appConfig.BOT_TOKEN || appConfig.BOT_TOKEN.startsWith("placeholder");
     logger.info("🚀 Starting OpenClaw Bot v3.0.0...");
 
     // Initialize database
@@ -88,20 +97,37 @@ async function main() {
     logger.info("✅ Database connected");
 
     // Seed pricing defaults (first run only)
-    await PaymentSettingsService.initializePricingDefaults().catch(err => logger.error('Failed to initialize pricing defaults', { error: err.message }));
-    await AdminConfigService.initializeDefaults().catch(err => logger.error('Failed to initialize admin config defaults', { error: err.message }));
+    await PaymentSettingsService.initializePricingDefaults().catch((err) =>
+      logger.error("Failed to initialize pricing defaults", {
+        error: err.message,
+      }),
+    );
+    await AdminConfigService.initializeDefaults().catch((err) =>
+      logger.error("Failed to initialize admin config defaults", {
+        error: err.message,
+      }),
+    );
     // Load API key DB overrides into process.env
     try {
-      const apiKeyOverrides = await prisma.pricingConfig.findMany({ where: { category: 'api_keys' } });
+      const apiKeyOverrides = await prisma.pricingConfig.findMany({
+        where: { category: "api_keys" },
+      });
       for (const row of apiKeyOverrides) {
-        const val = String(row.value ?? '');
-        if (val && val !== 'null') process.env[row.key] = val;
+        const val = String(row.value ?? "");
+        if (val && val !== "null") process.env[row.key] = val;
       }
       if (apiKeyOverrides.length) {
         initConfig(); // re-parse process.env so getConfig() picks up DB overrides
-        logger.info(`[API Keys] Loaded ${apiKeyOverrides.length} DB overrides into process.env`);
+        logger.info(
+          `[API Keys] Loaded ${apiKeyOverrides.length} DB overrides into process.env`,
+        );
       }
-    } catch (e) { logger.warn('[API Keys] Could not load DB overrides:', (e as Error).message); }
+    } catch (e) {
+      logger.warn(
+        "[API Keys] Could not load DB overrides:",
+        (e as Error).message,
+      );
+    }
     logger.info("✅ Pricing config ready");
 
     // Initialize Redis
@@ -110,7 +136,9 @@ async function main() {
     logger.info("✅ Redis connected");
 
     // Run Seeder in background (non-blocking) — don't delay HTTP server startup
-    runSeeder().catch(err => logger.error('[SEEDER] Background seeder failed:', err.message));
+    runSeeder().catch((err) =>
+      logger.error("[SEEDER] Background seeder failed:", err.message),
+    );
 
     // Initialize queue
     logger.info("📋 Initializing queue...");
@@ -148,7 +176,10 @@ async function main() {
     try {
       cron.schedule("0 */6 * * *", async () => {
         logger.info("⏰ Running scheduled retention check...");
-        await retentionQueue.add("scheduled_check", { type: "all", triggeredBy: "cron" });
+        await retentionQueue.add("scheduled_check", {
+          type: "all",
+          triggeredBy: "cron",
+        });
       });
       logger.info("✅ Retention cron scheduled (every 6h)");
     } catch (cronErr) {
@@ -196,7 +227,10 @@ async function main() {
       setAlertTelegram(bot.telegram);
     }
     if (appConfig.ADMIN_ALERT_CHAT_ID && !isPlaceholderToken) {
-      sendGroupAlert('info', 'Bot Started', { version: 'v3.0', env: appConfig.NODE_ENV });
+      sendGroupAlert("info", "Bot Started", {
+        version: "v3.0",
+        env: appConfig.NODE_ENV,
+      });
     }
     if (!isPlaceholderToken) {
       try {
@@ -205,7 +239,9 @@ async function main() {
           new Promise<number>((resolve) => setTimeout(() => resolve(0), 10000)),
         ]);
         if (stuckCount > 0) {
-          logger.info(`✅ Startup cleanup: resolved ${stuckCount} stuck videos`);
+          logger.info(
+            `✅ Startup cleanup: resolved ${stuckCount} stuck videos`,
+          );
         }
       } catch (cleanupErr) {
         logger.warn("⚠️ Startup stuck video cleanup failed:", cleanupErr);
@@ -227,7 +263,7 @@ async function main() {
     setupHandlers(bot);
 
     // Multipart file upload support
-    await app.register(require('@fastify/multipart'), {
+    await app.register(require("@fastify/multipart"), {
       limits: { fileSize: 200 * 1024 * 1024 }, // 200 MB max
     });
 
@@ -246,26 +282,29 @@ async function main() {
     await app.register(fastifyFormbody);
 
     // ── Correlation ID — attach to request for downstream logging ──
-    app.addHook('onRequest', async (request, _reply) => {
-      const incomingId = request.headers['x-request-id'];
+    app.addHook("onRequest", async (request, _reply) => {
+      const incomingId = request.headers["x-request-id"];
       const correlationId =
         (Array.isArray(incomingId) ? incomingId[0] : incomingId) ||
-        require('crypto').randomUUID();
+        require("crypto").randomUUID();
       const reqWithCorrelation = request as unknown as Record<string, unknown>;
       reqWithCorrelation.correlationId = correlationId;
     });
 
     // ── Security headers (onRequest so they're set before any response) ──
-    app.addHook('onRequest', async (_request, reply) => {
-      reply.header('X-Content-Type-Options', 'nosniff');
-      reply.header('X-Frame-Options', 'DENY');
-      reply.header('X-XSS-Protection', '1; mode=block');
-      reply.header('Referrer-Policy', 'strict-origin-when-cross-origin');
-      reply.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    app.addHook("onRequest", async (_request, reply) => {
+      reply.header("X-Content-Type-Options", "nosniff");
+      reply.header("X-Frame-Options", "DENY");
+      reply.header("X-XSS-Protection", "1; mode=block");
+      reply.header("Referrer-Policy", "strict-origin-when-cross-origin");
+      reply.header(
+        "Strict-Transport-Security",
+        "max-age=31536000; includeSubDomains",
+      );
       // CSP: first-party inline scripts/styles required by EJS views (faq/login)
       // and React inline styles; blocks remote script injection + frame embedding.
       reply.header(
-        'Content-Security-Policy',
+        "Content-Security-Policy",
         "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; " +
           "img-src 'self' data: blob: https:; font-src 'self' data:; " +
           "connect-src 'self' https: wss: ws: blob:; media-src 'self' blob: https:; " +
@@ -274,19 +313,29 @@ async function main() {
     });
 
     // ── CORS (onRequest to avoid conflicts with SSE/raw responses) ──
-    const corsOrigin = appConfig.CORS_ORIGIN || appConfig.WEBHOOK_URL || appConfig.WEB_APP_URL || '';
-    app.addHook('onRequest', async (request, reply) => {
+    const corsOrigin =
+      appConfig.CORS_ORIGIN ||
+      appConfig.WEBHOOK_URL ||
+      appConfig.WEB_APP_URL ||
+      "";
+    app.addHook("onRequest", async (request, reply) => {
       const origin = request.headers.origin;
       if (origin && corsOrigin) {
         const allowedOrigins = corsOrigin
           .split(",")
           .map((o: string) => o.trim());
         if (allowedOrigins.includes(origin)) {
-          reply.header('Access-Control-Allow-Origin', origin);
-          reply.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-          reply.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-API-Key, X-Ecosystem-Key');
-          reply.header('Access-Control-Allow-Credentials', 'true');
-          reply.header('Vary', 'Origin');
+          reply.header("Access-Control-Allow-Origin", origin);
+          reply.header(
+            "Access-Control-Allow-Methods",
+            "GET, POST, PUT, DELETE, OPTIONS",
+          );
+          reply.header(
+            "Access-Control-Allow-Headers",
+            "Content-Type, Authorization, X-API-Key, X-Ecosystem-Key",
+          );
+          reply.header("Access-Control-Allow-Credentials", "true");
+          reply.header("Vary", "Origin");
         }
       }
     });
@@ -299,11 +348,17 @@ async function main() {
           .split(",")
           .map((o: string) => o.trim());
         if (allowedOrigins.includes(origin)) {
-          reply.header('Access-Control-Allow-Origin', origin);
-          reply.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-          reply.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-API-Key, X-Ecosystem-Key');
-          reply.header('Access-Control-Allow-Credentials', 'true');
-          reply.header('Access-Control-Max-Age', '86400');
+          reply.header("Access-Control-Allow-Origin", origin);
+          reply.header(
+            "Access-Control-Allow-Methods",
+            "GET, POST, PUT, DELETE, OPTIONS",
+          );
+          reply.header(
+            "Access-Control-Allow-Headers",
+            "Content-Type, Authorization, X-API-Key, X-Ecosystem-Key",
+          );
+          reply.header("Access-Control-Allow-Credentials", "true");
+          reply.header("Access-Control-Max-Age", "86400");
         }
       }
       return reply.status(204).send();
@@ -322,10 +377,10 @@ async function main() {
       keyPrefix: "ratelimit:pypi",
     });
     await app.register(fastifyHttpProxy, {
-      upstream: 'http://127.0.0.1:8767',
-      prefix: '/api/py',
-      rewritePrefix: '/',
-      http: {},             // Force HTTP/1.1 (Node.js native) — undici's bodyTimeout kills SSE streams
+      upstream: "http://127.0.0.1:8767",
+      prefix: "/api/py",
+      rewritePrefix: "/",
+      http: {}, // Force HTTP/1.1 (Node.js native) — undici's bodyTimeout kills SSE streams
       preHandler: async (request, reply) => {
         (request as any).raw.setTimeout(180_000);
 
@@ -364,9 +419,9 @@ async function main() {
     await app.register(webRoutes);
 
     // React admin SPA static files (registered FIRST so sendFile decorator ties to this root)
-    await app.register((await import('@fastify/static')).default, {
-      root: path.join(process.cwd(), 'admin-ui', 'dist'),
-      prefix: '/admin/',
+    await app.register((await import("@fastify/static")).default, {
+      root: path.join(process.cwd(), "admin-ui", "dist"),
+      prefix: "/admin/",
       cacheControl: true,
       // maxAge 0 (ms) — index.html landing & SPA fallback harus fresh pasca-deploy (sendFile terikat ke plugin ini); aset ber-hash tetap 1h via /assets/ & /public/. Catatan: string '0' TIDAK dipakai — @lukeed/ms.parse('0') mengembalikan undefined -> header max-age=NaN
       maxAge: 0,
@@ -374,27 +429,30 @@ async function main() {
     });
 
     // Static files (dashboard, sw.js, images) — decorateReply: false since sendFile already taken
-    await app.register((await import('@fastify/static')).default, {
-      root: path.join(process.cwd(), 'public'),
-      prefix: '/public/',
+    await app.register((await import("@fastify/static")).default, {
+      root: path.join(process.cwd(), "public"),
+      prefix: "/public/",
       cacheControl: true,
-      maxAge: '1h',
+      maxAge: "1h",
       decorateReply: false,
     });
 
     // Single frontend bundle (admin-ui) — all SPA asset files served at /assets/
     try {
-      await app.register((await import('@fastify/static')).default, {
-        root: path.join(process.cwd(), 'admin-ui', 'dist', 'assets'),
-        prefix: '/assets/',
+      await app.register((await import("@fastify/static")).default, {
+        root: path.join(process.cwd(), "admin-ui", "dist", "assets"),
+        prefix: "/assets/",
         cacheControl: true,
-        maxAge: '1h',
+        maxAge: "1h",
         decorateReply: false,
         wildcard: true,
       });
-      logger.info('🏠 Frontend SPA assets registered (admin-ui single bundle)');
+      logger.info("🏠 Frontend SPA assets registered (admin-ui single bundle)");
     } catch (e) {
-      logger.warn({ msg: 'admin-ui/dist/assets not found — SPA assets unavailable; landing page served from admin-ui/dist or EJS via src/routes/web/pages.ts', err: String(e) });
+      logger.warn({
+        msg: "admin-ui/dist/assets not found — SPA assets unavailable; landing page served from admin-ui/dist or EJS via src/routes/web/pages.ts",
+        err: String(e),
+      });
     }
     await app.register(apiGatewayRoutes);
     await app.register(async (adminApi) => {
@@ -404,56 +462,63 @@ async function main() {
     });
     await app.register(ecosystemRoutes);
 
-    if (appConfig.NODE_ENV === 'test') {
-      const testRoutes = require('./routes/test').default;
+    if (appConfig.NODE_ENV === "test") {
+      const testRoutes = require("./routes/test").default;
       await app.register(testRoutes);
       logger.info("🧪 Test routes registered");
     }
     logger.info("✅ Routes registered");
 
     // SPA fallback — /app/* (customer SPA) & /articles* (landing artikel); /admin/* ditangani catch-all di src/routes/admin.ts
-    const spaDist = path.join(process.cwd(), 'admin-ui', 'dist');
+    const spaDist = path.join(process.cwd(), "admin-ui", "dist");
     // Whitelist ekstensi statis — path SPA valid berakhiran dot-token (mis. /app/foo.bar) harus tetap dapat index.html
-    const SPA_STATIC_EXT = /\.(?:js|mjs|cjs|css|png|jpe?g|gif|svg|webp|ico|avif|woff2?|ttf|eot|otf|map|json|txt|md|xml|pdf|mp4|webm|mp3|wav|ogg|html?)$/i;
+    const SPA_STATIC_EXT =
+      /\.(?:js|mjs|cjs|css|png|jpe?g|gif|svg|webp|ico|avif|woff2?|ttf|eot|otf|map|json|txt|md|xml|pdf|mp4|webm|mp3|wav|ogg|html?)$/i;
     app.setNotFoundHandler((request, reply) => {
-      const pathname = new URL(request.url, 'http://localhost').pathname;
+      const pathname = new URL(request.url, "http://localhost").pathname;
       const isSpaRoute =
-        (request.method === 'GET' || request.method === 'HEAD') &&
-        (pathname.startsWith('/app/') || pathname.startsWith('/articles')) &&
+        (request.method === "GET" || request.method === "HEAD") &&
+        (pathname.startsWith("/app/") || pathname.startsWith("/articles")) &&
         !SPA_STATIC_EXT.test(pathname);
       if (isSpaRoute) {
-        return reply.sendFile('index.html', spaDist);
+        return reply.sendFile("index.html", spaDist);
       }
-      const wantsHtml = request.headers.accept?.includes('text/html');
+      const wantsHtml = request.headers.accept?.includes("text/html");
       if (wantsHtml) {
-        return reply.status(404).type('text/html').send(
-          '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Not Found</title>' +
-          '<style>body{font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f5f5f5;text-align:center}.card{background:white;border-radius:16px;padding:40px;max-width:400px;box-shadow:0 4px 24px rgba(0,0,0,.1)}a{color:#2563eb;text-decoration:none;font-weight:600}</style></head>' +
-          '<body><div class="card"><h1>404</h1><p>Page not found</p><p><a href="/">Home</a> | <a href="/app">Web App</a></p></div></body></html>'
-        );
+        return reply
+          .status(404)
+          .type("text/html")
+          .send(
+            '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Not Found</title>' +
+              "<style>body{font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f5f5f5;text-align:center}.card{background:white;border-radius:16px;padding:40px;max-width:400px;box-shadow:0 4px 24px rgba(0,0,0,.1)}a{color:#2563eb;text-decoration:none;font-weight:600}</style></head>" +
+              '<body><div class="card"><h1>404</h1><p>Page not found</p><p><a href="/">Home</a> | <a href="/app">Web App</a></p></div></body></html>',
+          );
       }
-      return reply.status(404).send({ error: 'Not Found' });
+      return reply.status(404).send({ error: "Not Found" });
     });
 
     // 500 handler
     app.setErrorHandler((error, request, reply) => {
       if (error instanceof ApiError) {
         return reply.status(error.statusCode).send({
-          error: (error as {code: string}).code,
+          error: (error as { code: string }).code,
           message: (error as Error).message,
         });
       }
       app.log.error(error);
-      const wantsHtml = request.headers.accept?.includes('text/html');
+      const wantsHtml = request.headers.accept?.includes("text/html");
       if (wantsHtml) {
-        return reply.status(500).type('text/html').send(
-          '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Error</title>' +
-          '<style>body{font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f5f5f5;text-align:center}.card{background:white;border-radius:16px;padding:40px;max-width:400px;box-shadow:0 4px 24px rgba(0,0,0,.1)}a{color:#2563eb;text-decoration:none;font-weight:600}</style></head>' +
-          '<body><div class="card"><h1>500</h1><p>Something went wrong</p><p><a href="/">Home</a> | <a href="/app">Web App</a></p></div></body></html>'
-        );
+        return reply
+          .status(500)
+          .type("text/html")
+          .send(
+            '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Error</title>' +
+              "<style>body{font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f5f5f5;text-align:center}.card{background:white;border-radius:16px;padding:40px;max-width:400px;box-shadow:0 4px 24px rgba(0,0,0,.1)}a{color:#2563eb;text-decoration:none;font-weight:600}</style></head>" +
+              '<body><div class="card"><h1>500</h1><p>Something went wrong</p><p><a href="/">Home</a> | <a href="/app">Web App</a></p></div></body></html>',
+          );
       }
-      return reply.status(500).send({ error: 'Internal Server Error' });
-    })
+      return reply.status(500).send({ error: "Internal Server Error" });
+    });
 
     // Start Fastify server FIRST (non-blocking)
     logger.info(`🌐 Starting HTTP server on port ${port}...`);
@@ -471,19 +536,32 @@ async function main() {
     const forcePolling = appConfig.FORCE_POLLING;
 
     if (isPlaceholderToken) {
-      logger.warn("⚠️ BOT_TOKEN is placeholder — skipping Telegram bot initialization (HTTP server will still start)");
-    } else if (!forcePolling && appConfig.NODE_ENV === "production" && webhookUrl) {
+      logger.warn(
+        "⚠️ BOT_TOKEN is placeholder — skipping Telegram bot initialization (HTTP server will still start)",
+      );
+    } else if (
+      !forcePolling &&
+      appConfig.NODE_ENV === "production" &&
+      webhookUrl
+    ) {
       // In production, set Telegram webhook to point at our Fastify route
       try {
         const webhookSecret = appConfig.WEBHOOK_SECRET || "";
         const fullUrl = `${webhookUrl}/webhook/telegram`;
         await Promise.race([
           bot.telegram.setWebhook(fullUrl, { secret_token: webhookSecret }),
-          new Promise((_, reject) => setTimeout(() => reject(new Error("setWebhook timeout 10s")), 10000)),
+          new Promise((_, reject) =>
+            setTimeout(
+              () => reject(new Error("setWebhook timeout 10s")),
+              10000,
+            ),
+          ),
         ]);
         logger.info(`🤖 Bot webhook set: ${fullUrl}`);
       } catch (webhookErr) {
-        logger.warn(`⚠️ Failed to set Telegram webhook (${(webhookErr as Error).message}) — continuing without webhook`);
+        logger.warn(
+          `⚠️ Failed to set Telegram webhook (${(webhookErr as Error).message}) — continuing without webhook`,
+        );
       }
     } else {
       if (forcePolling) {
@@ -496,7 +574,12 @@ async function main() {
         // Delete any existing webhook first
         await Promise.race([
           bot.telegram.deleteWebhook({ drop_pending_updates: true }),
-          new Promise((_, reject) => setTimeout(() => reject(new Error("deleteWebhook timeout 5s")), 5000)),
+          new Promise((_, reject) =>
+            setTimeout(
+              () => reject(new Error("deleteWebhook timeout 5s")),
+              5000,
+            ),
+          ),
         ]).catch(() => {});
         await new Promise((resolve) => setTimeout(resolve, 1000));
 
@@ -513,8 +596,16 @@ async function main() {
     // Graceful shutdown
     const shutdown = async (signal: string) => {
       logger.info(`Received ${signal}, shutting down gracefully...`);
-      try { await bot.stop(signal); } catch (_) { /* ignore stop errors */ }
-      try { await app.close(); } catch (_) { /* ignore close errors */ }
+      try {
+        await bot.stop(signal);
+      } catch (_) {
+        /* ignore stop errors */
+      }
+      try {
+        await app.close();
+      } catch (_) {
+        /* ignore close errors */
+      }
       logger.info("👋 Goodbye!");
       process.exit(0);
     };
@@ -546,14 +637,18 @@ async function main() {
       logger.error("unhandledRejection:", msg);
       if (!msg.includes("Bot is not running") && !msg.includes("SIGTERM")) {
         sendAdminAlert(`Unhandled rejection:\n\`${msg.slice(0, 300)}\``);
-        sendGroupAlert('critical', 'Unhandled Rejection', { error: msg.slice(0, 300) });
+        sendGroupAlert("critical", "Unhandled Rejection", {
+          error: msg.slice(0, 300),
+        });
       }
     });
 
     process.on("uncaughtException", (err) => {
       logger.error("uncaughtException:", err);
       sendAdminAlert(`Uncaught exception:\n\`${err.message.slice(0, 300)}\``);
-      sendGroupAlert('critical', 'Uncaught Exception', { error: err.message.slice(0, 300) });
+      sendGroupAlert("critical", "Uncaught Exception", {
+        error: err.message.slice(0, 300),
+      });
       // Crash-lah secara eksplisit — PM2/systemd akan restart; menghindari state korup yang terus jalan
       process.exit(1);
     });

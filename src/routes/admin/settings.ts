@@ -9,21 +9,24 @@ import { PROVIDER_CONFIG } from "@/config/providers";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 
-const landingConfigBodySchema = zodToJsonSchema(z.object({
-  headline: z.string().optional().default(""),
-  subheadline: z.string().optional().default(""),
-  ctaText: z.string().optional().default(""),
-  heroImageUrl: z.string().url().optional().default(""),
-  heroVideo: z.string().optional().default(""),
-  testimonials: z.array(z.unknown()).optional().default([]),
-  pricingNote: z.string().optional().default(""),
-  footerText: z.string().optional().default(""),
-  videoDuration: z.string().optional().default("60"),
-  botUsername: z.string().optional().default("vilona_content_bot"),
-  proofStats: z.array(z.unknown()).optional().default([]),
-  problemCards: z.array(z.unknown()).optional().default([]),
-  solutionCards: z.array(z.unknown()).optional().default([]),
-}), "landingConfigBody");
+const landingConfigBodySchema = zodToJsonSchema(
+  z.object({
+    headline: z.string().optional().default(""),
+    subheadline: z.string().optional().default(""),
+    ctaText: z.string().optional().default(""),
+    heroImageUrl: z.string().url().optional().default(""),
+    heroVideo: z.string().optional().default(""),
+    testimonials: z.array(z.unknown()).optional().default([]),
+    pricingNote: z.string().optional().default(""),
+    footerText: z.string().optional().default(""),
+    videoDuration: z.string().optional().default("60"),
+    botUsername: z.string().optional().default("vilona_content_bot"),
+    proofStats: z.array(z.unknown()).optional().default([]),
+    problemCards: z.array(z.unknown()).optional().default([]),
+    solutionCards: z.array(z.unknown()).optional().default([]),
+  }),
+  "landingConfigBody",
+);
 
 export async function registerSettingsRoutes(server: FastifyInstance) {
   // ── Landing Page Config ──
@@ -49,45 +52,49 @@ export async function registerSettingsRoutes(server: FastifyInstance) {
     };
   });
 
-  server.post("/api/settings/landing", {
-    schema: {
-      body: landingConfigBodySchema,
+  server.post(
+    "/api/settings/landing",
+    {
+      schema: {
+        body: landingConfigBodySchema,
+      },
     },
-  }, async (request, reply) => {
-    const data = request.body as Record<string, unknown>;
-    if (!data || typeof data !== "object") {
-      return reply.status(400).send({ error: "Invalid payload" });
-    }
-    const config = {
-      headline: data.headline || "",
-      subheadline: data.subheadline || "",
-      ctaText: data.ctaText || "",
-      heroImageUrl: data.heroImageUrl || "",
-      heroVideo: data.heroVideo || "",
-      testimonials: Array.isArray(data.testimonials) ? data.testimonials : [],
-      pricingNote: data.pricingNote || "",
-      footerText: data.footerText || "",
-      videoDuration: data.videoDuration || "60",
-      botUsername:
-        data.botUsername || getConfig().BOT_USERNAME || "vilona_content_bot",
-      proofStats: Array.isArray(data.proofStats) ? data.proofStats : [],
-      problemCards: Array.isArray(data.problemCards) ? data.problemCards : [],
-      solutionCards: Array.isArray(data.solutionCards)
-        ? data.solutionCards
-        : [],
-      updatedAt: new Date().toISOString(),
-    };
-    await redis.set("admin:landing_config", JSON.stringify(config));
-    await redis.publish(
-      "admin_events",
-      JSON.stringify({
-        type: "settings_updated",
-        category: "landing",
-        timestamp: new Date().toISOString(),
-      }),
-    );
-    return { success: true };
-  });
+    async (request, reply) => {
+      const data = request.body as Record<string, unknown>;
+      if (!data || typeof data !== "object") {
+        return reply.status(400).send({ error: "Invalid payload" });
+      }
+      const config = {
+        headline: data.headline || "",
+        subheadline: data.subheadline || "",
+        ctaText: data.ctaText || "",
+        heroImageUrl: data.heroImageUrl || "",
+        heroVideo: data.heroVideo || "",
+        testimonials: Array.isArray(data.testimonials) ? data.testimonials : [],
+        pricingNote: data.pricingNote || "",
+        footerText: data.footerText || "",
+        videoDuration: data.videoDuration || "60",
+        botUsername:
+          data.botUsername || getConfig().BOT_USERNAME || "vilona_content_bot",
+        proofStats: Array.isArray(data.proofStats) ? data.proofStats : [],
+        problemCards: Array.isArray(data.problemCards) ? data.problemCards : [],
+        solutionCards: Array.isArray(data.solutionCards)
+          ? data.solutionCards
+          : [],
+        updatedAt: new Date().toISOString(),
+      };
+      await redis.set("admin:landing_config", JSON.stringify(config));
+      await redis.publish(
+        "admin_events",
+        JSON.stringify({
+          type: "settings_updated",
+          category: "landing",
+          timestamp: new Date().toISOString(),
+        }),
+      );
+      return { success: true };
+    },
+  );
 
   // ── Seed Pricing DB from static config ──
 
@@ -100,7 +107,11 @@ export async function registerSettingsRoutes(server: FastifyInstance) {
       await prisma.pricingConfig.upsert({
         where: { category_key: { category: "package", key: pkg.id } },
         update: { value: JSON.parse(JSON.stringify(pkg)) },
-        create: { category: "package", key: pkg.id, value: JSON.parse(JSON.stringify(pkg)) },
+        create: {
+          category: "package",
+          key: pkg.id,
+          value: JSON.parse(JSON.stringify(pkg)),
+        },
       });
       seeded++;
     }
@@ -109,7 +120,11 @@ export async function registerSettingsRoutes(server: FastifyInstance) {
       await prisma.pricingConfig.upsert({
         where: { category_key: { category: "subscription", key } },
         update: { value: JSON.parse(JSON.stringify(plan)) },
-        create: { category: "subscription", key, value: JSON.parse(JSON.stringify(plan)) },
+        create: {
+          category: "subscription",
+          key,
+          value: JSON.parse(JSON.stringify(plan)),
+        },
       });
       seeded++;
     }
@@ -117,11 +132,17 @@ export async function registerSettingsRoutes(server: FastifyInstance) {
     for (const [key, units] of Object.entries(UNIT_COSTS)) {
       await prisma.pricingConfig.upsert({
         where: { category_key: { category: "unit_cost", key } },
-        update: { value: JSON.parse(JSON.stringify({ units, credits: (units as number) / 10 })) },
+        update: {
+          value: JSON.parse(
+            JSON.stringify({ units, credits: (units as number) / 10 }),
+          ),
+        },
         create: {
           category: "unit_cost",
           key,
-          value: JSON.parse(JSON.stringify({ units, credits: (units as number) / 10 })),
+          value: JSON.parse(
+            JSON.stringify({ units, credits: (units as number) / 10 }),
+          ),
         },
       });
       seeded++;
@@ -143,7 +164,11 @@ export async function registerSettingsRoutes(server: FastifyInstance) {
       await prisma.pricingConfig.upsert({
         where: { category_key: { category: "niche", key: niche.id } },
         update: { value: JSON.parse(JSON.stringify(niche)) },
-        create: { category: "niche", key: niche.id, value: JSON.parse(JSON.stringify(niche)) },
+        create: {
+          category: "niche",
+          key: niche.id,
+          value: JSON.parse(JSON.stringify(niche)),
+        },
       });
       seeded++;
     }
@@ -158,7 +183,11 @@ export async function registerSettingsRoutes(server: FastifyInstance) {
         await prisma.pricingConfig.upsert({
           where: { category_key: { category: "provider_cost", key } },
           update: { value: JSON.parse(JSON.stringify({ costUsd })) },
-          create: { category: "provider_cost", key, value: JSON.parse(JSON.stringify({ costUsd })) },
+          create: {
+            category: "provider_cost",
+            key,
+            value: JSON.parse(JSON.stringify({ costUsd })),
+          },
         });
         seeded++;
       }
@@ -180,7 +209,10 @@ export async function registerSettingsRoutes(server: FastifyInstance) {
   });
 
   server.post("/api/settings/referral", async (request, reply) => {
-    const body = (request.body ?? {}) as { sellRate?: number; buyRate?: number };
+    const body = (request.body ?? {}) as {
+      sellRate?: number;
+      buyRate?: number;
+    };
     if (!body || (body.sellRate === undefined && body.buyRate === undefined)) {
       return reply.status(400).send({ error: "sellRate or buyRate required" });
     }

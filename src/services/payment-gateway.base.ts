@@ -20,12 +20,12 @@
  *   - Standardized error handling
  *   - Webhook event normalization
  */
-import crypto from 'crypto';
-import { prisma } from '@/config/database';
-import { logger } from '@/utils/logger';
-import { getPackagesAsync } from '@/config/pricing';
-import { getConfig } from '@/config/env';
-import { ValidationError, PaymentError } from '@/utils/app-errors';
+import crypto from "crypto";
+import { prisma } from "@/config/database";
+import { logger } from "@/utils/logger";
+import { getPackagesAsync } from "@/config/pricing";
+import { getConfig } from "@/config/env";
+import { ValidationError, PaymentError } from "@/utils/app-errors";
 
 export interface CreatePaymentParams {
   userId: bigint;
@@ -46,7 +46,7 @@ export interface CreatePaymentResult {
 
 export interface WebhookEvent {
   orderId: string;
-  status: 'paid' | 'failed' | 'pending' | 'expired';
+  status: "paid" | "failed" | "pending" | "expired";
   amount?: number;
   paidAt?: Date;
   rawEvent: unknown;
@@ -69,27 +69,42 @@ export abstract class PaymentGatewayBase {
   protected abstract getApiBaseUrl(): string;
 
   /** Get API credentials (key, secret) */
-  protected abstract getApiCredentials(): { apiKey: string; secretKey?: string; merchantCode?: string };
+  protected abstract getApiCredentials(): {
+    apiKey: string;
+    secretKey?: string;
+    merchantCode?: string;
+  };
 
   /** Build the gateway-specific order id */
   protected abstract buildOrderId(userId: bigint): string;
 
   /** Build the gateway-specific request payload for creating a payment */
-  protected abstract buildCreatePaymentPayload(order: OrderContext, callbackUrl: string, returnUrl: string): unknown;
+  protected abstract buildCreatePaymentPayload(
+    order: OrderContext,
+    callbackUrl: string,
+    returnUrl: string,
+  ): unknown;
 
   /** Parse the gateway-specific response and return the standard result */
-  protected abstract parseCreatePaymentResponse(response: unknown): CreatePaymentResult;
+  protected abstract parseCreatePaymentResponse(
+    response: unknown,
+  ): CreatePaymentResult;
 
   /** Verify the signature of an incoming webhook */
-  protected abstract verifyWebhookSignature(body: string, signature: string): boolean;
+  protected abstract verifyWebhookSignature(
+    body: string,
+    signature: string,
+  ): boolean;
 
   /** Optional: normalize a webhook event into the standard format */
   protected normalizeWebhookEvent(rawEvent: unknown): WebhookEvent {
     // Default implementation - subclasses can override
     const event = rawEvent as Record<string, unknown>;
     return {
-      orderId: String(event.merchant_ref || event.orderId || event.reference || ''),
-      status: this.mapStatus(String(event.status || '')),
+      orderId: String(
+        event.merchant_ref || event.orderId || event.reference || "",
+      ),
+      status: this.mapStatus(String(event.status || "")),
       amount: Number(event.amount || event.total_amount || 0),
       paidAt: event.paid_at ? new Date(String(event.paid_at)) : undefined,
       rawEvent,
@@ -97,22 +112,26 @@ export abstract class PaymentGatewayBase {
   }
 
   /** Map gateway-specific status string to standard status */
-  protected mapStatus(rawStatus: string): WebhookEvent['status'] {
+  protected mapStatus(rawStatus: string): WebhookEvent["status"] {
     const s = rawStatus.toUpperCase();
-    if (['PAID', 'SUCCESS', 'COMPLETED', 'CONFIRMED'].includes(s)) return 'paid';
-    if (['FAILED', 'EXPIRED', 'CANCELLED', 'REFUNDED'].includes(s)) return 'failed';
-    return 'pending';
+    if (["PAID", "SUCCESS", "COMPLETED", "CONFIRMED"].includes(s))
+      return "paid";
+    if (["FAILED", "EXPIRED", "CANCELLED", "REFUNDED"].includes(s))
+      return "failed";
+    return "pending";
   }
 
   /**
    * Look up the package and build the order context.
    * Subclasses should call this from their createTransaction() method.
    */
-  protected async buildOrderContext(params: CreatePaymentParams): Promise<OrderContext> {
+  protected async buildOrderContext(
+    params: CreatePaymentParams,
+  ): Promise<OrderContext> {
     const packages = await getPackagesAsync();
     const pkg = packages.find((p) => p.id === params.packageId);
     if (!pkg) {
-      throw new ValidationError('Invalid package', 'packageId');
+      throw new ValidationError("Invalid package", "packageId");
     }
     const credits = pkg.credits + (pkg.bonus || 0);
     const orderId = this.buildOrderId(params.userId);
@@ -128,14 +147,19 @@ export abstract class PaymentGatewayBase {
 
   /** Generate a random suffix for order IDs */
   protected randomSuffix(length = 6): string {
-    return crypto.randomBytes(Math.ceil(length / 2))
-      .toString('hex')
+    return crypto
+      .randomBytes(Math.ceil(length / 2))
+      .toString("hex")
       .slice(0, length)
       .toUpperCase();
   }
 
   /** Standardized error logging for gateway failures */
-  protected logGatewayError(operation: string, error: unknown, context?: Record<string, unknown>): void {
+  protected logGatewayError(
+    operation: string,
+    error: unknown,
+    context?: Record<string, unknown>,
+  ): void {
     logger.error(`[${this.gatewayName}] ${operation} failed:`, {
       error: error instanceof Error ? (error as Error).message : String(error),
       ...context,
@@ -146,20 +170,34 @@ export abstract class PaymentGatewayBase {
    * Default implementation of createTransaction.
    * Subclasses can override if they need special behavior, but most can use this as-is.
    */
-  async createTransaction(params: CreatePaymentParams): Promise<CreatePaymentResult> {
+  async createTransaction(
+    params: CreatePaymentParams,
+  ): Promise<CreatePaymentResult> {
     const order = await this.buildOrderContext(params);
     const callbackUrl = `${getConfig().WEBHOOK_URL}/webhook/${this.gatewayName}`;
     const returnUrl = `${getConfig().WEBHOOK_URL}/payment/finish`;
-    const payload = this.buildCreatePaymentPayload(order, callbackUrl, returnUrl);
+    const payload = this.buildCreatePaymentPayload(
+      order,
+      callbackUrl,
+      returnUrl,
+    );
 
     try {
       // Subclass-specific HTTP call is expected to be made here, but to keep
       // the base class HTTP-agnostic, we delegate to a hook. Default: throw.
-      throw new PaymentError(this.gatewayName, 'createTransaction() not implemented. Override in subclass.');
+      throw new PaymentError(
+        this.gatewayName,
+        "createTransaction() not implemented. Override in subclass.",
+      );
     } catch (error) {
       if (error instanceof PaymentError) throw error;
-      this.logGatewayError('createTransaction', error, { orderId: order.orderId });
-      throw new PaymentError(this.gatewayName, `Transaction creation failed: ${(error as Error).message}`);
+      this.logGatewayError("createTransaction", error, {
+        orderId: order.orderId,
+      });
+      throw new PaymentError(
+        this.gatewayName,
+        `Transaction creation failed: ${(error as Error).message}`,
+      );
     }
   }
 
@@ -167,9 +205,13 @@ export abstract class PaymentGatewayBase {
    * Default implementation of webhook handler.
    * Subclasses override to add gateway-specific signature verification.
    */
-  async handleWebhook(rawBody: string, signature: string, parsed: unknown): Promise<WebhookEvent> {
+  async handleWebhook(
+    rawBody: string,
+    signature: string,
+    parsed: unknown,
+  ): Promise<WebhookEvent> {
     if (!this.verifyWebhookSignature(rawBody, signature)) {
-      throw new PaymentError(this.gatewayName, 'Invalid webhook signature');
+      throw new PaymentError(this.gatewayName, "Invalid webhook signature");
     }
     return this.normalizeWebhookEvent(parsed);
   }
@@ -181,14 +223,14 @@ export abstract class PaymentGatewayBase {
 export function buildWebhookEvent(
   gateway: string,
   orderId: string,
-  status: WebhookEvent['status'],
+  status: WebhookEvent["status"],
   amount?: number,
 ): WebhookEvent {
   return {
     orderId,
     status,
     amount,
-    paidAt: status === 'paid' ? new Date() : undefined,
+    paidAt: status === "paid" ? new Date() : undefined,
     rawEvent: { gateway, orderId, status, amount },
   };
 }

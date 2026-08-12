@@ -54,7 +54,7 @@ export async function ebookCommand(ctx: BotContext): Promise<void> {
       "• Lead magnet, paid ebook, bonus\n" +
       "• Cover design otomatis\n\n" +
       "Pilih opsi di bawah:",
-    { parse_mode: "Markdown", reply_markup: keyboard }
+    { parse_mode: "Markdown", reply_markup: keyboard },
   );
 }
 
@@ -69,7 +69,7 @@ export async function handleEbookCreate(ctx: BotContext): Promise<void> {
   if (!isHealthy) {
     await ctx.reply(
       "⚠️ Ebook service sedang tidak tersedia. Silakan coba lagi nanti.",
-      { parse_mode: "Markdown" }
+      { parse_mode: "Markdown" },
     );
     return;
   }
@@ -82,7 +82,7 @@ export async function handleEbookCreate(ctx: BotContext): Promise<void> {
       "• _Panduan Lengkap Belajar Digital Marketing untuk Pemula_\n" +
       "• _101 Resep Masakan Rumahan yang Mudah dan Enak_\n" +
       "• _Strategi Bisnis Online dari Nol hingga Sukses_",
-    { parse_mode: "Markdown" }
+    { parse_mode: "Markdown" },
   );
 }
 
@@ -91,7 +91,7 @@ export async function handleEbookCreate(ctx: BotContext): Promise<void> {
  */
 export async function handleEbookIdea(
   ctx: BotContext,
-  message: Record<string, unknown>
+  message: Record<string, unknown>,
 ): Promise<void> {
   const lang = ctx.session?.userLang || "id";
 
@@ -106,7 +106,7 @@ export async function handleEbookIdea(
   await ctx.reply(
     "✅ Ide diterima!\n\n" +
       "Sekarang kirimkan judul ebook (atau ketik _auto_ untuk judul otomatis):",
-    { parse_mode: "Markdown" }
+    { parse_mode: "Markdown" },
   );
 }
 
@@ -115,12 +115,12 @@ export async function handleEbookIdea(
  */
 export async function handleEbookTitle(
   ctx: BotContext,
-  message: Record<string, unknown>
+  message: Record<string, unknown>,
 ): Promise<void> {
   const lang = ctx.session?.userLang || "id";
 
   const title =
-    (message.text as string) === "auto" ? undefined : message.text as string;
+    (message.text as string) === "auto" ? undefined : (message.text as string);
 
   ctx.session!.ebookTitle = title;
   ctx.session!.state = "EBOOK_CHAPTERS";
@@ -131,7 +131,7 @@ export async function handleEbookTitle(
       "• Lead magnet: 5-10 chapter\n" +
       "• Ebook biasa: 10-20 chapter\n" +
       "• Komprehensif: 20-30 chapter",
-    { parse_mode: "Markdown" }
+    { parse_mode: "Markdown" },
   );
 }
 
@@ -140,7 +140,7 @@ export async function handleEbookTitle(
  */
 export async function handleEbookChapters(
   ctx: BotContext,
-  message: Record<string, unknown>
+  message: Record<string, unknown>,
 ): Promise<void> {
   const lang = ctx.session?.userLang || "id";
 
@@ -170,7 +170,7 @@ export async function handleEbookChapters(
  */
 export async function handleEbookLanguage(
   ctx: BotContext,
-  data: string
+  data: string,
 ): Promise<void> {
   const lang = ctx.session?.userLang || "id";
   const language = data.replace("ebook_lang_", "");
@@ -195,7 +195,7 @@ export async function handleEbookLanguage(
  */
 export async function handleEbookMode(
   ctx: BotContext,
-  data: string
+  data: string,
 ): Promise<void> {
   const lang = ctx.session?.userLang || "id";
   const mode = data.replace("ebook_mode_", "");
@@ -216,7 +216,7 @@ export async function handleEbookMode(
       `🌐 Bahasa: ${LANGUAGES[language]}\n` +
       `📦 Tipe: ${PRODUCT_MODES[mode]}\n\n` +
       "Proses ini membutuhkan waktu 5-15 menit...",
-    { parse_mode: "Markdown" }
+    { parse_mode: "Markdown" },
   );
 
   try {
@@ -231,7 +231,7 @@ export async function handleEbookMode(
         target_language: language,
         product_mode: mode,
       },
-      ownerId
+      ownerId,
     );
 
     // Start generation
@@ -257,7 +257,7 @@ export async function handleEbookMode(
 async function pollEbookGeneration(
   ctx: BotContext,
   projectId: number,
-  owner?: string
+  owner?: string,
 ): Promise<void> {
   try {
     const status = await ebookService.waitForCompletion(projectId, owner);
@@ -293,7 +293,7 @@ async function pollEbookGeneration(
         `📖 Project ID: ${projectId}\n` +
         `📊 Status: ${status.status}\n\n` +
         "Pilih format download:",
-      { parse_mode: "Markdown", reply_markup: keyboard }
+      { parse_mode: "Markdown", reply_markup: keyboard },
     );
   } catch (err: unknown) {
     const error = err as Error;
@@ -309,7 +309,7 @@ async function pollEbookGeneration(
  */
 export async function handleEbookDownload(
   ctx: BotContext,
-  data: string
+  data: string,
 ): Promise<void> {
   const parts = data.split("_");
   const projectId = parseInt(parts[2]);
@@ -320,20 +320,21 @@ export async function handleEbookDownload(
     const file = await ebookService.download(projectId, format, ownerId);
     await ctx.replyWithDocument(
       { source: file.buffer, filename: file.filename },
-      { caption: `📥 Ebook ${format.toUpperCase()} siap.` }
+      { caption: `📥 Ebook ${format.toUpperCase()} siap.` },
     );
   } catch (err: unknown) {
     const error = err as Error;
-    logger.warn(`Ebook download via Telegram failed (${projectId} ${format}): ${error.message}`);
+    logger.warn(
+      `Ebook download via Telegram failed (${projectId} ${format}): ${error.message}`,
+    );
     const url = ebookService.getDownloadUrl(
       projectId,
       format,
-      ctx.from?.id?.toString()
+      ctx.from?.id?.toString(),
     );
-    await ctx.reply(
-      `📥 Download ebook (${format.toUpperCase()}):\n\n${url}`,
-      { parse_mode: "Markdown" }
-    );
+    await ctx.reply(`📥 Download ebook (${format.toUpperCase()}):\n\n${url}`, {
+      parse_mode: "Markdown",
+    });
   }
 }
 
@@ -342,14 +343,14 @@ export async function handleEbookDownload(
  */
 export async function handleEbookPreview(
   ctx: BotContext,
-  data: string
+  data: string,
 ): Promise<void> {
   const projectId = parseInt(data.split("_")[2]);
 
   try {
     const exportData = await ebookService.getExport(
       projectId,
-      ctx.from?.id?.toString()
+      ctx.from?.id?.toString(),
     );
 
     let preview = "📖 *Ebook Preview*\n\n";
@@ -378,7 +379,7 @@ export async function handleEbookList(ctx: BotContext): Promise<void> {
   try {
     const projects = await ebookService.listProjects(
       10,
-      ctx.from?.id?.toString()
+      ctx.from?.id?.toString(),
     );
 
     if (projects.length === 0) {

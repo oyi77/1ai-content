@@ -40,8 +40,20 @@ import {
 
 // Content commands (video clipper, editor, rework)
 import { ContentCommands } from "./content.commands";
-import { carouselCommand, autopilotCommand, calendarCommand, abtestCommand, repurposeCommand, regenCommand, remetaCommand } from "./tiktok-automation";
-import { connectCommand, publishCommand, scheduleCommand } from "./social-vilona.commands";
+import {
+  carouselCommand,
+  autopilotCommand,
+  calendarCommand,
+  abtestCommand,
+  repurposeCommand,
+  regenCommand,
+  remetaCommand,
+} from "./tiktok-automation";
+import {
+  connectCommand,
+  publishCommand,
+  scheduleCommand,
+} from "./social-vilona.commands";
 
 // Feature-based flows
 export * from "@/flows/generate";
@@ -55,12 +67,30 @@ import {
   adminDeductCreditsCommand,
 } from "./admin/grantCredits";
 import { paymentSettingsCommand } from "./admin/paymentSettings";
-import { showYouTubeMenu, showChannelList, showChannelDetail, showReports, triggerResearch, showResearchResults, showQuarantine, showAgentLogs } from "./youtube/youtube.menu";
 import {
-  showMainDashboard, showCreateMenu, showImageMenu, showChatMenu, showPromptsMenu,
-  showVideosMenu, showProfileMenu,
-  showSettingsMenu, showSupportMenu, showHelpMenu,
-  showTrendingMenu, showCalendarMenu, showABTestMenu,
+  showYouTubeMenu,
+  showChannelList,
+  showChannelDetail,
+  showReports,
+  triggerResearch,
+  showResearchResults,
+  showQuarantine,
+  showAgentLogs,
+} from "./youtube/youtube.menu";
+import {
+  showMainDashboard,
+  showCreateMenu,
+  showImageMenu,
+  showChatMenu,
+  showPromptsMenu,
+  showVideosMenu,
+  showProfileMenu,
+  showSettingsMenu,
+  showSupportMenu,
+  showHelpMenu,
+  showTrendingMenu,
+  showCalendarMenu,
+  showABTestMenu,
 } from "../menus/unified-dashboard";
 
 /**
@@ -175,30 +205,34 @@ export function setupCommands(bot: Telegraf<BotContext>): void {
   bot.command("admin", paymentSettingsCommand); // Alias
 
   // Set bot commands menu — 1AI Content Automation
-  bot.telegram.setMyCommands([
-    { command: "start", description: "🏠 Start & main menu" },
-    { command: "create", description: "🎬 Buat video baru" },
-    { command: "image", description: "🖼️ Buat foto produk/logo" },
-    { command: "carousel", description: "🖼️ Buat TikTok carousel" },
-    { command: "autopilot", description: "🤖 Auto-generate & publish" },
-    { command: "calendar", description: "📅 Content calendar" },
-    { command: "abtest", description: "🧪 A/B test konten" },
-    { command: "chat", description: "💬 Chat dengan AI Assistant" },
-    { command: "prompts", description: "📚 Browse prompt library" },
-    { command: "trending", description: "🔥 Trending content" },
-    { command: "viral", description: "🔥 Find viral videos" },
-    { command: "clip", description: "✂️ Clip videos" },
-    { command: "repurpose", description: "🔄 Repurpose content" },
-    { command: "remeta", description: "🔄 Re-metadata video" },
-    { command: "connect", description: "🔗 Connect social accounts" },
-    { command: "publish", description: "📤 Publish to social" },
-    { command: "schedule", description: "📅 Schedule posts" },
-    { command: "videos", description: "📁 Video saya" },
-    { command: "profile", description: "👤 Profil saya" },
-    { command: "settings", description: "⚙️ Pengaturan" },
-    { command: "support", description: "🆘 Contact support" },
-    { command: "help", description: "📖 Full guide" },
-  ]).catch(() => { /* ignore - bot token may not be set yet */ });
+  bot.telegram
+    .setMyCommands([
+      { command: "start", description: "🏠 Start & main menu" },
+      { command: "create", description: "🎬 Buat video baru" },
+      { command: "image", description: "🖼️ Buat foto produk/logo" },
+      { command: "carousel", description: "🖼️ Buat TikTok carousel" },
+      { command: "autopilot", description: "🤖 Auto-generate & publish" },
+      { command: "calendar", description: "📅 Content calendar" },
+      { command: "abtest", description: "🧪 A/B test konten" },
+      { command: "chat", description: "💬 Chat dengan AI Assistant" },
+      { command: "prompts", description: "📚 Browse prompt library" },
+      { command: "trending", description: "🔥 Trending content" },
+      { command: "viral", description: "🔥 Find viral videos" },
+      { command: "clip", description: "✂️ Clip videos" },
+      { command: "repurpose", description: "🔄 Repurpose content" },
+      { command: "remeta", description: "🔄 Re-metadata video" },
+      { command: "connect", description: "🔗 Connect social accounts" },
+      { command: "publish", description: "📤 Publish to social" },
+      { command: "schedule", description: "📅 Schedule posts" },
+      { command: "videos", description: "📁 Video saya" },
+      { command: "profile", description: "👤 Profil saya" },
+      { command: "settings", description: "⚙️ Pengaturan" },
+      { command: "support", description: "🆘 Contact support" },
+      { command: "help", description: "📖 Full guide" },
+    ])
+    .catch(() => {
+      /* ignore - bot token may not be set yet */
+    });
 
   logger.info("Bot commands registered successfully");
 }

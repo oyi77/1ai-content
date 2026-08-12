@@ -4,8 +4,8 @@
  * Telegram DM functionality for users
  */
 
-import { logger } from '@/utils/logger';
-import { Telegraf } from 'telegraf';
+import { logger } from "@/utils/logger";
+import { Telegraf } from "telegraf";
 
 export class UserTelegramService {
   /**
@@ -29,11 +29,15 @@ export class UserTelegramService {
   static async sendMessage(
     telegramId: bigint | string,
     message: string,
-    options?: { parse_mode?: 'Markdown' | 'HTML' },
+    options?: { parse_mode?: "Markdown" | "HTML" },
   ): Promise<boolean> {
     if (!this.botInstance) return false;
     try {
-      await this.botInstance.telegram.sendMessage(telegramId.toString(), message, options);
+      await this.botInstance.telegram.sendMessage(
+        telegramId.toString(),
+        message,
+        options,
+      );
       return true;
     } catch (err) {
       logger.warn(`Failed to send Telegram message to ${telegramId}:`, err);

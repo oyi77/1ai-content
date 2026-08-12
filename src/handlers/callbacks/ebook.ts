@@ -19,7 +19,7 @@ import {
  */
 export async function handleEbookCallbacks(
   ctx: BotContext,
-  data: string
+  data: string,
 ): Promise<boolean> {
   try {
     if (data === "ebook_create") {
@@ -58,7 +58,7 @@ export async function handleEbookCallbacks(
           "4. Pilih bahasa dan tipe\n" +
           "5. Tunggu proses generate (5-15 menit)\n" +
           "6. Download ebook Anda!",
-        { parse_mode: "Markdown" }
+        { parse_mode: "Markdown" },
       );
       return true;
     }

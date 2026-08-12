@@ -35,7 +35,10 @@ export class UserRepository {
   }
 
   /** Update user by Telegram ID */
-  static async update(telegramId: bigint, data: Prisma.UserUpdateInput): Promise<User> {
+  static async update(
+    telegramId: bigint,
+    data: Prisma.UserUpdateInput,
+  ): Promise<User> {
     return prisma.user.update({
       where: { telegramId },
       data: { ...data, updatedAt: new Date() },
@@ -62,7 +65,10 @@ export class UserRepository {
    * Atomically deduct credits (conditional on sufficient balance).
    * Returns the number of rows updated (0 = insufficient balance, 1 = success).
    */
-  static async deductCredits(telegramId: bigint, amount: number): Promise<number> {
+  static async deductCredits(
+    telegramId: bigint,
+    amount: number,
+  ): Promise<number> {
     const result = await prisma.user.updateMany({
       where: { telegramId, creditBalance: { gte: amount } },
       data: { creditBalance: { decrement: amount } },

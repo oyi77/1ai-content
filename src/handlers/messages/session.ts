@@ -16,7 +16,11 @@ export const SESSION_TTL = 86400; // 24h in seconds
  */
 export async function updateSessionDirectly(
   userId: number,
-  updater: (session: { state?: string; stateData?: Record<string, unknown>; [key: string]: unknown }) => void,
+  updater: (session: {
+    state?: string;
+    stateData?: Record<string, unknown>;
+    [key: string]: unknown;
+  }) => void,
 ): Promise<void> {
   const key = `session:${userId}`;
   const lockKey = `session-lock:${userId}`;
@@ -24,7 +28,9 @@ export async function updateSessionDirectly(
   const locked = await redis.set(lockKey, "1", "EX", 2, "NX");
   if (!locked) {
     // Lock held by concurrent request — skip this update to avoid corruption
-    logger.warn(`Session update skipped for user ${userId}: lock held by concurrent request`);
+    logger.warn(
+      `Session update skipped for user ${userId}: lock held by concurrent request`,
+    );
     return;
   }
   try {

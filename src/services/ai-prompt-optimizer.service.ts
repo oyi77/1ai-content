@@ -54,7 +54,10 @@ function buildMetaPrompt(
       .replace(/{rawPrompt}/g, rawPrompt)
       .replace(/{niche}/g, context.niche)
       .replace(/{style}/g, context.style)
-      .replace(/{hasReferenceImage}/g, context.hasReferenceImage ? "yes" : "no");
+      .replace(
+        /{hasReferenceImage}/g,
+        context.hasReferenceImage ? "yes" : "no",
+      );
   }
 
   return (
@@ -103,7 +106,10 @@ async function saveToCache(key: string, value: string): Promise<void> {
 }
 
 /** Tier 0: Groq (Llama 3.3 70B — fastest, cheapest at ~$0.05/1M tokens) */
-async function tryGroq(metaPrompt: string, modelOverride?: string): Promise<string | null> {
+async function tryGroq(
+  metaPrompt: string,
+  modelOverride?: string,
+): Promise<string | null> {
   const GROQ_API_KEY = getConfig().GROQ_API_KEY || "";
   if (!GROQ_API_KEY) return null;
 
@@ -136,7 +142,9 @@ async function tryGroq(metaPrompt: string, modelOverride?: string): Promise<stri
         promptTokens: response.data?.usage?.prompt_tokens || 0,
         completionTokens: response.data?.usage?.completion_tokens || 0,
       }).catch((err) =>
-        logger.warn("Prompt optimizer tracking failed", { error: (err as Error).message }),
+        logger.warn("Prompt optimizer tracking failed", {
+          error: (err as Error).message,
+        }),
       );
       logger.info("[AIPromptOptimizer] Groq succeeded");
       return content.trim();
@@ -149,7 +157,10 @@ async function tryGroq(metaPrompt: string, modelOverride?: string): Promise<stri
 }
 
 /** Tier 1: Gemini Flash */
-async function tryGemini(metaPrompt: string, modelOverride?: string): Promise<string | null> {
+async function tryGemini(
+  metaPrompt: string,
+  modelOverride?: string,
+): Promise<string | null> {
   const GEMINI_API_KEY = getConfig().GEMINI_API_KEY || "";
   if (!GEMINI_API_KEY) return null;
 
@@ -187,13 +198,18 @@ async function tryGemini(metaPrompt: string, modelOverride?: string): Promise<st
     }
     return null;
   } catch (err) {
-    logger.debug(`[AIPromptOptimizer] Gemini failed: ${(err as Error).message}`);
+    logger.debug(
+      `[AIPromptOptimizer] Gemini failed: ${(err as Error).message}`,
+    );
     return null;
   }
 }
 
 /** Tier 2: OmniRoute (OpenAI-compatible) */
-async function tryOmniRoute(metaPrompt: string, modelOverride?: string): Promise<string | null> {
+async function tryOmniRoute(
+  metaPrompt: string,
+  modelOverride?: string,
+): Promise<string | null> {
   const config = getConfig();
   const OMNIROUTE_URL = config.OMNIROUTE_URL;
   const OMNIROUTE_API_KEY = config.OMNIROUTE_API_KEY || "";
@@ -238,7 +254,9 @@ async function tryOmniRoute(metaPrompt: string, modelOverride?: string): Promise
     }
     return null;
   } catch (err) {
-    logger.debug(`[AIPromptOptimizer] OmniRoute failed: ${(err as Error).message}`);
+    logger.debug(
+      `[AIPromptOptimizer] OmniRoute failed: ${(err as Error).message}`,
+    );
     return null;
   }
 }
@@ -268,9 +286,13 @@ export class AIPromptOptimizer {
 
       const [prompts, taskCfg] = await Promise.all([
         AIConfigService.getPromptsConfig().catch(() => null),
-        AIConfigService.getTaskConfig('promptEnhancement').catch(() => null),
+        AIConfigService.getTaskConfig("promptEnhancement").catch(() => null),
       ]);
-      const metaPrompt = buildMetaPrompt(rawPrompt, context, prompts?.promptOptimizer || undefined);
+      const metaPrompt = buildMetaPrompt(
+        rawPrompt,
+        context,
+        prompts?.promptOptimizer || undefined,
+      );
       const preferred = taskCfg;
 
       // Tier -1: Shared AI Pipeline (try first, fall through on failure)
@@ -281,49 +303,79 @@ export class AIPromptOptimizer {
       if (pipelineResult && pipelineResult.content.trim().length > 10) {
         const text = pipelineResult.content.trim();
         trackTokens({
-          provider: 'pipeline',
+          provider: "pipeline",
           model: pipelineResult.model,
-          service: 'prompt_optimizer',
+          service: "prompt_optimizer",
           promptTokens: pipelineResult.usage.promptTokens,
           completionTokens: pipelineResult.usage.completionTokens,
-        }).catch((err) => logger.warn('Prompt optimizer tracking failed', { error: (err as Error).message }));
-        logger.info('[AIPromptOptimizer] Shared pipeline succeeded', { model: pipelineResult.model });
+        }).catch((err) =>
+          logger.warn("Prompt optimizer tracking failed", {
+            error: (err as Error).message,
+          }),
+        );
+        logger.info("[AIPromptOptimizer] Shared pipeline succeeded", {
+          model: pipelineResult.model,
+        });
         await saveToCache(cacheKey, text);
         return text;
       }
 
       // If builtin is configured, skip all LLMs
-      if (preferred?.provider === 'builtin') {
+      if (preferred?.provider === "builtin") {
         logger.info("[AIPromptOptimizer] builtin configured — skipping LLMs");
         return rawPrompt;
       }
 
       // Try preferred provider first (with configured model), then fall through
-      if (preferred?.provider === 'groq') {
+      if (preferred?.provider === "groq") {
         const result = await tryGroq(metaPrompt, preferred.model || undefined);
-        if (result) { await saveToCache(cacheKey, result); return result; }
-      } else if (preferred?.provider === 'gemini') {
-        const result = await tryGemini(metaPrompt, preferred.model || undefined);
-        if (result) { await saveToCache(cacheKey, result); return result; }
-      } else if (preferred?.provider === 'omniroute') {
-        const result = await tryOmniRoute(metaPrompt, preferred.model || undefined);
-        if (result) { await saveToCache(cacheKey, result); return result; }
+        if (result) {
+          await saveToCache(cacheKey, result);
+          return result;
+        }
+      } else if (preferred?.provider === "gemini") {
+        const result = await tryGemini(
+          metaPrompt,
+          preferred.model || undefined,
+        );
+        if (result) {
+          await saveToCache(cacheKey, result);
+          return result;
+        }
+      } else if (preferred?.provider === "omniroute") {
+        const result = await tryOmniRoute(
+          metaPrompt,
+          preferred.model || undefined,
+        );
+        if (result) {
+          await saveToCache(cacheKey, result);
+          return result;
+        }
       }
 
       // Fall through to remaining providers in default order: Groq → Gemini → OmniRoute
-      if (preferred?.provider !== 'groq') {
+      if (preferred?.provider !== "groq") {
         const groqResult = await tryGroq(metaPrompt);
-        if (groqResult) { await saveToCache(cacheKey, groqResult); return groqResult; }
+        if (groqResult) {
+          await saveToCache(cacheKey, groqResult);
+          return groqResult;
+        }
       }
 
-      if (preferred?.provider !== 'gemini') {
+      if (preferred?.provider !== "gemini") {
         const geminiResult = await tryGemini(metaPrompt);
-        if (geminiResult) { await saveToCache(cacheKey, geminiResult); return geminiResult; }
+        if (geminiResult) {
+          await saveToCache(cacheKey, geminiResult);
+          return geminiResult;
+        }
       }
 
-      if (preferred?.provider !== 'omniroute') {
+      if (preferred?.provider !== "omniroute") {
         const omniResult = await tryOmniRoute(metaPrompt);
-        if (omniResult) { await saveToCache(cacheKey, omniResult); return omniResult; }
+        if (omniResult) {
+          await saveToCache(cacheKey, omniResult);
+          return omniResult;
+        }
       }
 
       // All LLMs failed — fall back to raw prompt (rule-based PromptEngine
@@ -331,7 +383,9 @@ export class AIPromptOptimizer {
       logger.info("[AIPromptOptimizer] All LLMs failed, using original prompt");
       return rawPrompt;
     } catch (err) {
-      logger.warn(`[AIPromptOptimizer] Unexpected error: ${(err as Error).message}`);
+      logger.warn(
+        `[AIPromptOptimizer] Unexpected error: ${(err as Error).message}`,
+      );
       return rawPrompt;
     }
   }

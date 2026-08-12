@@ -3,14 +3,14 @@
  * Supports per-user conversation history and model listing.
  */
 
-import axios, { AxiosInstance } from 'axios';
-import { logger } from '@/utils/logger';
-import { trackTokens } from '@/services/token-tracker.service';
-import { getConfig } from '@/config/env';
-import { AIConfigService } from '@/services/ai-config.service';
+import axios, { AxiosInstance } from "axios";
+import { logger } from "@/utils/logger";
+import { trackTokens } from "@/services/token-tracker.service";
+import { getConfig } from "@/config/env";
+import { AIConfigService } from "@/services/ai-config.service";
 
 export interface ChatMessage {
-  role: 'system' | 'user' | 'assistant';
+  role: "system" | "user" | "assistant";
   content: string;
 }
 
@@ -192,46 +192,57 @@ export class OmniRouteService {
   constructor() {
     const config = getConfig();
     const omniUrl = config.OMNIROUTE_URL;
-    const omniApiKey = config.OMNIROUTE_API_KEY || '';
+    const omniApiKey = config.OMNIROUTE_API_KEY || "";
     this.client = axios.create({
       baseURL: omniUrl,
       timeout: 30_000,
       headers: {
-        'Content-Type': 'application/json',
-        ...(omniApiKey ? { 'Authorization': `Bearer ${omniApiKey}` } : {}),
+        "Content-Type": "application/json",
+        ...(omniApiKey ? { Authorization: `Bearer ${omniApiKey}` } : {}),
       },
     });
   }
 
-  async chat(userId: string, message: string, model?: string): Promise<ChatResponse> {
+  async chat(
+    userId: string,
+    message: string,
+    model?: string,
+  ): Promise<ChatResponse> {
     const config = getConfig();
     const [chatCfg, prompts] = await Promise.all([
       AIConfigService.getChatConfig(),
       AIConfigService.getPromptsConfig(),
     ]);
     // Env override wins; else AI config (DB/Redis), else hardcoded fallback (see .env.example).
-    const DEFAULT_MODEL = config.OMNIROUTE_DEFAULT_MODEL || chatCfg.defaultModel || 'antigravity/gemini-2.5-flash';
+    const DEFAULT_MODEL =
+      config.OMNIROUTE_DEFAULT_MODEL ||
+      chatCfg.defaultModel ||
+      "antigravity/gemini-2.5-flash";
     const systemPrompt = prompts.botPersona || BERKAHKARYA_SYSTEM_PROMPT;
     const history = this.conversationHistory.get(userId) || [];
 
     // Inject system prompt if this is the start of conversation
     const messagesWithSystem: ChatMessage[] = [
-      { role: 'system', content: systemPrompt },
+      { role: "system", content: systemPrompt },
       ...history.slice(-18),
-      { role: 'user', content: message },
+      { role: "user", content: message },
     ];
 
-    history.push({ role: 'user', content: message });
+    history.push({ role: "user", content: message });
 
     try {
-      const response = await this.client.post('/chat/completions', {
-        model: model || DEFAULT_MODEL,
-        messages: messagesWithSystem,
-        temperature: 0.7,
-        max_tokens: 4096,
-      }, { timeout: 120_000 }); // agnes TTFT ~50s; 30s client default would ETIMEDOUT
+      const response = await this.client.post(
+        "/chat/completions",
+        {
+          model: model || DEFAULT_MODEL,
+          messages: messagesWithSystem,
+          temperature: 0.7,
+          max_tokens: 4096,
+        },
+        { timeout: 120_000 },
+      ); // agnes TTFT ~50s; 30s client default would ETIMEDOUT
 
-      const content = response.data?.choices?.[0]?.message?.content || '';
+      const content = response.data?.choices?.[0]?.message?.content || "";
       const usedModel = response.data?.model || model || DEFAULT_MODEL;
 
       // Track token usage (non-blocking, non-fatal)
@@ -239,21 +250,26 @@ export class OmniRouteService {
       if (usage) {
         trackTokens({
           userId,
-          provider: 'omniroute',
+          provider: "omniroute",
           model: usedModel,
-          service: 'chat',
+          service: "chat",
           promptTokens: usage.prompt_tokens || 0,
           completionTokens: usage.completion_tokens || 0,
-        }).catch(err => logger.warn('OmniRoute tracking failed', { error: err.message }));
+        }).catch((err) =>
+          logger.warn("OmniRoute tracking failed", { error: err.message }),
+        );
       }
 
-      history.push({ role: 'assistant', content });
+      history.push({ role: "assistant", content });
       this.conversationHistory.set(userId, history);
 
       return { success: true, content, model: usedModel };
     } catch (error) {
-      const errMsg = (error as any)?.response?.data?.message ?? (error as Error)?.message ?? 'Unknown error';
-      logger.error('OmniRoute chat error:', errMsg);
+      const errMsg =
+        (error as any)?.response?.data?.message ??
+        (error as Error)?.message ??
+        "Unknown error";
+      logger.error("OmniRoute chat error:", errMsg);
       return { success: false, error: errMsg };
     }
   }
@@ -264,7 +280,7 @@ export class OmniRouteService {
 
   async isAlive(): Promise<boolean> {
     try {
-      await this.client.get('/models', { timeout: 5000 });
+      await this.client.get("/models", { timeout: 5000 });
       return true;
     } catch {
       return false;
@@ -273,7 +289,7 @@ export class OmniRouteService {
 
   async listModels(): Promise<string[]> {
     try {
-      const response = await this.client.get('/models', { timeout: 10000 });
+      const response = await this.client.get("/models", { timeout: 10000 });
       return (response.data?.data || []).map((m: { id: string }) => m.id);
     } catch {
       return [];
@@ -283,62 +299,101 @@ export class OmniRouteService {
   /**
    * Analyze an image from a direct HTTP URL (preferred over base64 for large files).
    */
-  async analyzeImageUrl(imageUrl: string, prompt: string, model?: string): Promise<ChatResponse> {
+  async analyzeImageUrl(
+    imageUrl: string,
+    prompt: string,
+    model?: string,
+  ): Promise<ChatResponse> {
     const config = getConfig();
     const chatCfg = await AIConfigService.getChatConfig();
-    const DEFAULT_MODEL = config.OMNIROUTE_DEFAULT_MODEL || chatCfg.defaultModel || 'antigravity/gemini-2.5-flash';
+    const DEFAULT_MODEL =
+      config.OMNIROUTE_DEFAULT_MODEL ||
+      chatCfg.defaultModel ||
+      "antigravity/gemini-2.5-flash";
     try {
-      const response = await this.client.post('/chat/completions', {
-        model: model || DEFAULT_MODEL,
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'text', text: prompt },
-            { type: 'image_url', image_url: { url: imageUrl } },
+      const response = await this.client.post(
+        "/chat/completions",
+        {
+          model: model || DEFAULT_MODEL,
+          messages: [
+            {
+              role: "user",
+              content: [
+                { type: "text", text: prompt },
+                { type: "image_url", image_url: { url: imageUrl } },
+              ],
+            },
           ],
-        }],
-        temperature: 0.65,
-        max_tokens: 2000,
-      }, { timeout: 12000 });
+          temperature: 0.65,
+          max_tokens: 2000,
+        },
+        { timeout: 12000 },
+      );
 
-      const content = response.data?.choices?.[0]?.message?.content || '';
-      if (!content) return { success: false, error: 'Empty response from vision model' };
-      return { success: true, content, model: response.data?.model || DEFAULT_MODEL };
+      const content = response.data?.choices?.[0]?.message?.content || "";
+      if (!content)
+        return { success: false, error: "Empty response from vision model" };
+      return {
+        success: true,
+        content,
+        model: response.data?.model || DEFAULT_MODEL,
+      };
     } catch (error) {
-      const errMsg = (error as any)?.response?.data?.message ?? (error as Error)?.message ?? 'Unknown error';
-      logger.error('OmniRoute analyzeImageUrl error:', errMsg);
+      const errMsg =
+        (error as any)?.response?.data?.message ??
+        (error as Error)?.message ??
+        "Unknown error";
+      logger.error("OmniRoute analyzeImageUrl error:", errMsg);
       return { success: false, error: errMsg };
     }
   }
 
-  async analyzeImage(base64Data: string, mimeType: string, prompt: string, model?: string): Promise<ChatResponse> {
+  async analyzeImage(
+    base64Data: string,
+    mimeType: string,
+    prompt: string,
+    model?: string,
+  ): Promise<ChatResponse> {
     const config = getConfig();
     const chatCfg = await AIConfigService.getChatConfig();
-    const DEFAULT_MODEL = config.OMNIROUTE_DEFAULT_MODEL || chatCfg.defaultModel || 'antigravity/gemini-2.5-flash';
+    const DEFAULT_MODEL =
+      config.OMNIROUTE_DEFAULT_MODEL ||
+      chatCfg.defaultModel ||
+      "antigravity/gemini-2.5-flash";
     try {
-      const response = await this.client.post('/chat/completions', {
-        model: model || DEFAULT_MODEL,
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'text', text: prompt },
-            { type: 'image_url', image_url: { url: `data:${mimeType};base64,${base64Data}` } },
+      const response = await this.client.post(
+        "/chat/completions",
+        {
+          model: model || DEFAULT_MODEL,
+          messages: [
+            {
+              role: "user",
+              content: [
+                { type: "text", text: prompt },
+                {
+                  type: "image_url",
+                  image_url: { url: `data:${mimeType};base64,${base64Data}` },
+                },
+              ],
+            },
           ],
-        }],
-        temperature: 0.65,
-        max_tokens: 2000,
-      }, { timeout: 12000 });
+          temperature: 0.65,
+          max_tokens: 2000,
+        },
+        { timeout: 12000 },
+      );
 
-      const content = response.data?.choices?.[0]?.message?.content || '';
-      if (!content) return { success: false, error: 'Empty response from vision model' };
+      const content = response.data?.choices?.[0]?.message?.content || "";
+      if (!content)
+        return { success: false, error: "Empty response from vision model" };
 
       const usedModel = response.data?.model || DEFAULT_MODEL;
       const usage = response.data?.usage;
       if (usage) {
         trackTokens({
-          provider: 'omniroute',
+          provider: "omniroute",
           model: usedModel,
-          service: 'clone_image_fallback',
+          service: "clone_image_fallback",
           promptTokens: usage.prompt_tokens || 0,
           completionTokens: usage.completion_tokens || 0,
         }).catch(() => {});
@@ -346,8 +401,11 @@ export class OmniRouteService {
 
       return { success: true, content, model: usedModel };
     } catch (error) {
-      const errMsg = (error as any)?.response?.data?.message ?? (error as Error)?.message ?? 'Unknown error';
-      logger.error('OmniRoute analyzeImage error:', errMsg);
+      const errMsg =
+        (error as any)?.response?.data?.message ??
+        (error as Error)?.message ??
+        "Unknown error";
+      logger.error("OmniRoute analyzeImage error:", errMsg);
       return { success: false, error: errMsg };
     }
   }

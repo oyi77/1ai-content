@@ -4,8 +4,8 @@
  * Strategies are checked in order; the first pattern match wins.
  * The generic fallback strategy must always be the last entry.
  */
-import { logger } from '@/utils/logger';
-import type { BalanceStrategyEntry } from './types';
+import { logger } from "@/utils/logger";
+import type { BalanceStrategyEntry } from "./types";
 import {
   siliconflowStrategy,
   laozhangStrategy,
@@ -25,7 +25,7 @@ import {
   byteplusStrategy,
   geminigenStrategy,
   genericOpenAIStrategy,
-} from './strategies';
+} from "./strategies";
 
 const STRATEGY_REGISTRY: BalanceStrategyEntry[] = [
   siliconflowStrategy,
