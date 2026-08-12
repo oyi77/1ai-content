@@ -56,7 +56,10 @@ interface RenderResult {
  *
  * Remotion's Img component works best with staticFile() references to the public/ dir.
  */
-async function prepareImage(imageUrl: string, publicDir: string): Promise<string> {
+async function prepareImage(
+  imageUrl: string,
+  publicDir: string,
+): Promise<string> {
   const ext = path.extname(imageUrl.split("?")[0]) || ".jpg";
   const filename = `product-${randomUUID().slice(0, 8)}${ext}`;
   const dest = path.join(publicDir, filename);
@@ -67,7 +70,8 @@ async function prepareImage(imageUrl: string, publicDir: string): Promise<string
     try {
       const resp = await fetch(imageUrl, {
         headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
           Referer: "https://www.tiktok.com/",
         },
       });
@@ -76,9 +80,13 @@ async function prepareImage(imageUrl: string, publicDir: string): Promise<string
       }
       const buffer = Buffer.from(await resp.arrayBuffer());
       fs.writeFileSync(dest, buffer);
-      console.log(`[Remotion] Downloaded to public/${filename} (${(buffer.length / 1024).toFixed(1)} KB)`);
+      console.log(
+        `[Remotion] Downloaded to public/${filename} (${(buffer.length / 1024).toFixed(1)} KB)`,
+      );
     } catch (err) {
-      console.warn(`[Remotion] Failed to download image: ${err}. Using URL directly.`);
+      console.warn(
+        `[Remotion] Failed to download image: ${err}. Using URL directly.`,
+      );
       return imageUrl; // Fall back to direct URL
     }
   } else {
@@ -115,7 +123,6 @@ async function renderProductAd(input: RenderInput): Promise<RenderResult> {
   // Prepare image for rendering
   const preparedImage = await prepareImage(input.imageUrl, cacheDir);
 
-
   // Generate deterministic ad copy
   const adCopyData = generateDeterministicAdCopy(
     input.category,
@@ -125,10 +132,7 @@ async function renderProductAd(input: RenderInput): Promise<RenderResult> {
 
   const outputFilename =
     input.outputPath ??
-    path.join(
-      outputDir,
-      `product-ad-${input.category}-${Date.now()}.mp4`,
-    );
+    path.join(outputDir, `product-ad-${input.category}-${Date.now()}.mp4`);
 
   console.log(`[Remotion] Bundling project...`);
   const bundleLocation = await bundle({

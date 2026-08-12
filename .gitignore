@@ -23,7 +23,6 @@ node_modules/
 .nyc_output/
 .omc/
 .omo/
-output/
 *.pid
 *.pid.lock
 public/qa-screenshots/
