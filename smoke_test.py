@@ -11,6 +11,31 @@ import time
 import os
 import requests
 
+# Load env exactly like services/run_api.py (project root .env first, then
+# services/.env) so a bare `python3 smoke_test.py` reproduces the production
+# runtime's EBOOK_API_KEY / DATABASE_URL and passes the API-key gate plus the
+# DB-backed /calendar + /ab-test routes. Previously this lived in a gitignored
+# wrapper, which made the committed fix dead from a clean checkout.
+def _load_dotenv(path: str) -> None:
+    try:
+        with open(path) as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                key, _, val = line.partition('=')
+                val = val.strip()
+                if len(val) >= 2 and val[0] == val[-1] and val[0] in ('"', "'"):
+                    val = val[1:-1]
+                os.environ[key] = val
+    except OSError:
+        pass
+
+_smoke_root = os.path.dirname(os.path.abspath(__file__))
+if os.path.exists(os.path.join(_smoke_root, '.env')):
+    _load_dotenv(os.path.join(_smoke_root, '.env'))
+_load_dotenv(os.path.join(_smoke_root, 'services', '.env'))
+
 BASE = "http://127.0.0.1:8767"
 TIMEOUT_FAST = 10    # endpoints that should respond instantly
 TIMEOUT_SLOW = 120   # generation endpoints that may take a while
