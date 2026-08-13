@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
+import { FastifyInstance } from "fastify";
 import { getOmniRouteService } from "@/services/omniroute.service";
 import { ImageGenerationService } from "@/services/image.service";
 import { generateVideoWithFallback } from "@/services/video-fallback.service";
@@ -58,7 +58,7 @@ export async function registerPlaygroundRoutes(server: FastifyInstance) {
     {
       schema: { body: playgroundTextSchema },
     },
-    async (request, reply) => {
+    async (request, _reply) => {
       const { prompt, model } = (request.body ?? {}) as {
         prompt: string;
         model?: string;
@@ -75,7 +75,7 @@ export async function registerPlaygroundRoutes(server: FastifyInstance) {
     {
       schema: { body: playgroundImageSchema },
     },
-    async (request, reply) => {
+    async (request, _reply) => {
       const { prompt, provider, aspectRatio } = (request.body ?? {}) as {
         prompt: string;
         provider?: string;
@@ -97,7 +97,7 @@ export async function registerPlaygroundRoutes(server: FastifyInstance) {
     {
       schema: { body: playgroundVideoSchema },
     },
-    async (request, reply) => {
+    async (request, _reply) => {
       const { prompt, provider, duration, niche } = (request.body ?? {}) as {
         prompt: string;
         provider?: string;
