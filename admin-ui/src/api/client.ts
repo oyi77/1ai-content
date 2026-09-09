@@ -830,6 +830,18 @@ export async function renderAd(data: {
   return postJson("/api/py/video/ad", data);
 }
 
+export async function renderAdHyperFrames(data: {
+  image_url?: string;
+  title: string;
+  category?: string;
+  affiliate_link?: string;
+  brand_name?: string;
+  ad_copy?: string;
+  hook_text?: string;
+  cta_text?: string;
+}): Promise<RenderAdResponse> {
+  return postJson("/api/py/video/ad-hyperframes", data);
+}
 // ── Storyboard API ──
 
 export interface StoryboardScene {

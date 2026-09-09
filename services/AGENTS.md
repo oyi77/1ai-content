@@ -60,8 +60,9 @@ Tiap folder layanan punya `AGENTS.md` sendiri (tujuan, interface, issue, rekomen
 | `remetadata/` | Engine remetadata video: judul/deskripsi/tag/waktu posting + tulis ulang via ffmpeg → `/tmp/remetadata_output` (`engine.py:48`) |
 | `remotion-ads/` | Proyek Node/TypeScript (package `remotion-product-ads`, remotion ^4.0.484): komposisi `ProductAd` (450 frame, 30fps, 1080x1920) & `ProductAd-Hook` (90 frame) |
 | `remotion/` | Bridge Python→Node: kirim JSON payload ke `src/render.ts` proyek remotion-ads, interpretasi hasil render |
+| `hyperframes/` | HyperFrames HTML→video renderer: `src/render.ts` generates composition HTML, calls `hyperframes render` CLI. Bridge `services/hyperframes/__init__.py`. New video type alongside Remotion |
+| `hyperframes/compositions/` | HyperFrames composition templates (HTML + CSS animations). `product-ad.html` is the 3-scene product ad (hook → showcase → CTA) |
 | `repurpose/` | Repurposing video: konten multi-format (klip, subtitle, overlay, BGM, posting sosial); dua engine tumpang tindih — `engine.py` (monolitik) vs `cascade.py` (refactor); `__init__.py` ekspor dari `cascade.py` |
-| `screenrec/` | Rekaman layar via ffmpeg x11grab dengan headless guard (non-X → `{success: false}`); `POST /video/screen-rec` |
 | `research/` | Riset niche pasar buku: niche, brief buku, peta bahasa; LLM OmniRoute (fallback Ollama) |
 | `routers/` | Layer routing FastAPI: 28 file router (20 legacy + 8 content-gaps 2026-08-04), semua di-mount di `api.py:69-115` via `registry.add_router(...)` |
 | `storyboard/` | Storyboard visual: scenario (LLM) + gambar per scene, layout HTML dengan gambar inline base64 |

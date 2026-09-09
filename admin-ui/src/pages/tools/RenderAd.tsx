@@ -1,9 +1,12 @@
 import { useState, FormEvent } from "react";
 import { Input, Select, Button, Spinner } from "../../components/UI";
-import { renderAd } from "../../api/client";
+import { renderAd, renderAdHyperFrames } from "../../api/client";
 import type { RenderAdResponse } from "../../api/client";
 
+type Renderer = "remotion" | "hyperframes";
+
 export default function RenderAd() {
+  const [renderer, setRenderer] = useState<Renderer>("remotion");
   const [title, setTitle] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [category, setCategory] = useState("beauty");
@@ -22,16 +25,27 @@ export default function RenderAd() {
     setResult(null);
     setErr("");
     try {
-      const res = await renderAd({
-        title,
-        image_url: imageUrl || undefined,
-        category,
-        brand_name: brandName || undefined,
-        affiliate_link: affiliateLink || undefined,
-        ad_copy: adCopy || undefined,
-        hook_text: hookText || undefined,
-        cta_text: ctaText || undefined,
-      });
+      const res = renderer === "remotion"
+        ? await renderAd({
+            title,
+            image_url: imageUrl || undefined,
+            category,
+            brand_name: brandName || undefined,
+            affiliate_link: affiliateLink || undefined,
+            ad_copy: adCopy || undefined,
+            hook_text: hookText || undefined,
+            cta_text: ctaText || undefined,
+          })
+        : await renderAdHyperFrames({
+            title,
+            image_url: imageUrl || undefined,
+            category,
+            brand_name: brandName || undefined,
+            affiliate_link: affiliateLink || undefined,
+            ad_copy: adCopy || undefined,
+            hook_text: hookText || undefined,
+            cta_text: ctaText || undefined,
+          });
       setResult(res);
     } catch (err: unknown) {
       setErr(String(err));
@@ -47,6 +61,33 @@ export default function RenderAd() {
         Generate a 15-second product showcase video with AI-generated ad copy,
         animations, and branding.
       </p>
+
+      {/* Renderer selector */}
+      <div className="flex gap-2 mb-6">
+        <button
+          type="button"
+          onClick={() => setRenderer("remotion")}
+          className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
+            renderer === "remotion"
+              ? "bg-blue-600 text-white"
+              : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+          }`}
+        >
+          Remotion
+        </button>
+        <button
+          type="button"
+          onClick={() => setRenderer("hyperframes")}
+          className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
+            renderer === "hyperframes"
+              ? "bg-purple-600 text-white"
+              : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+          }`}
+        >
+          HyperFrames
+        </button>
+      </div>
+
       <form onSubmit={handleSubmit} className="space-y-3 max-w-md">
         <div>
           <label className="block text-sm text-gray-400 mb-1">Product Title</label>
@@ -115,7 +156,7 @@ export default function RenderAd() {
           />
         </div>
         <Button type="submit" variant="primary">
-          {rendering ? "Rendering..." : "Render Ad Video"}
+          {rendering ? "Rendering..." : `Render with ${renderer === "remotion" ? "Remotion" : "HyperFrames"}`}
         </Button>
       </form>
       {rendering && <Spinner size={32} />}

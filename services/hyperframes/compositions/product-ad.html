@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Product Ad</title>
+    <style>
+      :root {
+        --color-bg: #0a0a0a;
+        --color-text: #ffffff;
+        --color-accent: #ff6b35;
+        --font-display: "Inter", system-ui, sans-serif;
+      }
+
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+
+      html, body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: var(--color-bg);
+        font-family: var(--font-display);
+        color: var(--color-text);
+      }
+
+      #main {
+        position: relative;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+      }
+
+      /* Scene backgrounds */
+      .scene-bg {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        transition: opacity 0.5s ease;
+      }
+
+      .scene-bg.active {
+        opacity: 1;
+      }
+
+      /* Hook scene */
+      .hook-bg {
+        background: linear-gradient(135deg, var(--grad-start) 0%, var(--grad-end) 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        padding: 80px;
+        text-align: center;
+      }
+
+      .hook-text {
+        font-size: 72px;
+        font-weight: 800;
+        line-height: 1.1;
+        text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        transform: translateY(40px);
+        opacity: 0;
+      }
+
+      .hook-image {
+        width: 600px;
+        height: 600px;
+        object-fit: cover;
+        border-radius: 30px;
+        margin-top: 60px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        transform: scale(0.8);
+        opacity: 0;
+      }
+
+      /* Showcase scene */
+      .showcase-bg {
+        background: linear-gradient(180deg, var(--grad-start) 0%, var(--grad-end) 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 80px;
+        text-align: center;
+      }
+
+      .showcase-image {
+        width: 700px;
+        height: 700px;
+        object-fit: cover;
+        border-radius: 40px;
+        box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+        transform: scale(0.7) rotate(-5deg);
+        opacity: 0;
+      }
+
+      .showcase-title {
+        font-size: 64px;
+        font-weight: 700;
+        margin-top: 60px;
+        line-height: 1.2;
+        transform: translateY(30px);
+        opacity: 0;
+      }
+
+      .showcase-copy {
+        font-size: 36px;
+        margin-top: 30px;
+        opacity: 0.85;
+        max-width: 800px;
+        line-height: 1.4;
+        transform: translateY(20px);
+        opacity: 0;
+      }
+
+      .showcase-category {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 28px;
+        margin-top: 40px;
+        padding: 16px 32px;
+        background: rgba(255,255,255,0.15);
+        border-radius: 50px;
+        backdrop-filter: blur(10px);
+        transform: translateY(20px);
+        opacity: 0;
+      }
+
+      /* CTA scene */
+      .cta-bg {
+        background: linear-gradient(135deg, var(--grad-end) 0%, var(--grad-start) 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 80px;
+        text-align: center;
+      }
+
+      .cta-badge {
+        font-size: 120px;
+        margin-bottom: 40px;
+        transform: scale(0);
+      }
+
+      .cta-title {
+        font-size: 80px;
+        font-weight: 800;
+        line-height: 1.1;
+        margin-bottom: 40px;
+        transform: translateY(40px);
+        opacity: 0;
+      }
+
+      .cta-button {
+        display: inline-block;
+        font-size: 42px;
+        font-weight: 700;
+        padding: 28px 64px;
+        background: #ffffff;
+        color: #000000;
+        border-radius: 60px;
+        text-decoration: none;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        transform: translateY(30px) scale(0.9);
+        opacity: 0;
+      }
+
+      .cta-brand {
+        font-size: 28px;
+        margin-top: 60px;
+        opacity: 0.7;
+        transform: translateY(20px);
+        opacity: 0;
+      }
+
+      /* Animation classes */
+      .animate-in {
+        animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+
+      .animate-scale {
+        animation: scaleIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+
+      .animate-bounce {
+        animation: bounceIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+
+      @keyframes fadeInUp {
+        from { transform: translateY(40px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
+
+      @keyframes scaleIn {
+        from { transform: scale(0.7) rotate(-5deg); opacity: 0; }
+        to { transform: scale(1) rotate(0deg); opacity: 1; }
+      }
+
+      @keyframes bounceIn {
+        0% { transform: scale(0); opacity: 0; }
+        60% { transform: scale(1.1); opacity: 1; }
+        100% { transform: scale(1); opacity: 1; }
+      }
+
+      /* Stagger delays */
+      .delay-1 { animation-delay: 0.1s; }
+      .delay-2 { animation-delay: 0.3s; }
+      .delay-3 { animation-delay: 0.5s; }
+      .delay-4 { animation-delay: 0.7s; }
+      .delay-5 { animation-delay: 0.9s; }
+    </style>
+  </head>
+  <body>
+    <div
+      id="main"
+      data-composition-id="product-ad"
+      data-start="0"
+      data-duration="15"
+      data-width="1080"
+      data-height="1920"
+      data-fps="30"
+    >
+      <!-- Scene 1: Hook (0-5s) -->
+      <div
+        class="scene-bg hook-bg"
+        data-start="0"
+        data-duration="5"
+        data-track-index="0"
+        style="--grad-start: #ff6b35; --grad-end: #f7931e;"
+      >
+        <h1 class="hook-text animate-in" data-start="0.5" data-duration="4">
+          Hook text here
+        </h1>
+        <img
+          class="hook-image animate-scale delay-2"
+          data-start="1"
+          data-duration="3.5"
+          src=""
+          alt="Product"
+        />
+      </div>
+
+      <!-- Scene 2: Showcase (5-10s) -->
+      <div
+        class="scene-bg showcase-bg"
+        data-start="5"
+        data-duration="5"
+        data-track-index="1"
+        style="--grad-start: #667eea; --grad-end: #764ba2;"
+      >
+        <img
+          class="showcase-image animate-scale"
+          data-start="5.2"
+          data-duration="4.5"
+          src=""
+          alt="Product"
+        />
+        <h2 class="showcase-title animate-in delay-2" data-start="5.5" data-duration="4">
+          Product Title
+        </h2>
+        <p class="showcase-copy animate-in delay-3" data-start="6" data-duration="3.5">
+          Ad copy goes here
+        </p>
+        <span class="showcase-category animate-in delay-4" data-start="6.5" data-duration="3">
+          <span class="category-emoji">🛍️</span>
+          <span class="category-label">Category</span>
+        </span>
+      </div>
+
+      <!-- Scene 3: CTA (10-15s) -->
+      <div
+        class="scene-bg cta-bg"
+        data-start="10"
+        data-duration="5"
+        data-track-index="2"
+        style="--grad-start: #f093fb; --grad-end: #f5576c;"
+      >
+        <div class="cta-badge animate-bounce" data-start="10.2" data-duration="4.5">
+          🛒
+        </div>
+        <h2 class="cta-title animate-in delay-2" data-start="10.5" data-duration="4">
+          Link di Bio! 🔗
+        </h2>
+        <a class="cta-button animate-scale delay-3" data-start="11" data-duration="3.5">
+          Beli Sekarang
+        </a>
+        <p class="cta-brand animate-in delay-4" data-start="11.5" data-duration="3">
+          Brand Name
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

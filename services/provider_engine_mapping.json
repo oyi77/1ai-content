@@ -409,6 +409,23 @@
       ],
       "note": "Deterministic template-based \u2014 no external AI provider"
     },
+    "hyperframes": {
+      "content_type": "video",
+      "is_content_generator": true,
+      "generation_methods": [
+        "render_product_ad(image_url, title, category, affiliate_link, brand_name)"
+      ],
+      "provider_chain": [
+        {
+          "provider": "HyperFrames (Node.js)",
+          "protocol": "subprocess (node render.ts)",
+          "endpoint": "local Node.js",
+          "auth": "none",
+          "file": "services/hyperframes/__init__.py"
+        }
+      ],
+      "note": "HTML composition-based video rendering \u2014 agent-native"
+    },
     "research": {
       "content_type": "text",
       "is_content_generator": true,

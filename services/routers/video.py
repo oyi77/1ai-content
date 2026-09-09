@@ -884,3 +884,28 @@ async def video_ad(req: RenderAdRequest):
         raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Remotion render error: {type(e).__name__}: {e}")
+
+
+# ── /video/ad-hyperframes (HyperFrames) ────────────────────────
+
+
+@video_router.post("/video/ad-hyperframes")
+async def video_ad_hyperframes(req: RenderAdRequest):
+    """Render a product ad video using HyperFrames (9:16, 1080x1920, 15s)."""
+    import services.hyperframes as hyperframes
+    try:
+        result = await hyperframes.render_product_ad(
+            image_url=req.image_url,
+            title=req.title,
+            category=req.category,
+            affiliate_link=req.affiliate_link,
+            brand_name=req.brand_name,
+            ad_copy=req.ad_copy,
+            hook_text=req.hook_text,
+            cta_text=req.cta_text,
+        )
+        return {"status": "ok", "data": result}
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"HyperFrames render error: {type(e).__name__}: {e}")
