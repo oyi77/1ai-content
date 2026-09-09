@@ -517,12 +517,13 @@ async function renderProductAd(input: RenderInput): Promise<RenderResult> {
   html = html.split("{{BRAND_NAME}}").join(input.brand_name || "Shopee Affiliate");
   html = html.split("{{IMAGE_URL}}").join(localImagePath || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' fill='%23333'%3E%3Crect width='400' height='400'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23999' font-size='24'%3EProduct%3C/text%3E%3C/svg%3E");
 
-  const compositionPath = path.join(tmpDir, `composition-${seed}.html`);
-  await writeFile(compositionPath, html);
+  const projDir = path.join(tmpDir, `proj-${seed}`);
+  await mkdir(projDir, { recursive: true });
+  await writeFile(path.join(projDir, "index.html"), html);
 
   const outputPath = input.output_path || path.join(outputDir, `product-ad-${seed}.mp4`);
-
-  const result = await runCommand("hyperframes", ["render", compositionPath, "--output", outputPath, "--fps", String(fps)], __dirname);
+  const hfBin = path.join(__dirname, "..", "node_modules", ".bin", "hyperframes");
+  const result = await runCommand(hfBin, ["render", projDir, "--output", outputPath, "--fps", String(fps)], __dirname);
 
   if (result.exitCode !== 0) {
     return { success: false, error: `HyperFrames render failed: ${result.stderr || "unknown error"}` };

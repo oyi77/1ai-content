@@ -37,7 +37,8 @@
     "render:ad": "cd services/remotion-ads && node --import tsx src/render.ts",
     "render:ad:studio": "cd services/remotion-ads && npx remotion studio src/index.tsx",
     "render:ad:hf": "cd services/hyperframes && node --import tsx src/render.ts",
-    "render:ad:hf:studio": "cd services/hyperframes && hyperframes preview",
+    "render:ad:hf:studio": "cd services/hyperframes && hyperframes preview"
+  },
   "keywords": [
     "telegram-bot",
     "ai-video",
