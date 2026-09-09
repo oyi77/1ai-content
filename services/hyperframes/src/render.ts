@@ -4,7 +4,7 @@
  */
 
 import { spawn } from "node:child_process";
-import { writeFile, mkdir } from "node:fs/promises";
+import { writeFile, mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -172,280 +172,77 @@ const COMPOSITION_TEMPLATE = `<!doctype html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Product Ad</title>
     <style>
-      :root {
-        --color-bg: #0a0a0a;
-        --color-text: #ffffff;
-        --font-display: "Inter", system-ui, sans-serif;
-      }
-
       * { margin: 0; padding: 0; box-sizing: border-box; }
-
       html, body {
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-        background: var(--color-bg);
-        font-family: var(--font-display);
-        color: var(--color-text);
+        width: 100%; height: 100%; overflow: hidden;
+        background: #0a0a0a;
+        font-family: "Inter", system-ui, sans-serif;
+        color: #ffffff;
       }
-
-      #main {
-        position: relative;
-        width: {{WIDTH}}px;
-        height: {{HEIGHT}}px;
-        overflow: hidden;
-      }
-
-      .scene-bg {
-        position: absolute;
-        inset: 0;
-        opacity: 0;
-        transition: opacity 0.5s ease;
-      }
-
-      .scene-bg.active { opacity: 1; }
-
-      .hook-bg {
-        background: linear-gradient(135deg, {{GRAD_START}} 0%, {{GRAD_END}} 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-direction: column;
-        padding: 80px;
-        text-align: center;
-      }
-
-      .hook-text {
-        font-size: 72px;
-        font-weight: 800;
-        line-height: 1.1;
-        text-shadow: 0 4px 20px rgba(0,0,0,0.3);
-        transform: translateY(40px);
-        opacity: 0;
-      }
-
-      .hook-image {
-        width: 600px;
-        height: 600px;
-        object-fit: cover;
-        border-radius: 30px;
-        margin-top: 60px;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.4);
-        transform: scale(0.8);
-        opacity: 0;
-      }
-
-      .showcase-bg {
-        background: linear-gradient(180deg, {{GRAD_START}} 0%, {{GRAD_END}} 100%);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 80px;
-        text-align: center;
-      }
-
-      .showcase-image {
-        width: 700px;
-        height: 700px;
-        object-fit: cover;
-        border-radius: 40px;
-        box-shadow: 0 30px 80px rgba(0,0,0,0.5);
-        transform: scale(0.7) rotate(-5deg);
-        opacity: 0;
-      }
-
-      .showcase-title {
-        font-size: 64px;
-        font-weight: 700;
-        margin-top: 60px;
-        line-height: 1.2;
-        transform: translateY(30px);
-        opacity: 0;
-      }
-
-      .showcase-copy {
-        font-size: 36px;
-        margin-top: 30px;
-        opacity: 0.85;
-        max-width: 800px;
-        line-height: 1.4;
-        transform: translateY(20px);
-        opacity: 0;
-      }
-
-      .showcase-category {
-        display: inline-flex;
-        align-items: center;
-        gap: 12px;
-        font-size: 28px;
-        margin-top: 40px;
-        padding: 16px 32px;
-        background: rgba(255,255,255,0.15);
-        border-radius: 50px;
-        backdrop-filter: blur(10px);
-        transform: translateY(20px);
-        opacity: 0;
-      }
-
-      .cta-bg {
-        background: linear-gradient(135deg, {{GRAD_END}} 0%, {{GRAD_START}} 100%);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 80px;
-        text-align: center;
-      }
-
-      .cta-badge {
-        font-size: 120px;
-        margin-bottom: 40px;
-        transform: scale(0);
-      }
-
-      .cta-title {
-        font-size: 80px;
-        font-weight: 800;
-        line-height: 1.1;
-        margin-bottom: 40px;
-        transform: translateY(40px);
-        opacity: 0;
-      }
-
-      .cta-button {
-        display: inline-block;
-        font-size: 42px;
-        font-weight: 700;
-        padding: 28px 64px;
-        background: #ffffff;
-        color: #000000;
-        border-radius: 60px;
-        text-decoration: none;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-        transform: translateY(30px) scale(0.9);
-        opacity: 0;
-      }
-
-      .cta-brand {
-        font-size: 28px;
-        margin-top: 60px;
-        opacity: 0.7;
-        transform: translateY(20px);
-        opacity: 0;
-      }
-
-      .animate-in {
-        animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      }
-
-      .animate-scale {
-        animation: scaleIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      }
-
-      .animate-bounce {
-        animation: bounceIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      }
-
-      @keyframes fadeInUp {
-        from { transform: translateY(40px); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
-      }
-
-      @keyframes scaleIn {
-        from { transform: scale(0.7) rotate(-5deg); opacity: 0; }
-        to { transform: scale(1) rotate(0deg); opacity: 1; }
-      }
-
-      @keyframes bounceIn {
-        0% { transform: scale(0); opacity: 0; }
-        60% { transform: scale(1.1); opacity: 1; }
-        100% { transform: scale(1); opacity: 1; }
-      }
-
-      .delay-1 { animation-delay: 0.1s; }
-      .delay-2 { animation-delay: 0.3s; }
-      .delay-3 { animation-delay: 0.5s; }
-      .delay-4 { animation-delay: 0.7s; }
-      .delay-5 { animation-delay: 0.9s; }
+      #main { position: relative; width: {{WIDTH}}px; height: {{HEIGHT}}px; overflow: hidden; }
+      .scene { position: absolute; inset: 0; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; padding: 80px; text-align: center; }
+      .hook-bg { background: linear-gradient(135deg, {{GRAD_START}} 0%, {{GRAD_END}} 100%); }
+      .showcase-bg { background: linear-gradient(180deg, {{GRAD_START}} 0%, {{GRAD_END}} 100%); }
+      .cta-bg { background: linear-gradient(135deg, {{GRAD_END}} 0%, {{GRAD_START}} 100%); }
+      .hook-text { font-size: 72px; font-weight: 800; line-height: 1.1;
+        text-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+      .hook-image { width: 600px; height: 600px; object-fit: cover; border-radius: 30px;
+        margin-top: 60px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); }
+      .showcase-image { width: 700px; height: 700px; object-fit: cover; border-radius: 40px;
+        box-shadow: 0 30px 80px rgba(0,0,0,0.5); }
+      .showcase-title { font-size: 64px; font-weight: 700; margin-top: 60px; line-height: 1.2; }
+      .showcase-copy { font-size: 36px; margin-top: 30px; max-width: 800px; line-height: 1.4; opacity: 0.9; }
+      .showcase-category { display: inline-flex; align-items: center; gap: 12px; font-size: 28px;
+        margin-top: 40px; padding: 16px 32px; background: rgba(255,255,255,0.15);
+        border-radius: 50px; }
+      .cta-badge { font-size: 120px; margin-bottom: 40px; }
+      .cta-title { font-size: 80px; font-weight: 800; line-height: 1.1; margin-bottom: 40px; }
+      .cta-button { display: inline-block; font-size: 42px; font-weight: 700; padding: 28px 64px;
+        background: #ffffff; color: #000000; border-radius: 60px; }
+      .cta-brand { font-size: 28px; margin-top: 60px; opacity: 0.8; }
     </style>
   </head>
   <body>
-    <div
-      id="main"
-      data-composition-id="product-ad"
-      data-start="0"
-      data-duration="15"
-      data-width="{{WIDTH}}"
-      data-height="{{HEIGHT}}"
-      data-fps="{{FPS}}"
-    >
-      <!-- Scene 1: Hook (0-5s) -->
-      <div
-        class="scene-bg hook-bg"
-        data-start="0"
-        data-duration="5"
-        data-track-index="0"
-      >
-        <h1 class="hook-text animate-in" data-start="0.5" data-duration="4">
-          {{HOOK_TEXT}}
-        </h1>
-        <img
-          class="hook-image animate-scale delay-2"
-          data-start="1"
-          data-duration="3.5"
-          src="{{IMAGE_URL}}"
-          alt="Product"
-        />
+    <div id="main" data-composition-id="product-ad"
+      data-start="0" data-duration="15" data-width="{{WIDTH}}" data-height="{{HEIGHT}}" data-fps="{{FPS}}">
+      <div id="scene-hook" class="clip scene hook-bg" data-start="0" data-duration="5" data-track-index="0">
+        <h1 id="hook-text" class="hook-text">{{HOOK_TEXT}}</h1>
+        <img id="hook-image" class="hook-image" src="{{IMAGE_URL}}" alt="Product" />
       </div>
-
-      <!-- Scene 2: Showcase (5-10s) -->
-      <div
-        class="scene-bg showcase-bg"
-        data-start="5"
-        data-duration="5"
-        data-track-index="1"
-      >
-        <img
-          class="showcase-image animate-scale"
-          data-start="5.2"
-          data-duration="4.5"
-          src="{{IMAGE_URL}}"
-          alt="Product"
-        />
-        <h2 class="showcase-title animate-in delay-2" data-start="5.5" data-duration="4">
-          {{TITLE}}
-        </h2>
-        <p class="showcase-copy animate-in delay-3" data-start="6" data-duration="3.5">
-          {{AD_COPY}}
-        </p>
-        <span class="showcase-category animate-in delay-4" data-start="6.5" data-duration="3">
-          <span class="category-emoji">{{EMOJI}}</span>
-          <span class="category-label">{{CATEGORY_LABEL}}</span>
-        </span>
+      <div id="scene-showcase" class="clip scene showcase-bg" data-start="5" data-duration="5" data-track-index="1">
+        <img id="showcase-image" class="showcase-image" src="{{IMAGE_URL}}" alt="Product" />
+        <h2 id="showcase-title" class="showcase-title">{{TITLE}}</h2>
+        <p id="showcase-copy" class="showcase-copy">{{AD_COPY}}</p>
+        <span id="showcase-category" class="showcase-category">{{EMOJI}} {{CATEGORY_LABEL}}</span>
       </div>
-
-      <!-- Scene 3: CTA (10-15s) -->
-      <div
-        class="scene-bg cta-bg"
-        data-start="10"
-        data-duration="5"
-        data-track-index="2"
-      >
-        <div class="cta-badge animate-bounce" data-start="10.2" data-duration="4.5">
-          🛒
-        </div>
-        <h2 class="cta-title animate-in delay-2" data-start="10.5" data-duration="4">
-          {{CTA_TEXT}}
-        </h2>
-        <a class="cta-button animate-scale delay-3" data-start="11" data-duration="3.5">
-          Beli Sekarang
-        </a>
-        <p class="cta-brand animate-in delay-4" data-start="11.5" data-duration="3">
-          {{BRAND_NAME}}
-        </p>
+      <div id="scene-cta" class="clip scene cta-bg" data-start="10" data-duration="5" data-track-index="2">
+        <div id="cta-badge" class="cta-badge">🛒</div>
+        <h2 id="cta-title" class="cta-title">{{CTA_TEXT}}</h2>
+        <span id="cta-button" class="cta-button">Beli Sekarang</span>
+        <p id="cta-brand" class="cta-brand">{{BRAND_NAME}}</p>
       </div>
     </div>
+    <script>{{GSAP}}</script>
+    <script>
+      // Seek-safe: single paused master timeline, registered for HyperFrames seeking.
+      var tl = gsap.timeline({ paused: true, defaults: { ease: "power4.out" } });
+      // Scene 1 — hook (0-5s)
+      tl.fromTo("#hook-text", { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8 }, 0.5);
+      tl.fromTo("#hook-image", { scale: 0.8, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.8 }, 1.0);
+      // Scene 2 — showcase (5-10s)
+      tl.fromTo("#showcase-image", { scale: 0.7, rotation: -5, opacity: 0 }, { scale: 1, rotation: 0, opacity: 1, duration: 0.8 }, 5.2);
+      tl.fromTo("#showcase-title", { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8 }, 5.5);
+      tl.fromTo("#showcase-copy", { y: 20, opacity: 0 }, { y: 0, opacity: 0.9, duration: 0.8 }, 6.0);
+      tl.fromTo("#showcase-category", { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8 }, 6.5);
+      // Scene 3 — CTA (10-15s)
+      tl.fromTo("#cta-badge", { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.8, ease: "back.out(1.7)" }, 10.2);
+      tl.fromTo("#cta-title", { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8 }, 10.5);
+      tl.fromTo("#cta-button", { y: 30, scale: 0.9, opacity: 0 }, { y: 0, scale: 1, opacity: 1, duration: 0.8 }, 11.0);
+      tl.fromTo("#cta-brand", { y: 20, opacity: 0 }, { y: 0, opacity: 0.8, duration: 0.8 }, 11.5);
+      window.__timelines = window.__timelines || {};
+      window.__timelines["product-ad"] = tl;
+    </script>
   </body>
 </html>
 `;
@@ -503,6 +300,8 @@ async function renderProductAd(input: RenderInput): Promise<RenderResult> {
 
   // Build composition HTML
   let html = COMPOSITION_TEMPLATE;
+  const gsapCode = await readFile(path.join(__dirname, "..", "vendor", "gsap.min.js"), "utf-8");
+  html = html.split("{{GSAP}}").join(gsapCode);
   html = html.split("{{WIDTH}}").join(String(width));
   html = html.split("{{HEIGHT}}").join(String(height));
   html = html.split("{{FPS}}").join(String(fps));
