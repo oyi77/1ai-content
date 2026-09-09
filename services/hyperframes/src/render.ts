@@ -522,6 +522,9 @@ async function renderProductAd(input: RenderInput): Promise<RenderResult> {
   await writeFile(path.join(projDir, "index.html"), html);
 
   const outputPath = input.output_path || path.join(outputDir, `product-ad-${seed}.mp4`);
+  // NOTE: render requires Chrome with HeadlessExperimental.beginFrame (newer than
+  // system chromium on most boxes). If capture fails with "'beginFrame' wasn't found",
+  // use --docker for containerized rendering or upgrade Chrome. Verified 2026-09-09.
   const hfBin = path.join(__dirname, "..", "node_modules", ".bin", "hyperframes");
   const result = await runCommand(hfBin, ["render", projDir, "--output", outputPath, "--fps", String(fps)], __dirname);
 
