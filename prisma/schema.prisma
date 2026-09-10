@@ -1274,3 +1274,16 @@ model ProcessedVideo {
 
   @@map("processed_videos")
 }
+
+// Cross-service content tracking (content_tracked workflow: 1ai-hub -> 1ai-content)
+model ContentProject {
+  id        BigInt   @id @default(autoincrement())
+  sourceUrl String   @map("source_url") @db.VarChar(512)
+  category  String   @db.VarChar(100)
+  workflow  String   @default("") @db.VarChar(64)
+  filePath  String?  @map("file_path") @db.VarChar(512)
+  status    String   @default("created") @db.VarChar(16)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("content_projects")
+}

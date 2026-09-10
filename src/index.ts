@@ -461,6 +461,7 @@ async function main() {
       await analyticsRoutes(adminApi);
     });
     await app.register(ecosystemRoutes);
+    await app.register((await import("./routes/content-projects.js")).contentProjectRoutes);
 
     if (appConfig.NODE_ENV === "test") {
       const testRoutes = require("./routes/test").default;
