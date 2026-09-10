@@ -61,3 +61,8 @@ services/data/article.sqlite
 config/tiktok_cookies.txt
 # E2E-generated movie artifacts
 services/media/movies/
+# Docker secrets
+secrets/
+
+# External tools — install via pip, don't clone
+tools/tiktok-carousel-generator/
