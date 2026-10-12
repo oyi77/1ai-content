@@ -524,9 +524,9 @@ async function main() {
     // Start Fastify server FIRST (non-blocking)
     logger.info(`🌐 Starting HTTP server on port ${port}...`);
     app
-      .listen({ port, host: "0.0.0.0" })
+      .listen({ port, host: "127.0.0.1" })
       .then(() => {
-        logger.info(`✅ HTTP server listening on http://0.0.0.0:${port}`);
+        logger.info(`✅ HTTP server listening on http://127.0.0.1:${port}`);
       })
       .catch((err) => {
         logger.error("❌ Failed to start HTTP server:", err);
