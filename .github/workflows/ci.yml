@@ -155,8 +155,24 @@ jobs:
       - name: Run pytest
         run: pytest -q
         env:
-          DATABASE_URL: postgresql://test:test@localhost:5432/openclaw_test
+          DATABASE_URL: postgresql://test:***@localhost:5432/openclaw_test
           REDIS_URL: redis://localhost:6379
+
+      - name: Check for test artifact pollution
+        run: |
+          set -e
+          # Only fail on known pollution patterns, not expected dirs like projects/.
+          # git status collapses untracked dirs, so scan the filesystem directly.
+          leaked=$(find . -path ./node_modules -prune -o \
+            \( -name 'model_stats_*MagicMock*' -o -name '*.session' \) -print 2>/dev/null \
+            | grep -v '/node_modules/' \
+            | grep -v '^./codergaboets\.session$' || true)
+          if [ -n "$leaked" ]; then
+            echo "::error::Test artifacts leaked into the repo:"
+            echo "$leaked"
+            exit 1
+          fi
+          echo "No test artifact pollution detected"
 
   build:
     runs-on: ubuntu-latest
