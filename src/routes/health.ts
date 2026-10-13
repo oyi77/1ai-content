@@ -33,11 +33,36 @@ const adminCheck = async (
 export async function healthCheckRoutes(
   server: FastifyInstance,
 ): Promise<void> {
-  // Basic health check (public — required for load balancers)
+  // ── Kubernetes-style liveness/readiness probes (public, no auth) ──
+  // /livez: process is alive — always 200 if the event loop responds
+  server.get("/livez", async (_req, reply) => {
+    reply.type("text/plain").send("Ok");
+  });
+
+  // /healthz: liveness alias (Docker/k8s convention)
+  server.get("/healthz", async (_req, reply) => {
+    reply.type("text/plain").send("Ok");
+  });
+
+  // /readyz: dependencies ready — 200 if DB+Redis up, 503 if degraded
+  server.get("/readyz", async (_req, reply) => {
+    const checks = await Promise.allSettled([
+      prisma.$queryRaw`SELECT 1`,
+      redis.ping(),
+    ]);
+    const ready =
+      checks[0].status === "fulfilled" && checks[1].status === "fulfilled";
+    reply
+      .code(ready ? 200 : 503)
+      .type("text/plain")
+      .send(ready ? "Ok" : "Not ready");
+  });
+
+  // Basic health check (public — backward compat for load balancers)
   server.get("/health", async () => {
     return {
       status: "healthy",
-      version: process.env.npm_package_version || "3.0.0", // npm_package_version is injected by npm, not in AppConfig
+      version: process.env.npm_package_version || "3.0.0",
       timestamp: new Date().toISOString(),
       environment: getConfig().NODE_ENV,
     };
