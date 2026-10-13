@@ -65,4 +65,4 @@ services/media/movies/
 secrets/
 
 # External tools — install via pip, don't clone
-tools/tiktok-carousel-generator/
+tools/tiktok-carousel-generator/projects/
