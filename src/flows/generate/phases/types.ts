@@ -6,10 +6,7 @@ import type {
   DurationPresetConfig,
   IndustryId,
 } from "@/config/hpas-engine";
-import type {
-  GenerateAction,
-  Platform,
-} from "../../generate.types";
+import type { GenerateAction, Platform } from "../../generate.types";
 
 /** Values every execution phase needs. Built by executeGeneration, passed explicitly. */
 export interface ExecSetup {

@@ -123,7 +123,6 @@ test.describe('Onboarding Wizard', () => {
 
     // Read the JWT from localStorage and verify persisted state via API
     const token = await page.evaluate(() => {
-      // @ts-expect-error: localStorage is browser-only but evaluate runs in browser
       return localStorage.getItem('token');
     });
     expect(token).toBeTruthy();

@@ -18,7 +18,7 @@ NC='\033[0m'
 # CONFIGURATION
 # =============================================================================
 
-API_URL="${API_URL:-http://localhost:3002}"
+API_URL="${API_URL:-http://localhost:3000}"
 TIMEOUT=10
 VERBOSE=false
 
@@ -255,7 +255,7 @@ echo ""
 
 # Port checks
 echo -e "${BLUE}--- Port Checks ---${NC}"
-check_port "localhost" "3002" "Bot API"
+check_port "localhost" "3000" "Bot API"
 check_port "localhost" "8767" "Media API (Python)"
 check_port "localhost" "5432" "PostgreSQL"
 check_port "localhost" "6379" "Redis"
@@ -263,7 +263,10 @@ echo ""
 
 # HTTP endpoint checks
 echo -e "${BLUE}--- HTTP Endpoint Checks ---${NC}"
-check_http "/health" "Health Endpoint"
+check_http "/livez" "Liveness Probe (/livez)"
+check_http "/readyz" "Readiness Probe (/readyz)"
+check_http "/healthz" "Healthz Endpoint (/healthz)"
+check_http "/health" "Health Endpoint (/health)"
 check_http_auth "/health/db" "Database Health"
 check_http_auth "/health/queue" "Queue Health"
 echo ""

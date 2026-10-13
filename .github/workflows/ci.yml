@@ -7,7 +7,7 @@ on:
     branches: [main, develop, master]
 
 env:
-  NODE_VERSION: "20"
+  NODE_VERSION: "22"
 
 jobs:
   lint:
@@ -24,7 +24,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run ESLint
+      - name: Run linter
         run: npm run lint
 
       - name: Check formatting
@@ -205,9 +205,9 @@ jobs:
             -e REDIS_URL=redis://host.docker.internal:6379 \
             openclaw-bot:${{ github.sha }}
 
-          # Poll /health until the bot is up (max 60s), then dump logs for debugging
+          # Poll /healthz until the bot is up (max 60s), then dump logs for debugging
           for i in $(seq 1 30); do
-            if curl -fsS http://localhost:3002/health >/dev/null 2>&1; then
+            if curl -fsS http://localhost:3002/healthz >/dev/null 2>&1; then
               echo "health check OK"
               docker stop openclaw-test
               exit 0

@@ -23,7 +23,7 @@ export async function resolveGating(
   const dbUser = await UserService.findByTelegramId(c.telegramId);
   if (!dbUser) {
     await c.ctx.reply(t("gen.user_not_found", "id"));
-  return null;
+    return null;
   }
 
   const lang = dbUser.language || "id";
@@ -32,7 +32,7 @@ export async function resolveGating(
   if (dbUser.isBanned) {
     await c.ctx.reply(t("error.account_banned", lang));
     clearGenerateSession(c.ctx);
-  return null;
+    return null;
   }
 
   // Check daily generation limit for subscribers
@@ -68,7 +68,7 @@ export async function resolveGating(
           },
         );
         clearGenerateSession(c.ctx);
-  return null;
+        return null;
       }
     } catch {
       /* if check fails, allow generation */
@@ -101,7 +101,10 @@ export async function resolveGating(
 
   // Free trial check for image_set and video (welcome bonus / daily free)
   let useFreeSlot = false;
-  if (unitBalance < cost && (c.action === "image_set" || c.action === "video")) {
+  if (
+    unitBalance < cost &&
+    (c.action === "image_set" || c.action === "video")
+  ) {
     // For video, only allow free trial for 15s (quick c.preset)
     if (c.action === "video" && c.presetConfig.totalSeconds > 15) {
       useFreeSlot = false;
@@ -149,7 +152,7 @@ export async function resolveGating(
       },
     );
     clearGenerateSession(c.ctx);
-  return null;
+    return null;
   }
 
   return { user: dbUser, cost, useFreeSlot, lang };

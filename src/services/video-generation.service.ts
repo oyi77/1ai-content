@@ -11,7 +11,11 @@ export type {
   VideoGenerationResult,
   VideoGenerationParams,
 } from "./video-generation/types";
-export { generateVideo, getCreditCost, processVideoJob } from "./video-generation/core";
+export {
+  generateVideo,
+  getCreditCost,
+  processVideoJob,
+} from "./video-generation/core";
 export {
   generatePromptFromNiche,
   generatePromptFromNicheAsync,

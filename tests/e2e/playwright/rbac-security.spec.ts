@@ -158,7 +158,6 @@ test.describe('Customer SPA Boundary', () => {
   test('9. SPA with fake JWT still redirects to login', async ({ page }) => {
     // Inject an invalid token before navigation
     await page.addInitScript(() => {
-      // @ts-expect-error: localStorage is browser-only but addInitScript runs in browser
       localStorage.setItem('token', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.fake');
     });
     const res = await page.goto('/app/dashboard');

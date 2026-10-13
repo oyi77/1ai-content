@@ -64,8 +64,7 @@ export async function runCampaign(c: ExecPhaseCtx): Promise<void> {
       try {
         await UserService.deductCredits(c.telegramId, creditCost);
       } catch (deductErr) {
-        if (campaignJob)
-          await (campaignJob as any).remove().catch(() => {});
+        if (campaignJob) await (campaignJob as any).remove().catch(() => {});
         throw deductErr;
       }
       const position = enqueueResult2.position;
@@ -74,7 +73,8 @@ export async function runCampaign(c: ExecPhaseCtx): Promise<void> {
         { parse_mode: "Markdown" },
       );
     } catch {
-      const { generateVideoAsync } = await import("../../../commands/create.js");
+      const { generateVideoAsync } =
+        await import("../../../commands/create.js");
       generateVideoAsync(
         c.ctx,
         vid.jobId,

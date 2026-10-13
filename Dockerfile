@@ -7,7 +7,7 @@
 # =============================================================================
 # STAGE 1: Dependencies
 # =============================================================================
-FROM node:20-alpine AS dependencies
+FROM node:22-alpine AS dependencies
 
 WORKDIR /app
 
@@ -20,7 +20,7 @@ RUN npm ci --only=production && npm cache clean --force
 # =============================================================================
 # STAGE 2: Builder
 # =============================================================================
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
@@ -49,7 +49,7 @@ RUN cd admin-ui && npm ci && npm run build
 # =============================================================================
 # STAGE 3: Production
 # =============================================================================
-FROM node:20-alpine AS production
+FROM node:22-alpine AS production
 
 # Security: Run as non-root user
 RUN addgroup -g 1001 -S nodejs && \
@@ -87,9 +87,9 @@ USER nodejs
 # Expose port
 EXPOSE 3000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD node -e "require('http').get('http://localhost:3000/health', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))"
+# Healthcheck: /healthz (liveness endpoint)
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD node -e "require('http').get('http://localhost:3000/healthz', r => r.statusCode === 200 ? process.exit(0) : process.exit(1)).on('error', () => process.exit(1))"
 
 # Start application with dumb-init
 ENTRYPOINT ["dumb-init", "--"]
@@ -98,7 +98,7 @@ CMD ["node", "dist/index.js"]
 # =============================================================================
 # STAGE 4: Development (optional)
 # =============================================================================
-FROM node:20-alpine AS development
+FROM node:22-alpine AS development
 
 WORKDIR /app
 

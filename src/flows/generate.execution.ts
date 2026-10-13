@@ -11,7 +11,10 @@ import { t } from "@/i18n/translations";
 import { detectIndustry, DURATION_PRESETS } from "@/config/hpas-engine";
 import { clearGenerateSession, downloadToLocal } from "./generate.types";
 import type { GenerateAction, Platform } from "./generate.types";
-import type { DurationPreset, DurationPresetConfig } from "@/config/hpas-engine";
+import type {
+  DurationPreset,
+  DurationPresetConfig,
+} from "@/config/hpas-engine";
 import type { ExecSetup } from "./generate/phases/types";
 import { resolveGating } from "./generate/phases/gating";
 import { runFreeTrial } from "./generate/phases/free-trial";

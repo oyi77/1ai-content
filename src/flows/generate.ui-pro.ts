@@ -32,7 +32,6 @@ import { UserService } from "@/services/user.service";
 import { clearGenerateSession, getStepIndicator } from "./generate.types";
 import type { GenerateMode, GenerateAction, Platform } from "./generate.types";
 
-
 // ── Pro Mode: Multi-Image Upload ─────────────────────────────────────────────
 
 export async function showProImageUpload(ctx: BotContext): Promise<void> {

@@ -32,7 +32,6 @@ import { UserService } from "@/services/user.service";
 import { clearGenerateSession, getStepIndicator } from "./generate.types";
 import type { GenerateMode, GenerateAction, Platform } from "./generate.types";
 
-
 // ── Image Preference (for prompt library / pre-filled prompts) ────────────────
 
 /** Show image preference screen: user can upload a reference image or skip */

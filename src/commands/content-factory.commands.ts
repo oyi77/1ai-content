@@ -174,9 +174,11 @@ export async function voiceCommand(ctx: BotContext): Promise<void> {
     return;
   }
 
-  // Auto-detect language
+  // Auto-detect language: check for ASCII range via charCode, avoiding control-character regex lint
+  const isAscii = (str: string) =>
+    [...str].every((c) => c.charCodeAt(0) <= 0x7f);
   const isIndonesian =
-    (/[a-z]/i.test(input) && !/^[\u0000-\u007F]*$/.test(input)) ||
+    (/[a-z]/i.test(input) && !isAscii(input)) ||
     /yang|dan|di|ke|dari|untuk|dengan|ini|itu|adalah|bisa|akan|sudah|tidak|juga|ada|saya|kamu|kita/.test(
       input.toLowerCase(),
     );

@@ -64,5 +64,34 @@ services/media/movies/
 # Docker secrets
 secrets/
 
+# Generated project data (test/runtime output — keep source, ignore artifacts)
+projects/*.json
+projects/*.db
+projects/*.sqlite
+projects/logs/
+projects/tmp/
+projects/test/
+# Render output
+renders/
+render-output/
+out/
+# Temporary videos
+temp-videos/
+*.tmp.mp4
+*.part.mp4
+# Local logs
+local-logs/
+*.log.*
+# Calibration files
+*calibration*.json
+**/token_calibration.json
+# Test databases
+*.test.db
+*.test.sqlite
+test.db
+test.sqlite
+test-db/
+fixtures/db/
+
 # External tools — install via pip, don't clone
 tools/tiktok-carousel-generator/projects/

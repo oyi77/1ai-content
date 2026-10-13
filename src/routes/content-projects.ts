@@ -20,13 +20,20 @@ function timingSafeEqual(a: string, b: string): boolean {
   return diff === 0;
 }
 
-export async function contentProjectRoutes(server: FastifyInstance): Promise<void> {
-  const serviceAuth = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
+export async function contentProjectRoutes(
+  server: FastifyInstance,
+): Promise<void> {
+  const serviceAuth = async (
+    request: FastifyRequest,
+    reply: FastifyReply,
+  ): Promise<void> => {
     const expected = getConfig().EBOOK_API_KEY;
     if (expected) {
       const provided = (request.headers["x-api-key"] as string) || "";
       if (!provided || !timingSafeEqual(provided, expected)) {
-        reply.status(401).send({ error: "Unauthorized: missing or invalid X-API-Key" });
+        reply
+          .status(401)
+          .send({ error: "Unauthorized: missing or invalid X-API-Key" });
         return;
       }
       return;
@@ -62,7 +69,7 @@ export async function contentProjectRoutes(server: FastifyInstance): Promise<voi
         },
       });
       return reply.send({ data: { id: project.id.toString() } });
-    }
+    },
   );
 
   server.get(
@@ -91,6 +98,6 @@ export async function contentProjectRoutes(server: FastifyInstance): Promise<voi
           created_at: project.createdAt.toISOString(),
         },
       });
-    }
+    },
   );
 }

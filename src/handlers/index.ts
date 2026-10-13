@@ -41,7 +41,9 @@ export function setupHandlers(bot: Telegraf<BotContext>): void {
       logger.error("Error answering pre_checkout_query:", error);
       try {
         await ctx.answerPreCheckoutQuery(false, "Internal error");
-      } catch {}
+      } catch {
+        // Ignored: best-effort response to pre_checkout_query on error
+      }
     }
   });
 

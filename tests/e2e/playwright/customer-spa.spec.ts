@@ -44,7 +44,6 @@ async function registerAndLogin(
  */
 async function authenticatePage(page: Page, token: string): Promise<void> {
   await page.addInitScript((t: string) => {
-    // @ts-expect-error: localStorage is browser-only but addInitScript runs in browser
     localStorage.setItem('token', t);
   }, token);
 }
