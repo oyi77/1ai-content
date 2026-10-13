@@ -46,9 +46,20 @@ class ManuscriptEngine:
     ):
         self.ai_client = ai_client or OmnirouteClient()
         self.projects_dir = Path(projects_dir)
-        # Namespace stats file by provider so Ollama/OmniRoute caches don't bleed
-        _provider = self.ai_client.provider
-        _stats_file = Path("projects") / f"model_stats_{_provider}.json"
+        # Namespace stats file by provider so Ollama/OmniRoute caches don't bleed.
+        # ponytail: provider must be a short slug from a known client; a Mock
+        # (or any non-string) collapses to "unknown" so tests can't spray
+        # junk files into projects/. Add to the allowlist if a new provider
+        # ships; anything else shares the "unknown" bucket.
+        import re
+
+        _raw = getattr(self.ai_client, "provider", "unknown")
+        _provider = (
+            re.sub(r"[^A-Za-z0-9_-]", "_", str(_raw))[:32]
+            if isinstance(_raw, str) and _raw
+            else "unknown"
+        )
+        _stats_file = self.projects_dir / f"model_stats_{_provider}.json"
         self.model_tracker = ModelTracker(stats_file=_stats_file)
         self.token_calibrator = TokenCalibrator()
         self.chapter_generator = ChapterGenerator(
