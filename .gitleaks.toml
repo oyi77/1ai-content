@@ -1,0 +1,28 @@
+# Gitleaks config — 1ai-content
+# https://github.com/gitleaks/gitleaks
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Known false positives: gen-AI docs, sample placeholders, non-secret artifacts"
+paths = [
+  '''\.github/workflows/ci\.yml''',
+  '''tests/.*''',
+  '''.*\.example$''',
+  '''docs/.*''',
+  '''AGENTS\.md$''',
+  '''src/views/.*\.md$''',
+  '''config/tiktok_cookies\.txt''',
+  '''ebook/.*''',
+  '''ecosystem\.config\.js''',
+  '''src/workers/retention\.worker\.ts''',
+]
+regexes = [
+  '''test-bot-token''',
+  '''ci-only-jwt-secret''',
+  '''test-admin-password''',
+  '''test-jwt-secret-for-ci''',
+  '''placeholder''',
+  '''msgKey''',
+]

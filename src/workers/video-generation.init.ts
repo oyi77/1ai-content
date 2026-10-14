@@ -19,6 +19,7 @@ import { getVideoCreditCostAsync } from "@/config/pricing";
 import { actionableError } from "@/utils/errors";
 import { sendAdminAlert } from "@/services/admin-alert.service";
 import { runWithCorrelation } from "@/utils/correlation";
+import { JobHeartbeatService } from "@/services/job-heartbeat.service";
 import { t } from "@/i18n/translations";
 import type { VideoGenerationJobData } from "./video-generation.types";
 import { VIDEO_DIR } from "./video-generation.helpers";
@@ -47,6 +48,10 @@ export function startVideoWorker(bot: {
     "video-generation",
     (job: Job<VideoGenerationJobData>) =>
       runWithCorrelation(async () => {
+        await JobHeartbeatService.beat(job.data.jobId, {
+          stage: "started",
+          progress: 0,
+        });
         logger.info(
           `Processing video job ${job.id} (jobId=${job.data.jobId}, scenes=${job.data.scenes})`,
         );
@@ -161,6 +166,11 @@ export function startVideoWorker(bot: {
           } else {
             await processExtendedScenes(job, telegram);
           }
+          await JobHeartbeatService.beat(job.data.jobId, {
+            stage: "completed",
+            progress: 100,
+          });
+          await JobHeartbeatService.clear(job.data.jobId);
           logger.info(`Video job ${job.id} completed successfully`);
         } catch (error) {
           logger.error(
@@ -170,6 +180,10 @@ export function startVideoWorker(bot: {
 
           try {
             const existingVideo = await VideoService.getByJobId(job.data.jobId);
+            await JobHeartbeatService.beat(job.data.jobId, {
+              stage: "failed",
+              failureReason: (error as Error).message?.slice(0, 300),
+            });
             if (existingVideo?.status === "failed") {
               logger.warn(
                 `Job ${job.data.jobId} already failed/refunded (catch) — skipping duplicate refund`,

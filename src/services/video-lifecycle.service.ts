@@ -219,6 +219,19 @@ export class VideoLifecycleService {
     progress: number,
     status?: string,
   ): Promise<Video> {
+    // Heartbeat: every progress write proves the worker is alive.
+    // Fire-and-forget — lifecycle import is lazy to avoid a module cycle.
+    try {
+      const { JobHeartbeatService } = await import(
+        "./job-heartbeat.service.js"
+      );
+      await JobHeartbeatService.beat(jobId, {
+        stage: status ?? "processing",
+        progress,
+      });
+    } catch {
+      /* heartbeat must never break progress writes */
+    }
     return prisma.video.update({
       where: { jobId },
       data: {

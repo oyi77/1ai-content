@@ -102,7 +102,7 @@ jobs:
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/openclaw_test
           REDIS_URL: redis://localhost:6379
-          JWT_SECRET: test-jwt-secret-for-ci
+          JWT_SECRET: test-jwt-secret-that-is-at-least-32-characters-long
           BOT_TOKEN: ${{ secrets.BOT_TOKEN || 'test-bot-token' }}
           ADMIN_PASSWORD: test-admin-password
 
@@ -224,6 +224,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks secret scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.24.0

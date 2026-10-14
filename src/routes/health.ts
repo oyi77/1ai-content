@@ -10,6 +10,7 @@ import { redis } from "@/config/redis";
 import { getQueueStats } from "@/config/queue";
 import { PROVIDER_CONFIG } from "@/config/providers";
 import { MetricsService } from "@/services/metrics.service";
+import { JobHeartbeatService } from "@/services/job-heartbeat.service";
 import { getConfig } from "@/config/env";
 import { timingSafeCompare } from "@/utils/crypto";
 import { makeAdminToken } from "@/routes/admin/auth";
@@ -247,6 +248,55 @@ export async function healthCheckRoutes(
     return {
       timestamp: new Date().toISOString(),
       ...metrics,
+    };
+  });
+
+  // ── Stale-job detector ──
+  // Flags "processing" videos whose worker heartbeat is missing/old.
+  // Query params: staleAfterMin (default 10), limit (default 50).
+  server.get("/health/jobs", { preHandler: [adminCheck] }, async (request) => {
+    const query = request.query as Record<string, string>;
+    const staleAfterMs =
+      (parseInt(query.staleAfterMin || "10", 10) || 10) * 60 * 1000;
+    const limit = Math.min(parseInt(query.limit || "50", 10) || 50, 200);
+    const now = Date.now();
+
+    const processing = await prisma.video.findMany({
+      where: { status: "processing" },
+      select: { jobId: true, progress: true, createdAt: true, userId: true },
+      orderBy: { createdAt: "asc" },
+      take: limit,
+    });
+
+    const jobs = await Promise.all(
+      processing.map(async (v) => {
+        const hb = await JobHeartbeatService.get(v.jobId);
+        const ageMs = hb ? now - hb.updatedAt : Infinity;
+        return {
+          jobId: v.jobId,
+          progress: v.progress,
+          stage: hb?.stage ?? null,
+          provider: hb?.provider ?? null,
+          retryCount: hb?.retryCount ?? 0,
+          startedAt: hb?.startedAt
+            ? new Date(hb.startedAt).toISOString()
+            : v.createdAt.toISOString(),
+          lastHeartbeat: hb ? new Date(hb.updatedAt).toISOString() : null,
+          ageMs: ageMs === Infinity ? null : ageMs,
+          stale: ageMs > staleAfterMs,
+          failureReason: hb?.failureReason ?? null,
+        };
+      }),
+    );
+
+    const stale = jobs.filter((j) => j.stale);
+    return {
+      timestamp: new Date().toISOString(),
+      staleAfterMin: staleAfterMs / 60000,
+      processing: jobs.length,
+      staleCount: stale.length,
+      staleJobs: stale,
+      jobs,
     };
   });
 }

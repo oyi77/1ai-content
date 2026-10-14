@@ -103,6 +103,48 @@ describe('Health Endpoints', () => {
     await app.close();
   });
 
+  describe('GET /livez + /healthz (public liveness probes)', () => {
+    it('GET /livez returns 200 text Ok with no auth', async () => {
+      const res = await request(app.server).get('/livez');
+      expect(res.status).toBe(200);
+      expect(res.text).toBe('Ok');
+    });
+
+    it('GET /healthz returns 200 text Ok with no auth', async () => {
+      const res = await request(app.server).get('/healthz');
+      expect(res.status).toBe(200);
+      expect(res.text).toBe('Ok');
+    });
+  });
+
+  describe('GET /readyz (public readiness probe)', () => {
+    it('returns 200 Ok when DB + Redis are up', async () => {
+      isolatedPrisma.$queryRaw.mockResolvedValueOnce([{ '?column?': 1 }]);
+      isolatedRedis.ping.mockResolvedValueOnce('PONG');
+      const res = await request(app.server).get('/readyz');
+      expect(res.status).toBe(200);
+      expect(res.text).toBe('Ok');
+    });
+
+    it('returns 503 when DB is down', async () => {
+      isolatedPrisma.$queryRaw.mockRejectedValueOnce(
+        new Error('connection refused'),
+      );
+      isolatedRedis.ping.mockResolvedValueOnce('PONG');
+      const res = await request(app.server).get('/readyz');
+      expect(res.status).toBe(503);
+      expect(res.text).toBe('Not ready');
+    });
+
+    it('returns 503 when Redis is down', async () => {
+      isolatedPrisma.$queryRaw.mockResolvedValueOnce([{ '?column?': 1 }]);
+      isolatedRedis.ping.mockRejectedValueOnce(new Error('ECONNREFUSED'));
+      const res = await request(app.server).get('/readyz');
+      expect(res.status).toBe(503);
+      expect(res.text).toBe('Not ready');
+    });
+  });
+
   describe('GET /health', () => {
     it('returns 200 with status healthy', async () => {
       const res = await request(app.server).get('/health');
@@ -204,11 +246,77 @@ describe('Health Endpoints', () => {
   describe('GET /health/providers', () => {
     it('returns video and image provider objects', async () => {
       isolatedRedis.get.mockResolvedValue(null);
-      const res = await request(app.server).get(`/health/providers?token=${ADMIN_TOKEN}`);
+      const res = await request(app.server).get(
+        `/health/providers?token=${ADMIN_TOKEN}`,
+      );
       expect(res.status).toBe(200);
       expect(res.body.video).toBeDefined();
       expect(res.body.image).toBeDefined();
       expect(res.body.timestamp).toBeDefined();
+    });
+  });
+
+  describe('GET /health/jobs (stale-job detector)', () => {
+    it('returns empty jobs list when nothing is processing', async () => {
+      isolatedPrisma.video = {
+        findMany: jest.fn().mockResolvedValueOnce([]),
+      };
+      const res = await request(app.server).get(
+        `/health/jobs?token=${ADMIN_TOKEN}`,
+      );
+      expect(res.status).toBe(200);
+      expect(res.body.processing).toBe(0);
+      expect(res.body.staleCount).toBe(0);
+      expect(res.body.jobs).toEqual([]);
+    });
+
+    it('flags processing videos with no heartbeat as stale', async () => {
+      isolatedPrisma.video = {
+        findMany: jest.fn().mockResolvedValueOnce([
+          {
+            jobId: 'VID-stale',
+            progress: 10,
+            createdAt: new Date(Date.now() - 20 * 60 * 1000),
+            userId: BigInt(1),
+          },
+        ]),
+      };
+      isolatedRedis.get.mockResolvedValueOnce(null); // no heartbeat
+      const res = await request(app.server).get(
+        `/health/jobs?token=${ADMIN_TOKEN}`,
+      );
+      expect(res.status).toBe(200);
+      expect(res.body.processing).toBe(1);
+      expect(res.body.staleCount).toBe(1);
+      expect(res.body.staleJobs[0].jobId).toBe('VID-stale');
+      expect(res.body.staleJobs[0].lastHeartbeat).toBeNull();
+    });
+
+    it('does not flag fresh-heartbeat jobs as stale', async () => {
+      isolatedPrisma.video = {
+        findMany: jest.fn().mockResolvedValueOnce([
+          {
+            jobId: 'VID-fresh',
+            progress: 50,
+            createdAt: new Date(Date.now() - 5 * 60 * 1000),
+            userId: BigInt(1),
+          },
+        ]),
+      };
+      isolatedRedis.get.mockResolvedValueOnce(
+        JSON.stringify({
+          stage: 'processing',
+          progress: 50,
+          updatedAt: Date.now(),
+          startedAt: Date.now() - 5 * 60 * 1000,
+        }),
+      );
+      const res = await request(app.server).get(
+        `/health/jobs?token=${ADMIN_TOKEN}`,
+      );
+      expect(res.status).toBe(200);
+      expect(res.body.processing).toBe(1);
+      expect(res.body.staleCount).toBe(0);
     });
   });
 

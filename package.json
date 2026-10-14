@@ -76,6 +76,7 @@
     "form-data": "^4.0.0",
     "google-auth-library": "^10.7.0",
     "googleapis": "^173.0.0",
+    "hyperframes": "^0.1.0",
     "ioredis": "^5.6.0",
     "js-yaml": "^4.1.0",
     "jsonwebtoken": "^9.0.3",
@@ -86,8 +87,7 @@
     "telegraf": "^4.15.0",
     "uuid": "^11.0.0",
     "winston": "^3.17.0",
-    "zod": "^3.25.0",
-    "hyperframes": "^0.1.0"
+    "zod": "^3.25.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.0",
@@ -113,6 +113,7 @@
     "prettier": "^3.0.0",
     "prisma": "^5.7.0",
     "supertest": "^7.2.2",
+    "ts-jest": "^29.4.14",
     "tsx": "^4.19.0",
     "typescript": "^5.9.0"
   },
@@ -143,20 +144,33 @@
       "!src/**/mcp/**"
     ],
     "moduleNameMapper": {
-      "^@/(.*)$": "<rootDir>/src/$1"
+      "^@/(.*)[.]js$": "<rootDir>/src/$1",
+      "^@/(.*)$": "<rootDir>/src/$1",
+      "^([.]{1,2}/.*)[.]js$": "$1"
     },
-    "setupFilesAfterEnv": [
-      "<rootDir>/tests/setup.ts"
-    ],
     "testPathIgnorePatterns": [
       "/node_modules/",
-      "/dist/"
+      "/dist/",
+      "/src/tools/",
+      "/coverage/"
     ],
     "coverageDirectory": "coverage",
     "coverageReporters": [
       "text",
       "lcov",
       "clover"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 12,
+        "functions": 13,
+        "lines": 19,
+        "statements": 19
+      }
+    },
+    "setupFilesAfterEnv": [
+      "<rootDir>/tests/setup-env.ts",
+      "<rootDir>/tests/setup-mocks.ts"
     ]
   }
 }

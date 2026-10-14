@@ -101,46 +101,57 @@ export async function extractViaGroq(
     promptOverride ??
     (mediaType === "image" ? OMNI_IMAGE_PROMPT : OMNI_VIDEO_PROMPT);
 
-  const response = await axios.post(
-    "https://api.groq.com/openai/v1/chat/completions",
-    {
-      model: groqModel,
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "text", text: prompt },
-            {
-              type: "image_url",
-              image_url: { url: `data:${imageMime};base64,${base64Data}` },
-            },
-          ],
-        },
-      ],
-      max_tokens: 2000,
-      temperature: 0.65,
-    },
-    {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
+  try {
+    const response = await axios.post(
+      "https://api.groq.com/openai/v1/chat/completions",
+      {
+        model: groqModel,
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: prompt },
+              {
+                type: "image_url",
+                image_url: { url: `data:${imageMime};base64,${base64Data}` },
+              },
+            ],
+          },
+        ],
+        max_tokens: 2000,
+        temperature: 0.65,
       },
-      timeout: 30000,
-    },
-  );
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        timeout: 30000,
+      },
+    );
 
-  const content = response.data?.choices?.[0]?.message?.content;
-  if (!content) throw new ProviderError("Groq", "Empty response");
+    const content = response.data?.choices?.[0]?.message?.content;
+    if (!content) throw new ProviderError("Groq", "Empty response");
 
-  logger.info(`Groq vision succeeded for ${mediaType}`);
+    logger.info(`Groq vision succeeded for ${mediaType}`);
 
-  trackTokens({
-    provider: "groq",
-    model: groqModel,
-    service: `groq_vision_${mediaType}`,
-    promptTokens: response.data?.usage?.prompt_tokens || 0,
-    completionTokens: response.data?.usage?.completion_tokens || 0,
-  }).catch(() => {});
+    trackTokens({
+      provider: "groq",
+      model: groqModel,
+      service: `groq_vision_${mediaType}`,
+      promptTokens: response.data?.usage?.prompt_tokens || 0,
+      completionTokens: response.data?.usage?.completion_tokens || 0,
+    }).catch(() => {});
 
-  return parseGeminiResponse(content);
+    return parseGeminiResponse(content);
+  } catch (err) {
+    if (err instanceof ProviderError) throw err;
+    // Wrap network/HTTP errors so callers get a typed ProviderError, not a raw axios Error.
+    const detail = axios.isAxiosError(err)
+      ? `HTTP ${err.response?.status ?? "?"}: ${err.code ?? err.message}`
+      : err instanceof Error
+        ? err.message
+        : String(err);
+    throw new ProviderError("Groq", detail);
+  }
 }

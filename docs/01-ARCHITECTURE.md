@@ -2,7 +2,7 @@
 
 ## Overview
 
-1ai-content is a multi-service content platform: a **Fastify HTTP server** (port 3002) serves a single consolidated React SPA (`admin-ui/`) covering Landing `/`, Admin `/admin/*`, and Customer `/app/*`, plus a few standalone EJS pages (admin login, privacy/tos/faq, youtube dashboard). A **Python FastAPI server** (port 8767) handles media processing (video, audio, ebook generation). An **nginx reverse proxy** (port 6969, managed by cf-router) routes everything from `content.aitradepulse.com` to the correct backend.
+1ai-content is a multi-service content platform: a **Fastify HTTP server** (port 3000 by default; production runs `PORT=3002`) serves a single consolidated React SPA (`admin-ui/`) covering Landing `/`, Admin `/admin/*`, and Customer `/app/*`, plus a few standalone EJS pages (admin login, privacy/tos/faq, youtube dashboard). A **Python FastAPI server** (port 8767) handles media processing (video, audio, ebook generation). An **nginx reverse proxy** (port 6969, managed by cf-router) routes everything from `content.aitradepulse.com` to the correct backend.
 
 ```
 User → content.aitradepulse.com:443
@@ -28,7 +28,7 @@ Entry point. Builds the Fastify instance, wires plugins, registers route modules
 3. **Route registration** (order matters — see Routes section below)
 4. **SPA catch-all handlers**
 5. **404/500 error handlers**
-6. **Server listen** on port from `.env` (default 3002)
+6. **Server listen** on port from `.env` (default 3000; production sets `PORT=3002`)
 7. **Telegram bot init** — webhook mode (production) or polling (dev)
 
 ### Key files
@@ -123,7 +123,7 @@ Aggregates 7 sub-modules for public-facing routes:
 
 | Module | File | Prefix/Notes |
 |--------|------|-------------|
-| `healthCheckRoutes` | `src/routes/health.ts` | `/health` |
+| `healthCheckRoutes` | `src/routes/health.ts` | `/livez` `/readyz` `/healthz` (public) + `/health*` (admin) |
 | `webhookRoutes` | `src/routes/webhook.ts` | Telegram webhook |
 | `agencyRoutes` | `src/routes/agency.ts` | Prefix `/api` |
 | `contentApiRoutes` | `src/routes/content-api.ts` | |

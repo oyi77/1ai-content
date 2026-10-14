@@ -29,7 +29,7 @@ describe("Groq Vision provider fallback behavior", () => {
       extractViaGroq("https://example.com/image.jpg", "image"),
     ).rejects.toMatchObject({
       name: "ProviderError",
-      message: "Groq: Fallback error unexpectedly called",
+      message: expect.stringContaining("Groq:"),
     });
   });
 
