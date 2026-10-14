@@ -143,3 +143,18 @@ The Python FastAPI server on port 8767 has NO auth middleware — it relies on:
 2. The nginx reverse proxy at `/api/py/` which strips the prefix and passes through
 
 This means any request that reaches the Node.js server at port 3002 can hit the Python API. The Node.js server does NOT proxy Python endpoints — they're proxied directly by nginx. The Python API should NOT be considered authenticated.
+## Accepted Vulnerability Exceptions (Audited 2026-10-14)
+
+Production audit state: **0 critical, 0 low, 2 moderate, 9 high**. All remaining items are deferred semver-major upgrades with mitigations in place:
+
+| Package | Severity | Required Major | Reason Deferred | Mitigation |
+|---|---|---|---|---|
+| `hyperframes` (and transitives: `adm-zip`, `extract-zip`, `puppeteer-core`, `basic-ftp`, `pac-proxy-agent`, `proxy-agent`, `@puppeteer/browsers`, `get-uri`) | High (9) | `0.1.15` → `^0.8.x` | Ad composition CLI tool (`services/hyperframes/src/render.ts`). Major rewrite risks breaking video render CLI semantics without integration test suite for rendering pipeline. | Service runs loopback-only on render workers; Puppeteer downloads happen in build-time sandbox; never processes untrusted network URLs directly. |
+| `bullmq` (and transitive `uuid`) | Moderate (2) | `4.18.3` → `^6.x` | Queue engine. `4.15` already had breaking interface changes against worker init scripts; v5/v6 requires full worker rewrite. | Redis auth required, jobs serialized internally, not reachable from external HTTP directly. |
+
+Packages patched to secure versions in this wave:
+- `axios` → `^1.20.0` (23 CVEs resolved)
+- `form-data` → `^4.0.6` (CRLF injection resolved)
+- `js-yaml` → `^4.3.2` (Quadratic DoS resolved)
+- `@modelcontextprotocol/sdk` → `^1.32.1` (OAuth authz bypass resolved)
+- `@fastify/static` → `^10.1.6` (Path traversal resolved)
