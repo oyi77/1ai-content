@@ -292,6 +292,7 @@ See [CHANGELOG.md](CHANGELOG.md) untuk riwayat perubahan lengkap.
 - ✅ Disaster recovery procedures
 - ✅ RBAC untuk admin functions
 - ✅ Multi-tenant architecture support
+- ✅ `/video/process` strictly returns error when download produces an image rather than video
 
 ---
 

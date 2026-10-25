@@ -80,6 +80,13 @@ async def process_video(req: VideoProcessRequest):
 
     file_path = result["file_path"]
     file_type = "video" if _facade.os.path.splitext(file_path)[1].lower() in (".mp4", ".mov", ".avi", ".mkv", ".webm") else "image"
+    if file_type != "video":
+        return {"data": {
+            "status": "failed",
+            "error": f"Download returned {file_type} instead of video: {result.get('reason', 'unknown')}",
+            "file_path": None,
+            "file_type": file_type,
+        }}
     duration = None
     width = None
     height = None
