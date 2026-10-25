@@ -56,6 +56,8 @@ class Reframer:
             RuntimeError: On non-zero exit or missing binary.
         """
         try:
+            if "libx264" in args and "-threads" not in args:
+                args = [*args[:-1], "-threads", "2", args[-1]]
             subprocess.run(args, capture_output=True, text=True, check=True)
             return True
         except subprocess.CalledProcessError as e:
@@ -139,7 +141,7 @@ class Reframer:
             "-vf", crop_filter,
             "-c:v", "libx264",
             "-crf", "18",
-            "-preset", "medium",
+            "-preset", "veryfast",
             "-c:a", "aac",
             "-b:a", "192k",
             "-pix_fmt", "yuv420p",
@@ -248,7 +250,7 @@ class Reframer:
                 self.ffmpeg, "-y",
                 "-i", video_path,
                 "-vf", vf,
-                "-c:v", "libx264", "-crf", "18", "-preset", "medium",
+                "-c:v", "libx264", "-crf", "18", "-preset", "veryfast",
                 "-c:a", "copy", "-pix_fmt", "yuv420p", "-movflags", "+faststart",
                 output_path,
             ])
@@ -315,7 +317,7 @@ class Reframer:
         self._run_ffmpeg([
             self.ffmpeg, "-y", "-i", input_path,
             "-vf", "hflip",
-            "-c:v", "libx264", "-crf", "18", "-preset", "fast",
+            "-c:v", "libx264", "-crf", "18", "-preset", "veryfast",
             "-pix_fmt", "yuv420p",
             "-c:a", "copy", "-movflags", "+faststart",
             output_path,
@@ -335,7 +337,7 @@ class Reframer:
             self.ffmpeg, "-y", "-i", input_path,
             "-filter_complex", f"[0:v]{vf}[v];[0:a]{af}[a]",
             "-map", "[v]", "-map", "[a]",
-            "-c:v", "libx264", "-crf", "18", "-preset", "fast",
+            "-c:v", "libx264", "-crf", "18", "-preset", "veryfast",
             "-pix_fmt", "yuv420p",
             "-c:a", "aac", "-movflags", "+faststart",
             output_path,
@@ -358,7 +360,7 @@ class Reframer:
         self._run_ffmpeg([
             self.ffmpeg, "-y", "-i", input_path,
             "-vf", vf,
-            "-c:v", "libx264", "-crf", "18", "-preset", "fast",
+            "-c:v", "libx264", "-crf", "18", "-preset", "veryfast",
             "-pix_fmt", "yuv420p",
             "-c:a", "copy", "-movflags", "+faststart",
             output_path,

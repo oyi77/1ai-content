@@ -117,9 +117,9 @@ async def process_video(req: VideoProcessRequest):
             h264_path = _facade.os.path.join(_facade.os.path.dirname(file_path), f"{_facade.uuid.uuid4().hex}_h264.mp4")
             try:
                 reenc = await _facade.run_subprocess(
-                    ["ffmpeg", "-y", "-i", file_path,
-                     "-c:v", "libx264", "-crf", "18", "-preset", "fast",
-                     "-pix_fmt", "yuv420p",
+                    ["ffmpeg", "-y", "-threads", "2", "-i", file_path,
+                     "-c:v", "libx264", "-crf", "18", "-preset", "veryfast",
+                     "-threads", "2", "-pix_fmt", "yuv420p",
                      "-c:a", "aac", "-b:a", "128k",
                      "-movflags", "+faststart",
                      h264_path],

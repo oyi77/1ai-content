@@ -293,6 +293,7 @@ See [CHANGELOG.md](CHANGELOG.md) untuk riwayat perubahan lengkap.
 - ✅ RBAC untuk admin functions
 - ✅ Multi-tenant architecture support
 - ✅ `/video/process` strictly returns error when download produces an image rather than video
+- ✅ `/video/process` H.264 encoding uses `veryfast` with a two-thread cap to prevent concurrent batches from oversubscribing CPU
 
 ---
 
