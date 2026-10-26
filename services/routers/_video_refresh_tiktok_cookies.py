@@ -169,6 +169,13 @@ async def process_video(req: VideoProcessRequest):
                 pass
 
     # 5. Apply uniqueness transforms (mirror / speed / crop_zoom)
+    # Snapshot the dir before transforms so the last variant is kept, others freed.
+    _download_dir = _facade.os.path.dirname(file_path)
+    _pre_transform: set[str] = set()
+    try:
+        _pre_transform = {_facade.os.path.join(_download_dir, f) for f in _facade.os.listdir(_download_dir)}
+    except OSError:
+        pass
     if file_type == "video" and req.transforms:
         from services.clipper.reframer import Reframer as _Reframer
         _reframer = _Reframer()
@@ -194,6 +201,18 @@ async def process_video(req: VideoProcessRequest):
             await _rpv(req.source_url, file_path)
         except Exception:
             pass
+
+    # Free intermediate artifacts: keep only the final file in the download dir.
+    # Without this each /video/process call leaves 100-250MB of raws/h264/reframes
+    # behind in /tmp and the disk fills up. Hub downloads once per item and never
+    # re-requests this file, so intermediates are pure waste.
+    try:
+        for _f in _facade.os.listdir(_download_dir):
+            _p = _facade.os.path.join(_download_dir, _f)
+            if _p in _pre_transform and _p != file_path:
+                _facade.os.remove(_p)
+    except OSError:
+        pass
 
     return {"data": {
         "status": "processed",
