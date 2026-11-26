@@ -156,7 +156,9 @@ const envSchema = z.object({
   DUITKU_ENVIRONMENT: z.string().default("sandbox"),
   NOWPAYMENTS_API_KEY: z.string().optional(),
   NOWPAYMENTS_IPN_SECRET: z.string().optional(),
-  '1AI_PAYMENT_URL': z.string().default("http://localhost:3100"),
+  // Production default: the shared aggregator. Localhost was a silent
+  // misconfiguration when the env var was absent on a deployed instance.
+  '1AI_PAYMENT_URL': z.string().default("https://pay.berkahkarya.org"),
   '1AI_PAYMENT_API_KEY': z.string().optional(),
   '1AI_PAYMENT_WEBHOOK_SECRET': z.string().optional(),
   'ECOSYSTEM_API_KEY': z.string().optional(),
@@ -209,7 +211,8 @@ const envSchema = z.object({
 
   // ── Social (optional) ──
   POSTBRIDGE_API_KEY: z.string().optional(),
-  SOCIAL_SERVICE_URL: z.string().default("http://localhost:8200"),
+  // :8200 is Vault. The live 1ai-social API is :8202 (see 1ai-hub A.31).
+  SOCIAL_SERVICE_URL: z.string().default("http://127.0.0.1:8202"),
   SOCIAL_SERVICE_KEY: z.string().optional(),
 
   // ── Feature Flags (optional, default false) ──
