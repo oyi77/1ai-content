@@ -76,7 +76,7 @@ Do NOT add the rules repo as a git submodule. Update rules centrally, then run/s
 - **Framework**: Telegraf (Telegram bot), Fastify 5 (HTTP), BullMQ (antrian Redis), Prisma 5 + PostgreSQL, Winston (log), Zod (validasi env — `src/config/env.ts`), @sentry/node.
 - **AI pipeline**: `@1ai/ai-pipeline` & `@1ai/platform-adapters` — dependensi `file:../1ai/packages/...` (di luar repo! pastikan path tersedia).
 - **Provider video 9-tier fallback** (lihat `.env.example`): BytePlus, xAI, LaoZhang, Evolink, Hypereal, SiliconFlow, Fal.ai, Kling, Together, PiAPI, D-ID + Remotion; image: GeminiGen, NVIDIA, Replicate, Fal.ai, HuggingFace; prompt AI: OpenAI, Anthropic, Gemini.
-- **Payment**: unified `1ai-payment` (localhost:3100) + legacy Midtrans / TriPay / Duitku / NOWPayments / Telegram Stars (`src/services/payment*.ts`).
+- **Payment**: unified `1ai-payment` (`https://pay.berkahkarya.org` in production, localhost:3100 for dev) + legacy Midtrans / TriPay / Duitku / NOWPayments / Telegram Stars (`src/services/payment*.ts`).
 - **Frontend**: SATU React SPA di `admin-ui/` — React ^19.2.7 + react-router-dom ^7.18.1 + Vite ^8.1.1 + TailwindCSS ^4.3.3, base `/` tanpa basename; route 3 namespace di `admin-ui/src/main.tsx` (`/`→Landing, `/admin/*`→AdminApp, `/app/*`→CustomerApp); di-serve backend :3002 (prod PM2; dev default PORT=3000) — static `/admin/` (index.ts:328-335), `/assets/` (index.ts:346-359), SPA fallback notFoundHandler (index.ts:373-393 — hanya /app/*; /admin/* ditangani catch-all src/routes/admin.ts:414-423); `customer-ui/` & `landing-ui/` dihapus (source di-git-mv ke `admin-ui/src/{app,landing}`).
 
 ## Arsitektur Singkat
@@ -109,7 +109,7 @@ Variabel env wajib & opsional didefinisikan di `.env.example` (292 baris; jangan
 - **AI providers**: key per-provider (9-tier video, image, prompt AI — daftar di `.env.example`), `REMOTION_ENABLED`, `FFMPEG_PATH`.
 - **Circuit breaker & fallback**: `CIRCUIT_BREAKER_THRESHOLD=3`, `MAX_PROVIDER_RETRY=2`, `FALLBACK_CHAIN_MAX=8` (+ setting per-provider).
 - **Queue**: `BULLMQ_CONCURRENCY=5`, `VIDEO_QUEUE_NAME`, `IMAGE_QUEUE_NAME`.
-- **Payment**: `1AI_PAYMENT_URL/API_KEY/WEBHOOK_SECRET` (unified, localhost:3100) + legacy `MIDTRANS_*`, `TRIPAY_*`, `DUITKU_*`, `NOWPAYMENTS_API_KEY`, Telegram Stars.
+- **Payment**: `1AI_PAYMENT_URL/API_KEY/WEBHOOK_SECRET` (unified, production `https://pay.berkahkarya.org`) + legacy `MIDTRANS_*`, `TRIPAY_*`, `DUITKU_*`, `NOWPAYMENTS_API_KEY`, Telegram Stars.
 - **Distribusi**: `POSTBRIDGE_*` (enable/key/webhook/baseURL/platforms), CloakAdapter, TikTok cookies (`config/tiktok_cookies.txt`).
 - **Ebook**: `EBOOK_API_URL=http://localhost:8767` (alias DEPRECATED dari `CONTENT_FACTORY_URL` — sama-sama media-api :8767), `EBOOK_API_KEY`.
 - **Ecosystem**: `ECOSYSTEM_API_KEY`, `SOCIAL_SERVICE_URL` (127.0.0.1:8200), `AFFILIATE_SERVICE_URL` (127.0.0.1:3001), `TRACKING_URL`.
